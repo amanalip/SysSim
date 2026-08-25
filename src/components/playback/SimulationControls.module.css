@@ -140,15 +140,39 @@
   letter-spacing: 0.5px;
 }
 
-.select {
+.segmentedGroup {
+  display: flex;
   background-color: var(--bg-primary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-sm);
-  padding: 4px 6px;
-  font-size: 11px;
-  color: var(--text-primary);
-  outline: none;
+  padding: 2px;
+  gap: 1px;
+}
+
+.segmentedBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  padding: 3px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
   cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.12s ease;
+}
+
+.segmentedBtn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-tertiary);
+}
+
+.segmentedBtnActive {
+  background-color: var(--bg-elevated);
+  color: var(--accent-primary) !important;
+  box-shadow: var(--shadow-sm);
 }
 
 .qpsInput {

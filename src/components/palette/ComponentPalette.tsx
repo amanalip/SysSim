@@ -22,7 +22,7 @@ const CATEGORY_ORDER: Array<{ key: ComponentCategory; label: string }> = [
 export const ComponentPalette: React.FC = () => {
   const [search, setSearch] = useState('');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
-  const addNode = useStore((state) => state.addNode);
+  const { addNode, addToast } = useStore();
 
   const toggleCategory = (category: string) => {
     setCollapsedCategories((prev) => ({
@@ -66,6 +66,7 @@ export const ComponentPalette: React.FC = () => {
     // Add in center with random slight offset
     const randomOffset = (Math.random() - 0.5) * 80;
     addNode(type, { x: 350 + randomOffset, y: 250 + randomOffset }, name);
+    addToast(`Added ${name} to canvas`, 'success');
   };
 
   return (
@@ -138,12 +139,15 @@ export const ComponentPalette: React.FC = () => {
                     draggable
                     onDragStart={(e) => onDragStart(e, component.type)}
                     onClick={() => handleQuickAdd(component.type, component.name)}
-                    title={`Drag or click to add ${component.name} to canvas`}
+                    title={`Click or drag to place ${component.name} (${component.description})`}
                   >
                     <div className={styles.cardLeft}>
                       <div
                         className={styles.iconWrapper}
-                        style={{ color: categoryColor }}
+                        style={{
+                          color: categoryColor,
+                          backgroundColor: `${categoryColor}18`,
+                        }}
                       >
                         <ComponentIcon type={component.type} size={16} />
                       </div>

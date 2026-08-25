@@ -6,6 +6,10 @@ import {
   RotateCcw,
   Flame,
   BarChart2,
+  TrendingUp,
+  Waves,
+  Zap,
+  Activity,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { simBridge } from '../../engine/sim-bridge';
@@ -86,6 +90,12 @@ export const SimulationControls: React.FC = () => {
   };
 
   const speeds = [0.5, 1, 2, 5, 10];
+  const patterns: Array<{ key: TrafficPattern; label: string; icon: React.ReactNode }> = [
+    { key: 'steady', label: 'Steady', icon: <Activity size={10} /> },
+    { key: 'bursty', label: 'Bursty', icon: <Waves size={10} /> },
+    { key: 'ramp', label: 'Ramp', icon: <TrendingUp size={10} /> },
+    { key: 'spike', label: 'Spike', icon: <Zap size={10} /> },
+  ];
 
   return (
     <div className={styles.controlsBar}>
@@ -128,19 +138,22 @@ export const SimulationControls: React.FC = () => {
 
       <div className={styles.divider} />
 
-      {/* Traffic Config */}
+      {/* Traffic Pattern Segmented Switcher */}
       <div className={styles.configGroup}>
         <span className={styles.label}>Pattern</span>
-        <select
-          className={styles.select}
-          value={trafficConfig.pattern}
-          onChange={(e) => handlePatternChange(e.target.value as TrafficPattern)}
-        >
-          <option value="steady">Steady</option>
-          <option value="bursty">Bursty</option>
-          <option value="ramp">Ramp-up</option>
-          <option value="spike">Spike</option>
-        </select>
+        <div className={styles.segmentedGroup}>
+          {patterns.map((p) => (
+            <button
+              key={p.key}
+              className={`${styles.segmentedBtn} ${trafficConfig.pattern === p.key ? styles.segmentedBtnActive : ''}`}
+              onClick={() => handlePatternChange(p.key)}
+              title={`${p.label} Traffic Pattern`}
+            >
+              {p.icon}
+              <span>{p.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className={styles.configGroup}>
