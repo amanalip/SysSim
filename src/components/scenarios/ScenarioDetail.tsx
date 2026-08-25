@@ -11,6 +11,7 @@ import {
 import { Scenario } from '../../model/types';
 import { useStore } from '../../store/use-store';
 import { simBridge } from '../../engine/sim-bridge';
+import { ScenarioInterviewStepper } from './ScenarioInterviewStepper';
 import styles from './ScenarioDetail.module.css';
 
 interface ScenarioDetailProps {
@@ -98,6 +99,9 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
           </span>
         </div>
       </div>
+
+      {/* FAANG System Design Interview Workflow */}
+      <ScenarioInterviewStepper scenario={scenario} />
 
       {/* Interactive Actions */}
       <div className={styles.actionsGroup}>

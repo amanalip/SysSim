@@ -11,6 +11,7 @@ import {
   Keyboard,
   Flame,
   Layout,
+  Bookmark,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import {
@@ -21,6 +22,7 @@ import {
 } from '../../utils/sharing';
 import { ShortcutsModal } from '../modals/ShortcutsModal';
 import { ChaosDrillModal } from '../modals/ChaosDrillModal';
+import { SnapshotManagerModal } from '../modals/SnapshotManagerModal';
 import styles from './Header.module.css';
 
 export const Header: React.FC = () => {
@@ -37,6 +39,7 @@ export const Header: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isChaosDrillsOpen, setIsChaosDrillsOpen] = useState(false);
+  const [isSnapshotsOpen, setIsSnapshotsOpen] = useState(false);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -132,6 +135,15 @@ export const Header: React.FC = () => {
 
         <button
           className={styles.actionBtn}
+          onClick={() => setIsSnapshotsOpen(true)}
+          title="Manage multi-slot architecture snapshots"
+        >
+          <Bookmark size={13} color="var(--accent-primary)" />
+          <span>Snapshots</span>
+        </button>
+
+        <button
+          className={styles.actionBtn}
           onClick={() => setIsChaosDrillsOpen(true)}
           title="Run targeted Chaos Engineering drills"
           style={{ color: 'var(--error)' }}
@@ -221,6 +233,10 @@ export const Header: React.FC = () => {
       <ChaosDrillModal
         isOpen={isChaosDrillsOpen}
         onClose={() => setIsChaosDrillsOpen(false)}
+      />
+      <SnapshotManagerModal
+        isOpen={isSnapshotsOpen}
+        onClose={() => setIsSnapshotsOpen(false)}
       />
     </header>
   );
