@@ -38,6 +38,8 @@
 | **28** | `src/components/modals/ShortcutsModal.tsx` | Shortcuts modal lacked keyboard `Escape` dismiss listener. | Added `Escape` key event listener. |
 | **29** | `src/components/canvas/nodes/CustomComponentNode.tsx` | Bottleneck warning icon had generic static tooltip. | Dynamically displays exact detected issue titles on hover. |
 | **30** | `src/components/panels/MetricsDashboard.tsx` | Success Rate card rounded to nearest integer, masking high-availability decimal SLA precision. | Formatted to 2 decimal places (`99.99%`). |
+| **31** | `src/components/panels/PropertiesPanel.tsx` | PropertiesPanel lacked an input to tune `maxThroughputQps` capacity and lacked an `Escape` key close listener. | Added Max Capacity (QPS) field and `Escape` keyboard dismiss. |
+| **32** | `src/components/canvas/edges/ProtocolEdge.tsx` | Protocol dropdown menu on canvas connections stayed open when user pressed `Escape`. | Added `Escape` keyboard dismiss listener to ProtocolEdge dropdown. |
 
 ---
 
@@ -61,12 +63,14 @@
 16. **Bottleneck Badge Inspection Tooltips**: Warning badges on canvas nodes indicate specific bottleneck descriptions.
 17. **Fractional Availability SLA Precision**: Telemetry displays 2-decimal SLA compliance.
 18. **Instant Reference Architecture Loading**: Smooth scenario loading with automated reset.
+19. **Direct Rated Capacity Tuning**: Configurable Max Capacity (QPS) in Properties Panel.
+20. **Universal Escape Key Dismissal**: `Escape` key reliably dismisses properties panels, modals, dropdowns, and search bars.
 
 ---
 
 ## 3. Test Suites & Quality Improvements
 
-- **16 test files**, **73 total unit and integration tests** passing:
+- **17 test files**, **83 total unit and integration tests** passing:
   - Non-LB multi-edge round-robin routing
   - 502 Bad Gateway handling on empty LB targets
   - RateLimiterConfig `limitQps` subtext rendering
@@ -87,3 +91,5 @@
   - QueueModel and DatabaseModel reset verification
   - SysSimEngine comprehensive model reset
   - Inline zone label updates
+  - PropertiesPanel max throughput and health updates
+  - ProtocolEdge transport switching and partition toggling

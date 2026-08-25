@@ -29,6 +29,18 @@ export const PropertiesPanel: React.FC = () => {
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
+  React.useEffect(() => {
+    if (!isPropertiesPanelOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsPropertiesPanelOpen(false);
+        selectNode(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPropertiesPanelOpen, setIsPropertiesPanelOpen, selectNode]);
+
   if (!isPropertiesPanelOpen || !selectedNode) {
     return null;
   }
@@ -375,6 +387,26 @@ export const PropertiesPanel: React.FC = () => {
                 onChange={(e) =>
                   updateNodeConfig(config.id, {
                     maxConnections: parseInt(e.target.value, 10) || 100,
+                  })
+                }
+              />
+            </div>
+          )}
+
+          {/* Max Throughput Capacity (QPS) */}
+          {'maxThroughputQps' in config && (
+            <div className={styles.fieldGroup}>
+              <div className={styles.fieldLabel}>
+                <span>Max Capacity (QPS)</span>
+                <span className={styles.fieldValueBadge}>{config.maxThroughputQps}</span>
+              </div>
+              <input
+                type="number"
+                className={styles.input}
+                value={config.maxThroughputQps}
+                onChange={(e) =>
+                  updateNodeConfig(config.id, {
+                    maxThroughputQps: parseInt(e.target.value, 10) || 1000,
                   })
                 }
               />
