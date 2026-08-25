@@ -1,0 +1,155 @@
+.paletteContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+}
+
+.searchInput {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 12px;
+  width: 100%;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted);
+}
+
+.categoryGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  user-select: none;
+}
+
+.categoryHeader:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.categoryTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.categoryDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.componentGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.componentCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: grab;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.componentCard:hover {
+  background-color: var(--bg-elevated);
+  border-color: var(--accent-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.componentCard:active {
+  cursor: grabbing;
+}
+
+.cardLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-secondary);
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cardName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cardDesc {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+
+.addBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+}
+
+.componentCard:hover .addBtn {
+  opacity: 1;
+  color: var(--accent-primary);
+}
+
+.addBtn:hover {
+  background-color: var(--accent-subtle);
+}

@@ -1,0 +1,29 @@
+.canvasContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvasInner {
+  width: 100%;
+  height: 100%;
+}
+
+.referenceOverlayBadge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background-color: var(--accent-subtle);
+  border: 1px solid var(--accent-primary);
+  color: var(--accent-primary);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(8px);
+}
