@@ -23,6 +23,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
 
   const shortcuts = [
     { label: 'Start / Pause Simulation', key: 'Space' },
+    { label: 'Open Command Palette', key: 'Ctrl + K / Cmd + K' },
     { label: 'Undo Canvas Action', key: 'Ctrl + Z / Cmd + Z' },
     { label: 'Redo Canvas Action', key: 'Ctrl + Shift + Z' },
     { label: 'Duplicate Selected Component', key: 'Ctrl + D / Cmd + D' },

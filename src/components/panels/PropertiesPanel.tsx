@@ -442,6 +442,16 @@ export const PropertiesPanel: React.FC = () => {
         <div className={styles.footerActions}>
           <button
             className={styles.actionBtn}
+            onClick={() => {
+              useStore.getState().duplicateNode(config.id);
+              useStore.getState().addToast(`Duplicated ${config.name}`, 'success');
+            }}
+            title="Duplicate component (Ctrl+D)"
+          >
+            <span>Duplicate</span>
+          </button>
+          <button
+            className={styles.actionBtn}
             onClick={handleResetDefaults}
             title="Reset component settings to defaults"
           >

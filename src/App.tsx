@@ -11,6 +11,7 @@ import { MetricsDashboard } from './components/panels/MetricsDashboard';
 import { EnvelopeCalculator } from './components/panels/EnvelopeCalculator';
 import { ScenarioManager } from './components/scenarios/ScenarioManager';
 import { ShortcutsModal } from './components/modals/ShortcutsModal';
+import { CommandPalette } from './components/modals/CommandPalette';
 import { ToastContainer } from './components/ui/Toast';
 import { chaosRunner } from './engine/metrics/chaos-runner';
 import { simBridge } from './engine/sim-bridge';
@@ -36,6 +37,7 @@ export function App() {
   } = useStore();
 
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -79,7 +81,14 @@ export function App() {
   // Global keyboard shortcuts
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Ignore when user is actively typing in an input or textarea
+      // Command Palette (Ctrl+K or Cmd+K) - works even if typing in some inputs
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+        return;
+      }
+
+      // Ignore standard single-key shortcuts when user is actively typing in an input
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
         return;
@@ -161,6 +170,10 @@ export function App() {
       <ShortcutsModal
         isOpen={isShortcutsModalOpen}
         onClose={() => setIsShortcutsModalOpen(false)}
+      />
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
       />
     </div>
   );
