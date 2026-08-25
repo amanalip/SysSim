@@ -1,5 +1,5 @@
 .nodeContainer {
-  min-width: 170px;
+  min-width: 180px;
   background-color: var(--node-bg);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
@@ -28,7 +28,7 @@
 }
 
 .nodeBody {
-  padding: 10px 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -55,6 +55,7 @@
   height: 28px;
   border-radius: var(--radius-sm);
   background-color: var(--bg-tertiary);
+  flex-shrink: 0;
 }
 
 .titleArea {
@@ -110,12 +111,47 @@
   100% { opacity: 1; }
 }
 
+.telemetryRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--bg-primary);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.telemetryPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.utilNormal {
+  color: var(--success);
+}
+
+.utilWarning {
+  color: var(--warning);
+  font-weight: 700;
+}
+
+.utilCritical {
+  color: var(--error);
+  font-weight: 700;
+  animation: pulse 1s infinite alternate;
+}
+
 .nodeFooter {
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid var(--border-subtle);
-  padding-top: 6px;
+  padding-top: 4px;
   margin-top: 2px;
   font-size: 10px;
   color: var(--text-secondary);

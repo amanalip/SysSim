@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Power, Settings, Trash2, AlertTriangle } from 'lucide-react';
+import { Power, Settings, Trash2, AlertTriangle, Zap, Clock, Activity, Link2 } from 'lucide-react';
 import { AnyComponentConfig } from '../../../model/types';
 import { categoryColors } from '../../../theme';
 import { ComponentIcon } from '../../icons/ComponentIcon';
@@ -18,11 +18,13 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
 }) => {
   const nodeData = data as unknown as NodeData;
   const config = nodeData.config;
-  const { selectNode, removeNode, setNodeHealthOverride, bottlenecks } = useStore();
+  const { selectNode, removeNode, setNodeHealthOverride, bottlenecks, metrics, simState } = useStore();
 
   const categoryColor = categoryColors[config.category]?.main || 'var(--accent-primary)';
   const isDown = config.health === 'down';
   const hasBottleneck = bottlenecks.some((b) => b.nodeId === id);
+  const nodeMetric = metrics.componentMetrics?.[id];
+  const isSimActive = simState === 'running' || simState === 'paused';
 
   const toggleHealth = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -78,6 +80,10 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
   return (
     <div
       className={`${styles.nodeContainer} ${selected ? styles.selected : ''} ${isDown ? styles.isDownContainer : ''}`}
+      style={{
+        borderLeftColor: categoryColor,
+        borderLeftWidth: '3px',
+      }}
       onClick={() => selectNode(id)}
     >
       <Handle
@@ -110,7 +116,10 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
           <div className={styles.iconAndTitle}>
             <div
               className={styles.iconBox}
-              style={{ color: categoryColor }}
+              style={{
+                color: categoryColor,
+                backgroundColor: `${categoryColor}18`,
+              }}
             >
               <ComponentIcon type={config.type} size={15} />
             </div>
@@ -124,6 +133,39 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
             title={`Status: ${config.health}`}
           />
         </div>
+
+        {/* Live Telemetry Pill Bar during active simulation */}
+        {isSimActive && nodeMetric && nodeMetric.totalRequests > 0 && (
+          <div className={styles.telemetryRow}>
+            <div className={styles.telemetryPill} title="Throughput QPS">
+              <Zap size={9} color="var(--accent-primary)" />
+              <span>{nodeMetric.qps}</span>
+            </div>
+            <div className={styles.telemetryPill} title="p95 Latency">
+              <Clock size={9} color="var(--text-muted)" />
+              <span>{nodeMetric.p95LatencyMs}ms</span>
+            </div>
+            <div
+              className={`${styles.telemetryPill} ${
+                nodeMetric.utilizationPercent > 85
+                  ? styles.utilCritical
+                  : nodeMetric.utilizationPercent > 60
+                  ? styles.utilWarning
+                  : styles.utilNormal
+              }`}
+              title="Capacity Utilization"
+            >
+              <Activity size={9} />
+              <span>{nodeMetric.utilizationPercent}%</span>
+            </div>
+            {nodeMetric.activeConnections > 0 && (
+              <div className={styles.telemetryPill} title="Active Connections">
+                <Link2 size={9} color="var(--text-muted)" />
+                <span>{nodeMetric.activeConnections}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className={styles.nodeFooter}>
           <span className={styles.badgeTag}>{getSubtext()}</span>
