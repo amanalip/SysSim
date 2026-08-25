@@ -525,7 +525,21 @@ export class SysSimEngine {
     if (isSuccess) {
       this.totalSuccess++;
       req.status = 'success';
-      req.color = '#3fb950';
+      const hasAsync = req.path.some((p) =>
+        ['message_queue', 'pubsub', 'event_bus', 'task_queue'].includes(p.nodeType)
+      );
+      const hasCacheHit = req.path.some((p) =>
+        ['redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(p.nodeType) &&
+        p.info?.includes('Hit')
+      );
+
+      if (hasAsync) {
+        req.color = '#a855f7'; // Purple async queue flow
+      } else if (hasCacheHit) {
+        req.color = '#06b6d4'; // Cyan cache hit
+      } else {
+        req.color = '#3fb950'; // Green 200 OK
+      }
     } else {
       this.totalFailed++;
     }

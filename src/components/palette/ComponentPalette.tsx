@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronDown, ChevronRight, Plus, X } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Plus, X, Layers, Sparkles } from 'lucide-react';
 import {
   COMPONENT_METADATA_LIST,
   ComponentMetadata,
@@ -7,6 +7,7 @@ import {
 import { ComponentCategory, ComponentType } from '../../model/types';
 import { categoryColors } from '../../theme';
 import { ComponentIcon } from '../icons/ComponentIcon';
+import { ARCHITECTURE_BLUEPRINTS, ArchitectureBlueprint } from '../../model/blueprints';
 import { useStore } from '../../store/use-store';
 import styles from './ComponentPalette.module.css';
 
@@ -22,7 +23,7 @@ const CATEGORY_ORDER: Array<{ key: ComponentCategory; label: string }> = [
 export const ComponentPalette: React.FC = () => {
   const [search, setSearch] = useState('');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
-  const { addNode, addToast } = useStore();
+  const { addNode, nodes, edges, loadCanvasState, addToast } = useStore();
 
   const toggleCategory = (category: string) => {
     setCollapsedCategories((prev) => ({
@@ -39,6 +40,17 @@ export const ComponentPalette: React.FC = () => {
         c.name.toLowerCase().includes(query) ||
         c.description.toLowerCase().includes(query) ||
         c.category.toLowerCase().includes(query)
+    );
+  }, [search]);
+
+  const filteredBlueprints = useMemo(() => {
+    if (!search.trim()) return ARCHITECTURE_BLUEPRINTS;
+    const query = search.toLowerCase();
+    return ARCHITECTURE_BLUEPRINTS.filter(
+      (b) =>
+        b.name.toLowerCase().includes(query) ||
+        b.description.toLowerCase().includes(query) ||
+        b.category.toLowerCase().includes(query)
     );
   }, [search]);
 
@@ -63,10 +75,17 @@ export const ComponentPalette: React.FC = () => {
   };
 
   const handleQuickAdd = (type: ComponentType, name: string) => {
-    // Add in center with random slight offset
     const randomOffset = (Math.random() - 0.5) * 80;
     addNode(type, { x: 350 + randomOffset, y: 250 + randomOffset }, name);
     addToast(`Added ${name} to canvas`, 'success');
+  };
+
+  const handleAddBlueprint = (bp: ArchitectureBlueprint) => {
+    const baseX = 200 + (Math.random() - 0.5) * 60;
+    const baseY = 150 + (Math.random() - 0.5) * 60;
+    const created = bp.create(baseX, baseY);
+    loadCanvasState([...nodes, ...created.nodes], [...edges, ...created.edges]);
+    addToast(`Inserted ${bp.name} blueprint onto canvas`, 'success');
   };
 
   return (
@@ -76,7 +95,7 @@ export const ComponentPalette: React.FC = () => {
         <input
           type="text"
           className={styles.searchInput}
-          placeholder="Search components..."
+          placeholder="Search components or blueprints..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => {
@@ -101,6 +120,69 @@ export const ComponentPalette: React.FC = () => {
         )}
       </div>
 
+      {/* Blueprints Section */}
+      {filteredBlueprints.length > 0 && (
+        <div className={styles.categoryGroup}>
+          <div
+            className={styles.categoryHeader}
+            onClick={() => toggleCategory('blueprints')}
+          >
+            <div className={styles.categoryTitle}>
+              <Sparkles size={13} color="var(--warning)" />
+              <span>Blueprints</span>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                ({filteredBlueprints.length})
+              </span>
+            </div>
+            {collapsedCategories['blueprints'] ? (
+              <ChevronRight size={14} color="var(--text-muted)" />
+            ) : (
+              <ChevronDown size={14} color="var(--text-muted)" />
+            )}
+          </div>
+
+          {!collapsedCategories['blueprints'] && (
+            <div className={styles.componentGrid}>
+              {filteredBlueprints.map((bp) => (
+                <div
+                  key={bp.id}
+                  className={styles.componentCard}
+                  onClick={() => handleAddBlueprint(bp)}
+                  title={`Click to insert ${bp.name} (${bp.description})`}
+                >
+                  <div className={styles.cardLeft}>
+                    <div
+                      className={styles.iconWrapper}
+                      style={{
+                        color: 'var(--warning)',
+                        backgroundColor: 'rgba(210, 153, 34, 0.15)',
+                      }}
+                    >
+                      <Layers size={16} />
+                    </div>
+                    <div className={styles.cardInfo}>
+                      <span className={styles.cardName}>{bp.name}</span>
+                      <span className={styles.cardDesc}>{bp.description}</span>
+                    </div>
+                  </div>
+                  <button
+                    className={styles.addBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddBlueprint(bp);
+                    }}
+                    title="Insert blueprint onto canvas"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Standard Categorized Components */}
       {CATEGORY_ORDER.map(({ key, label }) => {
         const items = componentsByCategory[key];
         if (!items || items.length === 0) return null;
