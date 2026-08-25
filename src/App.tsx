@@ -4,6 +4,7 @@ import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { ComponentPalette } from './components/palette/ComponentPalette';
 import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
+import { PropertiesPanel } from './components/panels/PropertiesPanel';
 import { ToastContainer } from './components/ui/Toast';
 import styles from './App.module.css';
 
@@ -37,6 +38,8 @@ export function App() {
             )}
           </div>
         </main>
+
+        <PropertiesPanel />
       </div>
       <ToastContainer />
     </div>
