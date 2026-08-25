@@ -85,6 +85,35 @@ describe('Post-Audit Verified Bug Fixes & Day/Night Mode Contrast', () => {
     expect(useStore.getState().nodes[0].data.config.name).toBe('Imported App');
   });
 
+  it('Bug 5: updateNodeConfig and duplicateNode update configuration and clone properly', () => {
+    const { addNode, updateNodeConfig, duplicateNode } = useStore.getState();
+
+    const nodeId = addNode('app_server', { x: 100, y: 100 }, 'Original App');
+    updateNodeConfig(nodeId, { maxThroughputQps: 12000 });
+
+    expect(useStore.getState().nodes[0].data.config.maxThroughputQps).toBe(12000);
+
+    const dupId = duplicateNode(nodeId);
+    expect(dupId).toBeDefined();
+    expect(useStore.getState().nodes.length).toBe(2);
+    expect(useStore.getState().nodes[1].data.config.name).toContain('(Copy)');
+  });
+
+  it('Bug 6: updateEdgeProtocol and toggleCutEdge update edge metadata properly', () => {
+    const { addNode, addEdge, updateEdgeProtocol, toggleCutEdge } = useStore.getState();
+
+    const n1 = addNode('app_server', { x: 100, y: 100 }, 'A');
+    const n2 = addNode('sql_db', { x: 300, y: 100 }, 'B');
+    addEdge(n1, n2, 'HTTP');
+
+    const edgeId = useStore.getState().edges[0].id;
+    updateEdgeProtocol(edgeId, 'gRPC');
+    expect(useStore.getState().edges[0].data?.protocol).toBe('gRPC');
+
+    toggleCutEdge(edgeId);
+    expect(useStore.getState().edges[0].data?.isCut).toBe(true);
+  });
+
   it('Simulator engine purges dead node statistics and resets cache models on reset', () => {
     const engine = new SysSimEngine({
       nodes: [

@@ -57,6 +57,9 @@
 | **47** | `src/store/use-store.ts` | `loadCanvasState()` did not call `simBridge.syncGraph()`, leaving the simulation engine running old graphs after importing architecture JSON files or switching presets. | Added `simBridge.syncGraph()` inside `loadCanvasState()`. |
 | **48** | `src/engine/components/cache-model.ts` & `src/engine/simulator.ts` | `CacheModel` lacked a `reset()` method, causing cached keys and hit/miss counters to persist across simulation resets. | Implemented `reset(): void` on `CacheModel` and invoked it across all cache models in `SysSimEngine.reset()`. |
 | **49** | `src/components/canvas/ContextMenu.tsx` | Right-click "Inject Fault / Restore Node" action toggled node visual state but did not notify the simulation engine. | Added `simBridge.syncGraph()` inside `handleToggleHealth()`. |
+| **50** | `src/store/use-store.ts` | `updateNodeConfig()` modified React state but did not call `simBridge.syncGraph()`, leaving the simulation engine executing old throughput and replica numbers. | Added `simBridge.syncGraph()` inside `updateNodeConfig()`. |
+| **51** | `src/store/use-store.ts` | `duplicateNode()` cloned nodes into `nodes` array but did not notify the simulation engine. | Added `simBridge.syncGraph()` inside `duplicateNode()`. |
+| **52** | `src/store/use-store.ts` | `updateEdgeProtocol()` and `toggleCutEdge()` updated edge metadata but did not refresh the simulation engine's active topology snapshot. | Added `simBridge.syncGraph()` to both `updateEdgeProtocol()` and `toggleCutEdge()`. |
 
 ---
 

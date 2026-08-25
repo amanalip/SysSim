@@ -305,6 +305,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedEdgeId: null,
       isPropertiesPanelOpen: true,
     }));
+    simBridge.syncGraph();
     return id;
   },
 
@@ -329,6 +330,7 @@ export const useStore = create<SysSimState>((set, get) => ({
         return node;
       }),
     }));
+    simBridge.syncGraph();
   },
 
   removeNode: (id) => {
@@ -390,6 +392,7 @@ export const useStore = create<SysSimState>((set, get) => ({
         e.id === edgeId ? { ...e, data: { ...e.data, protocol } } : e
       ),
     }));
+    simBridge.syncGraph();
   },
 
   toggleCutEdge: (edgeId) => {
@@ -408,6 +411,7 @@ export const useStore = create<SysSimState>((set, get) => ({
           : e
       ),
     }));
+    simBridge.syncGraph();
   },
 
   removeEdge: (edgeId) => {
@@ -484,6 +488,8 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedEdgeId: null,
       isPropertiesPanelOpen: false,
     });
+    simBridge.reset();
+    simBridge.syncGraph();
   },
 
   loadCanvasState: (nodes, edges, zones = []) => {
