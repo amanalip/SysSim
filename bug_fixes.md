@@ -55,24 +55,24 @@
 
 ---
 
-## 2. Desktop UX/UI Enhancements (Batches 1 to 5 Completed)
+## 2. Desktop UX/UI Enhancements (All 19 Features Completed in 10 Batches)
 
 1. **Category-Coded Node Styling & Ambient Badges (Batch 1)**: Distinct category tinting and left accent bars (Compute, DB, Cache, Queue, Security).
-2. **On-Node Live Telemetry Badges (Batch 1)**: Real-time QPS, p95 latency, dynamic utilization % pill, and active connections right on canvas cards during simulation.
-3. **Interactive Floating Node Actions (Batch 2)**: Floating action pill on selected canvas nodes (Duplicate, Fault Injection, Settings, Delete).
-4. **Glassmorphic Simulation Floating Dock (Batch 2)**: Frosted glass backdrop blur, glowing pulse status dot, and high-contrast controls.
-5. **Segmented Speed & Traffic Pattern Switchers (Batch 3)**: Visual segmented pill buttons for speed (`0.5x`, `1x`, `2x`, `5x`, `10x`) and traffic patterns (Steady, Bursty, Ramp, Spike).
-6. **Sidebar Palette Highlights & Quick-Add Toasts (Batch 3)**: Category-tinted icon containers and instant toast feedback on drag/click insertion.
-7. **101 Scenarios Mastery Progress Header & Status Filters (Batch 4)**: Mastery completion bar (`X / 101 Solved • Y% Completed`) and Solved/Unsolved filter pills.
-8. **Metrics Dashboard Minibar & Gradient Area Charts (Batch 4)**: Persistent live ticker minibar when drawer is closed, with smooth gradient area charts.
-9. **Properties Inspector Footer Actions (Batch 5)**: Quick Duplicate and Reset actions alongside Delete in inspector footer.
-10. **Global Command Palette (`Ctrl+K` / `Cmd+K`) (Batch 5)**: Spotlight quick search modal to trigger simulation commands, insert components, and jump to any of the 101 scenarios.
-
----
-
-## 3. Automated Verification
-
-- **23 test files**, **143 unit and integration tests** passing (100% pass rate).
-- Production build: `npm run build` compiled cleanly in **8.46s**.
-- Zero em dashes (`—`) across the entire repository.
-- All code pushed to GitHub repository (`origin/main`).
+2. **On-Node Live Telemetry Badges (Batch 1)**: Real-time badges for QPS, latency ms, utilization %, and active connection pool usage.
+3. **Interactive Floating Node Actions (Batch 2)**: Quick hover toolbar directly on canvas nodes with Duplicate, Fault Injection toggle, Config, and Delete buttons.
+4. **Glassmorphic Simulation Floating Dock (Batch 2)**: Frosted glass floating controls with simulation status pulse dot and segmented speed pills (0.5x to 10x).
+5. **Segmented Traffic Pattern Switcher (Batch 3)**: Quick switcher pills for Steady, Bursty, Ramp, and Spike traffic models.
+6. **Palette Category Highlights with Quick-Add Feedback (Batch 3)**: Category-coded glow highlights, item count tags, and toast feedback.
+7. **101 Scenarios Mastery Progress Header & Filter Pills (Batch 4)**: Mastery header showing total solved ratio and percentage with All, Solved, and Unsolved filter pills.
+8. **Metrics Dashboard Minibar Ticker & Gradient Curves (Batch 4)**: Persistent ticker minibar when dashboard is collapsed and multi-color gradient area curves.
+9. **Properties Inspector Duplicate & Reset Action Bar (Batch 5)**: Action bar in the properties drawer for one-click node cloning and default configuration reset.
+10. **Global Command Palette Hotkey (Batch 5)**: `Ctrl+K` / `Cmd+K` Spotlight search launcher for components, blueprints, scenarios, and actions.
+11. **Multi-Color Traffic Particle Diagnostics (Batch 6)**: Visual particle classification by request status: Green for 200 OK, Red for 500 errors, Amber for 429 rate limits, Cyan for cache hits, and Purple for async queues.
+12. **Pre-Assembled Architecture Blueprints in Palette (Batch 6)**: Expandable blueprints section offering instant multi-tier templates (Scalable Microservice Tier, HA DB Cluster, Event-Driven Pipeline).
+13. **5-Pillar Architecture Health Radar Scorecard (Batch 7)**: Health scorecard scoring designs across Availability, Scalability, Latency SLA, Cost Efficiency, and Resilience with letter grades and suggestions.
+14. **Targeted Chaos Experiment Drills Modal (Batch 7)**: Disaster simulation drills (Traffic Spike 5x, Database Outage, Cache Eviction Storm, Split-Brain Edge Sever, AZ Blackout) with one-click restore.
+15. **Step-by-Step Scenario Interview Stepper (Batch 8)**: 5-step FAANG system design interview flow (Scope & SLAs, Capacity Estimation, High-Level Architecture, Deep Dive, SLA Load Test).
+16. **Multi-Slot Architecture Snapshot Manager (Batch 8)**: 5-slot architecture state manager in browser local storage to save, name, and recall custom designs.
+17. **Canvas HUD Widget & Edge Routing Switcher (Batch 9)**: Floating HUD toolbar with Smooth Bezier, Orthogonal Manhattan, and Straight edge routing options alongside Zoom and Minimap controls.
+18. **Hop-by-Hop Distributed Request Trace & Root-Cause Inspector (Batch 9)**: Waterfall timeline breakdown displaying per-hop latencies, error details, and root-cause bottleneck indicators.
+19. **Real-Time Monthly Cloud Cost Estimator (Batch 10)**: Dynamic cloud infrastructure cost estimator comparing AWS, GCP, and Azure pricing with spot instance discounts and per-category cost breakdowns.

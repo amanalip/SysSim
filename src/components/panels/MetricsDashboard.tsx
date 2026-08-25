@@ -24,6 +24,7 @@ import { useStore } from '../../store/use-store';
 import { BottleneckPanel } from './BottleneckPanel';
 import { HealthRadarPanel } from './HealthRadarPanel';
 import { RequestTracePanel } from './RequestTracePanel';
+import { CostEstimatorPanel } from './CostEstimatorPanel';
 import styles from './MetricsDashboard.module.css';
 
 export const MetricsDashboard: React.FC = () => {
@@ -168,6 +169,14 @@ export const MetricsDashboard: React.FC = () => {
               onClick={() => setActiveBottomTab('trace')}
             >
               Distributed Traces
+            </button>
+            <button
+              className={`${styles.tabBtn} ${
+                activeBottomTab === 'cost' ? styles.tabBtnActive : ''
+              }`}
+              onClick={() => setActiveBottomTab('cost')}
+            >
+              Cloud Cost Estimator
             </button>
           </div>
         </div>
@@ -443,6 +452,7 @@ export const MetricsDashboard: React.FC = () => {
 
         {activeBottomTab === 'health' && <HealthRadarPanel />}
         {activeBottomTab === 'trace' && <RequestTracePanel />}
+        {activeBottomTab === 'cost' && <CostEstimatorPanel />}
       </div>
     </div>
   );

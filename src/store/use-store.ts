@@ -58,8 +58,8 @@ export interface SysSimState {
   setTheme: (theme: ThemeMode) => void;
   activeSidebarTab: 'palette' | 'scenarios' | 'calculator';
   setActiveSidebarTab: (tab: 'palette' | 'scenarios' | 'calculator') => void;
-  activeBottomTab: 'metrics' | 'bottlenecks' | 'health' | 'trace';
-  setActiveBottomTab: (tab: 'metrics' | 'bottlenecks' | 'health' | 'trace') => void;
+  activeBottomTab: 'metrics' | 'bottlenecks' | 'health' | 'trace' | 'cost';
+  setActiveBottomTab: (tab: 'metrics' | 'bottlenecks' | 'health' | 'trace' | 'cost') => void;
   isBottomDrawerOpen: boolean;
   setIsBottomDrawerOpen: (open: boolean) => void;
   isPropertiesPanelOpen: boolean;
