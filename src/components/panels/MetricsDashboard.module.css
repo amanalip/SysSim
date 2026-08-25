@@ -1,3 +1,106 @@
+.miniTickerBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 28px;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 20;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-sans);
+  transition: background-color 0.15s ease;
+}
+
+.miniTickerBar:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.miniTickerLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.miniPulseDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--success);
+  box-shadow: 0 0 6px var(--success);
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.miniTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.miniDivider {
+  width: 1px;
+  height: 14px;
+  background-color: var(--border-primary);
+}
+
+.miniStatItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.miniStatLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.miniStatVal {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.miniBottleneckPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--error);
+  color: #ffffff;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 700;
+  animation: pulse 1s infinite alternate;
+}
+
+.miniTickerRight {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.expandLabel {
+  font-size: 10px;
+}
+
 .drawerContainer {
   position: absolute;
   bottom: 0;
@@ -169,13 +272,18 @@
   text-transform: uppercase;
 }
 
-.componentTable {
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
   width: 100%;
   border-collapse: collapse;
   font-size: 11px;
 }
 
-.componentTable th {
+.table th {
   text-align: left;
   padding: 6px 10px;
   color: var(--text-muted);
@@ -184,14 +292,8 @@
   text-transform: uppercase;
 }
 
-.componentTable td {
+.table td {
   padding: 6px 10px;
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-primary);
-  font-family: var(--font-mono);
-}
-
-.componentTable td:first-child {
-  font-family: var(--font-sans);
-  font-weight: 600;
 }

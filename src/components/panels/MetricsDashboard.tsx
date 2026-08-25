@@ -5,11 +5,16 @@ import {
   Download,
   Table,
   LineChart as LineChartIcon,
+  ChevronUp,
+  AlertTriangle,
+  Zap,
+  Clock,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -26,11 +31,64 @@ export const MetricsDashboard: React.FC = () => {
     setIsBottomDrawerOpen,
     activeBottomTab,
     setActiveBottomTab,
+    bottlenecks,
   } = useStore();
 
   const [viewMode, setViewMode] = useState<'charts' | 'table'>('charts');
 
-  if (!isBottomDrawerOpen) return null;
+  // Closed state: render a sleek persistent mini-ticker bar
+  if (!isBottomDrawerOpen) {
+    const successPercent =
+      metrics.totalRequestsSent > 0
+        ? ((metrics.totalRequestsSuccess / metrics.totalRequestsSent) * 100).toFixed(2)
+        : '100.00';
+
+    return (
+      <div
+        className={styles.miniTickerBar}
+        onClick={() => setIsBottomDrawerOpen(true)}
+        title="Click to open full Metrics & Telemetry Dashboard (M)"
+      >
+        <div className={styles.miniTickerLeft}>
+          <div className={styles.miniPulseDot} />
+          <span className={styles.miniTitle}>Live Telemetry</span>
+          <div className={styles.miniDivider} />
+
+          <div className={styles.miniStatItem}>
+            <Zap size={11} color="var(--accent-primary)" />
+            <span className={styles.miniStatLabel}>QPS:</span>
+            <span className={styles.miniStatVal}>{metrics.currentQps}</span>
+          </div>
+
+          <div className={styles.miniStatItem}>
+            <CheckCircle2 size={11} color="var(--success)" />
+            <span className={styles.miniStatLabel}>Success:</span>
+            <span className={styles.miniStatVal} style={{ color: 'var(--success)' }}>
+              {successPercent}%
+            </span>
+          </div>
+
+          <div className={styles.miniStatItem}>
+            <Clock size={11} color="var(--warning)" />
+            <span className={styles.miniStatLabel}>p99:</span>
+            <span className={styles.miniStatVal}>{metrics.p99LatencyMs}ms</span>
+          </div>
+
+          {bottlenecks.length > 0 && (
+            <div className={styles.miniBottleneckPill}>
+              <AlertTriangle size={11} color="#ffffff" />
+              <span>{bottlenecks.length} Bottleneck{bottlenecks.length > 1 ? 's' : ''}</span>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.miniTickerRight}>
+          <span className={styles.expandLabel}>Expand Telemetry</span>
+          <ChevronUp size={14} />
+        </div>
+      </div>
+    );
+  }
 
   const handleExportCsv = () => {
     const headers = [
@@ -91,7 +149,7 @@ export const MetricsDashboard: React.FC = () => {
               }`}
               onClick={() => setActiveBottomTab('bottlenecks')}
             >
-              Bottleneck Inspector
+              Bottleneck Inspector {bottlenecks.length > 0 && `(${bottlenecks.length})`}
             </button>
           </div>
         </div>
@@ -123,7 +181,7 @@ export const MetricsDashboard: React.FC = () => {
           <button
             className={styles.closeBtn}
             onClick={() => setIsBottomDrawerOpen(false)}
-            title="Close metrics panel"
+            title="Minimize metrics panel (M)"
           >
             <X size={15} />
           </button>
@@ -139,7 +197,7 @@ export const MetricsDashboard: React.FC = () => {
             <div className={styles.summaryCardsGrid}>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Total Requests</span>
-                <span className={styles.summaryValue}>{metrics.totalRequestsSent}</span>
+                <span className={styles.summaryValue}>{metrics.totalRequestsSent.toLocaleString()}</span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Success Rate</span>
@@ -189,11 +247,21 @@ export const MetricsDashboard: React.FC = () => {
             {/* Dynamic Views: Charts vs Per-Component Table */}
             {viewMode === 'charts' ? (
               <div className={styles.chartsGrid}>
-                {/* Latency Percentiles Chart */}
+                {/* Latency Percentiles Area Chart */}
                 <div className={styles.chartContainer}>
                   <span className={styles.chartTitle}>Latency Percentiles (ms)</span>
                   <ResponsiveContainer width="100%" height={140}>
-                    <LineChart data={metrics.timeSeries}>
+                    <AreaChart data={metrics.timeSeries}>
+                      <defs>
+                        <linearGradient id="p50Grad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#58a6ff" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#58a6ff" stopOpacity={0.0}/>
+                        </linearGradient>
+                        <linearGradient id="p99Grad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f85149" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#f85149" stopOpacity={0.0}/>
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
                       <XAxis dataKey="timestampSec" stroke="var(--text-muted)" fontSize={10} />
                       <YAxis stroke="var(--text-muted)" fontSize={10} />
@@ -201,42 +269,53 @@ export const MetricsDashboard: React.FC = () => {
                         contentStyle={{
                           backgroundColor: 'var(--bg-secondary)',
                           borderColor: 'var(--border-primary)',
+                          borderRadius: '8px',
                           fontSize: '11px',
                         }}
                       />
-                      <Line
+                      <Area
                         type="monotone"
                         dataKey="p50LatencyMs"
-                        name="p50"
+                        name="p50 (ms)"
                         stroke="#58a6ff"
                         strokeWidth={1.5}
-                        dot={false}
+                        fill="url(#p50Grad)"
                       />
-                      <Line
+                      <Area
                         type="monotone"
                         dataKey="p95LatencyMs"
-                        name="p95"
+                        name="p95 (ms)"
                         stroke="#f59e0b"
                         strokeWidth={1.5}
-                        dot={false}
+                        fill="none"
                       />
-                      <Line
+                      <Area
                         type="monotone"
                         dataKey="p99LatencyMs"
-                        name="p99"
+                        name="p99 (ms)"
                         stroke="#f85149"
                         strokeWidth={1.5}
-                        dot={false}
+                        fill="url(#p99Grad)"
                       />
-                    </LineChart>
+                    </AreaChart>
                   </ResponsiveContainer>
                 </div>
 
-                {/* Throughput & Errors Chart */}
+                {/* Throughput & Errors Area Chart */}
                 <div className={styles.chartContainer}>
                   <span className={styles.chartTitle}>Throughput & Error Rate</span>
                   <ResponsiveContainer width="100%" height={140}>
-                    <LineChart data={metrics.timeSeries}>
+                    <AreaChart data={metrics.timeSeries}>
+                      <defs>
+                        <linearGradient id="qpsGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3fb950" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#3fb950" stopOpacity={0.0}/>
+                        </linearGradient>
+                        <linearGradient id="errGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f85149" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#f85149" stopOpacity={0.0}/>
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
                       <XAxis dataKey="timestampSec" stroke="var(--text-muted)" fontSize={10} />
                       <YAxis stroke="var(--text-muted)" fontSize={10} />
@@ -244,70 +323,63 @@ export const MetricsDashboard: React.FC = () => {
                         contentStyle={{
                           backgroundColor: 'var(--bg-secondary)',
                           borderColor: 'var(--border-primary)',
+                          borderRadius: '8px',
                           fontSize: '11px',
                         }}
                       />
-                      <Line
+                      <Area
                         type="monotone"
                         dataKey="throughputQps"
                         name="Throughput (QPS)"
                         stroke="#3fb950"
                         strokeWidth={1.5}
-                        dot={false}
+                        fill="url(#qpsGrad)"
                       />
-                      <Line
+                      <Area
                         type="monotone"
                         dataKey="errorRatePercent"
                         name="Error Rate (%)"
                         stroke="#f85149"
                         strokeWidth={1.5}
-                        dot={false}
+                        fill="url(#errGrad)"
                       />
-                    </LineChart>
+                    </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table className={styles.componentTable}>
+              /* Per-Component Metrics Breakdown Table */
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
                   <thead>
                     <tr>
-                      <th>Component</th>
+                      <th>Node</th>
                       <th>Type</th>
-                      <th>Total Requests</th>
-                      <th>QPS</th>
+                      <th>Throughput</th>
                       <th>Utilization %</th>
                       <th>Active Conns</th>
-                      <th>Avg Latency</th>
                       <th>p95 Latency</th>
-                      <th>Error %</th>
-                      <th>Queue Depth</th>
-                      <th>Cache Hit %</th>
+                      <th>Error Rate</th>
+                      <th>Processed</th>
+                      <th>Dropped</th>
                     </tr>
                   </thead>
                   <tbody>
                     {compList.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={11}
-                          style={{
-                            textAlign: 'center',
-                            padding: '32px 16px',
-                            color: 'var(--text-muted)',
-                            fontSize: '12px',
-                          }}
-                        >
-                          Start simulation playback to collect per-component metrics
+                        <td colSpan={9} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                          No component telemetry recorded yet. Start simulation to observe metrics.
                         </td>
                       </tr>
                     ) : (
                       compList.map((c) => (
                         <tr key={c.nodeId}>
                           <td style={{ fontWeight: 600 }}>{c.nodeName}</td>
-                          <td style={{ color: 'var(--text-muted)' }}>{c.nodeType}</td>
-                          <td>{c.totalRequests}</td>
-                          <td>{c.qps}</td>
-                          <td>
+                          <td style={{ textTransform: 'capitalize', color: 'var(--text-muted)' }}>
+                            {c.nodeType.replace('_', ' ')}
+                          </td>
+                          <td style={{ fontFamily: 'var(--font-mono)' }}>{c.qps} QPS</td>
+                          <td style={{ fontFamily: 'var(--font-mono)' }}>
                             <span
                               style={{
                                 color:
@@ -315,26 +387,32 @@ export const MetricsDashboard: React.FC = () => {
                                     ? 'var(--error)'
                                     : c.utilizationPercent > 60
                                     ? 'var(--warning)'
-                                    : 'inherit',
-                                fontWeight: c.utilizationPercent > 80 ? 600 : 'normal',
+                                    : 'var(--text-primary)',
+                                fontWeight: c.utilizationPercent > 60 ? 700 : 400,
                               }}
                             >
                               {c.utilizationPercent}%
                             </span>
                           </td>
-                          <td>{c.activeConnections}</td>
-                          <td>{c.avgLatencyMs}ms</td>
-                          <td>{c.p95LatencyMs}ms</td>
+                          <td style={{ fontFamily: 'var(--font-mono)' }}>{c.activeConnections}</td>
+                          <td style={{ fontFamily: 'var(--font-mono)' }}>{c.p95LatencyMs}ms</td>
                           <td
                             style={{
-                              color: c.errorRatePercent > 0 ? 'var(--error)' : 'inherit',
-                              fontWeight: c.errorRatePercent > 0 ? 600 : 'normal',
+                              color: c.errorRatePercent > 0 ? 'var(--error)' : 'var(--text-primary)',
+                              fontFamily: 'var(--font-mono)',
                             }}
                           >
                             {c.errorRatePercent}%
                           </td>
-                          <td>{c.queueDepth}</td>
-                          <td>{c.cacheHitRatioPercent}%</td>
+                          <td style={{ fontFamily: 'var(--font-mono)' }}>{c.totalRequests.toLocaleString()}</td>
+                          <td
+                            style={{
+                              color: c.failedRequests > 0 ? 'var(--error)' : 'var(--text-muted)',
+                              fontFamily: 'var(--font-mono)',
+                            }}
+                          >
+                            {c.failedRequests.toLocaleString()}
+                          </td>
                         </tr>
                       ))
                     )}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, CheckCircle2, X } from 'lucide-react';
+import { Search, CheckCircle2, X, Trophy } from 'lucide-react';
 import { ALL_SCENARIOS, SCENARIO_CATEGORIES } from '../../scenarios';
 import { useStore } from '../../store/use-store';
 import { ScenarioCategory, ScenarioDifficulty } from '../../model/types';
@@ -9,16 +9,28 @@ interface ScenarioPickerProps {
   onSelectScenario: (id: number) => void;
 }
 
+type StatusFilter = 'All' | 'Solved' | 'Unsolved';
+
 export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario }) => {
   const { currentScenario, completedScenarioIds } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
 
   const normalizedQuery = searchTerm.trim().toLowerCase();
 
+  const totalScenarios = ALL_SCENARIOS.length;
+  const solvedCount = completedScenarioIds.length;
+  const progressPercent = Math.round((solvedCount / totalScenarios) * 100);
+
   const filteredScenarios = useMemo(() => {
     return ALL_SCENARIOS.filter((s) => {
+      const isCompleted = completedScenarioIds.includes(s.id);
+      const matchesStatus =
+        statusFilter === 'All' ||
+        (statusFilter === 'Solved' && isCompleted) ||
+        (statusFilter === 'Unsolved' && !isCompleted);
       const matchesCategory =
         selectedCategory === 'All' || s.category === selectedCategory;
       const matchesDifficulty =
@@ -28,12 +40,32 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
         s.title.toLowerCase().includes(normalizedQuery) ||
         s.problemStatement.toLowerCase().includes(normalizedQuery) ||
         s.category.toLowerCase().includes(normalizedQuery);
-      return matchesCategory && matchesDifficulty && matchesSearch;
+      return matchesStatus && matchesCategory && matchesDifficulty && matchesSearch;
     });
-  }, [normalizedQuery, selectedCategory, selectedDifficulty]);
+  }, [normalizedQuery, selectedCategory, selectedDifficulty, statusFilter, completedScenarioIds]);
 
   return (
     <div className={styles.pickerContainer}>
+      {/* 101 Scenarios Progress Header */}
+      <div className={styles.progressCard}>
+        <div className={styles.progressHeader}>
+          <div className={styles.progressTitle}>
+            <Trophy size={13} color="var(--warning)" />
+            <span>Mastery Progress</span>
+          </div>
+          <span className={styles.progressScore}>
+            {solvedCount} / {totalScenarios} ({progressPercent}%)
+          </span>
+        </div>
+        <div className={styles.progressBarTrack}>
+          <div
+            className={styles.progressBarFill}
+            style={{ width: `${Math.max(2, progressPercent)}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Search Input */}
       <div className={styles.searchBox}>
         <Search size={14} color="var(--text-muted)" />
         <input
@@ -57,6 +89,20 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
         )}
       </div>
 
+      {/* Status Filter Pills */}
+      <div className={styles.statusFilterRow}>
+        {(['All', 'Solved', 'Unsolved'] as StatusFilter[]).map((st) => (
+          <button
+            key={st}
+            className={`${styles.statusFilterBtn} ${statusFilter === st ? styles.statusFilterBtnActive : ''}`}
+            onClick={() => setStatusFilter(st)}
+          >
+            {st}
+          </button>
+        ))}
+      </div>
+
+      {/* Category & Difficulty Selectors */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         <select
           className={styles.categorySelect}
@@ -69,6 +115,9 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
               (s) =>
                 s.category === cat &&
                 (selectedDifficulty === 'All' || s.difficulty === selectedDifficulty) &&
+                (statusFilter === 'All' ||
+                  (statusFilter === 'Solved' && completedScenarioIds.includes(s.id)) ||
+                  (statusFilter === 'Unsolved' && !completedScenarioIds.includes(s.id))) &&
                 (normalizedQuery === '' ||
                   s.title.toLowerCase().includes(normalizedQuery) ||
                   s.problemStatement.toLowerCase().includes(normalizedQuery))
@@ -92,6 +141,9 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
               (s) =>
                 s.difficulty === diff &&
                 (selectedCategory === 'All' || s.category === selectedCategory) &&
+                (statusFilter === 'All' ||
+                  (statusFilter === 'Solved' && completedScenarioIds.includes(s.id)) ||
+                  (statusFilter === 'Unsolved' && !completedScenarioIds.includes(s.id))) &&
                 (normalizedQuery === '' ||
                   s.title.toLowerCase().includes(normalizedQuery) ||
                   s.problemStatement.toLowerCase().includes(normalizedQuery))
@@ -105,6 +157,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
         </select>
       </div>
 
+      {/* Scenario List */}
       <div className={styles.scenarioList}>
         {filteredScenarios.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-muted)', fontSize: 12 }}>

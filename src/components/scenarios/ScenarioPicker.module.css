@@ -1,9 +1,55 @@
 .pickerContainer {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   user-select: none;
   font-family: var(--font-sans);
+}
+
+.progressCard {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progressHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progressTitle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.progressScore {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--warning);
+}
+
+.progressBarTrack {
+  height: 5px;
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--warning) 0%, var(--success) 100%);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
 }
 
 .searchBox {
@@ -25,6 +71,40 @@
   outline: none;
 }
 
+.statusFilterRow {
+  display: flex;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.statusFilterBtn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.12s ease;
+}
+
+.statusFilterBtn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-tertiary);
+}
+
+.statusFilterBtnActive {
+  background-color: var(--bg-elevated);
+  color: var(--accent-primary) !important;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
 .categorySelect {
   background-color: var(--bg-primary);
   border: 1px solid var(--border-primary);
@@ -40,7 +120,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 480px;
+  max-height: 440px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -49,7 +129,7 @@
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   gap: 4px;
