@@ -52,6 +52,8 @@
 | **42** | `src/components/modals/ShortcutsModal.tsx` | Shortcuts modal lacked entries for sidebar navigation keys. | Added `1 / 2 / 3` tab switching hotkeys to the shortcuts reference list. |
 | **43** | `.github/workflows/static.yml` | Conflicting `static.yml` action was deploying raw uncompiled repository root `.` to GitHub Pages, bypassing Vite build and breaking website rendering. | Removed `static.yml` and unified deployment on `deploy.yml` with `dist` artifact upload. |
 | **44** | `src/components/layout/Header.module.css` | Header CSS class names were mismatched with `Header.tsx` JSX, collapsing header into unstyled text. | Restored full Header flexbox styling, gradient icon badge, and button alignments. |
+| **45** | `src/store/use-store.ts` | Triggering `undo()` or `redo()` reverted React canvas nodes and edges, but never notified the simulation bridge, causing the simulation engine and particle layer to continue running on stale prior graphs. | Added `simBridge.syncGraph()` invocation to both `undo()` and `redo()` actions. |
+| **46** | `src/components/canvas/CanvasHud.module.css` | Canvas HUD floating toolbar had hardcoded dark background and low-contrast text colors in light mode, making buttons and icons difficult to read. | Synchronized background, borders, and text colors with light and dark mode CSS variables (`var(--bg-secondary)`, `var(--text-secondary)`, `var(--border-primary)`). |
 
 ---
 

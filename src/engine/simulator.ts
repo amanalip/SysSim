@@ -88,6 +88,15 @@ export class SysSimEngine {
     this.queueModels.clear();
     this.dbModels.clear();
 
+    const validNodeIds = new Set(graph.nodes.map((n) => n.id));
+    for (const id of Object.keys(this.nodeStats)) {
+      if (!validNodeIds.has(id)) {
+        delete this.nodeStats[id];
+        delete this.activeConnections[id];
+        delete this.nonLbRoutingIndices[id];
+      }
+    }
+
     this.graph.nodes.forEach((n) => {
       if (!this.nodeStats[n.id]) {
         this.nodeStats[n.id] = {

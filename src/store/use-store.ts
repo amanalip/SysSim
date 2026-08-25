@@ -17,6 +17,7 @@ import {
 import { createDefaultConfig } from '../model/component-defaults';
 import { validateConnection } from '../model/validation';
 import { computeAutoLayout } from '../layout/auto-layout';
+import { simBridge } from '../engine/sim-bridge';
 import { ThemeMode } from '../theme';
 
 export interface CanvasNode {
@@ -338,6 +339,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
       isPropertiesPanelOpen: state.selectedNodeId === id ? false : state.isPropertiesPanelOpen,
     }));
+    simBridge.syncGraph();
   },
 
   addEdge: (source, target, preferredProtocol) => {
@@ -414,6 +416,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       edges: state.edges.filter((e) => e.id !== edgeId),
       selectedEdgeId: state.selectedEdgeId === edgeId ? null : state.selectedEdgeId,
     }));
+    simBridge.syncGraph();
   },
 
   selectNode: (nodeId) => {
@@ -527,6 +530,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedNodeId: null,
       selectedEdgeId: null,
     });
+    simBridge.syncGraph();
   },
 
   redo: () => {
@@ -548,6 +552,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedNodeId: null,
       selectedEdgeId: null,
     });
+    simBridge.syncGraph();
   },
 
   // Simulation State
