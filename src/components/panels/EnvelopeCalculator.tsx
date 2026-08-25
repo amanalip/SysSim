@@ -8,34 +8,32 @@ export const EnvelopeCalculator: React.FC = () => {
   const { calculatorInputs, setCalculatorInputs, nodes, selectNode } = useStore();
 
   const outputs: CalculatorOutputs = useMemo(() => {
-    const {
-      qps,
-      payloadSizeKb,
-      retentionDays,
-      readWriteRatio,
-      replicationFactor,
-      serverCapacityQps,
-    } = calculatorInputs;
+    const safeQps = Math.max(1, calculatorInputs.qps || 1);
+    const safePayload = Math.max(0.1, calculatorInputs.payloadSizeKb || 1);
+    const safeRetention = Math.max(1, calculatorInputs.retentionDays || 1);
+    const safeRatio = Math.max(0.01, calculatorInputs.readWriteRatio !== undefined ? calculatorInputs.readWriteRatio : 10);
+    const safeReplication = Math.max(1, calculatorInputs.replicationFactor || 1);
+    const safeCapacity = Math.max(1, calculatorInputs.serverCapacityQps || 1000);
 
-    const writeFraction = 1 / (readWriteRatio + 1);
-    const writeQps = qps * writeFraction;
-    const readQps = qps - writeQps;
+    const writeFraction = 1 / (safeRatio + 1);
+    const writeQps = safeQps * writeFraction;
+    const readQps = Math.max(0, safeQps - writeQps);
 
     // Daily new write data (GB) = writeQps * payloadKB * 86400 / 1024 / 1024
-    const dailyNewDataGb = Math.round(((writeQps * payloadSizeKb * 86400) / (1024 * 1024)) * 10) / 10;
+    const dailyNewDataGb = Math.round(((writeQps * safePayload * 86400) / (1024 * 1024)) * 10) / 10;
 
     // Total raw storage (TB) = (dailyNewDataGb * retentionDays) / 1024
-    const totalStorageNeededTb = Math.round(((dailyNewDataGb * retentionDays) / 1024) * 100) / 100;
+    const totalStorageNeededTb = Math.round(((dailyNewDataGb * safeRetention) / 1024) * 100) / 100;
 
     // Replicated storage (TB)
-    const totalReplicatedStorageTb = Math.round(totalStorageNeededTb * replicationFactor * 100) / 100;
+    const totalReplicatedStorageTb = Math.round(totalStorageNeededTb * safeReplication * 100) / 100;
 
     // Inbound & Outbound Bandwidth (Mbps) = QPS * payloadKB * 8 / 1024
-    const inboundBandwidthMbps = Math.round(((writeQps * payloadSizeKb * 8) / 1024) * 10) / 10;
-    const outboundBandwidthMbps = Math.round(((readQps * payloadSizeKb * 8) / 1024) * 10) / 10;
+    const inboundBandwidthMbps = Math.round(((writeQps * safePayload * 8) / 1024) * 10) / 10;
+    const outboundBandwidthMbps = Math.round(((readQps * safePayload * 8) / 1024) * 10) / 10;
 
     // Estimated servers needed = Math.ceil(qps / serverCapacityQps)
-    const estimatedServersNeeded = Math.max(1, Math.ceil(qps / (serverCapacityQps || 1000)));
+    const estimatedServersNeeded = Math.max(1, Math.ceil(safeQps / safeCapacity));
 
     // Recommended Cache memory (GB) = 20% of daily data (80/20 rule)
     const recommendedCacheMemoryGb = Math.round(dailyNewDataGb * 0.2 * 10) / 10;
@@ -53,10 +51,10 @@ export const EnvelopeCalculator: React.FC = () => {
       recommendedCacheMemoryGb,
       estimatedDbConnections,
       formulas: {
-        dailyStorage: `(${Math.round(writeQps)} write QPS * ${payloadSizeKb} KB * 86,400s) / 10^6`,
-        servers: `${qps} total QPS / ${serverCapacityQps} QPS per instance`,
+        dailyStorage: `(${Math.round(writeQps)} write QPS * ${safePayload} KB * 86,400s) / 10^6`,
+        servers: `${safeQps} total QPS / ${safeCapacity} QPS per instance`,
         cache: `20% Pareto cache of daily write traffic (${dailyNewDataGb} GB)`,
-        bandwidth: `${qps} QPS * ${payloadSizeKb} KB * 8 bits`,
+        bandwidth: `${safeQps} total QPS * ${safePayload} KB * 8 bits`,
       },
     };
   }, [calculatorInputs]);
@@ -283,12 +281,22 @@ export const EnvelopeCalculator: React.FC = () => {
 
           <div className={styles.outputCard}>
             <div className={styles.outputHeader}>
-              <span className={styles.outputLabel}>Outbound Bandwidth</span>
+              <span className={styles.outputLabel}>Inbound Bandwidth (Writes)</span>
+              <span className={styles.outputValue}>
+                {outputs.inboundBandwidthMbps} Mbps
+              </span>
+            </div>
+            <span className={styles.formulaText}>Writes: {Math.round(outputs.dailyNewDataGb)} GB/day at {outputs.inboundBandwidthMbps} Mbps</span>
+          </div>
+
+          <div className={styles.outputCard}>
+            <div className={styles.outputHeader}>
+              <span className={styles.outputLabel}>Outbound Bandwidth (Reads)</span>
               <span className={styles.outputValue}>
                 {outputs.outboundBandwidthMbps} Mbps
               </span>
             </div>
-            <span className={styles.formulaText}>{outputs.formulas.bandwidth}</span>
+            <span className={styles.formulaText}>Reads: {outputs.outboundBandwidthMbps} Mbps egress traffic</span>
           </div>
         </div>
       </div>

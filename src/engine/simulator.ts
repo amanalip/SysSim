@@ -73,6 +73,7 @@ export class SysSimEngine {
   private queueModels: Map<string, QueueModel> = new Map();
   private dbModels: Map<string, DatabaseModel> = new Map();
   private activeConnections: Record<string, number> = {};
+  private nonLbRoutingIndices: Record<string, number> = {};
 
   constructor(graph?: SimGraph, config?: TrafficConfig) {
     if (graph) this.setGraph(graph);
@@ -193,6 +194,7 @@ export class SysSimEngine {
     this.totalFailed = 0;
     this.timeSeries = [];
     this.activeConnections = {};
+    this.nonLbRoutingIndices = {};
     this.nodeStats = {};
     this.graph.nodes.forEach((n) => {
       this.nodeStats[n.id] = {
@@ -462,6 +464,23 @@ export class SysSimEngine {
       );
 
       if (outgoingEdges.length === 0) {
+        if (config.type === 'load_balancer') {
+          // Load balancer with 0 outgoing available edges
+          stats.failedRequests++;
+          req.path.push({
+            nodeId: node.id,
+            nodeName: config.name,
+            nodeType: config.type,
+            enterTimeMs: totalLatency,
+            exitTimeMs: totalLatency + 2,
+            latencyMs: 2,
+            status: 'error',
+            info: '502 Bad Gateway: No healthy upstream targets available',
+          });
+          isSuccess = false;
+          req.status = 'error';
+          req.color = '#f85149';
+        }
         currentNodeId = null;
       } else if (outgoingEdges.length === 1) {
         currentNodeId = outgoingEdges[0].target;
@@ -471,9 +490,31 @@ export class SysSimEngine {
           const nextTarget = lbRouter
             ? lbRouter.selectTarget(req.id, this.activeConnections)
             : outgoingEdges[0].target;
-          currentNodeId = nextTarget;
+
+          if (!nextTarget) {
+            stats.failedRequests++;
+            req.path.push({
+              nodeId: node.id,
+              nodeName: config.name,
+              nodeType: config.type,
+              enterTimeMs: totalLatency,
+              exitTimeMs: totalLatency + 2,
+              latencyMs: 2,
+              status: 'error',
+              info: '502 Bad Gateway: Upstream selection failed',
+            });
+            isSuccess = false;
+            req.status = 'error';
+            req.color = '#f85149';
+            currentNodeId = null;
+          } else {
+            currentNodeId = nextTarget;
+          }
         } else {
-          currentNodeId = outgoingEdges[0].target;
+          // Multi-edge fanout for non-load-balancer nodes (e.g. gateway/app server)
+          const nextIdx = (this.nonLbRoutingIndices[node.id] || 0) % outgoingEdges.length;
+          this.nonLbRoutingIndices[node.id] = nextIdx + 1;
+          currentNodeId = outgoingEdges[nextIdx].target;
         }
       }
     }

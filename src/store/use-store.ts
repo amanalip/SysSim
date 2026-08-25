@@ -88,11 +88,13 @@ export interface SysSimState {
   setEdges: (edges: CanvasEdge[] | ((prev: CanvasEdge[]) => CanvasEdge[])) => void;
   setZones: (zones: ZoneData[] | ((prev: ZoneData[]) => ZoneData[])) => void;
   addNode: (type: AnyComponentConfig['type'], position: { x: number; y: number }, customName?: string) => string;
+  duplicateNode: (nodeId: string) => string | null;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   updateNodeConfig: (id: string, partialConfig: Partial<AnyComponentConfig>) => void;
   removeNode: (id: string) => void;
   addEdge: (source: string, target: string, protocol?: EdgeProtocol) => boolean;
   updateEdgeProtocol: (edgeId: string, protocol: EdgeProtocol) => void;
+  toggleCutEdge: (edgeId: string) => void;
   removeEdge: (edgeId: string) => void;
   selectNode: (nodeId: string | null) => void;
   selectEdge: (edgeId: string | null) => void;
@@ -275,6 +277,32 @@ export const useStore = create<SysSimState>((set, get) => ({
     return id;
   },
 
+  duplicateNode: (nodeId) => {
+    const target = get().nodes.find((n) => n.id === nodeId);
+    if (!target) return null;
+
+    const id = `${target.data.config.type}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const clonedConfig = JSON.parse(JSON.stringify(target.data.config));
+    clonedConfig.id = id;
+    clonedConfig.name = `${clonedConfig.name} (Copy)`;
+
+    const newNode: CanvasNode = {
+      id,
+      type: 'customComponent',
+      position: { x: target.position.x + 40, y: target.position.y + 40 },
+      data: { config: clonedConfig },
+    };
+
+    get().pushHistory();
+    set((state) => ({
+      nodes: [...state.nodes, newNode],
+      selectedNodeId: id,
+      selectedEdgeId: null,
+      isPropertiesPanelOpen: true,
+    }));
+    return id;
+  },
+
   updateNodePosition: (id, position) => {
     set((state) => ({
       nodes: state.nodes.map((node) => (node.id === id ? { ...node, position } : node)),
@@ -354,6 +382,24 @@ export const useStore = create<SysSimState>((set, get) => ({
     set((state) => ({
       edges: state.edges.map((e) =>
         e.id === edgeId ? { ...e, data: { ...e.data, protocol } } : e
+      ),
+    }));
+  },
+
+  toggleCutEdge: (edgeId) => {
+    get().pushHistory();
+    set((state) => ({
+      edges: state.edges.map((e) =>
+        e.id === edgeId
+          ? {
+              ...e,
+              data: {
+                ...e.data,
+                isCut: !e.data?.isCut,
+                protocol: e.data?.protocol || 'HTTP',
+              },
+            }
+          : e
       ),
     }));
   },

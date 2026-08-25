@@ -39,6 +39,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
     setNodes,
     setEdges,
     addNode,
+    duplicateNode,
     addEdge,
     selectNode,
     selectEdge,
@@ -163,14 +164,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
         if (selectedNodeId) {
-          const target = nodes.find((n) => n.id === selectedNodeId);
-          if (target) {
-            addNode(
-              target.data.config.type,
-              { x: target.position.x + 30, y: target.position.y + 30 },
-              `${target.data.config.name} (Copy)`
-            );
-          }
+          duplicateNode(selectedNodeId);
         }
         e.preventDefault();
         return;

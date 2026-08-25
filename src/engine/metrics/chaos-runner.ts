@@ -3,9 +3,10 @@ import { simBridge } from '../sim-bridge';
 
 class ChaosRunner {
   private timer: ReturnType<typeof setInterval> | null = null;
+  private faultedNodeIds: Set<string> = new Set();
 
   public start(intervalSec: number = 10): void {
-    this.stop();
+    this.stop(false);
     this.timer = setInterval(() => {
       const { nodes, isChaosMode, simState } = useStore.getState();
       if (!isChaosMode || simState !== 'running' || nodes.length === 0) {
@@ -20,6 +21,12 @@ class ChaosRunner {
       const currentHealth = randomNode.data.config.health;
       const nextHealth = currentHealth === 'down' ? 'healthy' : 'down';
 
+      if (nextHealth === 'down') {
+        this.faultedNodeIds.add(randomNode.id);
+      } else {
+        this.faultedNodeIds.delete(randomNode.id);
+      }
+
       useStore.getState().setNodeHealthOverride(randomNode.id, nextHealth);
       useStore.getState().addToast(
         `Chaos Monkey: Marked ${randomNode.data.config.name} as ${nextHealth.toUpperCase()}`,
@@ -29,11 +36,30 @@ class ChaosRunner {
     }, intervalSec * 1000);
   }
 
-  public stop(): void {
+  public stop(restoreNodes: boolean = true): void {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
     }
+
+    if (restoreNodes && this.faultedNodeIds.size > 0) {
+      this.faultedNodeIds.forEach((id) => {
+        useStore.getState().setNodeHealthOverride(id, 'healthy');
+      });
+      this.faultedNodeIds.clear();
+      simBridge.syncGraph();
+    }
+  }
+
+  public restoreAll(): void {
+    const { nodes } = useStore.getState();
+    nodes.forEach((n) => {
+      if (n.data.config.health === 'down' || n.data.config.health === 'degraded') {
+        useStore.getState().setNodeHealthOverride(n.id, 'healthy');
+      }
+    });
+    this.faultedNodeIds.clear();
+    simBridge.syncGraph();
   }
 }
 

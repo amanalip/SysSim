@@ -87,6 +87,37 @@
   color: var(--accent-primary);
 }
 
+.protocolBadgeCut {
+  border-color: var(--error) !important;
+  color: var(--error) !important;
+  background-color: rgba(248, 81, 73, 0.15) !important;
+  text-decoration: line-through;
+}
+
+.edgeCutBtn {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.edgeLabelContainer:hover .edgeCutBtn {
+  opacity: 1;
+}
+
+.edgeCutBtn:hover {
+  border-color: var(--warning);
+  color: var(--warning) !important;
+}
+
 .edgeDeleteBtn {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-primary);

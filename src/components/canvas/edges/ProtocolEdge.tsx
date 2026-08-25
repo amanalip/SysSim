@@ -5,7 +5,7 @@ import {
   getBezierPath,
   EdgeProps,
 } from '@xyflow/react';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, X, Scissors } from 'lucide-react';
 import { EdgeProtocol, ProtocolEdgeData } from '../../../model/types';
 import { useStore } from '../../../store/use-store';
 import styles from './ProtocolEdge.module.css';
@@ -48,7 +48,7 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { updateEdgeProtocol, removeEdge, selectEdge } = useStore();
+  const { updateEdgeProtocol, removeEdge, selectEdge, toggleCutEdge, addToast } = useStore();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -71,6 +71,12 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
     e.stopPropagation();
     updateEdgeProtocol(id, protocol);
     setIsOpen(false);
+  };
+
+  const handleToggleCut = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleCutEdge(id);
+    addToast(isCut ? 'Restored network connection' : 'Cut network connection', isCut ? 'success' : 'warning');
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -101,16 +107,25 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
           ref={dropdownRef}
         >
           <div
-            className={styles.protocolBadge}
+            className={`${styles.protocolBadge} ${isCut ? styles.protocolBadgeCut : ''}`}
             onClick={(e) => {
               e.stopPropagation();
               setIsOpen(!isOpen);
             }}
-            title="Click to change transport protocol"
+            title={isCut ? 'Connection is CUT (Click to change protocol)' : 'Click to change transport protocol'}
           >
-            <span>{currentProtocol}</span>
+            <span>{isCut ? `[CUT] ${currentProtocol}` : currentProtocol}</span>
             <ChevronDown size={10} />
           </div>
+
+          <button
+            className={styles.edgeCutBtn}
+            onClick={handleToggleCut}
+            title={isCut ? 'Restore connection' : 'Cut connection (simulate network partition)'}
+            style={{ color: isCut ? 'var(--warning)' : 'var(--text-muted)' }}
+          >
+            <Scissors size={10} />
+          </button>
 
           <button
             className={styles.edgeDeleteBtn}

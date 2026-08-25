@@ -283,25 +283,41 @@ export const MetricsDashboard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {compList.map((c) => (
-                      <tr key={c.nodeId}>
-                        <td>{c.nodeName}</td>
-                        <td>{c.nodeType}</td>
-                        <td>{c.totalRequests}</td>
-                        <td>{c.qps}</td>
-                        <td>{c.avgLatencyMs}ms</td>
-                        <td>{c.p95LatencyMs}ms</td>
+                    {compList.length === 0 ? (
+                      <tr>
                         <td
+                          colSpan={9}
                           style={{
-                            color: c.errorRatePercent > 0 ? 'var(--error)' : 'inherit',
+                            textAlign: 'center',
+                            padding: '32px 16px',
+                            color: 'var(--text-muted)',
+                            fontSize: '12px',
                           }}
                         >
-                          {c.errorRatePercent}%
+                          Start simulation playback to collect per-component metrics
                         </td>
-                        <td>{c.queueDepth}</td>
-                        <td>{c.cacheHitRatioPercent}%</td>
                       </tr>
-                    ))}
+                    ) : (
+                      compList.map((c) => (
+                        <tr key={c.nodeId}>
+                          <td>{c.nodeName}</td>
+                          <td>{c.nodeType}</td>
+                          <td>{c.totalRequests}</td>
+                          <td>{c.qps}</td>
+                          <td>{c.avgLatencyMs}ms</td>
+                          <td>{c.p95LatencyMs}ms</td>
+                          <td
+                            style={{
+                              color: c.errorRatePercent > 0 ? 'var(--error)' : 'inherit',
+                            }}
+                          >
+                            {c.errorRatePercent}%
+                          </td>
+                          <td>{c.queueDepth}</td>
+                          <td>{c.cacheHitRatioPercent}%</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

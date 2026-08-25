@@ -16,7 +16,10 @@ export function serializeCanvasState(): SerializedCanvasState {
       id: e.id,
       source: e.source,
       target: e.target,
-      data: e.data,
+      data: {
+        protocol: e.data?.protocol || 'HTTP',
+        isCut: !!e.data?.isCut,
+      },
     })),
     zones: zones.map((z) => ({
       id: z.id,

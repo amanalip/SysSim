@@ -50,11 +50,14 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
     if ('hitRatioPercent' in config) {
       return `${config.hitRatioPercent}% hit ratio`;
     }
-    if ('rateLimitQps' in config) {
-      return `${config.rateLimitQps} QPS limit`;
+    if ('limitQps' in config) {
+      return `${config.limitQps} QPS limit`;
     }
     if ('partitions' in config) {
       return `${config.partitions} partitions`;
+    }
+    if ('readReplicasCount' in config && config.readReplicasCount !== undefined) {
+      return `${config.readReplicasCount} read replica${config.readReplicasCount > 1 ? 's' : ''}`;
     }
     return config.category;
   };

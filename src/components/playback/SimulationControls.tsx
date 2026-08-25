@@ -76,7 +76,7 @@ export const SimulationControls: React.FC = () => {
           className={`${styles.playBtn} ${isRunning ? styles.playBtnRunning : ''}`}
           onClick={handlePlayPause}
           disabled={!hasNodes}
-          title={isRunning ? 'Pause Simulation' : 'Start Simulation'}
+          title={isRunning ? 'Pause Simulation (Space)' : 'Start Simulation (Space)'}
         >
           {isRunning ? <Pause size={14} /> : <Play size={14} />}
           <span>{isRunning ? 'Pause' : 'Simulate'}</span>
@@ -152,7 +152,7 @@ export const SimulationControls: React.FC = () => {
       <button
         className={`${styles.chaosBtn} ${isChaosMode ? styles.chaosBtnActive : ''}`}
         onClick={toggleChaos}
-        title="Toggle randomized intermittent chaos failure injection"
+        title="Toggle Chaos Monkey failure injection (C)"
       >
         <Flame size={12} />
         <span>Chaos {isChaosMode ? 'ON' : 'OFF'}</span>
@@ -190,7 +190,7 @@ export const SimulationControls: React.FC = () => {
       <button
         className={`${styles.controlBtn} ${isBottomDrawerOpen ? styles.chaosBtnActive : ''}`}
         onClick={() => setIsBottomDrawerOpen(!isBottomDrawerOpen)}
-        title="Toggle Real-Time Metrics & Charts Drawer"
+        title="Toggle Real-Time Metrics & Charts Drawer (M)"
       >
         <BarChart2 size={15} />
       </button>

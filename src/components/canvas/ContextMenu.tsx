@@ -36,6 +36,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   const {
     nodes,
     addNode,
+    duplicateNode,
     selectNode,
     removeNode,
     setNodeHealthOverride,
@@ -77,11 +78,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
   const handleDuplicate = () => {
     if (targetNode) {
-      addNode(
-        targetNode.data.config.type,
-        { x: targetNode.position.x + 40, y: targetNode.position.y + 40 },
-        `${targetNode.data.config.name} (Copy)`
-      );
+      duplicateNode(targetNode.id);
     }
     onClose();
   };
@@ -109,11 +106,15 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     onClose();
   };
 
+  // Clamping coordinates inside viewport
+  const safeX = typeof window !== 'undefined' ? Math.max(10, Math.min(menuState.x, window.innerWidth - 220)) : menuState.x;
+  const safeY = typeof window !== 'undefined' ? Math.max(10, Math.min(menuState.y, window.innerHeight - 340)) : menuState.y;
+
   return (
     <div
       ref={menuRef}
       className={styles.contextMenu}
-      style={{ top: menuState.y, left: menuState.x }}
+      style={{ top: safeY, left: safeX }}
     >
       {targetNode ? (
         <>
