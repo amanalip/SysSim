@@ -40,6 +40,8 @@
 | **30** | `src/components/panels/MetricsDashboard.tsx` | Success Rate card rounded to nearest integer, masking high-availability decimal SLA precision. | Formatted to 2 decimal places (`99.99%`). |
 | **31** | `src/components/panels/PropertiesPanel.tsx` | PropertiesPanel lacked an input to tune `maxThroughputQps` capacity and lacked an `Escape` key close listener. | Added Max Capacity (QPS) field and `Escape` keyboard dismiss. |
 | **32** | `src/components/canvas/edges/ProtocolEdge.tsx` | Protocol dropdown menu on canvas connections stayed open when user pressed `Escape`. | Added `Escape` keyboard dismiss listener to ProtocolEdge dropdown. |
+| **33** | `src/components/canvas/ContextMenu.tsx` | Context menu lacked `Escape` key listener, staying visible until clicked outside. | Added `Escape` key listener for instant keyboard dismissal. |
+| **34** | `src/components/playback/SimulationControls.tsx` | QPS input snapped back to default when user backspaced to clear and re-type. | Implemented local string state with onBlur validation fallback. |
 
 ---
 
@@ -64,20 +66,21 @@
 17. **Fractional Availability SLA Precision**: Telemetry displays 2-decimal SLA compliance.
 18. **Instant Reference Architecture Loading**: Smooth scenario loading with automated reset.
 19. **Direct Rated Capacity Tuning**: Configurable Max Capacity (QPS) in Properties Panel.
-20. **Universal Escape Key Dismissal**: `Escape` key reliably dismisses properties panels, modals, dropdowns, and search bars.
+20. **Universal Escape Key Dismissal**: `Escape` key reliably dismisses properties panels, modals, dropdowns, context menus, and search bars.
+21. **Smooth Backspace/Numeric QPS Input**: QPS input allows fluent backspace editing without value jumping.
 
 ---
 
 ## 3. Test Suites & Quality Improvements
 
-- **17 test files**, **83 total unit and integration tests** passing:
+- **18 test files**, **93 total unit and integration tests** passing:
   - Non-LB multi-edge round-robin routing
   - 502 Bad Gateway handling on empty LB targets
   - RateLimiterConfig `limitQps` subtext rendering
   - RateLimiterModel simulated time start at 0 and refill calculations
   - RateLimiterModel reset restoring token bucket
   - Node duplication custom property cloning
-  - ContextMenu coordinate clamping
+  - ContextMenu coordinate clamping and Escape dismissal
   - EnvelopeCalculator zero-division and Inbound/Outbound bandwidth calculations
   - Chaos Monkey fault injection and clean restoration
   - Edge cut/repair simulation step handling
@@ -93,3 +96,6 @@
   - Inline zone label updates
   - PropertiesPanel max throughput and health updates
   - ProtocolEdge transport switching and partition toggling
+  - SimulationControls traffic pattern and QPS updates
+  - Zone creation and deletion lifecycle
+  - Redo and undo history stack verification

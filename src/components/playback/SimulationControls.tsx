@@ -27,6 +27,12 @@ export const SimulationControls: React.FC = () => {
     setIsBottomDrawerOpen,
   } = useStore();
 
+  const [qpsText, setQpsText] = React.useState(String(trafficConfig.baseQps));
+
+  React.useEffect(() => {
+    setQpsText(String(trafficConfig.baseQps));
+  }, [trafficConfig.baseQps]);
+
   const isRunning = simState === 'running';
   const hasNodes = nodes.length > 0;
 
@@ -58,10 +64,21 @@ export const SimulationControls: React.FC = () => {
     simBridge.syncConfig({ pattern });
   };
 
-  const handleQpsChange = (val: number) => {
-    const safeVal = Math.max(1, Math.min(100000, val || 100));
-    setTrafficConfig({ baseQps: safeVal });
-    simBridge.syncConfig({ baseQps: safeVal });
+  const handleQpsChange = (raw: string) => {
+    setQpsText(raw);
+    const val = parseInt(raw, 10);
+    if (!isNaN(val) && val > 0) {
+      const safeVal = Math.max(1, Math.min(100000, val));
+      setTrafficConfig({ baseQps: safeVal });
+      simBridge.syncConfig({ baseQps: safeVal });
+    }
+  };
+
+  const handleQpsBlur = () => {
+    const val = parseInt(qpsText, 10);
+    if (isNaN(val) || val <= 0) {
+      setQpsText(String(trafficConfig.baseQps));
+    }
   };
 
   const toggleChaos = () => {
@@ -123,8 +140,9 @@ export const SimulationControls: React.FC = () => {
         <input
           type="number"
           className={styles.qpsInput}
-          value={trafficConfig.baseQps}
-          onChange={(e) => handleQpsChange(parseInt(e.target.value, 10))}
+          value={qpsText}
+          onChange={(e) => handleQpsChange(e.target.value)}
+          onBlur={handleQpsBlur}
           min="10"
           max="50000"
           step="50"
