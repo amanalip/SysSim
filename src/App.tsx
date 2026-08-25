@@ -15,6 +15,7 @@ import { ToastContainer } from './components/ui/Toast';
 import { chaosRunner } from './engine/metrics/chaos-runner';
 import { simBridge } from './engine/sim-bridge';
 import { decodeStateFromUrlHash } from './utils/sharing';
+import { ALL_SCENARIOS } from './scenarios';
 import styles from './App.module.css';
 
 export function App() {
@@ -26,6 +27,8 @@ export function App() {
     chaosIntervalSec,
     simState,
     loadCanvasState,
+    loadScenario,
+    loadReferenceDesign,
     addToast,
     autoLayout,
     isBottomDrawerOpen,
@@ -38,7 +41,7 @@ export function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Decode URL hash state on initial boot
+  // Decode URL hash state on initial boot or load starter architecture
   useEffect(() => {
     if (window.location.hash) {
       const decoded = decodeStateFromUrlHash(window.location.hash);
@@ -50,9 +53,18 @@ export function App() {
         );
         addToast('Loaded shared architecture from URL', 'success');
         simBridge.syncGraph();
+        return;
       }
     }
-  }, [loadCanvasState, addToast]);
+
+    // Load initial starter architecture if canvas is empty
+    if (nodes.length === 0) {
+      const starter = ALL_SCENARIOS[0]; // URL Shortener
+      loadScenario(starter);
+      loadReferenceDesign(starter.referenceDesign);
+      simBridge.syncGraph();
+    }
+  }, []);
 
   // Chaos runner synchronization
   useEffect(() => {
