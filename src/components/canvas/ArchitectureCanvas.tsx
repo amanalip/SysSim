@@ -14,9 +14,11 @@ import {
   Connection,
   Edge,
   Node,
+  MarkerType,
 } from '@xyflow/react';
 import { useStore } from '../../store/use-store';
 import { CustomComponentNode } from './nodes/CustomComponentNode';
+import { ProtocolEdge } from './edges/ProtocolEdge';
 import { ComponentType } from '../../model/types';
 import styles from './ArchitectureCanvas.module.css';
 
@@ -55,7 +57,26 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
     []
   );
 
-  const edgeTypes = useMemo(() => customEdgeTypes || {}, [customEdgeTypes]);
+  const edgeTypes = useMemo(
+    () => ({
+      protocolEdge: ProtocolEdge,
+      ...customEdgeTypes,
+    }),
+    [customEdgeTypes]
+  );
+
+  const defaultEdgeOptions = useMemo(
+    () => ({
+      type: 'protocolEdge',
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 14,
+        height: 14,
+        color: '#58a6ff',
+      },
+    }),
+    []
+  );
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -146,6 +167,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         edges={edges as unknown as Edge[]}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        defaultEdgeOptions={defaultEdgeOptions}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

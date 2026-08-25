@@ -14,6 +14,7 @@ import {
   ZoneData,
 } from '../model/types';
 import { createDefaultConfig } from '../model/component-defaults';
+import { validateConnection } from '../model/validation';
 import { ThemeMode } from '../theme';
 
 export interface CanvasNode {
@@ -30,6 +31,7 @@ export interface CanvasEdge {
   id: string;
   source: string;
   target: string;
+  type?: string;
   sourceHandle?: string | null;
   targetHandle?: string | null;
   data: ProtocolEdgeData;
@@ -40,6 +42,12 @@ interface CanvasHistoryEntry {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
   zones: ZoneData[];
+}
+
+export interface ToastItem {
+  id: string;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
 }
 
 export interface SysSimState {
@@ -59,6 +67,11 @@ export interface SysSimState {
   showMinimap: boolean;
   setShowMinimap: (show: boolean) => void;
 
+  // Toasts
+  toasts: ToastItem[];
+  addToast: (message: string, type?: ToastItem['type']) => void;
+  removeToast: (id: string) => void;
+
   // Canvas State
   nodes: CanvasNode[];
   edges: CanvasEdge[];
@@ -76,7 +89,7 @@ export interface SysSimState {
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   updateNodeConfig: (id: string, partialConfig: Partial<AnyComponentConfig>) => void;
   removeNode: (id: string) => void;
-  addEdge: (source: string, target: string, protocol?: EdgeProtocol) => void;
+  addEdge: (source: string, target: string, protocol?: EdgeProtocol) => boolean;
   updateEdgeProtocol: (edgeId: string, protocol: EdgeProtocol) => void;
   removeEdge: (edgeId: string) => void;
   selectNode: (nodeId: string | null) => void;
@@ -193,6 +206,23 @@ export const useStore = create<SysSimState>((set, get) => ({
   showMinimap: true,
   setShowMinimap: (showMinimap) => set({ showMinimap }),
 
+  // Toasts
+  toasts: [],
+  addToast: (message, type = 'info') => {
+    const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    set((state) => ({
+      toasts: [...state.toasts, { id, message, type }],
+    }));
+    setTimeout(() => {
+      get().removeToast(id);
+    }, 4000);
+  },
+  removeToast: (id) => {
+    set((state) => ({
+      toasts: state.toasts.filter((t) => t.id !== id),
+    }));
+  },
+
   // Canvas State
   nodes: [],
   edges: [],
@@ -271,16 +301,35 @@ export const useStore = create<SysSimState>((set, get) => ({
     }));
   },
 
-  addEdge: (source, target, protocol = 'HTTP') => {
-    if (source === target) return;
+  addEdge: (source, target, preferredProtocol) => {
+    if (source === target) return false;
     const existing = get().edges.find((e) => e.source === source && e.target === target);
-    if (existing) return;
+    if (existing) return false;
+
+    const sourceNode = get().nodes.find((n) => n.id === source);
+    const targetNode = get().nodes.find((n) => n.id === target);
+
+    let protocol = preferredProtocol || 'HTTP';
+
+    if (sourceNode && targetNode) {
+      const validation = validateConnection(
+        sourceNode.data.config.type,
+        targetNode.data.config.type
+      );
+      if (!validation.valid && validation.message) {
+        get().addToast(validation.message, 'warning');
+      }
+      if (!preferredProtocol) {
+        protocol = validation.recommendedProtocol;
+      }
+    }
 
     const id = `edge_${source}_${target}_${Date.now()}`;
     const newEdge: CanvasEdge = {
       id,
       source,
       target,
+      type: 'protocolEdge',
       data: { protocol },
     };
 
@@ -290,6 +339,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedEdgeId: id,
       selectedNodeId: null,
     }));
+    return true;
   },
 
   updateEdgeProtocol: (edgeId, protocol) => {

@@ -1,0 +1,142 @@
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  BaseEdge,
+  EdgeLabelRenderer,
+  getBezierPath,
+  EdgeProps,
+} from '@xyflow/react';
+import { ChevronDown, X } from 'lucide-react';
+import { EdgeProtocol, ProtocolEdgeData } from '../../../model/types';
+import { useStore } from '../../../store/use-store';
+import styles from './ProtocolEdge.module.css';
+
+const PROTOCOL_OPTIONS: EdgeProtocol[] = [
+  'HTTP',
+  'gRPC',
+  'WebSocket',
+  'TCP',
+  'pub/sub',
+  'MQTT',
+];
+
+export const ProtocolEdge: React.FC<EdgeProps> = ({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style = {},
+  markerEnd,
+  selected,
+  data,
+}) => {
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  const edgeData = (data as unknown as ProtocolEdgeData) || { protocol: 'HTTP' };
+  const currentProtocol = edgeData.protocol || 'HTTP';
+  const isCut = edgeData.isCut;
+
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const { updateEdgeProtocol, removeEdge, selectEdge } = useStore();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const handleProtocolSelect = (protocol: EdgeProtocol, e: React.MouseEvent) => {
+    e.stopPropagation();
+    updateEdgeProtocol(id, protocol);
+    setIsOpen(false);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    removeEdge(id);
+  };
+
+  return (
+    <>
+      <BaseEdge
+        path={edgePath}
+        markerEnd={markerEnd}
+        style={{
+          ...style,
+        }}
+        className={`${styles.edgePath} ${selected ? styles.edgePathSelected : ''} ${
+          isCut ? styles.edgePathCut : ''
+        }`}
+      />
+
+      <EdgeLabelRenderer>
+        <div
+          style={{
+            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+          }}
+          className={styles.edgeLabelContainer}
+          onClick={() => selectEdge(id)}
+          ref={dropdownRef}
+        >
+          <div
+            className={styles.protocolBadge}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(!isOpen);
+            }}
+            title="Click to change transport protocol"
+          >
+            <span>{currentProtocol}</span>
+            <ChevronDown size={10} />
+          </div>
+
+          <button
+            className={styles.edgeDeleteBtn}
+            onClick={handleDelete}
+            title="Delete connection"
+          >
+            <X size={10} />
+          </button>
+
+          {isOpen && (
+            <div className={styles.protocolSelect}>
+              {PROTOCOL_OPTIONS.map((proto) => (
+                <button
+                  key={proto}
+                  className={`${styles.protocolOption} ${
+                    proto === currentProtocol ? styles.protocolOptionActive : ''
+                  }`}
+                  onClick={(e) => handleProtocolSelect(proto, e)}
+                >
+                  {proto}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </EdgeLabelRenderer>
+    </>
+  );
+};
