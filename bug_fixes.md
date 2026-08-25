@@ -60,6 +60,7 @@
 | **50** | `src/store/use-store.ts` | `updateNodeConfig()` modified React state but did not call `simBridge.syncGraph()`, leaving the simulation engine executing old throughput and replica numbers. | Added `simBridge.syncGraph()` inside `updateNodeConfig()`. |
 | **51** | `src/store/use-store.ts` | `duplicateNode()` cloned nodes into `nodes` array but did not notify the simulation engine. | Added `simBridge.syncGraph()` inside `duplicateNode()`. |
 | **52** | `src/store/use-store.ts` | `updateEdgeProtocol()` and `toggleCutEdge()` updated edge metadata but did not refresh the simulation engine's active topology snapshot. | Added `simBridge.syncGraph()` to both `updateEdgeProtocol()` and `toggleCutEdge()`. |
+| **53** | `src/components/panels/EnvelopeCalculator.tsx` | All 6 numeric capacity inputs forced immediate fallback to defaults on keystroke, causing inputs to snap back when users pressed backspace to clear values. | Added local string state management and onBlur validation fallbacks across all calculator inputs. |
 
 ---
 

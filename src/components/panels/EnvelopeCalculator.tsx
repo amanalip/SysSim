@@ -7,6 +7,29 @@ import styles from './EnvelopeCalculator.module.css';
 export const EnvelopeCalculator: React.FC = () => {
   const { calculatorInputs, setCalculatorInputs, nodes, selectNode } = useStore();
 
+  const [qpsText, setQpsText] = React.useState(String(calculatorInputs.qps));
+  const [payloadText, setPayloadText] = React.useState(String(calculatorInputs.payloadSizeKb));
+  const [retentionText, setRetentionText] = React.useState(String(calculatorInputs.retentionDays));
+  const [ratioText, setRatioText] = React.useState(String(calculatorInputs.readWriteRatio));
+  const [replicationText, setReplicationText] = React.useState(String(calculatorInputs.replicationFactor));
+  const [capacityText, setCapacityText] = React.useState(String(calculatorInputs.serverCapacityQps));
+
+  React.useEffect(() => {
+    setQpsText(String(calculatorInputs.qps));
+    setPayloadText(String(calculatorInputs.payloadSizeKb));
+    setRetentionText(String(calculatorInputs.retentionDays));
+    setRatioText(String(calculatorInputs.readWriteRatio));
+    setReplicationText(String(calculatorInputs.replicationFactor));
+    setCapacityText(String(calculatorInputs.serverCapacityQps));
+  }, [
+    calculatorInputs.qps,
+    calculatorInputs.payloadSizeKb,
+    calculatorInputs.retentionDays,
+    calculatorInputs.readWriteRatio,
+    calculatorInputs.replicationFactor,
+    calculatorInputs.serverCapacityQps,
+  ]);
+
   const outputs: CalculatorOutputs = useMemo(() => {
     const safeQps = Math.max(1, calculatorInputs.qps || 1);
     const safePayload = Math.max(0.1, calculatorInputs.payloadSizeKb || 1);
@@ -145,10 +168,16 @@ export const EnvelopeCalculator: React.FC = () => {
             <input
               type="number"
               className={styles.input}
-              value={calculatorInputs.qps}
-              onChange={(e) =>
-                setCalculatorInputs({ qps: parseInt(e.target.value, 10) || 100 })
-              }
+              value={qpsText}
+              onChange={(e) => {
+                setQpsText(e.target.value);
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val > 0) setCalculatorInputs({ qps: val });
+              }}
+              onBlur={() => {
+                const val = parseInt(qpsText, 10);
+                if (isNaN(val) || val <= 0) setQpsText(String(calculatorInputs.qps));
+              }}
             />
           </div>
 
@@ -157,10 +186,16 @@ export const EnvelopeCalculator: React.FC = () => {
             <input
               type="number"
               className={styles.input}
-              value={calculatorInputs.payloadSizeKb}
-              onChange={(e) =>
-                setCalculatorInputs({ payloadSizeKb: parseFloat(e.target.value) || 1 })
-              }
+              value={payloadText}
+              onChange={(e) => {
+                setPayloadText(e.target.value);
+                const val = parseFloat(e.target.value);
+                if (!isNaN(val) && val > 0) setCalculatorInputs({ payloadSizeKb: val });
+              }}
+              onBlur={() => {
+                const val = parseFloat(payloadText);
+                if (isNaN(val) || val <= 0) setPayloadText(String(calculatorInputs.payloadSizeKb));
+              }}
             />
           </div>
 
@@ -169,10 +204,16 @@ export const EnvelopeCalculator: React.FC = () => {
             <input
               type="number"
               className={styles.input}
-              value={calculatorInputs.retentionDays}
-              onChange={(e) =>
-                setCalculatorInputs({ retentionDays: parseInt(e.target.value, 10) || 30 })
-              }
+              value={retentionText}
+              onChange={(e) => {
+                setRetentionText(e.target.value);
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val > 0) setCalculatorInputs({ retentionDays: val });
+              }}
+              onBlur={() => {
+                const val = parseInt(retentionText, 10);
+                if (isNaN(val) || val <= 0) setRetentionText(String(calculatorInputs.retentionDays));
+              }}
             />
           </div>
 
@@ -181,10 +222,16 @@ export const EnvelopeCalculator: React.FC = () => {
             <input
               type="number"
               className={styles.input}
-              value={calculatorInputs.readWriteRatio}
-              onChange={(e) =>
-                setCalculatorInputs({ readWriteRatio: parseFloat(e.target.value) || 1 })
-              }
+              value={ratioText}
+              onChange={(e) => {
+                setRatioText(e.target.value);
+                const val = parseFloat(e.target.value);
+                if (!isNaN(val) && val >= 0) setCalculatorInputs({ readWriteRatio: val });
+              }}
+              onBlur={() => {
+                const val = parseFloat(ratioText);
+                if (isNaN(val) || val < 0) setRatioText(String(calculatorInputs.readWriteRatio));
+              }}
             />
           </div>
 
@@ -193,10 +240,16 @@ export const EnvelopeCalculator: React.FC = () => {
             <input
               type="number"
               className={styles.input}
-              value={calculatorInputs.replicationFactor}
-              onChange={(e) =>
-                setCalculatorInputs({ replicationFactor: parseInt(e.target.value, 10) || 1 })
-              }
+              value={replicationText}
+              onChange={(e) => {
+                setReplicationText(e.target.value);
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val > 0) setCalculatorInputs({ replicationFactor: val });
+              }}
+              onBlur={() => {
+                const val = parseInt(replicationText, 10);
+                if (isNaN(val) || val <= 0) setReplicationText(String(calculatorInputs.replicationFactor));
+              }}
             />
           </div>
 
@@ -205,10 +258,16 @@ export const EnvelopeCalculator: React.FC = () => {
             <input
               type="number"
               className={styles.input}
-              value={calculatorInputs.serverCapacityQps}
-              onChange={(e) =>
-                setCalculatorInputs({ serverCapacityQps: parseInt(e.target.value, 10) || 500 })
-              }
+              value={capacityText}
+              onChange={(e) => {
+                setCapacityText(e.target.value);
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val > 0) setCalculatorInputs({ serverCapacityQps: val });
+              }}
+              onBlur={() => {
+                const val = parseInt(capacityText, 10);
+                if (isNaN(val) || val <= 0) setCapacityText(String(calculatorInputs.serverCapacityQps));
+              }}
             />
           </div>
         </div>
