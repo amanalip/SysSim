@@ -48,6 +48,8 @@
 | **38** | `src/components/panels/MetricsDashboard.tsx` | Component metrics table omitted `Utilization %` and `Active Conns` columns. | Added Utilization % and Active Conns table columns with color thresholds. |
 | **39** | `src/model/types.ts` | `ScenarioDifficulty` union was not exported for type-safe filtering. | Exported `ScenarioDifficulty` union type across components and tests. |
 | **40** | `src/components/scenarios/ScenarioPicker.tsx` | Scenario picker only supported category filtering, omitting difficulty filtering. | Added dual category and difficulty dropdown selectors with dynamic result counts. |
+| **41** | `src/components/panels/BottleneckPanel.tsx` | Bottleneck panel inspect button focused node without user feedback. | Added toast notification confirming inspected node selection in properties drawer. |
+| **42** | `src/components/modals/ShortcutsModal.tsx` | Shortcuts modal lacked entries for sidebar navigation keys. | Added `1 / 2 / 3` tab switching hotkeys to the shortcuts reference list. |
 
 ---
 
@@ -78,12 +80,13 @@
 23. **Estimated DB Pool Output Card**: Capacity calculator displays connection pool estimates with focus navigation.
 24. **Utilization & Active Connection Table Columns**: Per-component breakdown includes real-time utilization and active concurrency with alert coloring.
 25. **Keyboard Sidebar Tab Switching**: Hotkeys `1`, `2`, and `3` rapidly switch between Palette, Scenarios, and Calculator tabs.
+26. **Bottleneck Inspect Node Feedback**: Inspecting detected bottlenecks triggers an informative toast and focuses the properties inspector.
 
 ---
 
 ## 3. Test Suites & Quality Improvements
 
-- **21 test files**, **123 total unit and integration tests** passing:
+- **22 test files**, **133 total unit and integration tests** passing:
   - Non-LB multi-edge round-robin routing
   - 502 Bad Gateway handling on empty LB targets
   - RateLimiterConfig `limitQps` subtext rendering
@@ -112,3 +115,4 @@
   - SimulationBridge worker and fallback lifecycle management
   - Toast notification lifecycle and queue management
   - 101 Scenario registration, difficulty segmentation, and filtering
+  - Bottleneck detector SPOF, queue backpressure, DB concurrency, and sync-chain rules

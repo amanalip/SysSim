@@ -65,7 +65,10 @@ export const BottleneckPanel: React.FC = () => {
 
             <button
               className={styles.focusBtn}
-              onClick={() => selectNode(issue.nodeId)}
+              onClick={() => {
+                selectNode(issue.nodeId);
+                useStore.getState().addToast(`Inspecting ${issue.nodeName} in Properties Panel`, 'info');
+              }}
             >
               <span>Inspect {issue.nodeName}</span>
               <ArrowRight size={11} />

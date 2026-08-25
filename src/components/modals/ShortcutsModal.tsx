@@ -31,6 +31,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
     { label: 'Compute Topological Auto Layout', key: 'L' },
     { label: 'Toggle Chaos Monkey Failure Mode', key: 'C' },
     { label: 'Toggle Real-Time Metrics Drawer', key: 'M' },
+    { label: 'Switch to Palette / Scenarios / Calculator', key: '1 / 2 / 3' },
     { label: 'Open Keyboard Shortcuts Help', key: '?' },
   ];
 
