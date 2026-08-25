@@ -8,6 +8,7 @@ import { PropertiesPanel } from './components/panels/PropertiesPanel';
 import { SimulationControls } from './components/playback/SimulationControls';
 import { MetricsDashboard } from './components/panels/MetricsDashboard';
 import { EnvelopeCalculator } from './components/panels/EnvelopeCalculator';
+import { ScenarioManager } from './components/scenarios/ScenarioManager';
 import { ToastContainer } from './components/ui/Toast';
 import { chaosRunner } from './engine/metrics/chaos-runner';
 import styles from './App.module.css';
@@ -34,7 +35,7 @@ export function App() {
       <div className={styles.mainLayout}>
         <Sidebar
           paletteSlot={<ComponentPalette />}
-          scenariosSlot={<div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Scenarios module</div>}
+          scenariosSlot={<ScenarioManager />}
           calculatorSlot={<EnvelopeCalculator />}
         />
 

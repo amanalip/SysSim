@@ -8,6 +8,7 @@ import {
   OverallMetrics,
   ProtocolEdgeData,
   Scenario,
+  SerializedCanvasState,
   SimRequest,
   SimulationState,
   TrafficConfig,
@@ -128,18 +129,22 @@ export interface SysSimState {
   resetSimulation: () => void;
 
   // Scenario State
+  currentScenario: Scenario | null;
   activeScenario: Scenario | null;
   activeScenarioId: number | null;
   completedScenarioIds: number[];
   revealedHintsCount: number;
   showReferenceOverlay: boolean;
+  setShowReferenceOverlay: (show: boolean) => void;
   sideBySideMode: boolean;
   scenarioSearchQuery: string;
   scenarioDifficultyFilter: 'All' | 'Easy' | 'Medium' | 'Hard';
   scenarioCategoryFilter: string;
 
   // Scenario Actions
+  setCurrentScenario: (scenario: Scenario | null) => void;
   loadScenario: (scenario: Scenario) => void;
+  loadReferenceDesign: (refDesign: SerializedCanvasState) => void;
   closeScenario: () => void;
   revealNextHint: () => void;
   toggleReferenceOverlay: () => void;
@@ -535,18 +540,23 @@ export const useStore = create<SysSimState>((set, get) => ({
     }),
 
   // Scenario State
+  currentScenario: null,
   activeScenario: null,
   activeScenarioId: null,
   completedScenarioIds: JSON.parse(localStorage.getItem('syssim_completed_scenarios') || '[]'),
   revealedHintsCount: 0,
   showReferenceOverlay: false,
+  setShowReferenceOverlay: (showReferenceOverlay) => set({ showReferenceOverlay }),
   sideBySideMode: false,
   scenarioSearchQuery: '',
   scenarioDifficultyFilter: 'All',
   scenarioCategoryFilter: 'All',
 
+  setCurrentScenario: (currentScenario) => set({ currentScenario, activeScenario: currentScenario }),
+
   loadScenario: (scenario) => {
     set({
+      currentScenario: scenario,
       activeScenario: scenario,
       activeScenarioId: scenario.id,
       revealedHintsCount: 0,
@@ -556,8 +566,21 @@ export const useStore = create<SysSimState>((set, get) => ({
     get().clearCanvas();
   },
 
+  loadReferenceDesign: (refDesign) => {
+    get().pushHistory();
+    set({
+      nodes: refDesign.nodes as unknown as CanvasNode[],
+      edges: refDesign.edges as unknown as CanvasEdge[],
+      zones: (refDesign.zones || []) as ZoneData[],
+      selectedNodeId: null,
+      selectedEdgeId: null,
+      isPropertiesPanelOpen: false,
+    });
+  },
+
   closeScenario: () => {
     set({
+      currentScenario: null,
       activeScenario: null,
       activeScenarioId: null,
       revealedHintsCount: 0,
@@ -582,11 +605,14 @@ export const useStore = create<SysSimState>((set, get) => ({
 
   markScenarioCompleted: (scenarioId) => {
     const { completedScenarioIds } = get();
-    if (!completedScenarioIds.includes(scenarioId)) {
-      const updated = [...completedScenarioIds, scenarioId];
-      localStorage.setItem('syssim_completed_scenarios', JSON.stringify(updated));
-      set({ completedScenarioIds: updated });
+    let updated: number[];
+    if (completedScenarioIds.includes(scenarioId)) {
+      updated = completedScenarioIds.filter((id) => id !== scenarioId);
+    } else {
+      updated = [...completedScenarioIds, scenarioId];
     }
+    localStorage.setItem('syssim_completed_scenarios', JSON.stringify(updated));
+    set({ completedScenarioIds: updated });
   },
 
   setScenarioSearchQuery: (scenarioSearchQuery) => set({ scenarioSearchQuery }),

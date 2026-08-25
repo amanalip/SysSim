@@ -1,0 +1,129 @@
+.pickerContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  user-select: none;
+  font-family: var(--font-sans);
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+}
+
+.searchInput {
+  flex: 1;
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.categorySelect {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+}
+
+.scenarioList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.scenarioCard {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.scenarioCard:hover {
+  background-color: var(--bg-elevated);
+  border-color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+.scenarioCardActive {
+  border-color: var(--accent-primary);
+  background-color: var(--accent-subtle);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitleArea {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scenarioNumber {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.scenarioTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.diffBadge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+}
+
+.diffEasy {
+  background-color: rgba(63, 185, 80, 0.15);
+  color: var(--success);
+}
+
+.diffMedium {
+  background-color: rgba(210, 153, 34, 0.15);
+  color: var(--warning);
+}
+
+.diffHard {
+  background-color: rgba(248, 81, 73, 0.15);
+  color: var(--error);
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.categoryTag {
+  font-weight: 600;
+}

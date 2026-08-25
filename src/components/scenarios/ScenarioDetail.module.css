@@ -1,0 +1,211 @@
+.detailContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  user-select: none;
+  font-family: var(--font-sans);
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.backBtn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--accent-primary);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+}
+
+.backBtn:hover {
+  text-decoration: underline;
+}
+
+.headerSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.problemBox {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.constraintsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.constraintItem {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.constraintLabel {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.constraintVal {
+  font-size: 12px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.actionsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.primaryBtn {
+  background-color: var(--accent-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.primaryBtn:hover {
+  background-color: var(--accent-hover);
+}
+
+.secondaryBtn {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.secondaryBtn:hover {
+  background-color: var(--bg-elevated);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 4px;
+}
+
+.hintCard {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--accent-primary);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.discussionItem {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.question {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.answer {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  background-color: var(--bg-secondary);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.toggleAnswerBtn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--accent-primary);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sourceLink {
+  font-size: 11px;
+  color: var(--accent-primary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sourceLink:hover {
+  text-decoration: underline;
+}

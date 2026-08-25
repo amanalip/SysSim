@@ -467,26 +467,28 @@ export interface SerializedCanvasState {
   zones?: ZoneData[];
 }
 
+export type ScenarioCategory =
+  | 'Core / Classic'
+  | 'Social & Messaging'
+  | 'Streaming & Media'
+  | 'E-Commerce & Payments'
+  | 'Search & Discovery'
+  | 'Infrastructure & Platform'
+  | 'Data & Analytics'
+  | 'Auth & Security'
+  | 'IoT & Edge'
+  | 'Gaming'
+  | 'ML / AI Infrastructure'
+  | 'Collaboration'
+  | 'Maps & Geolocation'
+  | 'Communication'
+  | 'Content & Publishing';
+
 export interface Scenario {
   id: number;
   slug: string;
   title: string;
-  category:
-    | 'Core / Classic'
-    | 'Social & Messaging'
-    | 'Streaming & Media'
-    | 'E-Commerce & Payments'
-    | 'Search & Discovery'
-    | 'Infrastructure & Platform'
-    | 'Data & Analytics'
-    | 'Auth & Security'
-    | 'IoT & Edge Computing'
-    | 'Gaming'
-    | 'ML / AI Infrastructure'
-    | 'Collaboration & Productivity'
-    | 'Maps & Geolocation'
-    | 'Communication'
-    | 'Content & Publishing';
+  category: ScenarioCategory;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   problemStatement: string;
   constraints: ScenarioConstraints;
