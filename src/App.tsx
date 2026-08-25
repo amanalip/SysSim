@@ -6,15 +6,26 @@ import { ComponentPalette } from './components/palette/ComponentPalette';
 import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { PropertiesPanel } from './components/panels/PropertiesPanel';
 import { SimulationControls } from './components/playback/SimulationControls';
+import { MetricsDashboard } from './components/panels/MetricsDashboard';
 import { ToastContainer } from './components/ui/Toast';
+import { chaosRunner } from './engine/metrics/chaos-runner';
 import styles from './App.module.css';
 
 export function App() {
-  const { theme, nodes } = useStore();
+  const { theme, nodes, isChaosMode, chaosIntervalSec } = useStore();
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (isChaosMode) {
+      chaosRunner.start(chaosIntervalSec);
+    } else {
+      chaosRunner.stop();
+    }
+    return () => chaosRunner.stop();
+  }, [isChaosMode, chaosIntervalSec]);
 
   return (
     <div className={styles.appContainer}>
@@ -39,6 +50,7 @@ export function App() {
             )}
             <SimulationControls />
           </div>
+          <MetricsDashboard />
         </main>
 
         <PropertiesPanel />
