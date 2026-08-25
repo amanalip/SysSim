@@ -22,6 +22,7 @@ import {
 } from 'recharts';
 import { useStore } from '../../store/use-store';
 import { BottleneckPanel } from './BottleneckPanel';
+import { HealthRadarPanel } from './HealthRadarPanel';
 import styles from './MetricsDashboard.module.css';
 
 export const MetricsDashboard: React.FC = () => {
@@ -150,6 +151,14 @@ export const MetricsDashboard: React.FC = () => {
               onClick={() => setActiveBottomTab('bottlenecks')}
             >
               Bottleneck Inspector {bottlenecks.length > 0 && `(${bottlenecks.length})`}
+            </button>
+            <button
+              className={`${styles.tabBtn} ${
+                activeBottomTab === 'health' ? styles.tabBtnActive : ''
+              }`}
+              onClick={() => setActiveBottomTab('health')}
+            >
+              5-Pillar Health Radar
             </button>
           </div>
         </div>
@@ -422,6 +431,8 @@ export const MetricsDashboard: React.FC = () => {
             )}
           </>
         )}
+
+        {activeBottomTab === 'health' && <HealthRadarPanel />}
       </div>
     </div>
   );

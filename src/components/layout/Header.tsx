@@ -9,6 +9,8 @@ import {
   Moon,
   Sparkles,
   Keyboard,
+  Flame,
+  Layout,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import {
@@ -18,6 +20,7 @@ import {
   importArchitectureJson,
 } from '../../utils/sharing';
 import { ShortcutsModal } from '../modals/ShortcutsModal';
+import { ChaosDrillModal } from '../modals/ChaosDrillModal';
 import styles from './Header.module.css';
 
 export const Header: React.FC = () => {
@@ -33,6 +36,7 @@ export const Header: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [isChaosDrillsOpen, setIsChaosDrillsOpen] = useState(false);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -122,7 +126,18 @@ export const Header: React.FC = () => {
           onClick={autoLayout}
           title="Topologically arrange components (L)"
         >
+          <Layout size={13} />
           <span>Auto Layout</span>
+        </button>
+
+        <button
+          className={styles.actionBtn}
+          onClick={() => setIsChaosDrillsOpen(true)}
+          title="Run targeted Chaos Engineering drills"
+          style={{ color: 'var(--error)' }}
+        >
+          <Flame size={13} />
+          <span>Chaos Drills</span>
         </button>
 
         <button
@@ -202,6 +217,10 @@ export const Header: React.FC = () => {
       <ShortcutsModal
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
+      />
+      <ChaosDrillModal
+        isOpen={isChaosDrillsOpen}
+        onClose={() => setIsChaosDrillsOpen(false)}
       />
     </header>
   );
