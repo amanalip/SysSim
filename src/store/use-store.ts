@@ -589,7 +589,17 @@ export const useStore = create<SysSimState>((set, get) => ({
   currentScenario: null,
   activeScenario: null,
   activeScenarioId: null,
-  completedScenarioIds: JSON.parse(localStorage.getItem('syssim_completed_scenarios') || '[]'),
+  completedScenarioIds: (() => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const stored = localStorage.getItem('syssim_completed_scenarios');
+        if (stored) return JSON.parse(stored);
+      }
+    } catch {
+      // safe fallback
+    }
+    return [];
+  })(),
   revealedHintsCount: 0,
   showReferenceOverlay: false,
   setShowReferenceOverlay: (showReferenceOverlay) => set({ showReferenceOverlay }),
@@ -657,7 +667,13 @@ export const useStore = create<SysSimState>((set, get) => ({
     } else {
       updated = [...completedScenarioIds, scenarioId];
     }
-    localStorage.setItem('syssim_completed_scenarios', JSON.stringify(updated));
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('syssim_completed_scenarios', JSON.stringify(updated));
+      }
+    } catch {
+      // safe fallback
+    }
     set({ completedScenarioIds: updated });
   },
 

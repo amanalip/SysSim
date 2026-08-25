@@ -32,11 +32,27 @@ export class ConsistentHashRing {
   public getNode(key: string): string | null {
     if (this.ring.length === 0) return null;
     const h = this.hash(key);
-    for (let i = 0; i < this.ring.length; i++) {
-      if (this.ring[i].hash >= h) {
-        return this.ring[i].nodeId;
+
+    // Binary search for closest ring node with hash >= h
+    let low = 0;
+    let high = this.ring.length - 1;
+    let resultIdx = 0;
+
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      if (this.ring[mid].hash >= h) {
+        resultIdx = mid;
+        high = mid - 1;
+      } else {
+        low = mid + 1;
       }
     }
-    return this.ring[0].nodeId;
+
+    // Wrap around to index 0 if target hash exceeds all ring nodes
+    if (this.ring[resultIdx].hash < h) {
+      return this.ring[0].nodeId;
+    }
+
+    return this.ring[resultIdx].nodeId;
   }
 }

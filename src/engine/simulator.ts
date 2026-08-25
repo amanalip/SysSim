@@ -593,18 +593,21 @@ export class SysSimEngine {
       const nodeCacheRatio =
         totalCacheLookups > 0 ? (stats.hits / totalCacheLookups) * 100 : 0;
 
+      const nodeQps = stats.totalRequests > 0 ? Math.round(stats.totalRequests / Math.max(1, this.elapsedSimulationMs / 1000)) : 0;
+      const ratedMaxQps = Math.max(10, n.config.maxThroughputQps || 5000);
+
       componentMetrics[n.id] = {
         nodeId: n.id,
         nodeName: n.config.name,
         nodeType: n.config.type,
-        qps: stats.totalRequests > 0 ? Math.round(stats.totalRequests / Math.max(1, this.elapsedSimulationMs / 1000)) : 0,
+        qps: nodeQps,
         avgLatencyMs: Math.round(nodeAvgLat * 10) / 10,
         p95LatencyMs: Math.round(nodeP95 * 10) / 10,
         errorRatePercent: Math.round(nodeErrorRate * 10) / 10,
-        activeConnections: Math.min(stats.totalRequests, (n.config as any).maxConnections || 100),
+        activeConnections: this.activeConnections[n.id] || 0,
         queueDepth: stats.queueDepth,
         cacheHitRatioPercent: Math.round(nodeCacheRatio * 10) / 10,
-        utilizationPercent: Math.min(100, Math.round((stats.totalRequests / Math.max(10, (n.config.maxThroughputQps || 5000))) * 100)),
+        utilizationPercent: Math.min(100, Math.round((nodeQps / ratedMaxQps) * 100)),
         totalRequests: stats.totalRequests,
         successfulRequests: stats.successfulRequests,
         failedRequests: stats.failedRequests,

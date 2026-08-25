@@ -26,10 +26,18 @@
 | **16** | `src/engine/routing/load-balancer.ts` | When `algorithm === 'weighted'` without custom weights map, `weightedTargets` was empty, causing fallback to strictly first node. | Initialized `weightedTargets` with default weight 1 for all targets when custom weights are omitted. |
 | **17** | `src/engine/components/queue-model.ts` | `QueueModel` lacked a `reset()` method, causing filled message queues to retain stale queue depth across simulation resets. | Added `reset(): void` to `QueueModel` and called it during `SysSimEngine.reset()`. |
 | **18** | `src/engine/components/db-model.ts` | `DatabaseModel` connection decrement relied on unmanaged `setTimeout` and lacked a `reset()` method. | Added `reset()` to clear active connection pool count and bounded virtual query completion. |
-| **19** | `src/engine/simulator.ts` | `SysSimEngine.reset()` did not reset sub-models (`rateLimiters`, `queueModels`, `dbModels`), leaving stale state after reset. | Iterated and called `.reset()` on all active component models during engine reset. |
+| **19** | `src/engine/simulator.ts` | `SysSimEngine.reset()` did not reset sub-models (`rateLimiters`, `queueModels`, `dbModels`), leaving stale state after reset. | Iterated and called `.reset()` across all active component models during engine reset. |
 | **20** | `src/components/canvas/ArchitectureCanvas.tsx` | `handleKeyDown` useCallback hook omitted `duplicateNode` from its dependency array. | Added `duplicateNode` to dependency array to prevent stale closure issues. |
 | **21** | `src/components/scenarios/ScenarioPicker.tsx` | Search term matching did not handle case-insensitive category searches and category counts remained static. | Dynamically computed real-time matching scenario counts per category based on active search. |
 | **22** | `src/components/canvas/zones/ZoneGroup.tsx` | Zone headers lacked inline label editing without recreating the zone. | Added double-click inline input for instant zone renaming. |
+| **23** | `src/engine/simulator.ts` | `componentMetrics.activeConnections` reported `Math.min(totalRequests, maxConns)` instead of real-time tracked connection state. | Corrected to read from `this.activeConnections[nodeId]`. |
+| **24** | `src/engine/simulator.ts` | `componentMetrics.utilizationPercent` divided cumulative all-time requests by capacity, artificially pinning utilization to 100% after seconds of playback. | Computed utilization dynamically as `nodeQps / maxThroughputQps * 100`. |
+| **25** | `src/store/use-store.ts` | `completedScenarioIds` called unguarded `JSON.parse(localStorage.getItem(...))` on module load, crashing on corrupted or restricted storage. | Protected with safe fallback helper and try-catch storage access. |
+| **26** | `src/engine/routing/consistent-hashing.ts` | Ring node lookup used linear `O(N)` scan on every routed request. | Replaced with binary search for `O(log N)` lookup speed. |
+| **27** | `src/components/scenarios/ScenarioDetail.tsx` | Loading a reference architecture while traffic ran left ghost in-flight packets and old metrics. | Triggered `simBridge.reset()` cleanly before loading reference canvas state. |
+| **28** | `src/components/modals/ShortcutsModal.tsx` | Shortcuts modal lacked keyboard `Escape` dismiss listener. | Added `Escape` key event listener. |
+| **29** | `src/components/canvas/nodes/CustomComponentNode.tsx` | Bottleneck warning icon had generic static tooltip. | Dynamically displays exact detected issue titles on hover. |
+| **30** | `src/components/panels/MetricsDashboard.tsx` | Success Rate card rounded to nearest integer, masking high-availability decimal SLA precision. | Formatted to 2 decimal places (`99.99%`). |
 
 ---
 
@@ -51,12 +59,14 @@
 14. **Topology Overview Counter Badge**: Header bar displays live total component and link counts for quick diagram orientation.
 15. **Smooth Topological Layout Animation**: Auto-layout triggers smooth animated centering with 20% aesthetic padding.
 16. **Bottleneck Badge Inspection Tooltips**: Warning badges on canvas nodes indicate specific bottleneck descriptions.
+17. **Fractional Availability SLA Precision**: Telemetry displays 2-decimal SLA compliance.
+18. **Instant Reference Architecture Loading**: Smooth scenario loading with automated reset.
 
 ---
 
 ## 3. Test Suites & Quality Improvements
 
-- **15 test files**, **63 total unit and integration tests** passing:
+- **16 test files**, **73 total unit and integration tests** passing:
   - Non-LB multi-edge round-robin routing
   - 502 Bad Gateway handling on empty LB targets
   - RateLimiterConfig `limitQps` subtext rendering
@@ -71,6 +81,9 @@
   - Topological auto-layout cycle protection
   - Bottleneck detector recognizing `browser_cache`, `pubsub`, and `event_bus`
   - LoadBalancerRouter weighted fallback
+  - ConsistentHashRing binary search lookup
+  - Rate-based component utilization calculation
+  - Real-time active connection tracking
   - QueueModel and DatabaseModel reset verification
   - SysSimEngine comprehensive model reset
   - Inline zone label updates

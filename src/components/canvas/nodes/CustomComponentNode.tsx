@@ -94,7 +94,12 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
       {hasBottleneck && (
         <div
           className={styles.bottleneckWarning}
-          title="Bottleneck or Single Point of Failure detected"
+          title={
+            bottlenecks
+              .filter((b) => b.nodeId === id)
+              .map((b) => b.title)
+              .join(' | ') || 'Bottleneck detected'
+          }
         >
           <AlertTriangle size={10} />
         </div>

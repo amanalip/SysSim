@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Keyboard, X } from 'lucide-react';
 import styles from './ShortcutsModal.module.css';
 
@@ -8,6 +8,17 @@ interface ShortcutsModalProps {
 }
 
 export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const shortcuts = [
@@ -31,7 +42,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
             <Keyboard size={16} color="var(--accent-primary)" />
             <span>Keyboard Shortcuts</span>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} title="Close shortcuts">
+          <button className={styles.closeBtn} onClick={onClose} title="Close shortcuts (Escape)">
             <X size={15} />
           </button>
         </div>

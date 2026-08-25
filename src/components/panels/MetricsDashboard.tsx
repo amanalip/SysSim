@@ -145,10 +145,11 @@ export const MetricsDashboard: React.FC = () => {
                 <span className={styles.summaryLabel}>Success Rate</span>
                 <span className={styles.summaryValue} style={{ color: 'var(--success)' }}>
                   {metrics.totalRequestsSent > 0
-                    ? `${Math.round(
-                        (metrics.totalRequestsSuccess / metrics.totalRequestsSent) * 100
-                      )}%`
-                    : '100%'}
+                    ? `${(
+                        (metrics.totalRequestsSuccess / metrics.totalRequestsSent) *
+                        100
+                      ).toFixed(2)}%`
+                    : '100.00%'}
                 </span>
               </div>
               <div className={styles.summaryCard}>

@@ -44,6 +44,7 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
   };
 
   const handleLoadReference = () => {
+    simBridge.reset();
     loadReferenceDesign(scenario.referenceDesign);
     simBridge.syncGraph();
     useStore.getState().addToast(`Loaded Reference Architecture for ${scenario.title}`, 'info');
