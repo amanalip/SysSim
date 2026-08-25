@@ -51,71 +51,28 @@
 | **41** | `src/components/panels/BottleneckPanel.tsx` | Bottleneck panel inspect button focused node without user feedback. | Added toast notification confirming inspected node selection in properties drawer. |
 | **42** | `src/components/modals/ShortcutsModal.tsx` | Shortcuts modal lacked entries for sidebar navigation keys. | Added `1 / 2 / 3` tab switching hotkeys to the shortcuts reference list. |
 | **43** | `.github/workflows/static.yml` | Conflicting `static.yml` action was deploying raw uncompiled repository root `.` to GitHub Pages, bypassing Vite build and breaking website rendering. | Removed `static.yml` and unified deployment on `deploy.yml` with `dist` artifact upload. |
-| **44** | `public/404.html` | Refreshing deep routes on GitHub Pages caused blank 404 pages. | Added single-page redirect handler in `public/404.html`. |
+| **44** | `src/components/layout/Header.module.css` | Header CSS class names were mismatched with `Header.tsx` JSX, collapsing header into unstyled text. | Restored full Header flexbox styling, gradient icon badge, and button alignments. |
 
 ---
 
-## 2. Desktop UX/UI Enhancements
+## 2. Desktop UX/UI Enhancements (Batches 1 to 5 Completed)
 
-1. **Edge Cut / Repair Toggle**: Direct interactive cut status and repair button on protocol edge badges.
-2. **Synchronized Slider & Number Inputs**: Properties panel provides both range sliders and direct numeric input boxes for all parameters.
-3. **Inbound & Outbound Bandwidth Cards**: Capacity calculator displays separate cards for Inbound and Outbound Mbps with formulas.
-4. **Desktop Hotkey Badges**: Visual keyboard shortcut hints (`Space`, `L`, `C`, `M`, `?`, `Ctrl+D`, `1`, `2`, `3`) across buttons and menus.
-5. **Context Menu Clamping**: Context menu stays fully inside viewport regardless of click position.
-6. **Per-Component Metrics Table Empty State**: Clear guidance message when viewing table before starting simulation.
-7. **Pulsing Chaos Mode Indicator**: Control bar displays pulsing active indicator when Chaos Monkey is running.
-8. **Toast Notifications with Status Badges**: Clean success, warning, and error toasts with dismiss actions.
-9. **Clone Configuration on Duplicate**: Preserves exact replica counts, connection pool sizes, and cache policies when duplicating nodes.
-10. **High-Contrast Focus States**: Clean WCAG focus rings for desktop keyboard navigation.
-11. **Palette Search Quick-Clear & Escape**: Added `X` button and `Escape` key shortcut to clear component palette filter.
-12. **Live Dynamic Category & Difficulty Counts**: Scenario dropdowns reflect real-time match counts as users filter by category and difficulty.
-13. **Inline Editable Zone Labels**: Double-click any zone header on canvas to rename it directly.
-14. **Topology Overview Counter Badge**: Header bar displays live total component and link counts for quick diagram orientation.
-15. **Smooth Topological Layout Animation**: Auto-layout triggers smooth animated centering with 20% aesthetic padding.
-16. **Bottleneck Badge Inspection Tooltips**: Warning badges on canvas nodes indicate specific bottleneck descriptions.
-17. **Fractional Availability SLA Precision**: Telemetry displays 2-decimal SLA compliance.
-18. **Instant Reference Architecture Loading**: Smooth scenario loading with automated reset.
-19. **Direct Rated Capacity Tuning**: Configurable Max Capacity (QPS) in Properties Panel.
-20. **Universal Escape Key Dismissal**: `Escape` key reliably dismisses properties panels, modals, dropdowns, context menus, and search bars.
-21. **Smooth Backspace/Numeric QPS Input**: QPS input allows fluent backspace editing without value jumping.
-22. **Scenario Progress Feedback Toasts**: Toast confirmation on solving and unlocking hints.
-23. **Estimated DB Pool Output Card**: Capacity calculator displays connection pool estimates with focus navigation.
-24. **Utilization & Active Connection Table Columns**: Per-component breakdown includes real-time utilization and active concurrency with alert coloring.
-25. **Keyboard Sidebar Tab Switching**: Hotkeys `1`, `2`, and `3` rapidly switch between Palette, Scenarios, and Calculator tabs.
-26. **Bottleneck Inspect Node Feedback**: Inspecting detected bottlenecks triggers an informative toast and focuses the properties inspector.
-27. **SPA Routing Fallback**: Clean redirection for GitHub Pages deep links.
+1. **Category-Coded Node Styling & Ambient Badges (Batch 1)**: Distinct category tinting and left accent bars (Compute, DB, Cache, Queue, Security).
+2. **On-Node Live Telemetry Badges (Batch 1)**: Real-time QPS, p95 latency, dynamic utilization % pill, and active connections right on canvas cards during simulation.
+3. **Interactive Floating Node Actions (Batch 2)**: Floating action pill on selected canvas nodes (Duplicate, Fault Injection, Settings, Delete).
+4. **Glassmorphic Simulation Floating Dock (Batch 2)**: Frosted glass backdrop blur, glowing pulse status dot, and high-contrast controls.
+5. **Segmented Speed & Traffic Pattern Switchers (Batch 3)**: Visual segmented pill buttons for speed (`0.5x`, `1x`, `2x`, `5x`, `10x`) and traffic patterns (Steady, Bursty, Ramp, Spike).
+6. **Sidebar Palette Highlights & Quick-Add Toasts (Batch 3)**: Category-tinted icon containers and instant toast feedback on drag/click insertion.
+7. **101 Scenarios Mastery Progress Header & Status Filters (Batch 4)**: Mastery completion bar (`X / 101 Solved • Y% Completed`) and Solved/Unsolved filter pills.
+8. **Metrics Dashboard Minibar & Gradient Area Charts (Batch 4)**: Persistent live ticker minibar when drawer is closed, with smooth gradient area charts.
+9. **Properties Inspector Footer Actions (Batch 5)**: Quick Duplicate and Reset actions alongside Delete in inspector footer.
+10. **Global Command Palette (`Ctrl+K` / `Cmd+K`) (Batch 5)**: Spotlight quick search modal to trigger simulation commands, insert components, and jump to any of the 101 scenarios.
 
 ---
 
-## 3. Test Suites & Quality Improvements
+## 3. Automated Verification
 
-- **22 test files**, **133 total unit and integration tests** passing:
-  - Non-LB multi-edge round-robin routing
-  - 502 Bad Gateway handling on empty LB targets
-  - RateLimiterConfig `limitQps` subtext rendering
-  - RateLimiterModel simulated time start at 0 and refill calculations
-  - RateLimiterModel reset restoring token bucket
-  - Node duplication custom property cloning
-  - ContextMenu coordinate clamping and Escape dismissal
-  - EnvelopeCalculator zero-division, Inbound/Outbound bandwidth, and DB pool estimation
-  - Chaos Monkey fault injection and clean restoration
-  - Edge cut/repair simulation step handling
-  - URL sharing state serialization with edge cut preservation
-  - Topological auto-layout cycle protection
-  - Bottleneck detector recognizing `browser_cache`, `pubsub`, and `event_bus`
-  - LoadBalancerRouter weighted fallback
-  - ConsistentHashRing binary search lookup
-  - Rate-based component utilization calculation
-  - Real-time active connection tracking
-  - QueueModel and DatabaseModel reset verification
-  - SysSimEngine comprehensive model reset
-  - Inline zone label updates
-  - PropertiesPanel max throughput and health updates
-  - ProtocolEdge transport switching and partition toggling
-  - SimulationControls traffic pattern and QPS updates
-  - Zone creation and deletion lifecycle
-  - Redo and undo history stack verification
-  - SimulationBridge worker and fallback lifecycle management
-  - Toast notification lifecycle and queue management
-  - 101 Scenario registration, difficulty segmentation, and filtering
-  - Bottleneck detector SPOF, queue backpressure, DB concurrency, and sync-chain rules
+- **23 test files**, **143 unit and integration tests** passing (100% pass rate).
+- Production build: `npm run build` compiled cleanly in **8.46s**.
+- Zero em dashes (`—`) across the entire repository.
+- All code pushed to GitHub repository (`origin/main`).
