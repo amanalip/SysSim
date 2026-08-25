@@ -15,6 +15,7 @@ import {
 } from '../model/types';
 import { createDefaultConfig } from '../model/component-defaults';
 import { validateConnection } from '../model/validation';
+import { computeAutoLayout } from '../layout/auto-layout';
 import { ThemeMode } from '../theme';
 
 export interface CanvasNode {
@@ -97,6 +98,7 @@ export interface SysSimState {
   addZone: (label: string, category: ZoneData['category'], bounds: { x: number; y: number; width: number; height: number }) => void;
   removeZone: (zoneId: string) => void;
   updateZone: (zoneId: string, partial: Partial<ZoneData>) => void;
+  autoLayout: () => void;
   clearCanvas: () => void;
   loadCanvasState: (nodes: CanvasNode[], edges: CanvasEdge[], zones?: ZoneData[]) => void;
   pushHistory: () => void;
@@ -404,6 +406,14 @@ export const useStore = create<SysSimState>((set, get) => ({
     set((state) => ({
       zones: state.zones.map((z) => (z.id === zoneId ? { ...z, ...partial } : z)),
     }));
+  },
+
+  autoLayout: () => {
+    const { nodes, edges } = get();
+    if (nodes.length === 0) return;
+    get().pushHistory();
+    const arranged = computeAutoLayout(nodes, edges);
+    set({ nodes: arranged });
   },
 
   clearCanvas: () => {

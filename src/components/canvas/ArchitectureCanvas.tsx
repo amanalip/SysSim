@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -15,10 +15,14 @@ import {
   Edge,
   Node,
   MarkerType,
+  useViewport,
 } from '@xyflow/react';
 import { useStore } from '../../store/use-store';
 import { CustomComponentNode } from './nodes/CustomComponentNode';
 import { ProtocolEdge } from './edges/ProtocolEdge';
+import { ContextMenu, ContextMenuState } from './ContextMenu';
+import { ZoneGroup } from './zones/ZoneGroup';
+import { computeAutoLayout } from '../../layout/auto-layout';
 import { ComponentType } from '../../model/types';
 import styles from './ArchitectureCanvas.module.css';
 
@@ -30,6 +34,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
   const {
     nodes,
     edges,
+    zones,
     setNodes,
     setEdges,
     addNode,
@@ -49,6 +54,16 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
   } = useStore();
 
   const reactFlowInstance = useReactFlow();
+  const viewport = useViewport();
+
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
+    isOpen: false,
+    x: 0,
+    y: 0,
+    flowX: 0,
+    flowY: 0,
+    nodeId: null,
+  });
 
   const nodeTypes = useMemo(
     () => ({
@@ -125,6 +140,14 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
     [addNode, reactFlowInstance]
   );
 
+  const handleAutoLayout = useCallback(() => {
+    const layouted = computeAutoLayout(nodes, edges);
+    setNodes(layouted);
+    setTimeout(() => {
+      reactFlowInstance.fitView({ padding: 0.2, duration: 400 });
+    }, 50);
+  }, [nodes, edges, setNodes, reactFlowInstance]);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
@@ -137,6 +160,27 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         return;
       }
 
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        if (selectedNodeId) {
+          const target = nodes.find((n) => n.id === selectedNodeId);
+          if (target) {
+            addNode(
+              target.data.config.type,
+              { x: target.position.x + 30, y: target.position.y + 30 },
+              `${target.data.config.name} (Copy)`
+            );
+          }
+        }
+        e.preventDefault();
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        setNodes((nds) => nds.map((n) => ({ ...n, selected: true })));
+        e.preventDefault();
+        return;
+      }
+
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedNodeId) {
           removeNode(selectedNodeId);
@@ -145,7 +189,27 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         }
       }
     },
-    [selectedNodeId, selectedEdgeId, removeNode, removeEdge, undo, redo]
+    [selectedNodeId, selectedEdgeId, nodes, setNodes, addNode, removeNode, removeEdge, undo, redo]
+  );
+
+  const handleContextMenu = useCallback(
+    (event: React.MouseEvent, nodeId: string | null = null) => {
+      event.preventDefault();
+      const flowPos = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      setContextMenu({
+        isOpen: true,
+        x: event.clientX,
+        y: event.clientY,
+        flowX: flowPos.x,
+        flowY: flowPos.y,
+        nodeId,
+      });
+    },
+    [reactFlowInstance]
   );
 
   return (
@@ -154,6 +218,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
       onDragOver={onDragOver}
       onDrop={onDrop}
       onKeyDown={handleKeyDown}
+      onContextMenu={(e) => handleContextMenu(e, null)}
       tabIndex={0}
     >
       {showReferenceOverlay && (
@@ -161,6 +226,10 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
           <span>Reference Architecture Overlay Active</span>
         </div>
       )}
+
+      {zones.map((zone) => (
+        <ZoneGroup key={zone.id} zone={zone} viewport={viewport} />
+      ))}
 
       <ReactFlow
         nodes={nodes as unknown as Node[]}
@@ -172,10 +241,12 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={(_, node) => selectNode(node.id)}
+        onNodeContextMenu={(e, node) => handleContextMenu(e, node.id)}
         onEdgeClick={(_, edge) => selectEdge(edge.id)}
         onPaneClick={() => {
           selectNode(null);
           selectEdge(null);
+          setContextMenu((prev) => ({ ...prev, isOpen: false }));
         }}
         snapToGrid={snapToGrid}
         snapGrid={[16, 16]}
@@ -206,6 +277,12 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
           />
         )}
       </ReactFlow>
+
+      <ContextMenu
+        menuState={contextMenu}
+        onClose={() => setContextMenu((prev) => ({ ...prev, isOpen: false }))}
+        onAutoLayout={handleAutoLayout}
+      />
     </div>
   );
 };

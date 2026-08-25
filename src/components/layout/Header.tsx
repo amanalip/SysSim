@@ -9,6 +9,7 @@ import {
   Download,
   RotateCcw,
   BookOpen,
+  LayoutGrid,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import styles from './Header.module.css';
@@ -16,13 +17,11 @@ import styles from './Header.module.css';
 interface HeaderProps {
   onShareClick?: () => void;
   onExportPngClick?: () => void;
-  onAutoLayoutClick?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   onShareClick,
   onExportPngClick,
-  onAutoLayoutClick,
 }) => {
   const {
     theme,
@@ -30,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
     activeScenario,
     closeScenario,
     clearCanvas,
+    autoLayout,
     showReferenceOverlay,
     toggleReferenceOverlay,
     nodes,
@@ -79,16 +79,15 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className={styles.rightSection}>
-        {onAutoLayoutClick && (
-          <button
-            className={styles.btn}
-            onClick={onAutoLayoutClick}
-            disabled={nodes.length === 0}
-            title="Auto-arrange components left to right"
-          >
-            <span>Auto Layout</span>
-          </button>
-        )}
+        <button
+          className={styles.btn}
+          onClick={autoLayout}
+          disabled={nodes.length === 0}
+          title="Auto-arrange components left to right"
+        >
+          <LayoutGrid size={14} />
+          <span>Auto Layout</span>
+        </button>
 
         <button
           className={styles.btn}
