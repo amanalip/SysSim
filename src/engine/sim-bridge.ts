@@ -87,19 +87,21 @@ class SimulationBridge {
       this.worker.postMessage({ type: 'START' });
     } else if (this.fallbackEngine) {
       this.fallbackEngine.start();
-      if (!this.fallbackTimer) {
-        let lastTime = Date.now();
-        this.fallbackTimer = setInterval(() => {
-          const now = Date.now();
-          const delta = now - lastTime;
-          lastTime = now;
-          if (this.fallbackEngine) {
-            const result = this.fallbackEngine.step(delta);
-            useStore.getState().updateMetrics(result.metrics);
-            useStore.getState().setActiveRequests(result.activeRequests);
-          }
-        }, 100);
+      if (this.fallbackTimer) {
+        clearInterval(this.fallbackTimer);
+        this.fallbackTimer = null;
       }
+      let lastTime = Date.now();
+      this.fallbackTimer = setInterval(() => {
+        const now = Date.now();
+        const delta = now - lastTime;
+        lastTime = now;
+        if (this.fallbackEngine) {
+          const result = this.fallbackEngine.step(delta);
+          useStore.getState().updateMetrics(result.metrics);
+          useStore.getState().setActiveRequests(result.activeRequests);
+        }
+      }, 100);
     }
   }
 
@@ -123,19 +125,21 @@ class SimulationBridge {
       this.worker.postMessage({ type: 'RESUME' });
     } else if (this.fallbackEngine) {
       this.fallbackEngine.resume();
-      if (!this.fallbackTimer) {
-        let lastTime = Date.now();
-        this.fallbackTimer = setInterval(() => {
-          const now = Date.now();
-          const delta = now - lastTime;
-          lastTime = now;
-          if (this.fallbackEngine) {
-            const result = this.fallbackEngine.step(delta);
-            useStore.getState().updateMetrics(result.metrics);
-            useStore.getState().setActiveRequests(result.activeRequests);
-          }
-        }, 100);
+      if (this.fallbackTimer) {
+        clearInterval(this.fallbackTimer);
+        this.fallbackTimer = null;
       }
+      let lastTime = Date.now();
+      this.fallbackTimer = setInterval(() => {
+        const now = Date.now();
+        const delta = now - lastTime;
+        lastTime = now;
+        if (this.fallbackEngine) {
+          const result = this.fallbackEngine.step(delta);
+          useStore.getState().updateMetrics(result.metrics);
+          useStore.getState().setActiveRequests(result.activeRequests);
+        }
+      }, 100);
     }
   }
 

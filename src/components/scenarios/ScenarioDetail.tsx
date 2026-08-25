@@ -116,12 +116,19 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
         </button>
 
         <button
-          className={styles.secondaryBtn}
-          onClick={() => markScenarioCompleted(scenario.id)}
-          style={{ color: isCompleted ? 'var(--success)' : 'inherit' }}
+          className={`${styles.secondaryBtn} ${isCompleted ? styles.completedBtn : ''}`}
+          onClick={() => {
+            markScenarioCompleted(scenario.id);
+            useStore.getState().addToast(
+              isCompleted
+                ? `Scenario #${scenario.id} marked as unsolved`
+                : `Scenario #${scenario.id} marked as solved!`,
+              isCompleted ? 'info' : 'success'
+            );
+          }}
         >
-          <CheckCircle2 size={14} />
-          <span>{isCompleted ? 'Solved (Click to Toggle)' : 'Mark as Solved'}</span>
+          <CheckCircle2 size={13} />
+          <span>{isCompleted ? 'Solved (Click to Undo)' : 'Mark as Solved'}</span>
         </button>
       </div>
 
