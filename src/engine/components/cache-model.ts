@@ -67,4 +67,10 @@ export class CacheModel {
     const total = this.hits + this.misses;
     return total > 0 ? (this.hits / total) * 100 : this.defaultHitRatio;
   }
+
+  public reset(): void {
+    this.cache.clear();
+    this.hits = 0;
+    this.misses = 0;
+  }
 }

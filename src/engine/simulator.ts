@@ -207,6 +207,7 @@ export class SysSimEngine {
     this.rateLimiters.forEach((rl) => rl.reset());
     this.queueModels.forEach((q) => q.reset());
     this.dbModels.forEach((db) => db.reset());
+    this.cacheModels.forEach((c) => c.reset());
     this.graph.nodes.forEach((n) => {
       this.nodeStats[n.id] = {
         totalRequests: 0,

@@ -54,6 +54,9 @@
 | **44** | `src/components/layout/Header.module.css` | Header CSS class names were mismatched with `Header.tsx` JSX, collapsing header into unstyled text. | Restored full Header flexbox styling, gradient icon badge, and button alignments. |
 | **45** | `src/store/use-store.ts` | Triggering `undo()` or `redo()` reverted React canvas nodes and edges, but never notified the simulation bridge, causing the simulation engine and particle layer to continue running on stale prior graphs. | Added `simBridge.syncGraph()` invocation to both `undo()` and `redo()` actions. |
 | **46** | `src/components/canvas/CanvasHud.module.css` | Canvas HUD floating toolbar had hardcoded dark background and low-contrast text colors in light mode, making buttons and icons difficult to read. | Synchronized background, borders, and text colors with light and dark mode CSS variables (`var(--bg-secondary)`, `var(--text-secondary)`, `var(--border-primary)`). |
+| **47** | `src/store/use-store.ts` | `loadCanvasState()` did not call `simBridge.syncGraph()`, leaving the simulation engine running old graphs after importing architecture JSON files or switching presets. | Added `simBridge.syncGraph()` inside `loadCanvasState()`. |
+| **48** | `src/engine/components/cache-model.ts` & `src/engine/simulator.ts` | `CacheModel` lacked a `reset()` method, causing cached keys and hit/miss counters to persist across simulation resets. | Implemented `reset(): void` on `CacheModel` and invoked it across all cache models in `SysSimEngine.reset()`. |
+| **49** | `src/components/canvas/ContextMenu.tsx` | Right-click "Inject Fault / Restore Node" action toggled node visual state but did not notify the simulation engine. | Added `simBridge.syncGraph()` inside `handleToggleHealth()`. |
 
 ---
 

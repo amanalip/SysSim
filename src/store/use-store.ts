@@ -496,6 +496,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedEdgeId: null,
       isPropertiesPanelOpen: false,
     });
+    simBridge.syncGraph();
   },
 
   pushHistory: () => {

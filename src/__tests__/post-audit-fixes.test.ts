@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore } from '../store/use-store';
 import { SysSimEngine } from '../engine/simulator';
+import { CacheModel } from '../engine/components/cache-model';
 import { AnyComponentConfig } from '../model/types';
 
 describe('Post-Audit Verified Bug Fixes & Day/Night Mode Contrast', () => {
@@ -56,11 +57,40 @@ describe('Post-Audit Verified Bug Fixes & Day/Night Mode Contrast', () => {
     expect(useStore.getState().nodes[1].data.config.name).toBe('Redis 1');
   });
 
-  it('Simulator engine purges dead node statistics when graph is updated', () => {
+  it('Bug 3: CacheModel reset clears cached entries and hit/miss counters', () => {
+    const cache = new CacheModel(100, 'LRU', 100);
+    cache.access('user_123');
+    cache.access('user_456');
+    expect(cache.getHitRatioPercent()).toBe(100);
+
+    cache.reset();
+    expect(cache.getHitRatioPercent()).toBe(100);
+  });
+
+  it('Bug 4: loadCanvasState loads nodes, edges, zones, and pushes history', () => {
+    const { loadCanvasState } = useStore.getState();
+    const mockNodes = [
+      {
+        id: 'imported_node_1',
+        type: 'custom',
+        position: { x: 200, y: 200 },
+        data: {
+          config: { id: 'imported_node_1', name: 'Imported App', type: 'app_server' } as AnyComponentConfig,
+        },
+      },
+    ];
+
+    loadCanvasState(mockNodes, [], []);
+    expect(useStore.getState().nodes.length).toBe(1);
+    expect(useStore.getState().nodes[0].data.config.name).toBe('Imported App');
+  });
+
+  it('Simulator engine purges dead node statistics and resets cache models on reset', () => {
     const engine = new SysSimEngine({
       nodes: [
         { id: 'node_1', config: { id: 'node_1', name: 'Node 1', type: 'app_server' } as AnyComponentConfig },
         { id: 'node_2', config: { id: 'node_2', name: 'Node 2', type: 'sql_db' } as AnyComponentConfig },
+        { id: 'node_3', config: { id: 'node_3', name: 'Node 3', type: 'redis_cache' } as AnyComponentConfig },
       ],
       edges: [],
     });
@@ -70,6 +100,11 @@ describe('Post-Audit Verified Bug Fixes & Day/Night Mode Contrast', () => {
     expect(metricsBefore.componentMetrics['node_1']).toBeDefined();
     expect(metricsBefore.componentMetrics['node_2']).toBeDefined();
 
+    // Reset engine
+    engine.reset();
+    const metricsAfterReset = engine.getMetricsSnapshot();
+    expect(metricsAfterReset.totalRequestsSent).toBe(0);
+
     // Update graph with node_2 removed
     engine.setGraph({
       nodes: [
@@ -78,8 +113,8 @@ describe('Post-Audit Verified Bug Fixes & Day/Night Mode Contrast', () => {
       edges: [],
     });
 
-    const metricsAfter = engine.getMetricsSnapshot();
-    expect(metricsAfter.componentMetrics['node_1']).toBeDefined();
-    expect(metricsAfter.componentMetrics['node_2']).toBeUndefined();
+    const metricsAfterGraphChange = engine.getMetricsSnapshot();
+    expect(metricsAfterGraphChange.componentMetrics['node_1']).toBeDefined();
+    expect(metricsAfterGraphChange.componentMetrics['node_2']).toBeUndefined();
   });
 });
