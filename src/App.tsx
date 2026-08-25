@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
-import { useStore } from './store/use-store';
+import { useEffect, useState } from 'react';
+import { useStore, CanvasNode, CanvasEdge } from './store/use-store';
+import { ZoneData } from './model/types';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { ComponentPalette } from './components/palette/ComponentPalette';
@@ -9,17 +10,51 @@ import { SimulationControls } from './components/playback/SimulationControls';
 import { MetricsDashboard } from './components/panels/MetricsDashboard';
 import { EnvelopeCalculator } from './components/panels/EnvelopeCalculator';
 import { ScenarioManager } from './components/scenarios/ScenarioManager';
+import { ShortcutsModal } from './components/modals/ShortcutsModal';
 import { ToastContainer } from './components/ui/Toast';
 import { chaosRunner } from './engine/metrics/chaos-runner';
+import { simBridge } from './engine/sim-bridge';
+import { decodeStateFromUrlHash } from './utils/sharing';
 import styles from './App.module.css';
 
 export function App() {
-  const { theme, nodes, isChaosMode, chaosIntervalSec } = useStore();
+  const {
+    theme,
+    nodes,
+    isChaosMode,
+    setChaosMode,
+    chaosIntervalSec,
+    simState,
+    loadCanvasState,
+    addToast,
+    autoLayout,
+    isBottomDrawerOpen,
+    setIsBottomDrawerOpen,
+  } = useStore();
+
+  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  // Decode URL hash state on initial boot
+  useEffect(() => {
+    if (window.location.hash) {
+      const decoded = decodeStateFromUrlHash(window.location.hash);
+      if (decoded && decoded.nodes && decoded.edges) {
+        loadCanvasState(
+          decoded.nodes as unknown as CanvasNode[],
+          decoded.edges as unknown as CanvasEdge[],
+          (decoded.zones || []) as ZoneData[]
+        );
+        addToast('Loaded shared architecture from URL', 'success');
+        simBridge.syncGraph();
+      }
+    }
+  }, [loadCanvasState, addToast]);
+
+  // Chaos runner synchronization
   useEffect(() => {
     if (isChaosMode) {
       chaosRunner.start(chaosIntervalSec);
@@ -28,6 +63,59 @@ export function App() {
     }
     return () => chaosRunner.stop();
   }, [isChaosMode, chaosIntervalSec]);
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Ignore when user is actively typing in an input or textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+        return;
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (simState === 'running') {
+          simBridge.pause();
+        } else if (simState === 'paused') {
+          simBridge.resume();
+        } else if (nodes.length > 0) {
+          simBridge.start();
+        }
+        return;
+      }
+
+      if (e.key === 'l' || e.key === 'L') {
+        if (!e.ctrlKey && !e.metaKey) {
+          autoLayout();
+          return;
+        }
+      }
+
+      if (e.key === 'c' || e.key === 'C') {
+        if (!e.ctrlKey && !e.metaKey) {
+          setChaosMode(!isChaosMode);
+          addToast(`Chaos mode ${!isChaosMode ? 'Enabled' : 'Disabled'}`, 'info');
+          return;
+        }
+      }
+
+      if (e.key === 'm' || e.key === 'M') {
+        if (!e.ctrlKey && !e.metaKey) {
+          setIsBottomDrawerOpen(!isBottomDrawerOpen);
+          return;
+        }
+      }
+
+      if (e.key === '?') {
+        setIsShortcutsModalOpen((prev) => !prev);
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [simState, nodes, isChaosMode, setChaosMode, autoLayout, isBottomDrawerOpen, setIsBottomDrawerOpen, addToast]);
 
   return (
     <div className={styles.appContainer}>
@@ -58,6 +146,10 @@ export function App() {
         <PropertiesPanel />
       </div>
       <ToastContainer />
+      <ShortcutsModal
+        isOpen={isShortcutsModalOpen}
+        onClose={() => setIsShortcutsModalOpen(false)}
+      />
     </div>
   );
 }
