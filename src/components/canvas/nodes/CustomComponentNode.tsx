@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Power, Settings, Trash2, AlertTriangle, Zap, Clock, Activity, Link2 } from 'lucide-react';
+import { Power, Settings, Trash2, AlertTriangle, Zap, Clock, Activity, Link2, Copy } from 'lucide-react';
 import { AnyComponentConfig } from '../../../model/types';
 import { categoryColors } from '../../../theme';
 import { ComponentIcon } from '../../icons/ComponentIcon';
@@ -18,7 +18,7 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
 }) => {
   const nodeData = data as unknown as NodeData;
   const config = nodeData.config;
-  const { selectNode, removeNode, setNodeHealthOverride, bottlenecks, metrics, simState } = useStore();
+  const { selectNode, removeNode, duplicateNode, setNodeHealthOverride, bottlenecks, metrics, simState, addToast } = useStore();
 
   const categoryColor = categoryColors[config.category]?.main || 'var(--accent-primary)';
   const isDown = config.health === 'down';
@@ -30,11 +30,19 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
     e.stopPropagation();
     const nextHealth = config.health === 'down' ? 'healthy' : 'down';
     setNodeHealthOverride(id, nextHealth);
+    addToast(`${config.name} marked ${nextHealth}`, 'info');
+  };
+
+  const handleDuplicate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    duplicateNode(id);
+    addToast(`Duplicated ${config.name}`, 'success');
   };
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     removeNode(id);
+    addToast(`Removed ${config.name}`, 'info');
   };
 
   const handleOpenConfig = (e: React.MouseEvent) => {
@@ -86,6 +94,40 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
       }}
       onClick={() => selectNode(id)}
     >
+      {/* Floating Action Toolbar on Canvas Selection */}
+      {selected && (
+        <div className={styles.floatingToolbar} onClick={(e) => e.stopPropagation()}>
+          <button
+            className={styles.floatingBtn}
+            onClick={handleDuplicate}
+            title="Duplicate Component (Ctrl+D)"
+          >
+            <Copy size={11} />
+          </button>
+          <button
+            className={styles.floatingBtn}
+            onClick={toggleHealth}
+            title={isDown ? 'Restore to healthy' : 'Inject fault (mark down)'}
+          >
+            <Power size={11} color={isDown ? 'var(--error)' : 'inherit'} />
+          </button>
+          <button
+            className={styles.floatingBtn}
+            onClick={handleOpenConfig}
+            title="Configure in Properties Panel"
+          >
+            <Settings size={11} />
+          </button>
+          <button
+            className={`${styles.floatingBtn} ${styles.floatingBtnDanger}`}
+            onClick={handleDelete}
+            title="Delete Component (Delete)"
+          >
+            <Trash2 size={11} />
+          </button>
+        </div>
+      )}
+
       <Handle
         type="target"
         position={Position.Left}

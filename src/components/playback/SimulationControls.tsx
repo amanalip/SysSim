@@ -85,8 +85,16 @@ export const SimulationControls: React.FC = () => {
     setChaosMode(!isChaosMode);
   };
 
+  const speeds = [0.5, 1, 2, 5, 10];
+
   return (
     <div className={styles.controlsBar}>
+      {/* Active Status Indicator */}
+      <div
+        className={`${styles.statusDot} ${isRunning ? styles.statusRunning : simState === 'paused' ? styles.statusPaused : styles.statusIdle}`}
+        title={`Engine status: ${simState}`}
+      />
+
       {/* Primary Play/Pause/Step/Reset */}
       <div className={styles.buttonGroup}>
         <button
@@ -149,19 +157,18 @@ export const SimulationControls: React.FC = () => {
         />
       </div>
 
-      <div className={styles.configGroup}>
-        <span className={styles.label}>Speed</span>
-        <select
-          className={styles.select}
-          value={speedMultiplier}
-          onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
-        >
-          <option value="0.5">0.5x</option>
-          <option value="1">1x</option>
-          <option value="2">2x</option>
-          <option value="5">5x</option>
-          <option value="10">10x</option>
-        </select>
+      {/* Segmented Speed Selector */}
+      <div className={styles.speedSegmentedGroup}>
+        {speeds.map((spd) => (
+          <button
+            key={spd}
+            className={`${styles.speedPill} ${speedMultiplier === spd ? styles.speedPillActive : ''}`}
+            onClick={() => handleSpeedChange(spd)}
+            title={`Set simulation speed to ${spd}x`}
+          >
+            {spd}x
+          </button>
+        ))}
       </div>
 
       <div className={styles.divider} />
@@ -179,18 +186,18 @@ export const SimulationControls: React.FC = () => {
       {/* Telemetry Stats */}
       <div className={styles.statsCluster}>
         <div className={styles.statItem}>
-          <span className={styles.statVal}>{metrics.totalRequestsSent}</span>
+          <span className={styles.statVal}>{metrics.totalRequestsSent.toLocaleString()}</span>
           <span className={styles.statLbl}>Sent</span>
         </div>
         <div className={styles.statItem}>
           <span className={`${styles.statVal} ${styles.successVal}`}>
-            {metrics.totalRequestsSuccess}
+            {metrics.totalRequestsSuccess.toLocaleString()}
           </span>
           <span className={styles.statLbl}>Passed</span>
         </div>
         <div className={styles.statItem}>
           <span className={`${styles.statVal} ${styles.failVal}`}>
-            {metrics.totalRequestsFailed}
+            {metrics.totalRequestsFailed.toLocaleString()}
           </span>
           <span className={styles.statLbl}>Failed</span>
         </div>
@@ -206,7 +213,7 @@ export const SimulationControls: React.FC = () => {
 
       {/* Metrics Panel Drawer Toggle */}
       <button
-        className={`${styles.controlBtn} ${isBottomDrawerOpen ? styles.chaosBtnActive : ''}`}
+        className={`${styles.controlBtn} ${isBottomDrawerOpen ? styles.drawerBtnActive : ''}`}
         onClick={() => setIsBottomDrawerOpen(!isBottomDrawerOpen)}
         title="Toggle Real-Time Metrics & Charts Drawer (M)"
       >

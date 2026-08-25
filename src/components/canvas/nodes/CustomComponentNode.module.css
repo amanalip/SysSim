@@ -20,6 +20,53 @@
   box-shadow: 0 0 0 2px var(--accent-subtle), var(--shadow-lg) !important;
 }
 
+.floatingToolbar {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-full);
+  padding: 2px 6px;
+  box-shadow: var(--shadow-md);
+  z-index: 30;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, 4px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.floatingBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.floatingBtn:hover {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+.floatingBtnDanger:hover {
+  background-color: rgba(248, 81, 73, 0.2);
+  color: var(--error);
+}
+
 .categoryStripe {
   height: 4px;
   border-top-left-radius: calc(var(--radius-md) - 1px);
