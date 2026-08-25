@@ -46,6 +46,8 @@
 | **36** | `src/components/scenarios/ScenarioDetail.tsx` | Toggling scenario solve status provided no feedback toast notification. | Added toast notifications confirming scenario solve and un-solve actions. |
 | **37** | `src/components/panels/EnvelopeCalculator.tsx` | Calculator computed `estimatedDbConnections` but lacked an output card. | Rendered dedicated Estimated DB Pool card with focus button to database nodes. |
 | **38** | `src/components/panels/MetricsDashboard.tsx` | Component metrics table omitted `Utilization %` and `Active Conns` columns. | Added Utilization % and Active Conns table columns with color thresholds. |
+| **39** | `src/model/types.ts` | `ScenarioDifficulty` union was not exported for type-safe filtering. | Exported `ScenarioDifficulty` union type across components and tests. |
+| **40** | `src/components/scenarios/ScenarioPicker.tsx` | Scenario picker only supported category filtering, omitting difficulty filtering. | Added dual category and difficulty dropdown selectors with dynamic result counts. |
 
 ---
 
@@ -54,7 +56,7 @@
 1. **Edge Cut / Repair Toggle**: Direct interactive cut status and repair button on protocol edge badges.
 2. **Synchronized Slider & Number Inputs**: Properties panel provides both range sliders and direct numeric input boxes for all parameters.
 3. **Inbound & Outbound Bandwidth Cards**: Capacity calculator displays separate cards for Inbound and Outbound Mbps with formulas.
-4. **Desktop Hotkey Badges**: Visual keyboard shortcut hints (`Space`, `L`, `C`, `M`, `?`, `Ctrl+D`) across buttons and menus.
+4. **Desktop Hotkey Badges**: Visual keyboard shortcut hints (`Space`, `L`, `C`, `M`, `?`, `Ctrl+D`, `1`, `2`, `3`) across buttons and menus.
 5. **Context Menu Clamping**: Context menu stays fully inside viewport regardless of click position.
 6. **Per-Component Metrics Table Empty State**: Clear guidance message when viewing table before starting simulation.
 7. **Pulsing Chaos Mode Indicator**: Control bar displays pulsing active indicator when Chaos Monkey is running.
@@ -62,7 +64,7 @@
 9. **Clone Configuration on Duplicate**: Preserves exact replica counts, connection pool sizes, and cache policies when duplicating nodes.
 10. **High-Contrast Focus States**: Clean WCAG focus rings for desktop keyboard navigation.
 11. **Palette Search Quick-Clear & Escape**: Added `X` button and `Escape` key shortcut to clear component palette filter.
-12. **Live Dynamic Category Counts**: Scenario category dropdown reflects real-time match counts as users type.
+12. **Live Dynamic Category & Difficulty Counts**: Scenario dropdowns reflect real-time match counts as users filter by category and difficulty.
 13. **Inline Editable Zone Labels**: Double-click any zone header on canvas to rename it directly.
 14. **Topology Overview Counter Badge**: Header bar displays live total component and link counts for quick diagram orientation.
 15. **Smooth Topological Layout Animation**: Auto-layout triggers smooth animated centering with 20% aesthetic padding.
@@ -74,13 +76,14 @@
 21. **Smooth Backspace/Numeric QPS Input**: QPS input allows fluent backspace editing without value jumping.
 22. **Scenario Progress Feedback Toasts**: Toast confirmation on solving and unlocking hints.
 23. **Estimated DB Pool Output Card**: Capacity calculator displays connection pool estimates with focus navigation.
-24. **Utilization & Active Connection Table Columns**: Per-component breakdown includes real-time utilization and active concurrency.
+24. **Utilization & Active Connection Table Columns**: Per-component breakdown includes real-time utilization and active concurrency with alert coloring.
+25. **Keyboard Sidebar Tab Switching**: Hotkeys `1`, `2`, and `3` rapidly switch between Palette, Scenarios, and Calculator tabs.
 
 ---
 
 ## 3. Test Suites & Quality Improvements
 
-- **20 test files**, **113 total unit and integration tests** passing:
+- **21 test files**, **123 total unit and integration tests** passing:
   - Non-LB multi-edge round-robin routing
   - 502 Bad Gateway handling on empty LB targets
   - RateLimiterConfig `limitQps` subtext rendering
@@ -108,3 +111,4 @@
   - Redo and undo history stack verification
   - SimulationBridge worker and fallback lifecycle management
   - Toast notification lifecycle and queue management
+  - 101 Scenario registration, difficulty segmentation, and filtering

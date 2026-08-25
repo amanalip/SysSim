@@ -484,12 +484,14 @@ export type ScenarioCategory =
   | 'Communication'
   | 'Content & Publishing';
 
+export type ScenarioDifficulty = 'Easy' | 'Medium' | 'Hard';
+
 export interface Scenario {
   id: number;
   slug: string;
   title: string;
   category: ScenarioCategory;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
+  difficulty: ScenarioDifficulty;
   problemStatement: string;
   constraints: ScenarioConstraints;
   hints: ScenarioHint[];

@@ -16,13 +16,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { activeSidebarTab, setActiveSidebarTab } = useStore();
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+      if (e.key === '1') setActiveSidebarTab('palette');
+      if (e.key === '2') setActiveSidebarTab('scenarios');
+      if (e.key === '3') setActiveSidebarTab('calculator');
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setActiveSidebarTab]);
+
   return (
     <aside className={styles.sidebar}>
       <div className={styles.tabsHeader}>
         <button
           className={`${styles.tabBtn} ${activeSidebarTab === 'palette' ? styles.tabBtnActive : ''}`}
           onClick={() => setActiveSidebarTab('palette')}
-          title="Component Palette"
+          title="Component Palette (1)"
         >
           <Box size={15} />
           <span>Palette</span>
@@ -30,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           className={`${styles.tabBtn} ${activeSidebarTab === 'scenarios' ? styles.tabBtnActive : ''}`}
           onClick={() => setActiveSidebarTab('scenarios')}
-          title="101 System Design Scenarios"
+          title="101 System Design Scenarios (2)"
         >
           <BookOpen size={15} />
           <span>Scenarios</span>
@@ -38,7 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           className={`${styles.tabBtn} ${activeSidebarTab === 'calculator' ? styles.tabBtnActive : ''}`}
           onClick={() => setActiveSidebarTab('calculator')}
-          title="Capacity Calculator"
+          title="Capacity Calculator (3)"
         >
           <Calculator size={15} />
           <span>Calculator</span>
