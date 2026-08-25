@@ -50,6 +50,8 @@
 | **40** | `src/components/scenarios/ScenarioPicker.tsx` | Scenario picker only supported category filtering, omitting difficulty filtering. | Added dual category and difficulty dropdown selectors with dynamic result counts. |
 | **41** | `src/components/panels/BottleneckPanel.tsx` | Bottleneck panel inspect button focused node without user feedback. | Added toast notification confirming inspected node selection in properties drawer. |
 | **42** | `src/components/modals/ShortcutsModal.tsx` | Shortcuts modal lacked entries for sidebar navigation keys. | Added `1 / 2 / 3` tab switching hotkeys to the shortcuts reference list. |
+| **43** | `.github/workflows/static.yml` | Conflicting `static.yml` action was deploying raw uncompiled repository root `.` to GitHub Pages, bypassing Vite build and breaking website rendering. | Removed `static.yml` and unified deployment on `deploy.yml` with `dist` artifact upload. |
+| **44** | `public/404.html` | Refreshing deep routes on GitHub Pages caused blank 404 pages. | Added single-page redirect handler in `public/404.html`. |
 
 ---
 
@@ -81,6 +83,7 @@
 24. **Utilization & Active Connection Table Columns**: Per-component breakdown includes real-time utilization and active concurrency with alert coloring.
 25. **Keyboard Sidebar Tab Switching**: Hotkeys `1`, `2`, and `3` rapidly switch between Palette, Scenarios, and Calculator tabs.
 26. **Bottleneck Inspect Node Feedback**: Inspecting detected bottlenecks triggers an informative toast and focuses the properties inspector.
+27. **SPA Routing Fallback**: Clean redirection for GitHub Pages deep links.
 
 ---
 
