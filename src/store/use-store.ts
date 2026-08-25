@@ -58,8 +58,8 @@ export interface SysSimState {
   setTheme: (theme: ThemeMode) => void;
   activeSidebarTab: 'palette' | 'scenarios' | 'calculator';
   setActiveSidebarTab: (tab: 'palette' | 'scenarios' | 'calculator') => void;
-  activeBottomTab: 'metrics' | 'bottlenecks' | 'health';
-  setActiveBottomTab: (tab: 'metrics' | 'bottlenecks' | 'health') => void;
+  activeBottomTab: 'metrics' | 'bottlenecks' | 'health' | 'trace';
+  setActiveBottomTab: (tab: 'metrics' | 'bottlenecks' | 'health' | 'trace') => void;
   isBottomDrawerOpen: boolean;
   setIsBottomDrawerOpen: (open: boolean) => void;
   isPropertiesPanelOpen: boolean;
@@ -68,6 +68,8 @@ export interface SysSimState {
   setSnapToGrid: (snap: boolean) => void;
   showMinimap: boolean;
   setShowMinimap: (show: boolean) => void;
+  edgeRouting: 'bezier' | 'orthogonal' | 'straight';
+  setEdgeRouting: (routing: 'bezier' | 'orthogonal' | 'straight') => void;
 
   // Toasts
   toasts: ToastItem[];
@@ -214,6 +216,8 @@ export const useStore = create<SysSimState>((set, get) => ({
   setSnapToGrid: (snapToGrid) => set({ snapToGrid }),
   showMinimap: true,
   setShowMinimap: (showMinimap) => set({ showMinimap }),
+  edgeRouting: 'bezier',
+  setEdgeRouting: (edgeRouting) => set({ edgeRouting }),
 
   // Toasts
   toasts: [],

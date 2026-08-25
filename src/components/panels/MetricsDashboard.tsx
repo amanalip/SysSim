@@ -23,6 +23,7 @@ import {
 import { useStore } from '../../store/use-store';
 import { BottleneckPanel } from './BottleneckPanel';
 import { HealthRadarPanel } from './HealthRadarPanel';
+import { RequestTracePanel } from './RequestTracePanel';
 import styles from './MetricsDashboard.module.css';
 
 export const MetricsDashboard: React.FC = () => {
@@ -159,6 +160,14 @@ export const MetricsDashboard: React.FC = () => {
               onClick={() => setActiveBottomTab('health')}
             >
               5-Pillar Health Radar
+            </button>
+            <button
+              className={`${styles.tabBtn} ${
+                activeBottomTab === 'trace' ? styles.tabBtnActive : ''
+              }`}
+              onClick={() => setActiveBottomTab('trace')}
+            >
+              Distributed Traces
             </button>
           </div>
         </div>
@@ -433,6 +442,7 @@ export const MetricsDashboard: React.FC = () => {
         )}
 
         {activeBottomTab === 'health' && <HealthRadarPanel />}
+        {activeBottomTab === 'trace' && <RequestTracePanel />}
       </div>
     </div>
   );

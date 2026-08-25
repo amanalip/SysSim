@@ -23,6 +23,7 @@ import { ProtocolEdge } from './edges/ProtocolEdge';
 import { ContextMenu, ContextMenuState } from './ContextMenu';
 import { ZoneGroup } from './zones/ZoneGroup';
 import { RequestParticleLayer } from './animation/RequestParticleLayer';
+import { CanvasHud } from './CanvasHud';
 import { computeAutoLayout } from '../../layout/auto-layout';
 import { ComponentType } from '../../model/types';
 import styles from './ArchitectureCanvas.module.css';
@@ -274,6 +275,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
       </ReactFlow>
 
       <RequestParticleLayer />
+      <CanvasHud />
 
       <ContextMenu
         menuState={contextMenu}

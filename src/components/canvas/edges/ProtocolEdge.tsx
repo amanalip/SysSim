@@ -3,6 +3,8 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   getBezierPath,
+  getSmoothStepPath,
+  getStraightPath,
   EdgeProps,
 } from '@xyflow/react';
 import { ChevronDown, X, Scissors } from 'lucide-react';
@@ -32,14 +34,28 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
   selected,
   data,
 }) => {
-  const [edgePath, labelX, labelY] = getBezierPath({
+  const { edgeRouting, updateEdgeProtocol, removeEdge, selectEdge, toggleCutEdge, addToast } = useStore();
+
+  let edgePath = '';
+  let labelX = 0;
+  let labelY = 0;
+
+  const pathParams = {
     sourceX,
     sourceY,
     sourcePosition,
     targetX,
     targetY,
     targetPosition,
-  });
+  };
+
+  if (edgeRouting === 'orthogonal') {
+    [edgePath, labelX, labelY] = getSmoothStepPath(pathParams);
+  } else if (edgeRouting === 'straight') {
+    [edgePath, labelX, labelY] = getStraightPath(pathParams);
+  } else {
+    [edgePath, labelX, labelY] = getBezierPath(pathParams);
+  }
 
   const edgeData = (data as unknown as ProtocolEdgeData) || { protocol: 'HTTP' };
   const currentProtocol = edgeData.protocol || 'HTTP';
@@ -47,8 +63,6 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
 
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const { updateEdgeProtocol, removeEdge, selectEdge, toggleCutEdge, addToast } = useStore();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -1,0 +1,92 @@
+.hudContainer {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(22, 27, 34, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  padding: 5px 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+  font-family: var(--font-sans);
+}
+
+.routingGroup {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background-color: var(--bg-primary);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.hudBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hudBtn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-tertiary);
+}
+
+.hudBtnActive {
+  background-color: var(--accent-subtle) !important;
+  color: var(--accent-primary) !important;
+  font-weight: 700;
+}
+
+.divider {
+  width: 1px;
+  height: 18px;
+  background-color: var(--border-subtle);
+}
+
+.toolsGroup,
+.zoomGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.iconBtn:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.iconBtnActive {
+  background-color: var(--accent-subtle) !important;
+  color: var(--accent-primary) !important;
+  border-color: rgba(88, 166, 255, 0.4) !important;
+}
