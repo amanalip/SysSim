@@ -5,6 +5,7 @@ import { Sidebar } from './components/layout/Sidebar';
 import { ComponentPalette } from './components/palette/ComponentPalette';
 import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { PropertiesPanel } from './components/panels/PropertiesPanel';
+import { SimulationControls } from './components/playback/SimulationControls';
 import { ToastContainer } from './components/ui/Toast';
 import styles from './App.module.css';
 
@@ -36,6 +37,7 @@ export function App() {
                 </div>
               </div>
             )}
+            <SimulationControls />
           </div>
         </main>
 
