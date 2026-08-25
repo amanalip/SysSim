@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, CheckCircle2 } from 'lucide-react';
+import { Search, CheckCircle2, X } from 'lucide-react';
 import { ALL_SCENARIOS, SCENARIO_CATEGORIES } from '../../scenarios';
 import { useStore } from '../../store/use-store';
 import { ScenarioCategory } from '../../model/types';
@@ -14,17 +14,20 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
+  const normalizedQuery = searchTerm.trim().toLowerCase();
+
   const filteredScenarios = useMemo(() => {
     return ALL_SCENARIOS.filter((s) => {
       const matchesCategory =
         selectedCategory === 'All' || s.category === selectedCategory;
       const matchesSearch =
-        searchTerm.trim() === '' ||
-        s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.problemStatement.toLowerCase().includes(searchTerm.toLowerCase());
+        normalizedQuery === '' ||
+        s.title.toLowerCase().includes(normalizedQuery) ||
+        s.problemStatement.toLowerCase().includes(normalizedQuery) ||
+        s.category.toLowerCase().includes(normalizedQuery);
       return matchesCategory && matchesSearch;
     });
-  }, [searchTerm, selectedCategory]);
+  }, [normalizedQuery, selectedCategory]);
 
   return (
     <div className={styles.pickerContainer}>
@@ -36,7 +39,19 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
           placeholder="Search 101 scenarios..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setSearchTerm('');
+          }}
         />
+        {searchTerm && (
+          <button
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+            onClick={() => setSearchTerm('')}
+            title="Clear search"
+          >
+            <X size={13} />
+          </button>
+        )}
       </div>
 
       <select
@@ -46,7 +61,13 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
       >
         <option value="All">All Categories ({ALL_SCENARIOS.length})</option>
         {SCENARIO_CATEGORIES.map((cat: ScenarioCategory) => {
-          const count = ALL_SCENARIOS.filter((s) => s.category === cat).length;
+          const count = ALL_SCENARIOS.filter(
+            (s) =>
+              s.category === cat &&
+              (normalizedQuery === '' ||
+                s.title.toLowerCase().includes(normalizedQuery) ||
+                s.problemStatement.toLowerCase().includes(normalizedQuery))
+          ).length;
           return (
             <option key={cat} value={cat}>
               {cat} ({count})
@@ -56,47 +77,53 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
       </select>
 
       <div className={styles.scenarioList}>
-        {filteredScenarios.map((s) => {
-          const isCompleted = completedScenarioIds.includes(s.id);
-          const isSelected = currentScenario?.id === s.id;
+        {filteredScenarios.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-muted)', fontSize: 12 }}>
+            No scenarios found matching "{searchTerm}"
+          </div>
+        ) : (
+          filteredScenarios.map((s) => {
+            const isCompleted = completedScenarioIds.includes(s.id);
+            const isSelected = currentScenario?.id === s.id;
 
-          return (
-            <div
-              key={s.id}
-              className={`${styles.scenarioCard} ${
-                isSelected ? styles.scenarioCardActive : ''
-              }`}
-              onClick={() => onSelectScenario(s.id)}
-            >
-              <div className={styles.cardTop}>
-                <div className={styles.cardTitleArea}>
-                  <span className={styles.scenarioNumber}>#{s.id}</span>
-                  <span className={styles.scenarioTitle}>{s.title}</span>
-                </div>
-                <span
-                  className={`${styles.diffBadge} ${
-                    s.difficulty === 'Easy'
-                      ? styles.diffEasy
-                      : s.difficulty === 'Medium'
-                      ? styles.diffMedium
-                      : styles.diffHard
-                  }`}
-                >
-                  {s.difficulty}
-                </span>
-              </div>
-
-              <div className={styles.cardMeta}>
-                <span className={styles.categoryTag}>{s.category}</span>
-                {isCompleted && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--success)', fontWeight: 600 }}>
-                    <CheckCircle2 size={11} /> Solved
+            return (
+              <div
+                key={s.id}
+                className={`${styles.scenarioCard} ${
+                  isSelected ? styles.scenarioCardActive : ''
+                }`}
+                onClick={() => onSelectScenario(s.id)}
+              >
+                <div className={styles.cardTop}>
+                  <div className={styles.cardTitleArea}>
+                    <span className={styles.scenarioNumber}>#{s.id}</span>
+                    <span className={styles.scenarioTitle}>{s.title}</span>
+                  </div>
+                  <span
+                    className={`${styles.diffBadge} ${
+                      s.difficulty === 'Easy'
+                        ? styles.diffEasy
+                        : s.difficulty === 'Medium'
+                        ? styles.diffMedium
+                        : styles.diffHard
+                    }`}
+                  >
+                    {s.difficulty}
                   </span>
-                )}
+                </div>
+
+                <div className={styles.cardMeta}>
+                  <span className={styles.categoryTag}>{s.category}</span>
+                  {isCompleted && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--success)', fontWeight: 600 }}>
+                      <CheckCircle2 size={11} /> Solved
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

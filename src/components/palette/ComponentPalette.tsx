@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Plus, X } from 'lucide-react';
 import {
   COMPONENT_METADATA_LIST,
   ComponentMetadata,
@@ -78,7 +78,26 @@ export const ComponentPalette: React.FC = () => {
           placeholder="Search components..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setSearch('');
+          }}
         />
+        {search && (
+          <button
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+            onClick={() => setSearch('')}
+            title="Clear search filter"
+          >
+            <X size={13} />
+          </button>
+        )}
       </div>
 
       {CATEGORY_ORDER.map(({ key, label }) => {

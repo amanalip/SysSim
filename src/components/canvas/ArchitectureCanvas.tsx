@@ -184,7 +184,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         }
       }
     },
-    [selectedNodeId, selectedEdgeId, nodes, setNodes, addNode, removeNode, removeEdge, undo, redo]
+    [selectedNodeId, selectedEdgeId, nodes, setNodes, addNode, duplicateNode, removeNode, removeEdge, undo, redo]
   );
 
   const handleContextMenu = useCallback(

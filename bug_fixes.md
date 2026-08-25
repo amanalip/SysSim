@@ -20,34 +20,57 @@
 | **10** | `src/components/panels/PropertiesPanel.tsx` | Range sliders lacked direct numeric input companion, making precise configuration difficult. | Added synchronized numeric text input alongside range sliders with min/max clamps. |
 | **11** | `src/utils/sharing.ts` | Serialization omitted `isCut` and edge data parameters during URL state compression. | Preserved full protocol edge data including `isCut` status in compressed URL hash. |
 | **12** | `src/components/canvas/animation/RequestParticleLayer.tsx` | High speed multipliers (5x, 10x) caused particle animation progress to jump or desync. | Normalized particle progress delta calculation with speed scaling. |
+| **13** | `src/engine/components/rate-limiter-model.ts` | `this.lastRefillMs` initialized to epoch time (`Date.now()`), causing negative refill when simulated time started at 0 and rejecting all requests forever. | Initialized `lastRefillMs = 0`, calculated safe delta `Math.max(0, nowMs - lastRefillMs)`, and added `reset()`. |
+| **14** | `src/layout/auto-layout.ts` | Topological BFS in `computeAutoLayout` allowed infinite looping on cyclical graphs because `levels[next] < nextLevel` was repeatedly true for feedback edges. | Added iteration bounds and level caps (`nextLevel < nodes.length`) to prevent browser freeze. |
+| **15** | `src/engine/metrics/bottleneck-detector.ts` | Missing queue check only checked `message_queue` and `task_queue`, falsely flagging `pubsub` and `event_bus` as unbuffered synchronous chains. | Added `pubsub` and `event_bus` to queue nodes filter and included `browser_cache` in cache nodes. |
+| **16** | `src/engine/routing/load-balancer.ts` | When `algorithm === 'weighted'` without custom weights map, `weightedTargets` was empty, causing fallback to strictly first node. | Initialized `weightedTargets` with default weight 1 for all targets when custom weights are omitted. |
+| **17** | `src/engine/components/queue-model.ts` | `QueueModel` lacked a `reset()` method, causing filled message queues to retain stale queue depth across simulation resets. | Added `reset(): void` to `QueueModel` and called it during `SysSimEngine.reset()`. |
+| **18** | `src/engine/components/db-model.ts` | `DatabaseModel` connection decrement relied on unmanaged `setTimeout` and lacked a `reset()` method. | Added `reset()` to clear active connection pool count and bounded virtual query completion. |
+| **19** | `src/engine/simulator.ts` | `SysSimEngine.reset()` did not reset sub-models (`rateLimiters`, `queueModels`, `dbModels`), leaving stale state after reset. | Iterated and called `.reset()` on all active component models during engine reset. |
+| **20** | `src/components/canvas/ArchitectureCanvas.tsx` | `handleKeyDown` useCallback hook omitted `duplicateNode` from its dependency array. | Added `duplicateNode` to dependency array to prevent stale closure issues. |
+| **21** | `src/components/scenarios/ScenarioPicker.tsx` | Search term matching did not handle case-insensitive category searches and category counts remained static. | Dynamically computed real-time matching scenario counts per category based on active search. |
+| **22** | `src/components/canvas/zones/ZoneGroup.tsx` | Zone headers lacked inline label editing without recreating the zone. | Added double-click inline input for instant zone renaming. |
 
 ---
 
 ## 2. Desktop UX/UI Enhancements
 
-1. **Edge Cut / Repair Toggle**: Added direct interactive cut status and repair button on protocol edge badges.
-2. **Synchronized Slider & Number Inputs**: Properties panel now provides both range sliders and direct numeric input boxes for all parameters.
+1. **Edge Cut / Repair Toggle**: Direct interactive cut status and repair button on protocol edge badges.
+2. **Synchronized Slider & Number Inputs**: Properties panel provides both range sliders and direct numeric input boxes for all parameters.
 3. **Inbound & Outbound Bandwidth Cards**: Capacity calculator displays separate cards for Inbound and Outbound Mbps with formulas.
-4. **Desktop Hotkey Badges**: Added visual keyboard shortcut hints (`Space`, `L`, `C`, `M`, `?`, `Ctrl+D`) across buttons and menus.
+4. **Desktop Hotkey Badges**: Visual keyboard shortcut hints (`Space`, `L`, `C`, `M`, `?`, `Ctrl+D`) across buttons and menus.
 5. **Context Menu Clamping**: Context menu stays fully inside viewport regardless of click position.
 6. **Per-Component Metrics Table Empty State**: Clear guidance message when viewing table before starting simulation.
 7. **Pulsing Chaos Mode Indicator**: Control bar displays pulsing active indicator when Chaos Monkey is running.
 8. **Toast Notifications with Status Badges**: Clean success, warning, and error toasts with dismiss actions.
 9. **Clone Configuration on Duplicate**: Preserves exact replica counts, connection pool sizes, and cache policies when duplicating nodes.
 10. **High-Contrast Focus States**: Clean WCAG focus rings for desktop keyboard navigation.
+11. **Palette Search Quick-Clear & Escape**: Added `X` button and `Escape` key shortcut to clear component palette filter.
+12. **Live Dynamic Category Counts**: Scenario category dropdown reflects real-time match counts as users type.
+13. **Inline Editable Zone Labels**: Double-click any zone header on canvas to rename it directly.
+14. **Topology Overview Counter Badge**: Header bar displays live total component and link counts for quick diagram orientation.
+15. **Smooth Topological Layout Animation**: Auto-layout triggers smooth animated centering with 20% aesthetic padding.
+16. **Bottleneck Badge Inspection Tooltips**: Warning badges on canvas nodes indicate specific bottleneck descriptions.
 
 ---
 
 ## 3. Test Suites & Quality Improvements
 
-- Added 12 new automated test cases covering:
+- **15 test files**, **63 total unit and integration tests** passing:
   - Non-LB multi-edge round-robin routing
   - 502 Bad Gateway handling on empty LB targets
-  - RateLimiterConfig `limitQps` rendering
+  - RateLimiterConfig `limitQps` subtext rendering
+  - RateLimiterModel simulated time start at 0 and refill calculations
+  - RateLimiterModel reset restoring token bucket
   - Node duplication custom property cloning
   - ContextMenu coordinate clamping
   - EnvelopeCalculator zero-division and Inbound/Outbound bandwidth calculations
   - Chaos Monkey fault injection and clean restoration
   - Edge cut/repair simulation step handling
   - URL sharing state serialization with edge cut preservation
-  - High-speed simulation step stability
+  - Topological auto-layout cycle protection
+  - Bottleneck detector recognizing `browser_cache`, `pubsub`, and `event_bus`
+  - LoadBalancerRouter weighted fallback
+  - QueueModel and DatabaseModel reset verification
+  - SysSimEngine comprehensive model reset
+  - Inline zone label updates

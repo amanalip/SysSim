@@ -40,14 +40,18 @@ export function computeAutoLayout(
     queue.push(nodes[0].id);
   }
 
-  while (queue.length > 0) {
+  let iterations = 0;
+  const maxIterations = nodes.length * 4;
+
+  while (queue.length > 0 && iterations < maxIterations) {
+    iterations++;
     const current = queue.shift()!;
     const currentLevel = levels[current] || 0;
 
     const neighbors = adj[current] || [];
     for (const next of neighbors) {
       const nextLevel = currentLevel + 1;
-      if (levels[next] === undefined || levels[next] < nextLevel) {
+      if (nextLevel < nodes.length && (levels[next] === undefined || levels[next] < nextLevel)) {
         levels[next] = nextLevel;
         queue.push(next);
       }

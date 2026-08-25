@@ -48,7 +48,8 @@ export function detectBottlenecks(
     (n) =>
       n.data.config.type === 'redis_cache' ||
       n.data.config.type === 'local_cache' ||
-      n.data.config.type === 'cdn_cache'
+      n.data.config.type === 'cdn_cache' ||
+      n.data.config.type === 'browser_cache'
   );
 
   if (dbNodes.length > 0 && cacheNodes.length === 0) {
@@ -67,7 +68,13 @@ export function detectBottlenecks(
 
   // 3. Synchronous Bottleneck Chain Detection
   // Paths with 4+ synchronous hops in series without async queues
-  const queueNodes = nodes.filter((n) => n.data.config.type === 'message_queue' || n.data.config.type === 'task_queue');
+  const queueNodes = nodes.filter(
+    (n) =>
+      n.data.config.type === 'message_queue' ||
+      n.data.config.type === 'task_queue' ||
+      n.data.config.type === 'pubsub' ||
+      n.data.config.type === 'event_bus'
+  );
   if (nodes.length >= 5 && queueNodes.length === 0 && edges.length >= 4) {
     const firstServer = nodes.find((n) => n.data.config.type === 'app_server');
     if (firstServer) {

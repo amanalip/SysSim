@@ -18,10 +18,10 @@ export class LoadBalancerRouter {
     this.targets = targets;
     if (this.algorithm === 'consistent_hashing') {
       this.ring = new ConsistentHashRing(targets);
-    } else if (this.algorithm === 'weighted' && weights) {
+    } else if (this.algorithm === 'weighted') {
       this.weightedTargets = [];
       targets.forEach((t) => {
-        const weight = weights[t] || 1;
+        const weight = weights && weights[t] ? Math.max(1, weights[t]) : 1;
         for (let i = 0; i < weight; i++) {
           this.weightedTargets.push(t);
         }

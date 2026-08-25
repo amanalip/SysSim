@@ -27,4 +27,8 @@ export class QueueModel {
   public getPartitions(): number {
     return this.partitions;
   }
+
+  public reset(): void {
+    this.currentDepth = 0;
+  }
 }

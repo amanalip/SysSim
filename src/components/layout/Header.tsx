@@ -28,6 +28,7 @@ export const Header: React.FC = () => {
     autoLayout,
     addToast,
     nodes,
+    edges,
   } = useStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -100,6 +101,19 @@ export const Header: React.FC = () => {
           <span className={styles.title}>SysSim</span>
           <span className={styles.subtitle}>Interactive System Design Simulator</span>
         </div>
+        <span
+          style={{
+            fontSize: 10,
+            color: 'var(--text-muted)',
+            backgroundColor: 'var(--bg-tertiary)',
+            padding: '2px 8px',
+            borderRadius: 12,
+            border: '1px solid var(--border-primary)',
+            marginLeft: 8,
+          }}
+        >
+          {nodes.length} components • {edges.length} links
+        </span>
       </div>
 
       <div className={styles.actionsSection}>

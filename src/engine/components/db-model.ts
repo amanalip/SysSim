@@ -19,14 +19,23 @@ export class DatabaseModel {
     const replicaFactor = !isWrite && this.readReplicas > 0 ? 1 / (1 + this.readReplicas * 0.3) : 1;
     const latency = Math.max(2, this.baseLatencyMs * replicaFactor + (Math.random() * 4 - 2));
 
-    setTimeout(() => {
+    // Release connection after virtual query completion
+    if (typeof setTimeout !== 'undefined') {
+      setTimeout(() => {
+        this.activeConnections = Math.max(0, this.activeConnections - 1);
+      }, Math.min(50, Math.round(latency)));
+    } else {
       this.activeConnections = Math.max(0, this.activeConnections - 1);
-    }, latency);
+    }
 
     return { latencyMs: Math.round(latency), poolExhausted: false };
   }
 
   public getActiveConnections(): number {
     return this.activeConnections;
+  }
+
+  public reset(): void {
+    this.activeConnections = 0;
   }
 }
