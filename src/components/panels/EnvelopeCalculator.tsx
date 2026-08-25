@@ -298,6 +298,24 @@ export const EnvelopeCalculator: React.FC = () => {
             </div>
             <span className={styles.formulaText}>Reads: {outputs.outboundBandwidthMbps} Mbps egress traffic</span>
           </div>
+
+          <div className={styles.outputCard}>
+            <div className={styles.outputHeader}>
+              <span className={styles.outputLabel}>Estimated DB Pool</span>
+              <span className={styles.outputValue}>
+                {outputs.estimatedDbConnections} conns
+              </span>
+            </div>
+            <span className={styles.formulaText}>Pool estimate: 2x writes + 0.5x reads</span>
+            {dbNode && (
+              <button
+                className={styles.linkNodeBtn}
+                onClick={() => selectNode(dbNode.id)}
+              >
+                Focus {dbNode.data.config.name} <ArrowUpRight size={10} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

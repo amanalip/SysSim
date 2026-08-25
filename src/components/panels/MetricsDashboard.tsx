@@ -276,6 +276,8 @@ export const MetricsDashboard: React.FC = () => {
                       <th>Type</th>
                       <th>Total Requests</th>
                       <th>QPS</th>
+                      <th>Utilization %</th>
+                      <th>Active Conns</th>
                       <th>Avg Latency</th>
                       <th>p95 Latency</th>
                       <th>Error %</th>
@@ -287,7 +289,7 @@ export const MetricsDashboard: React.FC = () => {
                     {compList.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={9}
+                          colSpan={11}
                           style={{
                             textAlign: 'center',
                             padding: '32px 16px',
@@ -301,15 +303,32 @@ export const MetricsDashboard: React.FC = () => {
                     ) : (
                       compList.map((c) => (
                         <tr key={c.nodeId}>
-                          <td>{c.nodeName}</td>
-                          <td>{c.nodeType}</td>
+                          <td style={{ fontWeight: 600 }}>{c.nodeName}</td>
+                          <td style={{ color: 'var(--text-muted)' }}>{c.nodeType}</td>
                           <td>{c.totalRequests}</td>
                           <td>{c.qps}</td>
+                          <td>
+                            <span
+                              style={{
+                                color:
+                                  c.utilizationPercent > 85
+                                    ? 'var(--error)'
+                                    : c.utilizationPercent > 60
+                                    ? 'var(--warning)'
+                                    : 'inherit',
+                                fontWeight: c.utilizationPercent > 80 ? 600 : 'normal',
+                              }}
+                            >
+                              {c.utilizationPercent}%
+                            </span>
+                          </td>
+                          <td>{c.activeConnections}</td>
                           <td>{c.avgLatencyMs}ms</td>
                           <td>{c.p95LatencyMs}ms</td>
                           <td
                             style={{
                               color: c.errorRatePercent > 0 ? 'var(--error)' : 'inherit',
+                              fontWeight: c.errorRatePercent > 0 ? 600 : 'normal',
                             }}
                           >
                             {c.errorRatePercent}%

@@ -44,6 +44,8 @@
 | **34** | `src/components/playback/SimulationControls.tsx` | QPS input snapped back to default when user backspaced to clear and re-type. | Implemented local string state with onBlur validation fallback. |
 | **35** | `src/engine/sim-bridge.ts` | SimulationBridge fallback ticker did not clear pre-existing interval timer on repeated start calls. | Added clean interval cancellation before creating new fallback tickers. |
 | **36** | `src/components/scenarios/ScenarioDetail.tsx` | Toggling scenario solve status provided no feedback toast notification. | Added toast notifications confirming scenario solve and un-solve actions. |
+| **37** | `src/components/panels/EnvelopeCalculator.tsx` | Calculator computed `estimatedDbConnections` but lacked an output card. | Rendered dedicated Estimated DB Pool card with focus button to database nodes. |
+| **38** | `src/components/panels/MetricsDashboard.tsx` | Component metrics table omitted `Utilization %` and `Active Conns` columns. | Added Utilization % and Active Conns table columns with color thresholds. |
 
 ---
 
@@ -71,12 +73,14 @@
 20. **Universal Escape Key Dismissal**: `Escape` key reliably dismisses properties panels, modals, dropdowns, context menus, and search bars.
 21. **Smooth Backspace/Numeric QPS Input**: QPS input allows fluent backspace editing without value jumping.
 22. **Scenario Progress Feedback Toasts**: Toast confirmation on solving and unlocking hints.
+23. **Estimated DB Pool Output Card**: Capacity calculator displays connection pool estimates with focus navigation.
+24. **Utilization & Active Connection Table Columns**: Per-component breakdown includes real-time utilization and active concurrency.
 
 ---
 
 ## 3. Test Suites & Quality Improvements
 
-- **19 test files**, **103 total unit and integration tests** passing:
+- **20 test files**, **113 total unit and integration tests** passing:
   - Non-LB multi-edge round-robin routing
   - 502 Bad Gateway handling on empty LB targets
   - RateLimiterConfig `limitQps` subtext rendering
@@ -84,7 +88,7 @@
   - RateLimiterModel reset restoring token bucket
   - Node duplication custom property cloning
   - ContextMenu coordinate clamping and Escape dismissal
-  - EnvelopeCalculator zero-division and Inbound/Outbound bandwidth calculations
+  - EnvelopeCalculator zero-division, Inbound/Outbound bandwidth, and DB pool estimation
   - Chaos Monkey fault injection and clean restoration
   - Edge cut/repair simulation step handling
   - URL sharing state serialization with edge cut preservation
@@ -103,3 +107,4 @@
   - Zone creation and deletion lifecycle
   - Redo and undo history stack verification
   - SimulationBridge worker and fallback lifecycle management
+  - Toast notification lifecycle and queue management
