@@ -27,7 +27,8 @@ export const CostEstimatorPanel: React.FC = () => {
     let networkingCost = 0;
     let messagingCost = 0;
 
-    const lineItems: CostLineItem[] = nodes.map((node) => {
+    const billableNodes = nodes.filter((n) => n.data.config.type !== 'client');
+    const lineItems: CostLineItem[] = billableNodes.map((node) => {
       const config = node.data.config as any;
       const type = config.type;
       const replicas = config.replicas || 1;

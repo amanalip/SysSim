@@ -66,6 +66,8 @@
 | **56** | `src/store/use-store.ts` | `setNodeHealthOverride` modified node health in state but did not notify the simulation engine, leaving properties panel health toggles out-of-sync. | Added `simBridge.syncGraph()` directly to `setNodeHealthOverride`. |
 | **57** | `src/components/modals/ChaosDrillModal.tsx` | "5x Flash Crowd Surge" drill updated store trafficConfig but omitted `simBridge.syncConfig()`, failing to transmit spike pattern to worker. | Added `simBridge.syncConfig({ baseQps, pattern: 'spike' })` and steady restore handling. |
 | **58** | `src/components/modals/ChaosDrillModal.tsx` | "High Network Latency" drill was a non-op placeholder without engine effect. | Degrades application server cluster nodes and marks health to simulate WAN latency. |
+| **59** | `src/components/panels/HealthRadarPanel.tsx` | Resilience calculation evaluated redundancy solely by counting discrete node elements, ignoring configured cluster replicas and database read replicas. | Factor in `(config.replicas || 1)` and `readReplicasCount` in server redundancy and database high availability scores. |
+| **60** | `src/components/panels/CostEstimatorPanel.tsx` | Traffic generator client nodes were incorrectly mapped to $15/month cloud host instances in monthly cost calculations. | Filter out `client` nodes from cloud infrastructure cost estimations and line item breakdowns. |
 
 ---
 

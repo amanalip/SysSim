@@ -109,8 +109,16 @@ export const HealthRadarPanel: React.FC = () => {
 
     // 5. Resilience Score
     let resScore = 60;
-    const hasMultipleServers = nodes.filter((n) => n.data.config.type === 'app_server').length > 1;
-    const hasMultipleDbs = nodes.filter((n) => n.data.config.type === 'sql_db').length > 1;
+    const totalAppReplicas = nodes
+      .filter((n) => n.data.config.type === 'app_server')
+      .reduce((sum, n) => sum + ((n.data.config as any).replicas || 1), 0);
+    const hasMultipleServers = totalAppReplicas > 1;
+    const hasMultipleDbs = nodes.some(
+      (n) =>
+        n.data.config.type === 'sql_db' &&
+        (nodes.filter((x) => x.data.config.type === 'sql_db').length > 1 ||
+          Boolean((n.data.config as any).readReplicasCount && (n.data.config as any).readReplicasCount > 0))
+    );
     if (hasMultipleServers) resScore += 20;
     if (hasMultipleDbs) resScore += 20;
     if (bottlenecks.some((b) => b.type === 'spof')) resScore -= 25;
