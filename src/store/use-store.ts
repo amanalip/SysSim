@@ -41,7 +41,7 @@ export interface CanvasEdge {
   selected?: boolean;
 }
 
-interface CanvasHistoryEntry {
+export interface CanvasHistoryEntry {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
   zones: ZoneData[];
@@ -558,7 +558,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       nodes: next.nodes,
       edges: next.edges,
       zones: next.zones,
-      historyPast: [...historyPast, current],
+      historyPast: [...historyPast.slice(-20), current],
       historyFuture: historyFuture.slice(1),
       selectedNodeId: null,
       selectedEdgeId: null,

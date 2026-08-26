@@ -128,6 +128,21 @@ export function App() {
         }
       }
 
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (e.key === '1') {
+          useStore.getState().setActiveSidebarTab('palette');
+          return;
+        }
+        if (e.key === '2') {
+          useStore.getState().setActiveSidebarTab('scenarios');
+          return;
+        }
+        if (e.key === '3') {
+          useStore.getState().setActiveSidebarTab('calculator');
+          return;
+        }
+      }
+
       if (e.key === '?') {
         setIsShortcutsModalOpen((prev) => !prev);
         return;

@@ -84,6 +84,8 @@
 | **74** | `src/model/blueprints.ts` | Starter architecture blueprints initialized nodes with `type: 'custom'` instead of `'customComponent'`, causing React Flow to fall back to unstyled nodes. | Replaced `type: 'custom'` with `type: 'customComponent'` across all blueprint definitions. |
 | **75** | `src/engine/simulator.ts` | Simulation engine bypassed `auth_service`, `encryption_service`, and `serverless` tiers, falling back to static 5ms delays without evaluating validation latency or cold starts. | Added dedicated simulation evaluation branches for `auth_service`, `encryption_service`, and `serverless`. |
 | **76** | `src/engine/sim-bridge.ts` | `SimulationBridge` lacked an `onerror` handler on the Web Worker, causing the simulation to hang if worker code encountered an unexpected runtime exception. | Registered `this.worker.onerror` to automatically fail over to main-thread `SysSimEngine`. |
+| **77** | `src/App.tsx` | Global keyboard listener omitted number keys `1`, `2`, and `3` advertised for switching between Palette, Scenarios, and Calculator tabs. | Added non-modifier `1`, `2`, `3` key listeners to update `activeSidebarTab`. |
+| **78** | `src/store/use-store.ts` | `redo()` appended previous snapshots to `historyPast` without applying a slice cap, permitting unbounded history stack growth. | Sliced `historyPast` to 20 entries in `redo()`. |
 
 ---
 
