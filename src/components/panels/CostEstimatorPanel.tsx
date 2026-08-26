@@ -26,12 +26,15 @@ export const CostEstimatorPanel: React.FC = () => {
     let cachingCost = 0;
     let networkingCost = 0;
     let messagingCost = 0;
+    let otherCost = 0;
 
     const billableNodes = nodes.filter((n) => n.data.config.type !== 'client');
     const lineItems: CostLineItem[] = billableNodes.map((node) => {
       const config = node.data.config as any;
       const type = config.type;
-      const replicas = config.replicas || 1;
+      const replicas = (config.type === 'sql_db'
+        ? (config.replicas || 1) + (config.readReplicasCount || 0)
+        : config.replicas) || 1;
 
       let unitCost = 35;
       let instanceType = 't4g.large (2 vCPU, 8GB)';
@@ -76,6 +79,7 @@ export const CostEstimatorPanel: React.FC = () => {
         unitCost = 15;
         instanceType = 'Standard Instance';
         category = 'Other';
+        otherCost += unitCost * replicas;
       }
 
       return {
@@ -94,7 +98,7 @@ export const CostEstimatorPanel: React.FC = () => {
     const bandwidthCost = Math.round(estimatedMonthlyGb * 0.08);
     networkingCost += bandwidthCost;
 
-    const totalMonthly = computeCost + storageCost + cachingCost + networkingCost + messagingCost;
+    const totalMonthly = computeCost + storageCost + cachingCost + networkingCost + messagingCost + otherCost;
 
     return {
       totalMonthly: Math.round(totalMonthly),

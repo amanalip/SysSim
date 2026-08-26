@@ -111,6 +111,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   const handleConfigure = () => {
     if (targetNode) {
       selectNode(targetNode.id);
+      useStore.getState().setIsPropertiesPanelOpen(true);
     }
     onClose();
   };
