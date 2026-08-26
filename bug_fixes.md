@@ -79,6 +79,8 @@
 | **69** | `src/components/panels/MetricsDashboard.tsx` | Export CSV button generated an empty file with only table headers when clicked before simulation metrics were recorded. | Added empty time-series telemetry validation guard and toast warning. |
 | **70** | `src/components/modals/ShortcutsModal.tsx` | Keyboard shortcuts reference guide omitted the global snapshot manager trigger `Ctrl + B / Cmd + B`. | Added Snapshot Manager shortcut entry to shortcuts list. |
 | **71** | `src/components/scenarios/ScenarioPicker.tsx` | Scenario catalog cards were non-interactive `div` elements lacking keyboard focus and selection handlers. | Added `tabIndex={0}`, `role="button"`, and Enter/Space `onKeyDown` listeners. |
+| **72** | `src/components/canvas/nodes/CustomComponentNode.tsx` | Floating toolbar action buttons lacked `preventDefault()` on click events, causing focus transfer and node selection flickers in certain browsers. | Added `e.preventDefault()` to duplicate, power, delete, and settings handlers. |
+| **73** | `src/store/use-store.ts` | `addEdge` permitted duplicate connections in the reverse direction between the same pair of nodes. | Added reverse link check `(e.source === target && e.target === source)` in `addEdge`. |
 
 ---
 

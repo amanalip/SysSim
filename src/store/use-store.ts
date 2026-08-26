@@ -346,7 +346,11 @@ export const useStore = create<SysSimState>((set, get) => ({
 
   addEdge: (source, target, preferredProtocol) => {
     if (source === target) return false;
-    const existing = get().edges.find((e) => e.source === source && e.target === target);
+    const existing = get().edges.find(
+      (e) =>
+        (e.source === source && e.target === target) ||
+        (e.source === target && e.target === source)
+    );
     if (existing) return false;
 
     const sourceNode = get().nodes.find((n) => n.id === source);

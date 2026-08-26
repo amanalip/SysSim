@@ -27,6 +27,7 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
   const isSimActive = simState === 'running' || simState === 'paused';
 
   const toggleHealth = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     const nextHealth = config.health === 'down' ? 'healthy' : 'down';
     setNodeHealthOverride(id, nextHealth);
@@ -34,18 +35,21 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
   };
 
   const handleDuplicate = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     duplicateNode(id);
     addToast(`Duplicated ${config.name}`, 'success');
   };
 
   const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     removeNode(id);
     addToast(`Removed ${config.name}`, 'info');
   };
 
   const handleOpenConfig = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     selectNode(id);
   };
