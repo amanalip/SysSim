@@ -91,6 +91,8 @@
 | **81** | `src/utils/sharing.ts` | `decodeStateFromUrlHash` lacked runtime schema validation on parsed JSON before returning state to the store. | Added structural array validation for `nodes` and `edges`. |
 | **82** | `src/engine/simulator.ts` | Cold reset simulation metric snapshots generated `NaN` in average latency, error rate, and cache hit metrics. | Added explicit `isNaN` and zero checks across all metric rollup formulas. |
 | **83** | `src/layout/auto-layout.ts` | Topological auto-layout repositioned nodes into absolute canvas grids, displacing nodes outside user-defined spatial security zones. | Updated `computeAutoLayout` to accept zones and constrain contained nodes within zone boundaries. |
+| **84** | `src/components/scenarios/ScenarioDetail.module.css` | `.detailContainer` had a hardcoded `max-height: 520px; overflow-y: auto;` causing nested scrollbar conflicts and truncating the workflow view with large blank spaces. | Removed hardcoded 520px max-height to let scenario detail cleanly scroll inside the sidebar. |
+| **85** | `src/components/panels/PropertiesPanel.tsx` | Properties drawer had no configuration controls for `auth_service`, `encryption_service`, and `serverless` nodes, displaying an empty configuration section. | Added dedicated form controls for token type, TTL, encryption algorithm, key rotation, and memory/timeout. |
 
 ---
 

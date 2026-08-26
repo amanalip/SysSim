@@ -4,9 +4,7 @@
   gap: 14px;
   user-select: none;
   font-family: var(--font-sans);
-  max-height: 520px;
-  overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 2px;
 }
 
 .backBtn {

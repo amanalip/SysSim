@@ -349,6 +349,145 @@ export const PropertiesPanel: React.FC = () => {
             </div>
           )}
 
+          {/* Auth Service Token Type & TTL */}
+          {config.type === 'auth_service' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Token Type</label>
+                <select
+                  className={styles.select}
+                  value={config.tokenType}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      tokenType: e.target.value as any,
+                    })
+                  }
+                >
+                  <option value="JWT">JWT (JSON Web Token)</option>
+                  <option value="Paseto">Paseto (Platform-Agnostic Security Tokens)</option>
+                  <option value="Session">Opaque Session ID</option>
+                </select>
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <div className={styles.fieldLabel}>
+                  <span>Token TTL (Minutes)</span>
+                  <span className={styles.fieldValueBadge}>{config.ttlMinutes}m</span>
+                </div>
+                <input
+                  type="number"
+                  className={styles.input}
+                  value={config.ttlMinutes}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      ttlMinutes: parseInt(e.target.value, 10) || 60,
+                    })
+                  }
+                />
+              </div>
+            </>
+          )}
+
+          {/* Encryption Service Algorithm & Key Rotation */}
+          {config.type === 'encryption_service' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Cipher Algorithm</label>
+                <select
+                  className={styles.select}
+                  value={config.algorithm}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      algorithm: e.target.value as any,
+                    })
+                  }
+                >
+                  <option value="AES-256-GCM">AES-256-GCM (Authenticated)</option>
+                  <option value="ChaCha20-Poly1305">ChaCha20-Poly1305 (Fast Stream)</option>
+                  <option value="RSA-4096">RSA-4096 (Asymmetric PKI)</option>
+                </select>
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <div className={styles.fieldLabel}>
+                  <span>Key Rotation (Days)</span>
+                  <span className={styles.fieldValueBadge}>{config.keyRotationDays}d</span>
+                </div>
+                <input
+                  type="number"
+                  className={styles.input}
+                  value={config.keyRotationDays}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      keyRotationDays: parseInt(e.target.value, 10) || 90,
+                    })
+                  }
+                />
+              </div>
+            </>
+          )}
+
+          {/* Serverless Function Configuration */}
+          {config.type === 'serverless' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <div className={styles.fieldLabel}>
+                  <span>Allocated Memory (MB)</span>
+                  <span className={styles.fieldValueBadge}>{config.memoryMb} MB</span>
+                </div>
+                <select
+                  className={styles.select}
+                  value={config.memoryMb}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      memoryMb: parseInt(e.target.value, 10) || 512,
+                    })
+                  }
+                >
+                  <option value="128">128 MB (Micro)</option>
+                  <option value="256">256 MB (Small)</option>
+                  <option value="512">512 MB (Standard)</option>
+                  <option value="1024">1024 MB (1 GB)</option>
+                  <option value="2048">2048 MB (2 GB Compute)</option>
+                </select>
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <div className={styles.fieldLabel}>
+                  <span>Execution Timeout (ms)</span>
+                  <span className={styles.fieldValueBadge}>{config.timeoutMs} ms</span>
+                </div>
+                <input
+                  type="number"
+                  className={styles.input}
+                  value={config.timeoutMs}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      timeoutMs: parseInt(e.target.value, 10) || 3000,
+                    })
+                  }
+                />
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <div className={styles.fieldLabel}>
+                  <span>Cold Start Latency (ms)</span>
+                  <span className={styles.fieldValueBadge}>{config.coldStartLatencyMs} ms</span>
+                </div>
+                <input
+                  type="number"
+                  className={styles.input}
+                  value={config.coldStartLatencyMs}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      coldStartLatencyMs: parseInt(e.target.value, 10) || 25,
+                    })
+                  }
+                />
+              </div>
+            </>
+          )}
+
           {/* Queue Partitions & Throughput */}
           {'partitions' in config && (
             <div className={styles.fieldGroup}>
