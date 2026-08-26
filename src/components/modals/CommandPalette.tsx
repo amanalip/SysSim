@@ -50,7 +50,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     clearCanvas,
     addNode,
     loadScenario,
-    loadReferenceDesign,
     addToast,
     nodes,
   } = useStore();
@@ -148,15 +147,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       icon: <BookOpen size={14} color="var(--accent-primary)" />,
       action: () => {
         loadScenario(sc);
-        loadReferenceDesign(sc.referenceDesign);
         simBridge.reset();
+        simBridge.syncGraph();
+        simBridge.syncConfig(sc.trafficPreset);
         useStore.getState().setActiveSidebarTab('scenarios');
-        addToast(`Loaded scenario #${sc.id}: ${sc.title}`, 'info');
+        addToast(`Loaded scenario challenge #${sc.id}: ${sc.title}`, 'info');
       },
     }));
 
     return [...actionCommands, ...componentCommands, ...scenarioCommands];
-  }, [simState, isChaosMode, setChaosMode, theme, setTheme, autoLayout, clearCanvas, addNode, loadScenario, loadReferenceDesign, addToast, nodes.length]);
+  }, [simState, isChaosMode, setChaosMode, theme, setTheme, autoLayout, clearCanvas, addNode, loadScenario, addToast, nodes.length]);
 
   const filteredCommands = useMemo(() => {
     if (!query.trim()) return allCommands.slice(0, 30);

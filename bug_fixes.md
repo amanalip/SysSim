@@ -95,6 +95,8 @@
 | **85** | `src/components/panels/PropertiesPanel.tsx` | Properties drawer had no configuration controls for `auth_service`, `encryption_service`, and `serverless` nodes, displaying an empty configuration section. | Added dedicated form controls for token type, TTL, encryption algorithm, key rotation, and memory/timeout. |
 | **86** | `src/components/canvas/ContextMenu.tsx` | Right-clicking a component and selecting "Configure" selected the node in state but failed to open the properties panel drawer if closed. | Added `setIsPropertiesPanelOpen(true)` directly to `handleConfigure`. |
 | **87** | `src/components/panels/CostEstimatorPanel.tsx` | Cost calculator only billed 1 database host regardless of `readReplicasCount` and dropped fallback instances from `totalMonthly`. | Billed `(replicas + readReplicasCount)` for SQL databases and added `otherCost` into total bill. |
+| **88** | `src/components/panels/HealthRadarPanel.tsx` | Health Radar penalized over-provisioning when simulation was idle because `metrics.currentQps` was 0, resulting in a 'C' cost grade on valid architectures. | Evaluated `trafficConfig.baseQps` instead of `metrics.currentQps` when simulation is idle. |
+| **89** | `src/components/modals/CommandPalette.tsx` | Selecting a scenario in the command palette forcibly loaded and overwrote the user canvas with reference design nodes. | Switched to challenge mode loading with graph/config worker sync, preserving user build freedom. |
 
 ---
 

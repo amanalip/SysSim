@@ -14,7 +14,7 @@ interface PillarScore {
 }
 
 export const HealthRadarPanel: React.FC = () => {
-  const { nodes, edges, metrics, bottlenecks } = useStore();
+  const { nodes, edges, metrics, bottlenecks, trafficConfig, simState } = useStore();
 
   const pillarScores = useMemo<PillarScore[]>(() => {
     if (nodes.length === 0) {
@@ -104,7 +104,8 @@ export const HealthRadarPanel: React.FC = () => {
       const c = n.data.config as any;
       return sum + (c.replicas || 1);
     }, 0);
-    if (totalReplicas > 12 && metrics.currentQps < 500) costScore -= 30; // Over-provisioned
+    const effectiveQps = simState === 'running' ? metrics.currentQps : (trafficConfig?.baseQps || 0);
+    if (totalReplicas > 12 && effectiveQps < 500) costScore -= 30; // Over-provisioned
     costScore = Math.max(10, Math.min(100, Math.round(costScore)));
 
     // 5. Resilience Score
