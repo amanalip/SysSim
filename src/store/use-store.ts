@@ -19,6 +19,7 @@ import { validateConnection } from '../model/validation';
 import { computeAutoLayout } from '../layout/auto-layout';
 import { simBridge } from '../engine/sim-bridge';
 import { ThemeMode } from '../theme';
+export type { ZoneData };
 
 export interface CanvasNode {
   id: string;
@@ -475,10 +476,10 @@ export const useStore = create<SysSimState>((set, get) => ({
   },
 
   autoLayout: () => {
-    const { nodes, edges } = get();
+    const { nodes, edges, zones } = get();
     if (nodes.length === 0) return;
     get().pushHistory();
-    const arranged = computeAutoLayout(nodes, edges);
+    const arranged = computeAutoLayout(nodes, edges, zones);
     set({ nodes: arranged });
   },
 

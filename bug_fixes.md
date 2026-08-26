@@ -89,6 +89,8 @@
 | **79** | `src/components/scenarios/ScenarioDetail.tsx` | Navigating between different challenge scenarios left the progressive hint counter unlocked at previous levels. | Added `useEffect` on `scenario.id` to reset `unlockedHintCount` and answer accordion states. |
 | **80** | `src/components/panels/BottleneckPanel.tsx` | Clicking "Inspect [Node Name]" selected the node in state but failed to open the Properties Panel drawer if it was closed. | Added `setIsPropertiesPanelOpen(true)` directly into the inspect button handler. |
 | **81** | `src/utils/sharing.ts` | `decodeStateFromUrlHash` lacked runtime schema validation on parsed JSON before returning state to the store. | Added structural array validation for `nodes` and `edges`. |
+| **82** | `src/engine/simulator.ts` | Cold reset simulation metric snapshots generated `NaN` in average latency, error rate, and cache hit metrics. | Added explicit `isNaN` and zero checks across all metric rollup formulas. |
+| **83** | `src/layout/auto-layout.ts` | Topological auto-layout repositioned nodes into absolute canvas grids, displacing nodes outside user-defined spatial security zones. | Updated `computeAutoLayout` to accept zones and constrain contained nodes within zone boundaries. |
 
 ---
 

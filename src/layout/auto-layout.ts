@@ -1,10 +1,26 @@
-import { CanvasEdge, CanvasNode } from '../store/use-store';
+import { CanvasEdge, CanvasNode, ZoneData } from '../store/use-store';
 
 export function computeAutoLayout(
   nodes: CanvasNode[],
-  edges: CanvasEdge[]
+  edges: CanvasEdge[],
+  zones: ZoneData[] = []
 ): CanvasNode[] {
   if (nodes.length === 0) return [];
+
+  // Map nodes to zones if originally contained
+  const nodeZoneMap: Record<string, ZoneData | undefined> = {};
+  nodes.forEach((node) => {
+    const containingZone = zones.find(
+      (z) =>
+        node.position.x >= z.x &&
+        node.position.x <= z.x + z.width &&
+        node.position.y >= z.y &&
+        node.position.y <= z.y + z.height
+    );
+    if (containingZone) {
+      nodeZoneMap[node.id] = containingZone;
+    }
+  });
 
   // Build adjacency graph and calculate in-degrees
   const inDegree: Record<string, number> = {};
@@ -86,9 +102,19 @@ export function computeAutoLayout(
     const startY = Math.max(START_Y, 300 - totalHeight / 2);
 
     nodeIds.forEach((id, idx) => {
+      let targetX = START_X + lvl * X_SPACING;
+      let targetY = startY + idx * Y_SPACING;
+
+      const zone = nodeZoneMap[id];
+      if (zone) {
+        // Constrain inside zone boundary
+        targetX = Math.max(zone.x + 20, Math.min(zone.x + zone.width - 160, targetX));
+        targetY = Math.max(zone.y + 30, Math.min(zone.y + zone.height - 80, targetY));
+      }
+
       positions[id] = {
-        x: START_X + lvl * X_SPACING,
-        y: startY + idx * Y_SPACING,
+        x: targetX,
+        y: targetY,
       };
     });
   });
