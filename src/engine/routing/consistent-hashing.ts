@@ -36,7 +36,7 @@ export class ConsistentHashRing {
     // Binary search for closest ring node with hash >= h
     let low = 0;
     let high = this.ring.length - 1;
-    let resultIdx = 0;
+    let resultIdx = -1;
 
     while (low <= high) {
       const mid = Math.floor((low + high) / 2);
@@ -49,7 +49,7 @@ export class ConsistentHashRing {
     }
 
     // Wrap around to index 0 if target hash exceeds all ring nodes
-    if (this.ring[resultIdx].hash < h) {
+    if (resultIdx === -1) {
       return this.ring[0].nodeId;
     }
 

@@ -65,6 +65,7 @@ export class SysSimEngine {
     }
   > = {};
   private timeSeries: TimeSeriesDataPoint[] = [];
+  private fractionalRequestAccumulator = 0;
 
   // Component model instances cache
   private lbRouters: Map<string, LoadBalancerRouter> = new Map();
@@ -196,6 +197,7 @@ export class SysSimEngine {
   public reset(): void {
     this.state = 'idle';
     this.elapsedSimulationMs = 0;
+    this.fractionalRequestAccumulator = 0;
     this.completedRequests = [];
     this.activeRequests = [];
     this.totalSent = 0;
@@ -267,12 +269,15 @@ export class SysSimEngine {
     this.elapsedSimulationMs += scaledDelta;
     const elapsedSec = this.elapsedSimulationMs / 1000;
 
-    // Drain queues
+    // Drain queues and database connections
     this.queueModels.forEach((q) => q.drain(scaledDelta));
+    this.dbModels.forEach((db) => db.drainConnections(scaledDelta));
 
-    // Determine current rate and how many requests to generate this tick
+    // Determine current rate and accumulate fractional requests per tick
     const currentQps = this.getCurrentQps(elapsedSec);
-    const requestsToGenerate = Math.max(1, Math.round((currentQps * scaledDelta) / 1000));
+    this.fractionalRequestAccumulator += (currentQps * scaledDelta) / 1000;
+    const requestsToGenerate = Math.floor(this.fractionalRequestAccumulator);
+    this.fractionalRequestAccumulator -= requestsToGenerate;
 
     // Find origin client nodes (or any roots if no clients exist)
     const clientNodes = this.graph.nodes.filter((n) => n.config.type === 'client');

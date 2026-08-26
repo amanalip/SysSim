@@ -73,6 +73,9 @@
 | **63** | `src/components/modals/CommandPalette.tsx` | Selecting a scenario from the command palette loaded the scenario onto the canvas but did not switch the sidebar tab to the scenario view. | Added `setActiveSidebarTab('scenarios')` on scenario selection in `CommandPalette.tsx`. |
 | **64** | `src/utils/sharing.ts` | Canvas PNG export screenshot filter only checked for `controlsBar`, leaving the floating HUD toolbar and empty canvas guidance prompts visible in the generated image. | Updated filter to exclude `.hudToolbar`, `.emptyCanvasNotice`, and `.floatingToolbar`. |
 | **65** | `src/engine/simulator.ts` | Simulation engine completely bypassed edge transport protocol latency characteristics when propagating requests across nodes. | Added protocol latency overhead calculation (`gRPC: 1ms`, `WebSocket/TCP: 2ms`, `pub/sub/MQTT: 3ms`, `HTTP: 4ms`) and custom edge latencies. |
+| **66** | `src/engine/simulator.ts` | Low QPS configurations forced at least 1 request generated per tick via `Math.max(1, ...)`, generating 20 QPS when configured for 10 QPS. | Added fractional request accumulator so request generation matches target QPS over time. |
+| **67** | `src/engine/components/db-model.ts` | Database connection pool release used real wall-clock `setTimeout` inside Web Worker, causing connection starvation at high simulation speeds. | Replaced `setTimeout` with tick delta based `drainConnections(deltaMs)`. |
+| **68** | `src/engine/routing/consistent-hashing.ts` | Consistent hash ring binary search node lookup used an uninitialized wrap state on upper bound lookup. | Initialized `resultIdx = -1` and explicitly wrapped to `ring[0].nodeId`. |
 
 ---
 
