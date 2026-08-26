@@ -162,6 +162,7 @@ export const ScenarioInterviewStepper: React.FC<ScenarioInterviewStepperProps> =
                       className={styles.runTestBtn}
                       onClick={() => {
                         setTrafficConfig({ baseQps: scenario.constraints.targetQps });
+                        simBridge.syncConfig({ baseQps: scenario.constraints.targetQps });
                         simBridge.start();
                         useStore.getState().addToast(`Started load test at ${scenario.constraints.targetQps} QPS!`, 'info');
                       }}
