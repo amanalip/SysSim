@@ -71,6 +71,8 @@
 | **61** | `src/components/canvas/ArchitectureCanvas.tsx` | `Delete` and `Backspace` shortcut handlers deleted selected nodes and edges while users were actively editing text inside inputs or textareas. | Added focused input element tag guard (`INPUT`, `TEXTAREA`, `SELECT`) to `handleKeyDown`. |
 | **62** | `src/engine/metrics/bottleneck-detector.ts` | Capacity overload detector checked individual component throughput limits without factoring in configured horizontal replicas (`replicas`). | Multiply rated component capacity by `(config.replicas || 1)` when evaluating overload thresholds. |
 | **63** | `src/components/modals/CommandPalette.tsx` | Selecting a scenario from the command palette loaded the scenario onto the canvas but did not switch the sidebar tab to the scenario view. | Added `setActiveSidebarTab('scenarios')` on scenario selection in `CommandPalette.tsx`. |
+| **64** | `src/utils/sharing.ts` | Canvas PNG export screenshot filter only checked for `controlsBar`, leaving the floating HUD toolbar and empty canvas guidance prompts visible in the generated image. | Updated filter to exclude `.hudToolbar`, `.emptyCanvasNotice`, and `.floatingToolbar`. |
+| **65** | `src/engine/simulator.ts` | Simulation engine completely bypassed edge transport protocol latency characteristics when propagating requests across nodes. | Added protocol latency overhead calculation (`gRPC: 1ms`, `WebSocket/TCP: 2ms`, `pub/sub/MQTT: 3ms`, `HTTP: 4ms`) and custom edge latencies. |
 
 ---
 

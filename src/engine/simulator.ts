@@ -475,6 +475,9 @@ export class SysSimEngine {
         (e) => e.source === currentNodeId && !e.data?.isCut
       );
 
+      let nextTargetNodeId: string | null = null;
+      let chosenEdge: (typeof outgoingEdges)[0] | null = null;
+
       if (outgoingEdges.length === 0) {
         if (config.type === 'load_balancer') {
           // Load balancer with 0 outgoing available edges
@@ -495,7 +498,8 @@ export class SysSimEngine {
         }
         currentNodeId = null;
       } else if (outgoingEdges.length === 1) {
-        currentNodeId = outgoingEdges[0].target;
+        chosenEdge = outgoingEdges[0];
+        nextTargetNodeId = chosenEdge.target;
       } else {
         if (config.type === 'load_balancer') {
           const lbRouter = this.lbRouters.get(node.id);
@@ -520,14 +524,34 @@ export class SysSimEngine {
             req.color = '#f85149';
             currentNodeId = null;
           } else {
-            currentNodeId = nextTarget;
+            nextTargetNodeId = nextTarget;
+            chosenEdge = outgoingEdges.find((e) => e.target === nextTarget) || outgoingEdges[0];
           }
         } else {
           // Multi-edge fanout for non-load-balancer nodes (e.g. gateway/app server)
           const nextIdx = (this.nonLbRoutingIndices[node.id] || 0) % outgoingEdges.length;
           this.nonLbRoutingIndices[node.id] = nextIdx + 1;
-          currentNodeId = outgoingEdges[nextIdx].target;
+          chosenEdge = outgoingEdges[nextIdx];
+          nextTargetNodeId = chosenEdge.target;
         }
+      }
+
+      if (nextTargetNodeId && chosenEdge) {
+        const protocol = chosenEdge.data?.protocol || 'HTTP';
+        const protocolOverhead =
+          chosenEdge.data?.latencyMs !== undefined
+            ? chosenEdge.data.latencyMs
+            : protocol === 'gRPC'
+            ? 1
+            : protocol === 'WebSocket' || protocol === 'TCP'
+            ? 2
+            : protocol === 'pub/sub' || protocol === 'MQTT'
+            ? 3
+            : 4; // HTTP default
+        totalLatency += protocolOverhead;
+        currentNodeId = nextTargetNodeId;
+      } else {
+        currentNodeId = null;
       }
     }
 

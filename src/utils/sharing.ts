@@ -102,9 +102,15 @@ export async function exportCanvasToPng(canvasElementId: string = 'syssim-canvas
       .getPropertyValue('--bg-primary')
       .trim() || '#0d1117',
     filter: (node) => {
-      // Exclude controls and particle overlay from static screenshot
-      const className = (node as HTMLElement).className || '';
-      return !className.includes('controlsBar') && !className.includes('particleLayer');
+      // Exclude controls, floating HUD, and particle overlay from static screenshot
+      const className = typeof (node as HTMLElement).className === 'string' ? (node as HTMLElement).className : '';
+      return (
+        !className.includes('controlsBar') &&
+        !className.includes('particleLayer') &&
+        !className.includes('hudToolbar') &&
+        !className.includes('emptyCanvasNotice') &&
+        !className.includes('floatingToolbar')
+      );
     },
   });
 
