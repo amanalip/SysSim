@@ -68,6 +68,9 @@
 | **58** | `src/components/modals/ChaosDrillModal.tsx` | "High Network Latency" drill was a non-op placeholder without engine effect. | Degrades application server cluster nodes and marks health to simulate WAN latency. |
 | **59** | `src/components/panels/HealthRadarPanel.tsx` | Resilience calculation evaluated redundancy solely by counting discrete node elements, ignoring configured cluster replicas and database read replicas. | Factor in `(config.replicas || 1)` and `readReplicasCount` in server redundancy and database high availability scores. |
 | **60** | `src/components/panels/CostEstimatorPanel.tsx` | Traffic generator client nodes were incorrectly mapped to $15/month cloud host instances in monthly cost calculations. | Filter out `client` nodes from cloud infrastructure cost estimations and line item breakdowns. |
+| **61** | `src/components/canvas/ArchitectureCanvas.tsx` | `Delete` and `Backspace` shortcut handlers deleted selected nodes and edges while users were actively editing text inside inputs or textareas. | Added focused input element tag guard (`INPUT`, `TEXTAREA`, `SELECT`) to `handleKeyDown`. |
+| **62** | `src/engine/metrics/bottleneck-detector.ts` | Capacity overload detector checked individual component throughput limits without factoring in configured horizontal replicas (`replicas`). | Multiply rated component capacity by `(config.replicas || 1)` when evaluating overload thresholds. |
+| **63** | `src/components/modals/CommandPalette.tsx` | Selecting a scenario from the command palette loaded the scenario onto the canvas but did not switch the sidebar tab to the scenario view. | Added `setActiveSidebarTab('scenarios')` on scenario selection in `CommandPalette.tsx`. |
 
 ---
 

@@ -150,6 +150,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         loadScenario(sc);
         loadReferenceDesign(sc.referenceDesign);
         simBridge.reset();
+        useStore.getState().setActiveSidebarTab('scenarios');
         addToast(`Loaded scenario #${sc.id}: ${sc.title}`, 'info');
       },
     }));
