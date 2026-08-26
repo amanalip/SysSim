@@ -71,10 +71,12 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
       icon: <Activity size={16} color="var(--accent-primary)" />,
       execute: () => {
         const currentQps = trafficConfig.baseQps || 500;
-        setTrafficConfig({ baseQps: currentQps * 5, pattern: 'spike' });
+        const newQps = currentQps * 5;
+        setTrafficConfig({ baseQps: newQps, pattern: 'spike' });
+        simBridge.syncConfig({ baseQps: newQps, pattern: 'spike' });
         simBridge.syncGraph();
         setActiveDrill('flash_crowd');
-        addToast(`Chaos Drill: Surged traffic to ${currentQps * 5} QPS!`, 'info');
+        addToast(`Chaos Drill: Surged traffic to ${newQps} QPS!`, 'info');
       },
     },
     {
@@ -103,8 +105,15 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
       description: 'Simulates cross-region WAN link degradation and packet delay.',
       icon: <Clock size={16} color="var(--warning)" />,
       execute: () => {
-        setActiveDrill('latency_jitter');
-        addToast('Chaos Drill: Injected 400ms latency overhead', 'warning');
+        const appServers = nodes.filter((n) => n.data.config.type === 'app_server');
+        if (appServers.length > 0) {
+          appServers.forEach((srv) => setNodeHealthOverride(srv.id, 'degraded'));
+          simBridge.syncGraph();
+          setActiveDrill('latency_jitter');
+          addToast(`Chaos Drill: Injected 400ms latency overhead on ${appServers.length} servers`, 'warning');
+        } else {
+          addToast('No application servers found on canvas to inject latency', 'warning');
+        }
       },
     },
   ];
@@ -124,6 +133,8 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
       }
     });
 
+    setTrafficConfig({ pattern: 'steady' });
+    simBridge.syncConfig({ pattern: 'steady' });
     simBridge.syncGraph();
     setActiveDrill(null);
     addToast('Restored all system components and network links to healthy', 'success');

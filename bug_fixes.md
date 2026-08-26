@@ -63,6 +63,9 @@
 | **53** | `src/components/panels/EnvelopeCalculator.tsx` | All 6 numeric capacity inputs forced immediate fallback to defaults on keystroke, causing inputs to snap back when users pressed backspace to clear values. | Added local string state management and onBlur validation fallbacks across all calculator inputs. |
 | **54** | `src/components/modals/SnapshotManagerModal.tsx` | Snapshot Manager modal lacked an `Escape` key listener, preventing keyboard dismissal. | Added `Escape` key listener inside `useEffect`. |
 | **55** | `src/components/scenarios/ScenarioInterviewStepper.tsx` | Stage 5 Load Test button updated store trafficConfig but omitted `simBridge.syncConfig()`, running the load test at stale base QPS. | Added `simBridge.syncConfig({ baseQps })` when triggering load tests. |
+| **56** | `src/store/use-store.ts` | `setNodeHealthOverride` modified node health in state but did not notify the simulation engine, leaving properties panel health toggles out-of-sync. | Added `simBridge.syncGraph()` directly to `setNodeHealthOverride`. |
+| **57** | `src/components/modals/ChaosDrillModal.tsx` | "5x Flash Crowd Surge" drill updated store trafficConfig but omitted `simBridge.syncConfig()`, failing to transmit spike pattern to worker. | Added `simBridge.syncConfig({ baseQps, pattern: 'spike' })` and steady restore handling. |
+| **58** | `src/components/modals/ChaosDrillModal.tsx` | "High Network Latency" drill was a non-op placeholder without engine effect. | Degrades application server cluster nodes and marks health to simulate WAN latency. |
 
 ---
 

@@ -583,7 +583,7 @@ export const useStore = create<SysSimState>((set, get) => ({
   setBottlenecks: (bottlenecks) => set({ bottlenecks }),
   setChaosMode: (isChaosMode, chaosIntervalSec = 15) =>
     set({ isChaosMode, chaosIntervalSec }),
-  setNodeHealthOverride: (nodeId, health) =>
+  setNodeHealthOverride: (nodeId, health) => {
     set((state) => ({
       nodeHealthOverrides: { ...state.nodeHealthOverrides, [nodeId]: health },
       nodes: state.nodes.map((n) =>
@@ -591,7 +591,9 @@ export const useStore = create<SysSimState>((set, get) => ({
           ? { ...n, data: { ...n.data, config: { ...n.data.config, health } } }
           : n
       ),
-    })),
+    }));
+    simBridge.syncGraph();
+  },
   resetSimulation: () =>
     set({
       simState: 'idle',
