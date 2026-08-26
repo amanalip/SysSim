@@ -30,6 +30,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
     { label: 'Select All Components', key: 'Ctrl + A / Cmd + A' },
     { label: 'Delete Selected Component / Edge', key: 'Delete / Backspace' },
     { label: 'Compute Topological Auto Layout', key: 'L' },
+    { label: 'Open Architecture Snapshot Manager', key: 'Ctrl + B / Cmd + B' },
     { label: 'Toggle Chaos Monkey Failure Mode', key: 'C' },
     { label: 'Toggle Real-Time Metrics Drawer', key: 'M' },
     { label: 'Switch to Palette / Scenarios / Calculator', key: '1 / 2 / 3' },

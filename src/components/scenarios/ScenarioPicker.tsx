@@ -174,6 +174,14 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
                 className={`${styles.scenarioCard} ${
                   isSelected ? styles.scenarioCardActive : ''
                 }`}
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectScenario(s.id);
+                  }
+                }}
                 onClick={() => onSelectScenario(s.id)}
               >
                 <div className={styles.cardTop}>

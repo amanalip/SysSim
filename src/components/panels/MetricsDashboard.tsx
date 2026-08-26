@@ -94,6 +94,11 @@ export const MetricsDashboard: React.FC = () => {
   }
 
   const handleExportCsv = () => {
+    if (!metrics.timeSeries || metrics.timeSeries.length === 0) {
+      useStore.getState().addToast('No simulation metrics recorded yet to export', 'warning');
+      return;
+    }
+
     const headers = [
       'TimestampSec',
       'P50LatencyMs',

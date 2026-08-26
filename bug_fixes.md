@@ -76,6 +76,9 @@
 | **66** | `src/engine/simulator.ts` | Low QPS configurations forced at least 1 request generated per tick via `Math.max(1, ...)`, generating 20 QPS when configured for 10 QPS. | Added fractional request accumulator so request generation matches target QPS over time. |
 | **67** | `src/engine/components/db-model.ts` | Database connection pool release used real wall-clock `setTimeout` inside Web Worker, causing connection starvation at high simulation speeds. | Replaced `setTimeout` with tick delta based `drainConnections(deltaMs)`. |
 | **68** | `src/engine/routing/consistent-hashing.ts` | Consistent hash ring binary search node lookup used an uninitialized wrap state on upper bound lookup. | Initialized `resultIdx = -1` and explicitly wrapped to `ring[0].nodeId`. |
+| **69** | `src/components/panels/MetricsDashboard.tsx` | Export CSV button generated an empty file with only table headers when clicked before simulation metrics were recorded. | Added empty time-series telemetry validation guard and toast warning. |
+| **70** | `src/components/modals/ShortcutsModal.tsx` | Keyboard shortcuts reference guide omitted the global snapshot manager trigger `Ctrl + B / Cmd + B`. | Added Snapshot Manager shortcut entry to shortcuts list. |
+| **71** | `src/components/scenarios/ScenarioPicker.tsx` | Scenario catalog cards were non-interactive `div` elements lacking keyboard focus and selection handlers. | Added `tabIndex={0}`, `role="button"`, and Enter/Space `onKeyDown` listeners. |
 
 ---
 
