@@ -86,6 +86,9 @@
 | **76** | `src/engine/sim-bridge.ts` | `SimulationBridge` lacked an `onerror` handler on the Web Worker, causing the simulation to hang if worker code encountered an unexpected runtime exception. | Registered `this.worker.onerror` to automatically fail over to main-thread `SysSimEngine`. |
 | **77** | `src/App.tsx` | Global keyboard listener omitted number keys `1`, `2`, and `3` advertised for switching between Palette, Scenarios, and Calculator tabs. | Added non-modifier `1`, `2`, `3` key listeners to update `activeSidebarTab`. |
 | **78** | `src/store/use-store.ts` | `redo()` appended previous snapshots to `historyPast` without applying a slice cap, permitting unbounded history stack growth. | Sliced `historyPast` to 20 entries in `redo()`. |
+| **79** | `src/components/scenarios/ScenarioDetail.tsx` | Navigating between different challenge scenarios left the progressive hint counter unlocked at previous levels. | Added `useEffect` on `scenario.id` to reset `unlockedHintCount` and answer accordion states. |
+| **80** | `src/components/panels/BottleneckPanel.tsx` | Clicking "Inspect [Node Name]" selected the node in state but failed to open the Properties Panel drawer if it was closed. | Added `setIsPropertiesPanelOpen(true)` directly into the inspect button handler. |
+| **81** | `src/utils/sharing.ts` | `decodeStateFromUrlHash` lacked runtime schema validation on parsed JSON before returning state to the store. | Added structural array validation for `nodes` and `edges`. |
 
 ---
 

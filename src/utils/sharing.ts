@@ -47,7 +47,11 @@ export function decodeStateFromUrlHash(hash: string): SerializedCanvasState | nu
     const compressed = hash.replace('#data=', '');
     const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
     if (!decompressed) return null;
-    return JSON.parse(decompressed) as SerializedCanvasState;
+    const parsed = JSON.parse(decompressed);
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
+      return null;
+    }
+    return parsed as SerializedCanvasState;
   } catch {
     return null;
   }

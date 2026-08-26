@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   HelpCircle,
@@ -33,6 +33,11 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
 
   const [unlockedHintCount, setUnlockedHintCount] = useState(1);
   const [openAnswers, setOpenAnswers] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    setUnlockedHintCount(1);
+    setOpenAnswers({});
+  }, [scenario.id]);
 
   const isCompleted = completedScenarioIds.includes(scenario.id);
 
