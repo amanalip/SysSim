@@ -97,6 +97,8 @@
 | **87** | `src/components/panels/CostEstimatorPanel.tsx` | Cost calculator only billed 1 database host regardless of `readReplicasCount` and dropped fallback instances from `totalMonthly`. | Billed `(replicas + readReplicasCount)` for SQL databases and added `otherCost` into total bill. |
 | **88** | `src/components/panels/HealthRadarPanel.tsx` | Health Radar penalized over-provisioning when simulation was idle because `metrics.currentQps` was 0, resulting in a 'C' cost grade on valid architectures. | Evaluated `trafficConfig.baseQps` instead of `metrics.currentQps` when simulation is idle. |
 | **89** | `src/components/modals/CommandPalette.tsx` | Selecting a scenario in the command palette forcibly loaded and overwrote the user canvas with reference design nodes. | Switched to challenge mode loading with graph/config worker sync, preserving user build freedom. |
+| **90** | `src/components/canvas/edges/ProtocolEdge.tsx` | Interactive edge buttons (protocol dropdown, cut edge, delete) omitted `preventDefault`, causing accidental selection drags. | Added `e.preventDefault()` to all interactive edge button handlers. |
+| **91** | `src/engine/metrics/bottleneck-detector.ts` | Databases handling over 2,000 QPS on a single primary instance without read replicas were only flagged as standard warnings. | Upgraded high-throughput database single-instance bottlenecks to critical severity with read-replica scaling guidance. |
 
 ---
 

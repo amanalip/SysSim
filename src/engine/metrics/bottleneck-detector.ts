@@ -28,15 +28,22 @@ export function detectBottlenecks(
     }
 
     if (config.type === 'sql_db' && 'readReplicasCount' in config && config.readReplicasCount === 0) {
+      const nodeMetric = metrics?.componentMetrics?.[node.id];
+      const isHighLoad = Boolean(nodeMetric && nodeMetric.qps > 2000);
       issues.push({
         id: `spof_db_${node.id}`,
         type: 'spof',
-        severity: 'warning',
+        severity: isHighLoad ? 'critical' : 'warning',
         nodeId: node.id,
         nodeName: config.name,
-        title: 'Database Single Point of Failure',
-        description: `Database '${config.name}' has no read replicas configured. All read and write operations hit the primary instance.`,
-        suggestedFix: 'Add at least 1 or 2 read replicas to distribute query traffic and provide failover capability.',
+        title: isHighLoad ? 'Critical Database Contention SPOF' : 'Database Single Point of Failure',
+        description: isHighLoad
+          ? `Database '${config.name}' is handling ${nodeMetric?.qps} QPS on a single primary instance without read replicas.`
+          : `Database '${config.name}' has no read replicas configured. All read and write operations hit the primary instance.`,
+        suggestedFix: isHighLoad
+          ? 'Add 2+ read replicas to offload read traffic and enable read/write query splitting.'
+          : 'Add at least 1 or 2 read replicas to distribute query traffic and provide failover capability.',
+        metricValue: nodeMetric ? `${nodeMetric.qps} QPS` : undefined,
       });
     }
   });

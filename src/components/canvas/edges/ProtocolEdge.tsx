@@ -89,18 +89,21 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
   }, [isOpen]);
 
   const handleProtocolSelect = (protocol: EdgeProtocol, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     updateEdgeProtocol(id, protocol);
     setIsOpen(false);
   };
 
   const handleToggleCut = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     toggleCutEdge(id);
     addToast(isCut ? 'Restored network connection' : 'Cut network connection', isCut ? 'success' : 'warning');
   };
 
   const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     removeEdge(id);
   };
