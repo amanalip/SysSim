@@ -99,6 +99,8 @@
 | **89** | `src/components/modals/CommandPalette.tsx` | Selecting a scenario in the command palette forcibly loaded and overwrote the user canvas with reference design nodes. | Switched to challenge mode loading with graph/config worker sync, preserving user build freedom. |
 | **90** | `src/components/canvas/edges/ProtocolEdge.tsx` | Interactive edge buttons (protocol dropdown, cut edge, delete) omitted `preventDefault`, causing accidental selection drags. | Added `e.preventDefault()` to all interactive edge button handlers. |
 | **91** | `src/engine/metrics/bottleneck-detector.ts` | Databases handling over 2,000 QPS on a single primary instance without read replicas were only flagged as standard warnings. | Upgraded high-throughput database single-instance bottlenecks to critical severity with read-replica scaling guidance. |
+| **92** | `src/components/panels/EnvelopeCalculator.tsx` | Inbound and outbound bandwidth calculations did not distinguish read request headers and write response status payloads. | Separated read/write request headers and response payloads for full-duplex IO accuracy. |
+| **93** | `src/components/scenarios/ScenarioDetail.tsx` | Scenario header constraints omitted read/write ratio and retention timelines, requiring users to search the problem text. | Added Read:Write ratio and Retention pill cells to the top constraints grid. |
 
 ---
 

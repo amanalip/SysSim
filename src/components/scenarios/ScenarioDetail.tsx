@@ -103,6 +103,22 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
             {scenario.constraints.availabilitySlaPercent}%
           </span>
         </div>
+        {scenario.constraints.readWriteRatio && (
+          <div className={styles.constraintItem}>
+            <span className={styles.constraintLabel}>Read:Write</span>
+            <span className={styles.constraintVal}>
+              {scenario.constraints.readWriteRatio}
+            </span>
+          </div>
+        )}
+        {scenario.constraints.retentionTimeline && (
+          <div className={styles.constraintItem}>
+            <span className={styles.constraintLabel}>Retention</span>
+            <span className={styles.constraintVal}>
+              {scenario.constraints.retentionTimeline}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* FAANG System Design Interview Workflow */}

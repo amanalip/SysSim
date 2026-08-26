@@ -445,6 +445,8 @@ export interface ScenarioConstraints {
   dataSizeGb: number;
   maxP99LatencyMs: number;
   availabilitySlaPercent: number;
+  readWriteRatio?: string;
+  retentionTimeline?: string;
 }
 
 export interface SerializedCanvasState {

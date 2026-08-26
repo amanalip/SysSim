@@ -51,9 +51,9 @@ export const EnvelopeCalculator: React.FC = () => {
     // Replicated storage (TB)
     const totalReplicatedStorageTb = Math.round(totalStorageNeededTb * safeReplication * 100) / 100;
 
-    // Inbound & Outbound Bandwidth (Mbps) = QPS * payloadKB * 8 / 1024
-    const inboundBandwidthMbps = Math.round(((writeQps * safePayload * 8) / 1024) * 10) / 10;
-    const outboundBandwidthMbps = Math.round(((readQps * safePayload * 8) / 1024) * 10) / 10;
+    // Inbound & Outbound Bandwidth (Mbps) = Full duplex request + response payload & header sizing
+    const inboundBandwidthMbps = Math.round(((writeQps * safePayload * 8 + readQps * 0.5 * 8) / 1024) * 10) / 10;
+    const outboundBandwidthMbps = Math.round(((readQps * safePayload * 8 + writeQps * 0.2 * 8) / 1024) * 10) / 10;
 
     // Estimated servers needed = Math.ceil(qps / serverCapacityQps)
     const estimatedServersNeeded = Math.max(1, Math.ceil(safeQps / safeCapacity));
