@@ -458,6 +458,16 @@ export class SysSimEngine {
         }
         hopLatency = 4;
         hopStatus = 'queued';
+      } else if (config.type === 'auth_service') {
+        hopLatency = Math.max(1, (config as any).validationLatencyMs || 4);
+        hopStatus = 'processed';
+      } else if (config.type === 'encryption_service') {
+        hopLatency = Math.max(1, (config as any).overheadLatencyMs || 3);
+        hopStatus = 'processed';
+      } else if (config.type === 'serverless') {
+        const isCold = stats.totalRequests <= 1;
+        hopLatency = isCold ? ((config as any).coldStartLatencyMs || 25) : 5;
+        hopStatus = 'processed';
       }
 
       totalLatency += hopLatency;

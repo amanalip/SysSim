@@ -29,6 +29,21 @@ class SimulationBridge {
             useStore.getState().setActiveRequests(activeRequests || []);
           }
         };
+
+        this.worker.onerror = (err) => {
+          console.warn('Simulation Web Worker encountered an error, failing over to main thread engine:', err);
+          try {
+            this.worker?.terminate();
+          } catch {}
+          this.worker = null;
+          this.fallbackEngine = new SysSimEngine();
+          this.syncGraph();
+          this.syncConfig(useStore.getState().trafficConfig);
+          this.setSpeed(useStore.getState().speedMultiplier);
+          if (useStore.getState().simState === 'running') {
+            this.start();
+          }
+        };
       } catch (err) {
         console.warn('Web Worker initialization failed, using main thread fallback', err);
         this.worker = null;

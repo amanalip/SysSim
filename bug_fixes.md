@@ -81,6 +81,9 @@
 | **71** | `src/components/scenarios/ScenarioPicker.tsx` | Scenario catalog cards were non-interactive `div` elements lacking keyboard focus and selection handlers. | Added `tabIndex={0}`, `role="button"`, and Enter/Space `onKeyDown` listeners. |
 | **72** | `src/components/canvas/nodes/CustomComponentNode.tsx` | Floating toolbar action buttons lacked `preventDefault()` on click events, causing focus transfer and node selection flickers in certain browsers. | Added `e.preventDefault()` to duplicate, power, delete, and settings handlers. |
 | **73** | `src/store/use-store.ts` | `addEdge` permitted duplicate connections in the reverse direction between the same pair of nodes. | Added reverse link check `(e.source === target && e.target === source)` in `addEdge`. |
+| **74** | `src/model/blueprints.ts` | Starter architecture blueprints initialized nodes with `type: 'custom'` instead of `'customComponent'`, causing React Flow to fall back to unstyled nodes. | Replaced `type: 'custom'` with `type: 'customComponent'` across all blueprint definitions. |
+| **75** | `src/engine/simulator.ts` | Simulation engine bypassed `auth_service`, `encryption_service`, and `serverless` tiers, falling back to static 5ms delays without evaluating validation latency or cold starts. | Added dedicated simulation evaluation branches for `auth_service`, `encryption_service`, and `serverless`. |
+| **76** | `src/engine/sim-bridge.ts` | `SimulationBridge` lacked an `onerror` handler on the Web Worker, causing the simulation to hang if worker code encountered an unexpected runtime exception. | Registered `this.worker.onerror` to automatically fail over to main-thread `SysSimEngine`. |
 
 ---
 

@@ -27,25 +27,25 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
       const nodes: CanvasNode[] = [
         {
           id: lbId,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX, y: baseY + 80 },
           data: { config: createDefaultConfig('load_balancer', lbId, 'API Gateway LB') },
         },
         {
           id: app1Id,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX + 240, y: baseY },
           data: { config: createDefaultConfig('app_server', app1Id, 'App Server Alpha') },
         },
         {
           id: app2Id,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX + 240, y: baseY + 160 },
           data: { config: createDefaultConfig('app_server', app2Id, 'App Server Beta') },
         },
         {
           id: cacheId,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX + 480, y: baseY + 80 },
           data: { config: createDefaultConfig('redis_cache', cacheId, 'Shared Redis') },
         },
@@ -100,19 +100,19 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
       const nodes: CanvasNode[] = [
         {
           id: primaryId,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX, y: baseY + 80 },
           data: { config: primaryConfig },
         },
         {
           id: replica1Id,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX + 260, y: baseY },
           data: { config: rep1Config },
         },
         {
           id: replica2Id,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX + 260, y: baseY + 160 },
           data: { config: rep2Config },
         },
@@ -153,31 +153,31 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
       const nodes: CanvasNode[] = [
         {
           id: gwId,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX, y: baseY + 80 },
           data: { config: createDefaultConfig('api_gateway', gwId, 'Ingress Gateway') },
         },
         {
           id: queueId,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX + 220, y: baseY + 80 },
           data: { config: createDefaultConfig('message_queue', queueId, 'Kafka Topic') },
         },
         {
           id: w1Id,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX + 440, y: baseY },
           data: { config: createDefaultConfig('worker', w1Id, 'Worker Alpha') },
         },
         {
           id: w2Id,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX + 440, y: baseY + 160 },
           data: { config: createDefaultConfig('worker', w2Id, 'Worker Beta') },
         },
         {
           id: sinkId,
-          type: 'custom',
+          type: 'customComponent',
           position: { x: baseX + 660, y: baseY + 80 },
           data: { config: createDefaultConfig('nosql_db', sinkId, 'Analytics NoSQL Sink') },
         },
