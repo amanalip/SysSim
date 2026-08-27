@@ -1,3 +1,10 @@
+.tracePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
 .traceContainer {
   display: flex;
   height: 100%;

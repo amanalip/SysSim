@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { DollarSign, Server, Database, Zap, Radio, Globe } from 'lucide-react';
 import { useStore } from '../../store/use-store';
+import { ModelNotice } from '../ui/ModelNotice';
 import styles from './CostEstimatorPanel.module.css';
 
 interface CostLineItem {
@@ -115,18 +116,28 @@ export const CostEstimatorPanel: React.FC = () => {
 
   if (nodes.length === 0) {
     return (
-      <div className={styles.emptyState}>
-        <DollarSign size={28} color="var(--text-muted)" />
-        <span className={styles.emptyTitle}>No Provisioned Cloud Infrastructure</span>
-        <span className={styles.emptySubtitle}>
-          Add components to the canvas to view real-time monthly cloud cost projections.
-        </span>
+      <div className={styles.container}>
+        <ModelNotice
+          kind="estimate"
+          detail="Static example rates are illustrative and are not a cloud-provider quote."
+        />
+        <div className={styles.emptyState}>
+          <DollarSign size={28} color="var(--text-muted)" />
+          <span className={styles.emptyTitle}>No Provisioned Cloud Infrastructure</span>
+          <span className={styles.emptySubtitle}>
+            Add components to the canvas to view an illustrative monthly cost estimate.
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
     <div className={styles.container}>
+      <ModelNotice
+        kind="estimate"
+        detail="Static example rates are illustrative and are not a cloud-provider quote."
+      />
       {/* Top Total Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>

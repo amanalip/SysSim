@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { CalculatorInputs, CalculatorOutputs } from '../../model/types';
+import { ModelNotice } from '../ui/ModelNotice';
 import styles from './EnvelopeCalculator.module.css';
 
 export const EnvelopeCalculator: React.FC = () => {
@@ -92,6 +93,11 @@ export const EnvelopeCalculator: React.FC = () => {
 
   return (
     <div className={styles.calculatorContainer}>
+      <ModelNotice
+        kind="estimate"
+        detail="Results use simplified workload assumptions and are not production capacity guarantees."
+      />
+
       {/* Presets */}
       <div className={styles.presetsBar}>
         <div className={styles.presetLabel}>Architecture Presets</div>

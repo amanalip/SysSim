@@ -3,6 +3,7 @@ import { Network, AlertTriangle, Eye } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { SimRequest } from '../../model/types';
 import { ComponentIcon } from '../icons/ComponentIcon';
+import { ModelNotice } from '../ui/ModelNotice';
 import styles from './RequestTracePanel.module.css';
 
 export const RequestTracePanel: React.FC = () => {
@@ -15,12 +16,20 @@ export const RequestTracePanel: React.FC = () => {
 
   if (traces.length === 0) {
     return (
-      <div className={styles.emptyState}>
-        <Network size={28} color="var(--text-muted)" />
-        <span className={styles.emptyTitle}>No Request Traces Recorded Yet</span>
-        <span className={styles.emptySubtitle}>
-          Start the simulation to capture and inspect end-to-end hop-by-hop distributed traces.
-        </span>
+      <div className={styles.tracePanel}>
+        <ModelNotice
+          kind="simulation"
+          detail="Traces are synthetic model paths, not telemetry captured from a deployed system."
+        />
+        <div className={styles.traceContainer}>
+          <div className={styles.emptyState}>
+            <Network size={28} color="var(--text-muted)" />
+            <span className={styles.emptyTitle}>No Request Traces Recorded Yet</span>
+            <span className={styles.emptySubtitle}>
+              Start the simulation to capture and inspect synthetic hop-by-hop request traces.
+            </span>
+          </div>
+        </div>
       </div>
     );
   }
@@ -31,80 +40,92 @@ export const RequestTracePanel: React.FC = () => {
   const totalLatency = selectedTrace?.totalLatencyMs || hops.reduce((acc, h) => acc + h.latencyMs, 0);
 
   return (
-    <div className={styles.traceContainer}>
-      {/* Left List of Traces */}
-      <div className={styles.traceList}>
-        <div className={styles.listHeader}>
-          <span>Recorded Traces ({traces.length})</span>
-        </div>
-        <div className={styles.listBody}>
-          {traces.map((trace) => {
-            const isSelected = trace.id === (selectedTrace?.id || traces[0]?.id);
-            const isSuccess = trace.status === 'success';
-            const isRateLimited = trace.status === 'rate_limited';
-
-            return (
-              <div
-                key={trace.id}
-                className={`${styles.traceItem} ${isSelected ? styles.traceItemActive : ''}`}
-                onClick={() => setSelectedTraceId(trace.id)}
-              >
-                <div className={styles.traceItemTop}>
-                  <span
-                    className={styles.statusPill}
-                    style={{
-                      backgroundColor: isSuccess
-                        ? 'rgba(63, 185, 80, 0.15)'
-                        : isRateLimited
-                        ? 'rgba(210, 153, 34, 0.15)'
-                        : 'rgba(248, 81, 73, 0.15)',
-                      color: isSuccess
-                        ? 'var(--success)'
-                        : isRateLimited
-                        ? 'var(--warning)'
-                        : 'var(--error)',
-                    }}
-                  >
-                    {isSuccess ? '200 OK' : isRateLimited ? '429 Limit' : '500 Error'}
-                  </span>
-                  <span className={styles.traceLatency}>{trace.totalLatencyMs.toFixed(1)}ms</span>
-                </div>
-                <div className={styles.traceItemBottom}>
-                  <span className={styles.traceHopsCount}>{trace.path.length} hops</span>
-                  <span className={styles.traceTime}>
-                    {new Date(trace.timestamp).toLocaleTimeString()}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Right Trace Waterfall Inspector */}
-      {selectedTrace && (
-        <div className={styles.waterfallView}>
-          <div className={styles.waterfallHeader}>
-            <div className={styles.traceOverview}>
-              <span className={styles.waterfallTitle}>
-                Trace #{selectedTrace.id.slice(0, 12)}
-              </span>
-              <span className={styles.waterfallMeta}>
-                Total Latency: <b>{totalLatency.toFixed(1)}ms</b> • Hops: <b>{hops.length}</b> • Status: <b>{selectedTrace.status}</b>
-              </span>
-            </div>
+    <div className={styles.tracePanel}>
+      <ModelNotice
+        kind="simulation"
+        detail="Traces are synthetic model paths, not telemetry captured from a deployed system."
+      />
+      <div className={styles.traceContainer}>
+        {/* Left List of Traces */}
+        <div className={styles.traceList}>
+          <div className={styles.listHeader}>
+            <span>Recorded Traces ({traces.length})</span>
           </div>
-
-          <div className={styles.hopsList}>
-            {hops.map((hop, idx) => {
-              const hopPercent = Math.round((hop.latencyMs / Math.max(1, totalLatency)) * 100);
-              const isSlowest = hop.latencyMs === maxHopLatency && hops.length > 1;
+          <div className={styles.listBody}>
+            {traces.map((trace) => {
+              const isSelected = trace.id === (selectedTrace?.id || traces[0]?.id);
+              const isSuccess = trace.status === 'success';
+              const isRateLimited = trace.status === 'rate_limited';
 
               return (
                 <div
-                  key={idx}
-                  className={`${styles.hopCard} ${isSlowest ? styles.hopCardBottleneck : ''}`}
+                  key={trace.id}
+                  className={`${styles.traceItem} ${isSelected ? styles.traceItemActive : ''}`}
+                  onClick={() => setSelectedTraceId(trace.id)}
                 >
+                  <div className={styles.traceItemTop}>
+                    <span
+                      className={styles.statusPill}
+                      style={{
+                        backgroundColor: isSuccess
+                          ? 'rgba(63, 185, 80, 0.15)'
+                          : isRateLimited
+                          ? 'rgba(210, 153, 34, 0.15)'
+                          : 'rgba(248, 81, 73, 0.15)',
+                        color: isSuccess
+                          ? 'var(--success)'
+                          : isRateLimited
+                          ? 'var(--warning)'
+                          : 'var(--error)',
+                      }}
+                    >
+                      {isSuccess ? '200 OK' : isRateLimited ? '429 Limit' : '500 Error'}
+                    </span>
+                    <span className={styles.traceLatency}>
+                      {trace.totalLatencyMs.toFixed(1)}ms
+                    </span>
+                  </div>
+                  <div className={styles.traceItemBottom}>
+                    <span className={styles.traceHopsCount}>{trace.path.length} hops</span>
+                    <span className={styles.traceTime}>
+                      {new Date(trace.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Trace Waterfall Inspector */}
+        {selectedTrace && (
+          <div className={styles.waterfallView}>
+            <div className={styles.waterfallHeader}>
+              <div className={styles.traceOverview}>
+                <span className={styles.waterfallTitle}>
+                  Trace #{selectedTrace.id.slice(0, 12)}
+                </span>
+                <span className={styles.waterfallMeta}>
+                  Total Latency: <b>{totalLatency.toFixed(1)}ms</b> • Hops:{' '}
+                  <b>{hops.length}</b> • Status: <b>{selectedTrace.status}</b>
+                </span>
+              </div>
+            </div>
+
+            <div className={styles.hopsList}>
+              {hops.map((hop, idx) => {
+                const hopPercent = Math.round(
+                  (hop.latencyMs / Math.max(1, totalLatency)) * 100,
+                );
+                const isSlowest = hop.latencyMs === maxHopLatency && hops.length > 1;
+
+                return (
+                  <div
+                    key={idx}
+                    className={`${styles.hopCard} ${
+                      isSlowest ? styles.hopCardBottleneck : ''
+                    }`}
+                  >
                   <div className={styles.hopLeft}>
                     <div className={styles.hopNumber}>{idx + 1}</div>
                     <div className={styles.hopIconBox}>
@@ -153,12 +174,13 @@ export const RequestTracePanel: React.FC = () => {
                       <Eye size={12} />
                     </button>
                   </div>
-                </div>
-              );
-            })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

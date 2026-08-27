@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { detectBottlenecks } from '../../engine/metrics/bottleneck-detector';
+import { ModelNotice } from '../ui/ModelNotice';
 import styles from './BottleneckPanel.module.css';
 
 export const BottleneckPanel: React.FC = () => {
@@ -13,18 +14,28 @@ export const BottleneckPanel: React.FC = () => {
 
   if (issues.length === 0) {
     return (
-      <div className={styles.emptyState}>
-        <CheckCircle2 size={24} color="var(--success)" />
-        <span className={styles.emptyTitle}>No Bottlenecks Detected</span>
-        <span style={{ fontSize: 11 }}>
-          Your current architecture satisfies baseline redundancy and capacity checks.
-        </span>
+      <div className={styles.panelContainer}>
+        <ModelNotice
+          kind="heuristic"
+          detail="Findings are rules-based design prompts, not proof of production readiness."
+        />
+        <div className={styles.emptyState}>
+          <CheckCircle2 size={24} color="var(--success)" />
+          <span className={styles.emptyTitle}>No Bottlenecks Detected</span>
+          <span style={{ fontSize: 11 }}>
+            No issue matched the current baseline rules; this is not a production-readiness guarantee.
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
     <div className={styles.panelContainer}>
+      <ModelNotice
+        kind="heuristic"
+        detail="Findings are rules-based design prompts, not proof of production readiness."
+      />
       <div className={styles.issueList}>
         {issues.map((issue) => (
           <div

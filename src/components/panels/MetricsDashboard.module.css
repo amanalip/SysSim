@@ -49,6 +49,17 @@
   letter-spacing: 0.5px;
 }
 
+.modelBadge {
+  padding: 1px 5px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.25px;
+  text-transform: uppercase;
+}
+
 .miniDivider {
   width: 1px;
   height: 14px;

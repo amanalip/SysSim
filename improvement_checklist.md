@@ -59,16 +59,16 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 ## Define SysSim's product contract — P0
 
-- [ ] 1. Decide whether SysSim is primarily an educational architecture playground, a quantitative simulator, or both.
-- [ ] 2. Define which outputs are exact calculations, approximations, heuristics, or illustrative values.
-- [ ] 3. Add visible labels to estimated or heuristic outputs so users cannot mistake them for production capacity guarantees.
-- [ ] 4. Define the intended audience: interview candidates, students, instructors, architects, or production engineers.
-- [ ] 5. Define explicitly supported browsers, screen sizes, input methods, and Node.js versions.
-- [ ] 6. Define maximum supported graph size, zone count, QPS, simulation duration, and snapshot size.
-- [ ] 7. Define whether simulations represent requests, operations, messages, jobs, or a configurable mix.
-- [ ] 8. Define the meaning of `success`, `failure`, `timeout`, `dropped`, `queued`, `hit`, and `miss` across the engine and UI.
-- [ ] 9. Define whether node replica counts represent virtual capacity within one node or separate graph nodes.
-- [ ] 10. Define what an edge means: dependency, synchronous call, asynchronous delivery, replication, fallback, or arbitrary data flow.
+- [x] 1. Decide whether SysSim is primarily an educational architecture playground, a quantitative simulator, or both.
+- [x] 2. Define which outputs are exact calculations, approximations, heuristics, or illustrative values.
+- [x] 3. Add visible labels to estimated or heuristic outputs so users cannot mistake them for production capacity guarantees.
+- [x] 4. Define the intended audience: interview candidates, students, instructors, architects, or production engineers.
+- [x] 5. Define explicitly supported browsers, screen sizes, input methods, and Node.js versions.
+- [x] 6. Define maximum supported graph size, zone count, QPS, simulation duration, and snapshot size.
+- [x] 7. Define whether simulations represent requests, operations, messages, jobs, or a configurable mix.
+- [x] 8. Define the meaning of `success`, `failure`, `timeout`, `dropped`, `queued`, `hit`, and `miss` across the engine and UI.
+- [x] 9. Define whether node replica counts represent virtual capacity within one node or separate graph nodes.
+- [x] 10. Define what an edge means: dependency, synchronous call, asynchronous delivery, replication, fallback, or arbitrary data flow.
 - [ ] 11. Document which behaviors are deliberately simplified and why.
 - [ ] 12. Review README feature claims against this contract and revise any premature claims.
 

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { ShieldCheck, Zap, Activity, DollarSign, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useStore } from '../../store/use-store';
+import { ModelNotice } from '../ui/ModelNotice';
 import styles from './HealthRadarPanel.module.css';
 
 interface PillarScore {
@@ -209,6 +210,10 @@ export const HealthRadarPanel: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      <ModelNotice
+        kind="heuristic"
+        detail="Scores summarize simplified rules and simulated telemetry; they are not an architecture certification."
+      />
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           <span className={styles.title}>5-Pillar Architecture Health Radar</span>
@@ -218,7 +223,7 @@ export const HealthRadarPanel: React.FC = () => {
         </div>
         <div className={styles.overallBadge}>
           <span className={styles.scoreNumber}>{overallAverage}</span>
-          <span className={styles.scoreLabel}>/ 100 Score</span>
+          <span className={styles.scoreLabel}>/ 100 Heuristic</span>
         </div>
       </div>
 
