@@ -4,6 +4,7 @@ import {
   BottleneckIssue,
   CalculatorInputs,
   EdgeProtocol,
+  EdgePurpose,
   NodeHealthStatus,
   OverallMetrics,
   ProtocolEdgeData,
@@ -16,6 +17,7 @@ import {
 } from '../model/types';
 import { createDefaultConfig } from '../model/component-defaults';
 import { validateConnection } from '../model/validation';
+import { inferEdgePurpose } from '../model/edge-semantics';
 import { computeAutoLayout } from '../layout/auto-layout';
 import { simBridge } from '../engine/sim-bridge';
 import { ThemeMode } from '../theme';
@@ -96,8 +98,9 @@ export interface SysSimState {
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   updateNodeConfig: (id: string, partialConfig: Partial<AnyComponentConfig>) => void;
   removeNode: (id: string) => void;
-  addEdge: (source: string, target: string, protocol?: EdgeProtocol) => boolean;
+  addEdge: (source: string, target: string, protocol?: EdgeProtocol, purpose?: EdgePurpose) => boolean;
   updateEdgeProtocol: (edgeId: string, protocol: EdgeProtocol) => void;
+  updateEdgePurpose: (edgeId: string, purpose: EdgePurpose) => void;
   toggleCutEdge: (edgeId: string) => void;
   removeEdge: (edgeId: string) => void;
   selectNode: (nodeId: string | null) => void;
@@ -345,7 +348,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     simBridge.syncGraph();
   },
 
-  addEdge: (source, target, preferredProtocol) => {
+  addEdge: (source, target, preferredProtocol, preferredPurpose) => {
     if (source === target) return false;
     const existing = get().edges.find(
       (e) =>
@@ -373,12 +376,17 @@ export const useStore = create<SysSimState>((set, get) => ({
     }
 
     const id = `edge_${source}_${target}_${Date.now()}`;
+    const purpose =
+      preferredPurpose ||
+      (sourceNode && targetNode
+        ? inferEdgePurpose(sourceNode.data.config.type, targetNode.data.config.type, protocol)
+        : 'request');
     const newEdge: CanvasEdge = {
       id,
       source,
       target,
       type: 'protocolEdge',
-      data: { protocol },
+      data: { protocol, purpose },
     };
 
     get().pushHistory();
@@ -395,6 +403,16 @@ export const useStore = create<SysSimState>((set, get) => ({
     set((state) => ({
       edges: state.edges.map((e) =>
         e.id === edgeId ? { ...e, data: { ...e.data, protocol } } : e
+      ),
+    }));
+    simBridge.syncGraph();
+  },
+
+  updateEdgePurpose: (edgeId, purpose) => {
+    get().pushHistory();
+    set((state) => ({
+      edges: state.edges.map((e) =>
+        e.id === edgeId ? { ...e, data: { ...e.data, purpose } } : e
       ),
     }));
     simBridge.syncGraph();

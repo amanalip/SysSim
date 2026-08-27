@@ -50,7 +50,9 @@ describe('User-facing product claims', () => {
     ).join('\n');
 
     expect(blueprintCopy).toContain('Load Balancer + 2 App Server nodes + Redis Cache');
-    expect(blueprintCopy).toContain('replication and failover are not modeled');
+    expect(blueprintCopy).toContain(
+      'replication traffic is independent, lag/failover are not modeled',
+    );
     expect(blueprintCopy).toContain('asynchronous timing is simplified');
     expect(blueprintCopy).not.toContain('3 App Server Replicas');
     expect(blueprintCopy).not.toContain('replication links');

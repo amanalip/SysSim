@@ -127,19 +127,11 @@ The current engine does not model all replica behaviors consistently. In particu
 
 ## Edge semantics
 
-An edge currently means a **directed potential next hop** from its source node to its target node. It carries a displayed protocol plus optional latency, bandwidth, and cut-state metadata.
+An edge is a **directed typed relationship** from its source node to its target node. Its explicit purpose is one of `request`, `fallback`, `async`, `fanout`, `replication`, or `observability`. It also carries a displayed protocol plus optional latency, bandwidth, and cut-state metadata.
 
-Current routing behavior is intentionally documented as follows:
+The stored purpose is authoritative. The editor infers an initial purpose for newly drawn edges from endpoints and protocol; legacy edges without a purpose conservatively execute as `request` until persisted migration is completed. Load balancing applies only to request edges leaving a load balancer. Generic multi-request dependencies are awaited rather than silently load-balanced.
 
-- one usable outgoing edge selects that target;
-- a load balancer with multiple usable outgoing edges uses its configured routing algorithm;
-- another component with multiple usable outgoing edges selects one target using round-robin routing;
-- a cut edge is excluded from routing;
-- cycles stop when a request encounters a node it has already visited;
-- the current model does not yet encode separate request, fallback, fanout, asynchronous, replication, or observability edge purposes;
-- drawing parallel dependencies therefore does not yet imply that all dependencies execute.
-
-This is a known limitation, not an architectural recommendation. Explicit edge-purpose semantics are tracked beginning at improvement task 22.
+Detailed execution, latency, status, fallback, and branch aggregation rules are defined in [Edge Semantics](edge-semantics.md). Cut edges are excluded. Invalid-combination validation, visual editing, persistence coverage, migration, and explicit cycle failure remain tracked in tasks 31–40.
 
 ## Interpreting results responsibly
 
@@ -157,7 +149,7 @@ SysSim deliberately favors an understandable, responsive teaching model over pro
 | --- | --- | --- | --- |
 | Time and scheduling | Requests advance in synchronous simulation steps rather than through a complete distributed event scheduler. | Keeps interaction responsive and makes the model approachable. | Do not infer real queue timing or concurrency. Event scheduling and capacity semantics are tracked in tasks 79–86 and 180–188. |
 | Randomness | Outcomes use unseeded randomness. | A seed lifecycle and portable random generator have not yet been introduced. | Runs may differ. Seeded reproducibility is tracked in tasks 173–178. |
-| Edge routing | An edge is only a potential next hop; most multi-edge nodes choose one target. | Explicit request, fallback, async, fanout, replication, and observability semantics require a larger graph-model migration. | Parallel edges do not mean all dependencies execute. Explicit edge purposes are tracked in tasks 22–40. |
+| Edge routing | Explicit purposes now distinguish request, fallback, async, fanout, replication, and observability execution, but validation, visual editing, migration, structured spans, and cycle failure remain incomplete. | Those layers require coordinated editor, schema, and trace changes beyond the engine semantics. | Use [Edge Semantics](edge-semantics.md) as the current contract. Remaining work is tracked in tasks 31–40. |
 | Cache behavior | Cache access and routing use simplified keys, hits, misses, and downstream behavior. | Real cache-aside behavior requires workload key distributions, origin fallback, population, TTL, and eviction semantics. | Do not use the model to predict a production hit ratio or origin load. Cache correctness is tracked in tasks 41–60. |
 | Messaging | Queues and brokers are simplified request-path hops rather than independently scheduled producer/consumer systems. | Correct async processing needs separate acknowledgement, backlog, drain, partition, retry, and consumer models. | Queue depth and completion timing are illustrative. Messaging behavior is tracked in tasks 61–78. |
 | Replicas and failover | A configured replica count is virtual capacity/redundancy inside one node and does not create independently routable instances or automatic failover. | Full failover needs health checks, routing changes, recovery delay, and database role semantics. | Draw separate nodes when independent routing matters. Replica and failover work is tracked in tasks 80–86, 95–96, and 120–124. |

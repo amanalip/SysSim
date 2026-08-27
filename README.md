@@ -13,6 +13,7 @@ SysSim's synthetic results are designed to build intuition. They are not product
 - **Interactive Canvas**: Drag-and-drop 27 component types across Compute, Networking, Storage, Caching, Messaging, and Security categories.
 - **Illustrative Traffic Simulation**: A step-based synthetic request model running in a background Web Worker. It generates modeled request paths, simplified hop latencies, and illustrative p50/p95/p99 telemetry.
 - **Traffic Patterns**: Simulate Steady, Bursty, Ramp-up, and Spike traffic profiles with customizable base QPS.
+- **Typed Edge Semantics**: Model synchronous requests, conditional fallback, parallel fanout, asynchronous acknowledgement, replication, and observability relationships with documented aggregation rules.
 - **Failure Exploration & Chaos Mode**: Mark components down, cut connections, and apply simplified fault states. Not every real-world recovery or failover path is modeled.
 - **Heuristic Design Review**: Rules-based prompts identify possible single points of failure, missing cache tiers, and modeled capacity pressure.
 - **Capacity Worksheet**: Deterministic back-of-envelope formulas estimate storage growth, replication multipliers, bandwidth, server count, and cache size from simplified assumptions.

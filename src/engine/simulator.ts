@@ -1,13 +1,16 @@
 import {
   AnyComponentConfig,
   ComponentMetricSnapshot,
+  EdgePurpose,
   OverallMetrics,
   ProtocolEdgeData,
+  RequestHop,
   SimRequest,
   SimulationState,
   TimeSeriesDataPoint,
   TrafficConfig,
 } from '../model/types';
+import { getEdgePurpose } from '../model/edge-semantics';
 import { createSimRequest } from './request';
 import { LoadBalancerRouter } from './routing/load-balancer';
 import { CacheModel } from './components/cache-model';
@@ -30,6 +33,15 @@ export interface SimEdge {
 export interface SimGraph {
   nodes: SimNode[];
   edges: SimEdge[];
+}
+
+interface TraversalResult {
+  success: boolean;
+  status: SimRequest['status'];
+  latencyMs: number;
+  hops: RequestHop[];
+  cacheMiss: boolean;
+  usedAsync: boolean;
 }
 
 export class SysSimEngine {
@@ -74,7 +86,6 @@ export class SysSimEngine {
   private queueModels: Map<string, QueueModel> = new Map();
   private dbModels: Map<string, DatabaseModel> = new Map();
   private activeConnections: Record<string, number> = {};
-  private nonLbRoutingIndices: Record<string, number> = {};
 
   constructor(graph?: SimGraph, config?: TrafficConfig) {
     if (graph) this.setGraph(graph);
@@ -94,7 +105,6 @@ export class SysSimEngine {
       if (!validNodeIds.has(id)) {
         delete this.nodeStats[id];
         delete this.activeConnections[id];
-        delete this.nonLbRoutingIndices[id];
       }
     }
 
@@ -115,7 +125,12 @@ export class SysSimEngine {
       // Initialize models
       if (n.config.type === 'load_balancer') {
         const outgoing = this.graph.edges
-          .filter((e) => e.source === n.id && !e.data?.isCut)
+          .filter(
+            (e) =>
+              e.source === n.id &&
+              !e.data?.isCut &&
+              getEdgePurpose(e.data) === 'request',
+          )
           .map((e) => e.target);
         this.lbRouters.set(
           n.id,
@@ -205,7 +220,6 @@ export class SysSimEngine {
     this.totalFailed = 0;
     this.timeSeries = [];
     this.activeConnections = {};
-    this.nonLbRoutingIndices = {};
     this.rateLimiters.forEach((rl) => rl.reset());
     this.queueModels.forEach((q) => q.reset());
     this.dbModels.forEach((db) => db.reset());
@@ -327,276 +341,423 @@ export class SysSimEngine {
 
   private processRequest(req: SimRequest): void {
     this.totalSent++;
-    let currentNodeId: string | null = req.sourceNodeId;
-    let isSuccess = true;
-    let totalLatency = 0;
-    const visited = new Set<string>();
+    const result = this.traverseNode(req.sourceNodeId, req.id, 0, new Set());
 
-    while (currentNodeId) {
-      if (visited.has(currentNodeId)) {
-        // Break cycles
-        break;
-      }
-      visited.add(currentNodeId);
+    req.path = result.hops;
+    req.totalLatencyMs = result.latencyMs;
+    req.status = result.success ? 'success' : result.status;
 
-      const node = this.graph.nodes.find((n) => n.id === currentNodeId);
-      if (!node) break;
-
-      const config = node.config;
-      const stats = this.nodeStats[node.id] || {
-        totalRequests: 0,
-        successfulRequests: 0,
-        failedRequests: 0,
-        latencies: [],
-        hits: 0,
-        misses: 0,
-        queueDepth: 0,
-      };
-      this.nodeStats[node.id] = stats;
-      stats.totalRequests++;
-
-      // Check health down
-      if (config.health === 'down') {
-        stats.failedRequests++;
-        req.path.push({
-          nodeId: node.id,
-          nodeName: config.name,
-          nodeType: config.type,
-          enterTimeMs: totalLatency,
-          exitTimeMs: totalLatency + 1,
-          latencyMs: 1,
-          status: 'error',
-          info: 'Component is down',
-        });
-        isSuccess = false;
-        req.status = 'error';
-        req.color = '#f85149';
-        break;
-      }
-
-      // Check failure rate
-      if (
-        config.failureRatePercent &&
-        Math.random() * 100 < config.failureRatePercent
-      ) {
-        stats.failedRequests++;
-        req.path.push({
-          nodeId: node.id,
-          nodeName: config.name,
-          nodeType: config.type,
-          enterTimeMs: totalLatency,
-          exitTimeMs: totalLatency + 5,
-          latencyMs: 5,
-          status: 'error',
-          info: 'Simulated component fault',
-        });
-        isSuccess = false;
-        req.status = 'error';
-        req.color = '#f85149';
-        break;
-      }
-
-      // Model specific evaluations
-      let hopLatency = 5;
-      let hopStatus: 'hit' | 'miss' | 'processed' | 'rejected' | 'queued' | 'error' = 'processed';
-
-      if (config.type === 'app_server') {
-        const replicas = config.replicas || 1;
-        hopLatency = Math.max(2, Math.round((config.processingLatencyMs || 15) / Math.sqrt(replicas)));
-      } else if (config.type === 'sql_db' || config.type === 'nosql_db') {
-        const dbModel = this.dbModels.get(node.id);
-        if (dbModel) {
-          const queryRes = dbModel.executeQuery(Math.random() < 0.1);
-          hopLatency = queryRes.latencyMs;
-        } else {
-          hopLatency = config.baseLatencyMs || 20;
-        }
-      } else if (
-        config.type === 'redis_cache' ||
-        config.type === 'local_cache' ||
-        config.type === 'cdn_cache' ||
-        config.type === 'browser_cache'
-      ) {
-        const cacheModel = this.cacheModels.get(node.id);
-        const cacheAccess = cacheModel
-          ? cacheModel.access(req.id, this.elapsedSimulationMs)
-          : { hit: Math.random() < 0.8, latencyMs: 2 };
-
-        if (cacheAccess.hit) {
-          hopLatency = cacheAccess.latencyMs;
-          hopStatus = 'hit';
-          stats.hits++;
-        } else {
-          hopLatency = 5;
-          hopStatus = 'miss';
-          stats.misses++;
-        }
-      } else if (config.type === 'rate_limiter') {
-        const rlModel = this.rateLimiters.get(node.id);
-        const allowed = rlModel ? rlModel.allowRequest(this.elapsedSimulationMs) : true;
-        if (!allowed) {
-          hopStatus = 'rejected';
-          isSuccess = false;
-          req.status = 'rate_limited';
-          req.color = '#d29922';
-          stats.failedRequests++;
-          break;
-        }
-      } else if (config.type === 'message_queue') {
-        const qModel = this.queueModels.get(node.id);
-        if (qModel) {
-          const enq = qModel.enqueue();
-          stats.queueDepth = enq.depth;
-          if (!enq.accepted) {
-            hopStatus = 'error';
-            isSuccess = false;
-            req.status = 'dropped';
-            req.color = '#f85149';
-            stats.failedRequests++;
-            break;
-          }
-        }
-        hopLatency = 4;
-        hopStatus = 'queued';
-      } else if (config.type === 'auth_service') {
-        hopLatency = Math.max(1, (config as any).validationLatencyMs || 4);
-        hopStatus = 'processed';
-      } else if (config.type === 'encryption_service') {
-        hopLatency = Math.max(1, (config as any).overheadLatencyMs || 3);
-        hopStatus = 'processed';
-      } else if (config.type === 'serverless') {
-        const isCold = stats.totalRequests <= 1;
-        hopLatency = isCold ? ((config as any).coldStartLatencyMs || 25) : 5;
-        hopStatus = 'processed';
-      }
-
-      totalLatency += hopLatency;
-      stats.latencies.push(hopLatency);
-      if (stats.latencies.length > 500) stats.latencies.shift();
-      stats.successfulRequests++;
-
-      req.path.push({
-        nodeId: node.id,
-        nodeName: config.name,
-        nodeType: config.type,
-        enterTimeMs: totalLatency - hopLatency,
-        exitTimeMs: totalLatency,
-        latencyMs: hopLatency,
-        status: hopStatus,
-      });
-
-      // Route downstream
-      const outgoingEdges = this.graph.edges.filter(
-        (e) => e.source === currentNodeId && !e.data?.isCut
-      );
-
-      let nextTargetNodeId: string | null = null;
-      let chosenEdge: (typeof outgoingEdges)[0] | null = null;
-
-      if (outgoingEdges.length === 0) {
-        if (config.type === 'load_balancer') {
-          // Load balancer with 0 outgoing available edges
-          stats.failedRequests++;
-          req.path.push({
-            nodeId: node.id,
-            nodeName: config.name,
-            nodeType: config.type,
-            enterTimeMs: totalLatency,
-            exitTimeMs: totalLatency + 2,
-            latencyMs: 2,
-            status: 'error',
-            info: '502 Bad Gateway: No healthy upstream targets available',
-          });
-          isSuccess = false;
-          req.status = 'error';
-          req.color = '#f85149';
-        }
-        currentNodeId = null;
-      } else if (outgoingEdges.length === 1) {
-        chosenEdge = outgoingEdges[0];
-        nextTargetNodeId = chosenEdge.target;
-      } else {
-        if (config.type === 'load_balancer') {
-          const lbRouter = this.lbRouters.get(node.id);
-          const nextTarget = lbRouter
-            ? lbRouter.selectTarget(req.id, this.activeConnections)
-            : outgoingEdges[0].target;
-
-          if (!nextTarget) {
-            stats.failedRequests++;
-            req.path.push({
-              nodeId: node.id,
-              nodeName: config.name,
-              nodeType: config.type,
-              enterTimeMs: totalLatency,
-              exitTimeMs: totalLatency + 2,
-              latencyMs: 2,
-              status: 'error',
-              info: '502 Bad Gateway: Upstream selection failed',
-            });
-            isSuccess = false;
-            req.status = 'error';
-            req.color = '#f85149';
-            currentNodeId = null;
-          } else {
-            nextTargetNodeId = nextTarget;
-            chosenEdge = outgoingEdges.find((e) => e.target === nextTarget) || outgoingEdges[0];
-          }
-        } else {
-          // Multi-edge fanout for non-load-balancer nodes (e.g. gateway/app server)
-          const nextIdx = (this.nonLbRoutingIndices[node.id] || 0) % outgoingEdges.length;
-          this.nonLbRoutingIndices[node.id] = nextIdx + 1;
-          chosenEdge = outgoingEdges[nextIdx];
-          nextTargetNodeId = chosenEdge.target;
-        }
-      }
-
-      if (nextTargetNodeId && chosenEdge) {
-        const protocol = chosenEdge.data?.protocol || 'HTTP';
-        const protocolOverhead =
-          chosenEdge.data?.latencyMs !== undefined
-            ? chosenEdge.data.latencyMs
-            : protocol === 'gRPC'
-            ? 1
-            : protocol === 'WebSocket' || protocol === 'TCP'
-            ? 2
-            : protocol === 'pub/sub' || protocol === 'MQTT'
-            ? 3
-            : 4; // HTTP default
-        totalLatency += protocolOverhead;
-        currentNodeId = nextTargetNodeId;
-      } else {
-        currentNodeId = null;
-      }
-    }
-
-    req.totalLatencyMs = totalLatency;
-    if (isSuccess) {
+    if (result.success) {
       this.totalSuccess++;
-      req.status = 'success';
-      const hasAsync = req.path.some((p) =>
-        ['message_queue', 'pubsub', 'event_bus', 'task_queue'].includes(p.nodeType)
+      const hasCacheHit = result.hops.some((hop) => hop.status === 'hit');
+      const hasMessagingHop = result.hops.some((hop) =>
+        ['message_queue', 'pubsub', 'event_bus', 'task_queue'].includes(hop.nodeType),
       );
-      const hasCacheHit = req.path.some((p) =>
-        ['redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(p.nodeType) &&
-        p.info?.includes('Hit')
-      );
-
-      if (hasAsync) {
-        req.color = '#a855f7'; // Purple async queue flow
+      if (result.usedAsync || hasMessagingHop) {
+        req.color = '#a855f7';
       } else if (hasCacheHit) {
-        req.color = '#06b6d4'; // Cyan cache hit
+        req.color = '#06b6d4';
       } else {
-        req.color = '#3fb950'; // Green 200 OK
+        req.color = '#3fb950';
       }
     } else {
       this.totalFailed++;
+      req.color = result.status === 'rate_limited' ? '#d29922' : '#f85149';
     }
 
     this.completedRequests.push(req);
     if (this.completedRequests.length > 1000) {
       this.completedRequests.shift();
     }
+  }
+
+  private traverseNode(
+    nodeId: string,
+    requestId: string,
+    startTimeMs: number,
+    visited: Set<string>,
+    viaEdgePurpose?: EdgePurpose,
+  ): TraversalResult {
+    if (visited.has(nodeId)) {
+      return {
+        success: true,
+        status: 'success',
+        latencyMs: 0,
+        hops: [],
+        cacheMiss: false,
+        usedAsync: false,
+      };
+    }
+
+    const node = this.graph.nodes.find((candidate) => candidate.id === nodeId);
+    if (!node) {
+      return {
+        success: false,
+        status: 'error',
+        latencyMs: 0,
+        hops: [],
+        cacheMiss: false,
+        usedAsync: false,
+      };
+    }
+
+    const branchVisited = new Set(visited);
+    branchVisited.add(nodeId);
+    const nodeResult = this.processNode(node, requestId, startTimeMs, viaEdgePurpose);
+    if (!nodeResult.success) return nodeResult;
+
+    const outgoingEdges = this.graph.edges.filter(
+      (edge) => edge.source === nodeId && !edge.data?.isCut,
+    );
+    const edgesByPurpose = (purpose: EdgePurpose) =>
+      outgoingEdges.filter((edge) => getEdgePurpose(edge.data) === purpose);
+
+    let latencyMs = nodeResult.latencyMs;
+    const hops = [...nodeResult.hops];
+    let usedAsync = false;
+    let primaryFailure: TraversalResult | null = null;
+
+    for (const edge of [
+      ...edgesByPurpose('replication'),
+      ...edgesByPurpose('observability'),
+    ]) {
+      this.traverseNode(edge.target, requestId, 0, branchVisited, getEdgePurpose(edge.data));
+    }
+
+    for (const edge of edgesByPurpose('async')) {
+      const edgeLatency = this.getEdgeLatency(edge);
+      const asyncBranch = this.traverseNode(
+        edge.target,
+        requestId,
+        startTimeMs + latencyMs + edgeLatency,
+        branchVisited,
+        'async',
+      );
+      const acknowledgementHop = asyncBranch.hops[0];
+      latencyMs += edgeLatency + (acknowledgementHop?.latencyMs || 0);
+      if (acknowledgementHop) hops.push(acknowledgementHop);
+      usedAsync = true;
+      if (
+        acknowledgementHop &&
+        (acknowledgementHop.status === 'error' || acknowledgementHop.status === 'rejected')
+      ) {
+        primaryFailure = {
+          success: false,
+          status: asyncBranch.status,
+          latencyMs,
+          hops,
+          cacheMiss: false,
+          usedAsync,
+        };
+        break;
+      }
+    }
+
+    const requestEdges = edgesByPurpose('request');
+    const fanoutEdges = edgesByPurpose('fanout');
+    const fallbackEdges = edgesByPurpose('fallback');
+
+    if (!nodeResult.cacheMiss && !primaryFailure && requestEdges.length > 0) {
+      const selectedRequestEdges =
+        node.config.type === 'load_balancer'
+          ? this.selectLoadBalancerEdge(node.id, requestId, requestEdges)
+          : requestEdges;
+
+      if (selectedRequestEdges.length === 0) {
+        primaryFailure = this.createRoutingFailure(
+          node,
+          startTimeMs + latencyMs,
+          '502 Bad Gateway: Upstream selection failed',
+        );
+      } else {
+        for (const edge of selectedRequestEdges) {
+          const edgeLatency = this.getEdgeLatency(edge);
+          const child = this.traverseNode(
+            edge.target,
+            requestId,
+            startTimeMs + latencyMs + edgeLatency,
+            branchVisited,
+            'request',
+          );
+          latencyMs += edgeLatency + child.latencyMs;
+          hops.push(...child.hops);
+          usedAsync ||= child.usedAsync;
+          if (!child.success) {
+            primaryFailure = child;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!nodeResult.cacheMiss && !primaryFailure && fanoutEdges.length > 0) {
+      const fanoutStart = startTimeMs + latencyMs;
+      const branchResults = fanoutEdges.map((edge) => {
+        const edgeLatency = this.getEdgeLatency(edge);
+        const child = this.traverseNode(
+          edge.target,
+          requestId,
+          fanoutStart + edgeLatency,
+          branchVisited,
+          'fanout',
+        );
+        return { ...child, latencyMs: edgeLatency + child.latencyMs };
+      });
+
+      latencyMs += Math.max(0, ...branchResults.map((result) => result.latencyMs));
+      branchResults.forEach((result) => {
+        hops.push(...result.hops);
+        usedAsync ||= result.usedAsync;
+      });
+      primaryFailure = branchResults.find((result) => !result.success) || null;
+    }
+
+    const needsFallback = nodeResult.cacheMiss || primaryFailure !== null;
+    if (needsFallback && fallbackEdges.length > 0) {
+      for (const edge of fallbackEdges) {
+        const edgeLatency = this.getEdgeLatency(edge);
+        const fallback = this.traverseNode(
+          edge.target,
+          requestId,
+          startTimeMs + latencyMs + edgeLatency,
+          branchVisited,
+          'fallback',
+        );
+        latencyMs += edgeLatency + fallback.latencyMs;
+        hops.push(...fallback.hops);
+        usedAsync ||= fallback.usedAsync;
+        if (fallback.success) {
+          return {
+            success: true,
+            status: 'success',
+            latencyMs,
+            hops,
+            cacheMiss: false,
+            usedAsync,
+          };
+        }
+        primaryFailure = fallback;
+      }
+    }
+
+    if (primaryFailure) {
+      return {
+        ...primaryFailure,
+        latencyMs,
+        hops,
+        usedAsync,
+      };
+    }
+
+    if (
+      node.config.type === 'load_balancer' &&
+      requestEdges.length === 0 &&
+      fanoutEdges.length === 0 &&
+      fallbackEdges.length === 0
+    ) {
+      const failure = this.createRoutingFailure(
+        node,
+        startTimeMs + latencyMs,
+        '502 Bad Gateway: No request upstream targets available',
+      );
+      return {
+        ...failure,
+        latencyMs: latencyMs + failure.latencyMs,
+        hops: [...hops, ...failure.hops],
+        usedAsync,
+      };
+    }
+
+    return {
+      success: true,
+      status: 'success',
+      latencyMs,
+      hops,
+      cacheMiss: nodeResult.cacheMiss,
+      usedAsync,
+    };
+  }
+
+  private processNode(
+    node: SimNode,
+    requestId: string,
+    startTimeMs: number,
+    viaEdgePurpose?: EdgePurpose,
+  ): TraversalResult {
+    const config = node.config;
+    const stats = this.nodeStats[node.id] || {
+      totalRequests: 0,
+      successfulRequests: 0,
+      failedRequests: 0,
+      latencies: [],
+      hits: 0,
+      misses: 0,
+      queueDepth: 0,
+    };
+    this.nodeStats[node.id] = stats;
+    stats.totalRequests++;
+
+    const failure = (status: SimRequest['status'], latencyMs: number, info: string) => {
+      stats.failedRequests++;
+      return {
+        success: false,
+        status,
+        latencyMs,
+        hops: [
+          {
+            nodeId: node.id,
+            nodeName: config.name,
+            nodeType: config.type,
+            enterTimeMs: startTimeMs,
+            exitTimeMs: startTimeMs + latencyMs,
+            latencyMs,
+            status: status === 'rate_limited' ? 'rejected' : 'error',
+            info,
+            viaEdgePurpose,
+          },
+        ],
+        cacheMiss: false,
+        usedAsync: false,
+      } satisfies TraversalResult;
+    };
+
+    if (config.health === 'down') {
+      return failure('error', 1, 'Component is down');
+    }
+
+    if (config.failureRatePercent && Math.random() * 100 < config.failureRatePercent) {
+      return failure('error', 5, 'Simulated component fault');
+    }
+
+    let hopLatency = 5;
+    let hopStatus: RequestHop['status'] = 'processed';
+    let hopInfo: string | undefined;
+
+    if (config.type === 'app_server') {
+      const replicas = config.replicas || 1;
+      hopLatency = Math.max(
+        2,
+        Math.round((config.processingLatencyMs || 15) / Math.sqrt(replicas)),
+      );
+    } else if (config.type === 'sql_db' || config.type === 'nosql_db') {
+      const dbModel = this.dbModels.get(node.id);
+      hopLatency = dbModel
+        ? dbModel.executeQuery(Math.random() < 0.1).latencyMs
+        : config.baseLatencyMs || 20;
+    } else if (
+      config.type === 'redis_cache' ||
+      config.type === 'local_cache' ||
+      config.type === 'cdn_cache' ||
+      config.type === 'browser_cache'
+    ) {
+      const cacheModel = this.cacheModels.get(node.id);
+      const cacheAccess = cacheModel
+        ? cacheModel.access(requestId, this.elapsedSimulationMs)
+        : { hit: Math.random() < 0.8, latencyMs: 2 };
+      if (cacheAccess.hit) {
+        hopLatency = cacheAccess.latencyMs;
+        hopStatus = 'hit';
+        hopInfo = 'Cache hit';
+        stats.hits++;
+      } else {
+        hopLatency = 5;
+        hopStatus = 'miss';
+        hopInfo = 'Cache miss';
+        stats.misses++;
+      }
+    } else if (config.type === 'rate_limiter') {
+      const allowed = this.rateLimiters.get(node.id)?.allowRequest(this.elapsedSimulationMs) ?? true;
+      if (!allowed) return failure('rate_limited', 1, 'Request rejected by rate limiter');
+    } else if (config.type === 'message_queue') {
+      const enqueue = this.queueModels.get(node.id)?.enqueue();
+      if (enqueue) {
+        stats.queueDepth = enqueue.depth;
+        if (!enqueue.accepted) return failure('dropped', 4, 'Queue capacity exceeded');
+      }
+      hopLatency = 4;
+      hopStatus = 'queued';
+    } else if (config.type === 'auth_service') {
+      hopLatency = Math.max(1, config.validationLatencyMs || 4);
+    } else if (config.type === 'encryption_service') {
+      hopLatency = Math.max(1, config.overheadLatencyMs || 3);
+    } else if (config.type === 'serverless') {
+      hopLatency = stats.totalRequests <= 1 ? config.coldStartLatencyMs || 25 : 5;
+    }
+
+    stats.latencies.push(hopLatency);
+    if (stats.latencies.length > 500) stats.latencies.shift();
+    stats.successfulRequests++;
+
+    return {
+      success: true,
+      status: 'success',
+      latencyMs: hopLatency,
+      hops: [
+        {
+          nodeId: node.id,
+          nodeName: config.name,
+          nodeType: config.type,
+          enterTimeMs: startTimeMs,
+          exitTimeMs: startTimeMs + hopLatency,
+          latencyMs: hopLatency,
+          status: hopStatus,
+          info: hopInfo,
+          viaEdgePurpose,
+        },
+      ],
+      cacheMiss: hopStatus === 'miss',
+      usedAsync: false,
+    };
+  }
+
+  private selectLoadBalancerEdge(
+    nodeId: string,
+    requestId: string,
+    requestEdges: SimEdge[],
+  ): SimEdge[] {
+    const target = this.lbRouters
+      .get(nodeId)
+      ?.selectTarget(requestId, this.activeConnections);
+    if (!target) return [];
+    const selected = requestEdges.find((edge) => edge.target === target);
+    return selected ? [selected] : [];
+  }
+
+  private createRoutingFailure(
+    node: SimNode,
+    startTimeMs: number,
+    info: string,
+  ): TraversalResult {
+    const stats = this.nodeStats[node.id];
+    if (stats) stats.failedRequests++;
+    return {
+      success: false,
+      status: 'error',
+      latencyMs: 2,
+      hops: [
+        {
+          nodeId: node.id,
+          nodeName: node.config.name,
+          nodeType: node.config.type,
+          enterTimeMs: startTimeMs,
+          exitTimeMs: startTimeMs + 2,
+          latencyMs: 2,
+          status: 'error',
+          info,
+        },
+      ],
+      cacheMiss: false,
+      usedAsync: false,
+    };
+  }
+
+  private getEdgeLatency(edge: SimEdge): number {
+    if (edge.data?.latencyMs !== undefined) return edge.data.latencyMs;
+    const protocol = edge.data?.protocol || 'HTTP';
+    if (protocol === 'gRPC') return 1;
+    if (protocol === 'WebSocket' || protocol === 'TCP') return 2;
+    if (protocol === 'pub/sub' || protocol === 'MQTT') return 3;
+    return 4;
   }
 
   public getMetricsSnapshot(): OverallMetrics {

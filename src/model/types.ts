@@ -45,6 +45,14 @@ export type NodeHealthStatus = 'healthy' | 'degraded' | 'down' | 'overloaded';
 
 export type EdgeProtocol = 'HTTP' | 'gRPC' | 'WebSocket' | 'TCP' | 'pub/sub' | 'MQTT';
 
+export type EdgePurpose =
+  | 'request'
+  | 'fallback'
+  | 'async'
+  | 'fanout'
+  | 'replication'
+  | 'observability';
+
 export type LoadBalancerAlgorithm =
   | 'round_robin'
   | 'least_connections'
@@ -314,6 +322,7 @@ export interface ZoneData {
 
 export interface ProtocolEdgeData {
   protocol: EdgeProtocol;
+  purpose?: EdgePurpose;
   bandwidthMbps?: number;
   latencyMs?: number;
   isCut?: boolean;
@@ -340,6 +349,7 @@ export interface RequestHop {
   exitTimeMs: number;
   latencyMs: number;
   status: 'hit' | 'miss' | 'processed' | 'rejected' | 'queued' | 'error';
+  viaEdgePurpose?: EdgePurpose;
   info?: string;
 }
 

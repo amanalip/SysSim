@@ -56,25 +56,25 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
           id: `e_${lbId}_${app1Id}`,
           source: lbId,
           target: app1Id,
-          data: { protocol: 'HTTP', isCut: false, latencyMs: 2 },
+          data: { protocol: 'HTTP', purpose: 'request', isCut: false, latencyMs: 2 },
         },
         {
           id: `e_${lbId}_${app2Id}`,
           source: lbId,
           target: app2Id,
-          data: { protocol: 'HTTP', isCut: false, latencyMs: 2 },
+          data: { protocol: 'HTTP', purpose: 'request', isCut: false, latencyMs: 2 },
         },
         {
           id: `e_${app1Id}_${cacheId}`,
           source: app1Id,
           target: cacheId,
-          data: { protocol: 'gRPC', isCut: false, latencyMs: 1 },
+          data: { protocol: 'gRPC', purpose: 'request', isCut: false, latencyMs: 1 },
         },
         {
           id: `e_${app2Id}_${cacheId}`,
           source: app2Id,
           target: cacheId,
-          data: { protocol: 'gRPC', isCut: false, latencyMs: 1 },
+          data: { protocol: 'gRPC', purpose: 'request', isCut: false, latencyMs: 1 },
         },
       ];
 
@@ -85,7 +85,7 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
     id: 'ha_database_cluster',
     name: 'Database Replica Topology',
     category: 'Storage',
-    description: 'Primary SQL DB + 2 replica nodes; replication and failover are not modeled',
+    description: 'Primary + 2 replica nodes; replication traffic is independent, lag/failover are not modeled',
     icon: 'Database',
     create: (baseX, baseY) => {
       const ts = Date.now();
@@ -123,13 +123,13 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
           id: `e_${primaryId}_${replica1Id}`,
           source: primaryId,
           target: replica1Id,
-          data: { protocol: 'TCP', isCut: false, latencyMs: 5 },
+          data: { protocol: 'TCP', purpose: 'replication', isCut: false, latencyMs: 5 },
         },
         {
           id: `e_${primaryId}_${replica2Id}`,
           source: primaryId,
           target: replica2Id,
-          data: { protocol: 'TCP', isCut: false, latencyMs: 5 },
+          data: { protocol: 'TCP', purpose: 'replication', isCut: false, latencyMs: 5 },
         },
       ];
 
@@ -188,31 +188,31 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
           id: `e_${gwId}_${queueId}`,
           source: gwId,
           target: queueId,
-          data: { protocol: 'gRPC', isCut: false, latencyMs: 2 },
+          data: { protocol: 'gRPC', purpose: 'async', isCut: false, latencyMs: 2 },
         },
         {
           id: `e_${queueId}_${w1Id}`,
           source: queueId,
           target: w1Id,
-          data: { protocol: 'TCP', isCut: false, latencyMs: 1 },
+          data: { protocol: 'TCP', purpose: 'fanout', isCut: false, latencyMs: 1 },
         },
         {
           id: `e_${queueId}_${w2Id}`,
           source: queueId,
           target: w2Id,
-          data: { protocol: 'TCP', isCut: false, latencyMs: 1 },
+          data: { protocol: 'TCP', purpose: 'fanout', isCut: false, latencyMs: 1 },
         },
         {
           id: `e_${w1Id}_${sinkId}`,
           source: w1Id,
           target: sinkId,
-          data: { protocol: 'gRPC', isCut: false, latencyMs: 3 },
+          data: { protocol: 'gRPC', purpose: 'request', isCut: false, latencyMs: 3 },
         },
         {
           id: `e_${w2Id}_${sinkId}`,
           source: w2Id,
           target: sinkId,
-          data: { protocol: 'gRPC', isCut: false, latencyMs: 3 },
+          data: { protocol: 'gRPC', purpose: 'request', isCut: false, latencyMs: 3 },
         },
       ];
 
