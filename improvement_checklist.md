@@ -85,21 +85,21 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 18. Define automatic deductions for failing builds, tests, security checks, accessibility checks, or performance budgets.
 - [x] 19. Define the minimum score required before a release can be called production-ready.
 - [x] 20. Add a dated score history table to this document or a dedicated quality report.
-- [ ] 21. Re-score only after completing verification, not from implementation confidence alone.
+- [x] 21. Re-score only after completing verification, not from implementation confidence alone.
 
 # Phase 1 — Simulation Semantics and Core Correctness
 
 ## Replace ambiguous edge routing with explicit semantics — P0
 
-- [ ] 22. Introduce an edge-purpose type such as `request`, `fallback`, `async`, `fanout`, `replication`, and `observability`.
-- [ ] 23. Decide whether edge purpose is inferred from component types, explicitly selected by the user, or both.
-- [ ] 24. Separate load balancing from generic multi-edge routing.
-- [ ] 25. Replace the current non-load-balancer round-robin behavior mislabeled as fanout.
-- [ ] 26. Implement true fanout where one event produces independent downstream branches.
-- [ ] 27. Implement request/response paths where the caller waits for one or more downstream results.
-- [ ] 28. Implement fallback edges that run only after a failure or cache miss.
-- [ ] 29. Implement asynchronous edges whose producer latency stops at enqueue acknowledgement.
-- [ ] 30. Implement replication edges that do not count as end-user request paths.
+- [x] 22. Introduce an edge-purpose type such as `request`, `fallback`, `async`, `fanout`, `replication`, and `observability`.
+- [x] 23. Decide whether edge purpose is inferred from component types, explicitly selected by the user, or both.
+- [x] 24. Separate load balancing from generic multi-edge routing.
+- [x] 25. Replace the current non-load-balancer round-robin behavior mislabeled as fanout.
+- [x] 26. Implement true fanout where one event produces independent downstream branches.
+- [x] 27. Implement request/response paths where the caller waits for one or more downstream results.
+- [x] 28. Implement fallback edges that run only after a failure or cache miss.
+- [x] 29. Implement asynchronous edges whose producer latency stops at enqueue acknowledgement.
+- [x] 30. Implement replication edges that do not count as end-user request paths.
 - [ ] 31. Prevent invalid edge-purpose and component combinations.
 - [ ] 32. Display edge purpose visually and accessibly on the canvas.
 - [ ] 33. Preserve edge purpose in JSON export, URL sharing, snapshots, undo, and redo.

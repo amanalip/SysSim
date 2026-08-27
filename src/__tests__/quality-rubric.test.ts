@@ -27,6 +27,7 @@ describe('Persistent quality rubric', () => {
     expect(rubric).toContain('at least **95/100**');
     expect(rubric).toContain('## Score history');
     expect(rubric).toContain('| 2026-08-27 | `042d627` |');
+    expect(rubric).toContain('| 2026-08-27 | `438a79d` | 6 | −43; cap 49 | 0 |');
   });
 
   it('keeps README positioning and license aligned with the product contract', () => {

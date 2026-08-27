@@ -140,5 +140,6 @@ A score below 95 may still describe a useful educational project, but it must no
 | Date | Commit | Evidence subtotal | Deductions/caps | Final score | Status | Evidence |
 | --- | --- | ---: | --- | ---: | --- | --- |
 | 2026-08-27 | `042d627` | Not scored | Not evaluated | — | Rubric established; verified rescore deferred to task 21 | Tasks 16–20 definition work; no score inferred from implementation confidence. |
+| 2026-08-27 | `438a79d` | 6 | −43; cap 49 | 0 | Not production-ready | [Dated quality report](quality-report-2026-08-27.md) |
 
 Future entries must preserve earlier rows. Corrections should be appended with an explanation rather than silently rewriting historical results.
