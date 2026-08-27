@@ -18,6 +18,8 @@ export const BottleneckPanel: React.FC = () => {
         <ModelNotice
           kind="heuristic"
           detail="Findings are rules-based design prompts, not proof of production readiness."
+          assumptionLabel="heuristic interpretation"
+          assumptionSection="interpreting-results-responsibly"
         />
         <div className={styles.emptyState}>
           <CheckCircle2 size={24} color="var(--success)" />
@@ -35,6 +37,8 @@ export const BottleneckPanel: React.FC = () => {
       <ModelNotice
         kind="heuristic"
         detail="Findings are rules-based design prompts, not proof of production readiness."
+        assumptionLabel="heuristic interpretation"
+        assumptionSection="interpreting-results-responsibly"
       />
       <div className={styles.issueList}>
         {issues.map((issue) => (

@@ -1,21 +1,23 @@
 # SysSim
 
-**Simulate before you scale.**
+**Explore architecture tradeoffs before you scale.**
 
-SysSim is an interactive system design simulation platform. Build architectures on a visual drag-and-drop canvas, run discrete-event traffic simulations, inject failures, inspect bottlenecks, and practice 101 system design scenarios with verified citations and progressive hints.
+SysSim is an education-first system-design architecture playground with an illustrative traffic simulator. Build architectures on a visual canvas, explore simplified failure states, inspect rules-based design prompts, and practice 101 system-design scenarios with progressive hints and source citations.
+
+SysSim's synthetic results are designed to build intuition. They are not production forecasts, cloud-provider quotes, load-test results, reliability certification, or proof that a design meets an SLA. Read the [product contract](docs/product-contract.md) for output definitions, assumptions, supported limits, and known simplifications.
 
 ---
 
 ## Features
 
 - **Interactive Canvas**: Drag-and-drop 27 component types across Compute, Networking, Storage, Caching, Messaging, and Security categories.
-- **Discrete Event Simulation**: Real-time traffic simulation running in a background Web Worker. Generates request flows, tracks per-hop latencies, and calculates p50/p95/p99 percentiles.
+- **Illustrative Traffic Simulation**: A step-based synthetic request model running in a background Web Worker. It generates modeled request paths, simplified hop latencies, and illustrative p50/p95/p99 telemetry.
 - **Traffic Patterns**: Simulate Steady, Bursty, Ramp-up, and Spike traffic profiles with customizable base QPS.
-- **Failure Injection & Chaos Mode**: Mark components down, cut network connections, and trigger automated Chaos Monkey fault injection.
-- **Bottleneck Detection**: Automatic analysis of single points of failure (SPOFs), missing cache tiers, and capacity overloads.
-- **Capacity Calculator**: Back-of-envelope math computing storage growth, replication multipliers, network bandwidth, server instance sizing, and RAM cache recommendations.
+- **Failure Exploration & Chaos Mode**: Mark components down, cut connections, and apply simplified fault states. Not every real-world recovery or failover path is modeled.
+- **Heuristic Design Review**: Rules-based prompts identify possible single points of failure, missing cache tiers, and modeled capacity pressure.
+- **Capacity Worksheet**: Deterministic back-of-envelope formulas estimate storage growth, replication multipliers, bandwidth, server count, and cache size from simplified assumptions.
 - **101 System Design Scenarios**: Factchecked scenario library spanning 15 categories with constraints, progressive hints, reference architectures, interview discussion questions, and verified source citations.
-- **Sharing & Export**: Compress architecture state into URL hashes with LZ-string, export PNG diagrams, and save/load JSON schemas.
+- **Sharing & Export**: Compress bounded architecture state into URL hashes, export PNG diagrams, and save/load JSON architecture data.
 
 ---
 
@@ -34,7 +36,7 @@ SysSim is an interactive system design simulation platform. Build architectures 
 
 ### Prerequisites
 
-Node.js 20 or higher is required.
+Node.js 20.x is the supported development and build runtime.
 
 ### Installation
 
@@ -44,13 +46,13 @@ git clone https://github.com/amanalip/SysSim.git
 cd SysSim
 
 # Install dependencies
-npm install
+npm ci
 
 # Start development server
 npm run dev
 ```
 
-Visit `http://localhost:5173` in your browser.
+Visit `http://localhost:5173/SysSim/` in a current Chromium-based desktop browser. The currently supported viewport is 1280 × 720 CSS pixels or larger with keyboard and mouse/trackpad input. Other browsers, touch input, and smaller layouts are currently best effort; see the [supported environment](docs/product-contract.md#supported-environment).
 
 ---
 
@@ -88,4 +90,4 @@ npm run preview
 
 ## License
 
-MIT License.
+GNU General Public License v3.0. See [LICENSE](LICENSE).

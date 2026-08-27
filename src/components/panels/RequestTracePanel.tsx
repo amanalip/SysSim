@@ -20,6 +20,8 @@ export const RequestTracePanel: React.FC = () => {
         <ModelNotice
           kind="simulation"
           detail="Traces are synthetic model paths, not telemetry captured from a deployed system."
+          assumptionLabel="request and hop model"
+          assumptionSection="what-the-simulation-represents"
         />
         <div className={styles.traceContainer}>
           <div className={styles.emptyState}>
@@ -44,6 +46,8 @@ export const RequestTracePanel: React.FC = () => {
       <ModelNotice
         kind="simulation"
         detail="Traces are synthetic model paths, not telemetry captured from a deployed system."
+        assumptionLabel="request and hop model"
+        assumptionSection="what-the-simulation-represents"
       />
       <div className={styles.traceContainer}>
         {/* Left List of Traces */}

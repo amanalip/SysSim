@@ -69,22 +69,22 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 8. Define the meaning of `success`, `failure`, `timeout`, `dropped`, `queued`, `hit`, and `miss` across the engine and UI.
 - [x] 9. Define whether node replica counts represent virtual capacity within one node or separate graph nodes.
 - [x] 10. Define what an edge means: dependency, synchronous call, asynchronous delivery, replication, fallback, or arbitrary data flow.
-- [ ] 11. Document which behaviors are deliberately simplified and why.
-- [ ] 12. Review README feature claims against this contract and revise any premature claims.
+- [x] 11. Document which behaviors are deliberately simplified and why.
+- [x] 12. Review README feature claims against this contract and revise any premature claims.
 
 ### Acceptance criteria
 
-- [ ] 13. A new `docs/product-contract.md` explains the supported use cases and limitations without requiring source-code knowledge.
-- [ ] 14. Every metric and analysis panel links or points to the assumptions behind its values.
-- [ ] 15. No UI wording claims a behavior that the engine does not implement.
+- [x] 13. A new `docs/product-contract.md` explains the supported use cases and limitations without requiring source-code knowledge.
+- [x] 14. Every metric and analysis panel links or points to the assumptions behind its values.
+- [x] 15. No UI wording claims a behavior that the engine does not implement.
 
 ## Establish the scoring rubric — P1
 
-- [ ] 16. Convert the audit categories into a persistent weighted rubric totaling 100 points.
-- [ ] 17. Assign objective pass/fail evidence to every rubric item.
-- [ ] 18. Define automatic deductions for failing builds, tests, security checks, accessibility checks, or performance budgets.
-- [ ] 19. Define the minimum score required before a release can be called production-ready.
-- [ ] 20. Add a dated score history table to this document or a dedicated quality report.
+- [x] 16. Convert the audit categories into a persistent weighted rubric totaling 100 points.
+- [x] 17. Assign objective pass/fail evidence to every rubric item.
+- [x] 18. Define automatic deductions for failing builds, tests, security checks, accessibility checks, or performance budgets.
+- [x] 19. Define the minimum score required before a release can be called production-ready.
+- [x] 20. Add a dated score history table to this document or a dedicated quality report.
 - [ ] 21. Re-score only after completing verification, not from implementation confidence alone.
 
 # Phase 1 — Simulation Semantics and Core Correctness

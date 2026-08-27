@@ -39,7 +39,7 @@ export const HealthRadarPanel: React.FC = () => {
           suggestions: ['Add load balancers and horizontal replicas.'],
         },
         {
-          name: 'Latency SLA',
+          name: 'Modeled Latency',
           score: 0,
           grade: 'N/A',
           color: 'var(--text-muted)',
@@ -147,11 +147,11 @@ export const HealthRadarPanel: React.FC = () => {
         grade: getGrade(availScore),
         color: getColor(availScore),
         icon: <ShieldCheck size={16} />,
-        summary: `${(100 - errorRate).toFixed(1)}% request success rate under load.`,
+        summary: `${(100 - errorRate).toFixed(1)}% modeled request success in the current run.`,
         suggestions:
           availScore < 80
             ? ['Mitigate single point of failure bottlenecks.', 'Add health check fallbacks.']
-            : ['High availability SLA satisfied.'],
+            : ['No availability warning rule matched; validate resilience independently.'],
       },
       {
         name: 'Scalability',
@@ -159,13 +159,13 @@ export const HealthRadarPanel: React.FC = () => {
         grade: getGrade(scaleScore),
         color: getColor(scaleScore),
         icon: <Zap size={16} />,
-        summary: `Architecture supports horizontal load distribution.`,
+        summary: `Heuristic based on load-balancer, cache, queue, and replica signals.`,
         suggestions: !hasCache
           ? ['Add Redis or CDN cache layer to offload databases.']
-          : ['Load balancer and caches effectively absorb traffic spikes.'],
+          : ['The graph includes load-balancing and cache signals; behavior remains simplified.'],
       },
       {
-        name: 'Latency SLA',
+        name: 'Modeled Latency',
         score: latScore,
         grade: getGrade(latScore),
         color: getColor(latScore),
@@ -174,7 +174,7 @@ export const HealthRadarPanel: React.FC = () => {
         suggestions:
           latScore < 80
             ? ['Introduce caching in front of heavy database queries.', 'Use gRPC for internal service links.']
-            : ['Latency is optimal for interactive web experiences.'],
+            : ['Modeled p95 is below the heuristic threshold; validate with real measurements.'],
       },
       {
         name: 'Cost Efficiency',
@@ -186,7 +186,7 @@ export const HealthRadarPanel: React.FC = () => {
         suggestions:
           costScore < 80
             ? ['Downscale idle replicas during steady periods.']
-            : ['Resource allocation closely matches active workload.'],
+            : ['The replica-count heuristic found no over-provisioning warning.'],
       },
       {
         name: 'Resilience',
@@ -194,10 +194,10 @@ export const HealthRadarPanel: React.FC = () => {
         grade: getGrade(resScore),
         color: getColor(resScore),
         icon: <RefreshCw size={16} />,
-        summary: `Redundancy & failover capabilities.`,
+        summary: `Redundancy signals inferred from graph structure.`,
         suggestions: !hasMultipleDbs
-          ? ['Add Read Replicas for primary database redundancy.']
-          : ['Redundant instances prevent total service outages.'],
+          ? ['Add separately routable database nodes and define a failover strategy.']
+          : ['Multiple database nodes are present; automatic failover is not modeled.'],
       },
     ];
   }, [nodes, edges, metrics, bottlenecks]);
@@ -213,12 +213,14 @@ export const HealthRadarPanel: React.FC = () => {
       <ModelNotice
         kind="heuristic"
         detail="Scores summarize simplified rules and simulated telemetry; they are not an architecture certification."
+        assumptionLabel="health-score simplifications"
+        assumptionSection="deliberate-simplifications-and-rationale"
       />
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           <span className={styles.title}>5-Pillar Architecture Health Radar</span>
           <span className={styles.subtitle}>
-            Continuous well-architected framework evaluation
+            Continuous rules-based design discussion prompts
           </span>
         </div>
         <div className={styles.overallBadge}>

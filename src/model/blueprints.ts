@@ -13,9 +13,9 @@ export interface ArchitectureBlueprint {
 export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
   {
     id: 'scalable_microservice',
-    name: 'Scalable Microservice Tier',
+    name: 'Microservice Tier Topology',
     category: 'Compute & Caching',
-    description: 'Layer 7 Load Balancer + 3 App Server Replicas + Redis Cache',
+    description: 'Load Balancer + 2 App Server nodes + Redis Cache',
     icon: 'Server',
     create: (baseX, baseY) => {
       const ts = Date.now();
@@ -83,9 +83,9 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
   },
   {
     id: 'ha_database_cluster',
-    name: 'HA Database Cluster',
+    name: 'Database Replica Topology',
     category: 'Storage',
-    description: 'Primary SQL DB + 2 Read Replicas with replication links',
+    description: 'Primary SQL DB + 2 replica nodes; replication and failover are not modeled',
     icon: 'Database',
     create: (baseX, baseY) => {
       const ts = Date.now();
@@ -138,9 +138,9 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
   },
   {
     id: 'event_driven_pipeline',
-    name: 'Event-Driven Async Pipeline',
+    name: 'Messaging Pipeline Topology',
     category: 'Messaging',
-    description: 'API Gateway + Message Queue + 2 Background Workers + NoSQL Sink',
+    description: 'Gateway + Queue + 2 Workers + NoSQL Sink; asynchronous timing is simplified',
     icon: 'Radio',
     create: (baseX, baseY) => {
       const ts = Date.now();

@@ -96,6 +96,8 @@ export const EnvelopeCalculator: React.FC = () => {
       <ModelNotice
         kind="estimate"
         detail="Results use simplified workload assumptions and are not production capacity guarantees."
+        assumptionLabel="capacity worksheet simplifications"
+        assumptionSection="deliberate-simplifications-and-rationale"
       />
 
       {/* Presets */}

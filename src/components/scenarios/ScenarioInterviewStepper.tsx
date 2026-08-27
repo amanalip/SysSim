@@ -59,23 +59,23 @@ export const ScenarioInterviewStepper: React.FC<ScenarioInterviewStepperProps> =
     {
       id: 4,
       title: '4. Deep Dive & Resilience',
-      subtitle: 'Eliminate bottlenecks and single points of failure',
+      subtitle: 'Discuss bottlenecks and resilience options',
       icon: <ShieldCheck size={14} />,
       tasks: [
         'Add Redis / Memcached caching tier to absorb read load',
-        'Configure DB Read Replicas for high availability failover',
+        'Discuss separately routable database replicas and a failover strategy',
         'Introduce Message Queues for asynchronous processing',
       ],
     },
     {
       id: 5,
-      title: '5. Load Test & Verify SLA',
-      subtitle: 'Run continuous traffic simulation and confirm health',
+      title: '5. Simulate Target Load & Review',
+      subtitle: 'Use illustrative output to identify follow-up questions',
       icon: <Play size={14} />,
       tasks: [
         'Click Play in the floating dock to start simulation',
-        'Inspect live metrics to verify error rate is within SLA',
-        'Check 5-Pillar Health Radar for system score above 85',
+        'Compare the simulated error rate with the target; this does not prove SLA compliance',
+        'Review the heuristic Health Radar as a discussion prompt',
       ],
     },
   ];
@@ -164,11 +164,16 @@ export const ScenarioInterviewStepper: React.FC<ScenarioInterviewStepperProps> =
                         setTrafficConfig({ baseQps: scenario.constraints.targetQps });
                         simBridge.syncConfig({ baseQps: scenario.constraints.targetQps });
                         simBridge.start();
-                        useStore.getState().addToast(`Started load test at ${scenario.constraints.targetQps} QPS!`, 'info');
+                        useStore
+                          .getState()
+                          .addToast(
+                            `Started illustrative scenario simulation at ${scenario.constraints.targetQps} QPS`,
+                            'info',
+                          );
                       }}
                     >
                       <Play size={12} />
-                      <span>Run Scenario Load Test ({scenario.constraints.targetQps} QPS)</span>
+                      <span>Run Scenario Simulation ({scenario.constraints.targetQps} QPS)</span>
                     </button>
                   )}
                 </div>

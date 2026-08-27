@@ -120,6 +120,8 @@ export const CostEstimatorPanel: React.FC = () => {
         <ModelNotice
           kind="estimate"
           detail="Static example rates are illustrative and are not a cloud-provider quote."
+          assumptionLabel="cloud-cost simplifications"
+          assumptionSection="deliberate-simplifications-and-rationale"
         />
         <div className={styles.emptyState}>
           <DollarSign size={28} color="var(--text-muted)" />
@@ -137,6 +139,8 @@ export const CostEstimatorPanel: React.FC = () => {
       <ModelNotice
         kind="estimate"
         detail="Static example rates are illustrative and are not a cloud-provider quote."
+        assumptionLabel="cloud-cost simplifications"
+        assumptionSection="deliberate-simplifications-and-rationale"
       />
       {/* Top Total Header */}
       <div className={styles.header}>

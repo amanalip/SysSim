@@ -149,6 +149,26 @@ This is a known limitation, not an architectural recommendation. Explicit edge-p
 - Validate real systems with production telemetry, provider pricing, load tests, failure exercises, and domain expertise.
 - Record the SysSim version and configuration when sharing results because model behavior can change between releases.
 
+## Deliberate simplifications and rationale
+
+SysSim deliberately favors an understandable, responsive teaching model over production fidelity. The following simplifications are part of the current contract, not hidden implementation details.
+
+| Area | Current simplification | Why it is simplified | Interpretation and planned follow-up |
+| --- | --- | --- | --- |
+| Time and scheduling | Requests advance in synchronous simulation steps rather than through a complete distributed event scheduler. | Keeps interaction responsive and makes the model approachable. | Do not infer real queue timing or concurrency. Event scheduling and capacity semantics are tracked in tasks 79–86 and 180–188. |
+| Randomness | Outcomes use unseeded randomness. | A seed lifecycle and portable random generator have not yet been introduced. | Runs may differ. Seeded reproducibility is tracked in tasks 173–178. |
+| Edge routing | An edge is only a potential next hop; most multi-edge nodes choose one target. | Explicit request, fallback, async, fanout, replication, and observability semantics require a larger graph-model migration. | Parallel edges do not mean all dependencies execute. Explicit edge purposes are tracked in tasks 22–40. |
+| Cache behavior | Cache access and routing use simplified keys, hits, misses, and downstream behavior. | Real cache-aside behavior requires workload key distributions, origin fallback, population, TTL, and eviction semantics. | Do not use the model to predict a production hit ratio or origin load. Cache correctness is tracked in tasks 41–60. |
+| Messaging | Queues and brokers are simplified request-path hops rather than independently scheduled producer/consumer systems. | Correct async processing needs separate acknowledgement, backlog, drain, partition, retry, and consumer models. | Queue depth and completion timing are illustrative. Messaging behavior is tracked in tasks 61–78. |
+| Replicas and failover | A configured replica count is virtual capacity/redundancy inside one node and does not create independently routable instances or automatic failover. | Full failover needs health checks, routing changes, recovery delay, and database role semantics. | Draw separate nodes when independent routing matters. Replica and failover work is tracked in tasks 80–86, 95–96, and 120–124. |
+| Health states | Manual and chaos states use simplified health labels; not every state consistently changes capacity, latency, or errors. | A unified health-state model has not yet been implemented. | A healthy label is not proof of availability. Health semantics are tracked in tasks 152–159. |
+| Chaos drills | Drills mutate selected graph/configuration state but do not reproduce complete infrastructure failure and recovery mechanisms. | Production chaos behavior depends on orchestration, routing, persistence, and recovery models outside the current engine. | Treat drills as visual experiments. Drill correctness is tracked in tasks 160–172. |
+| Latency and percentiles | Hop latency is simplified and aggregated from synthetic samples. | Network distributions, queue wait, service time, geography, and coordinated omission need separate models. | Percentiles describe only the current synthetic run. Latency/metrics work is tracked in tasks 180–199. |
+| Health and bottleneck analysis | Scores and findings are fixed rules over graph structure and simulated telemetry. | They are teaching prompts, not an externally validated architecture assessment. | Validate conclusions independently. Evidence-based analysis is tracked in tasks 271–284. |
+| Capacity worksheet | Formulas are deterministic but assume simplified traffic, payload, replication, and per-server capacity. | A general worksheet cannot know a workload's headroom, indexes, compression, growth, failover reserve, or utilization target. | Replace assumptions with measured inputs. Calculator work is tracked in tasks 285–297. |
+| Cloud cost | Prices are static illustrative example rates and omit many provider, region, usage, discount, and managed-service dimensions. | Live pricing and provider-specific billing are outside the current implementation. | Never treat the total as a quote or forecast. Cost transparency is tracked in tasks 298–307. |
+| Scale limits | The documented operating envelope is not yet enforced consistently at every input boundary. | Validation, persistence quotas, and stress budgets are scheduled separately. | Behavior beyond the envelope is unsupported. Enforcement is tracked across validation and performance tasks 214–249 and 473–497. |
+
 ## Contract maintenance
 
 Any change to simulation meaning, supported limits, status definitions, replica behavior, edge behavior, or output classification must update this document in the same change. Product copy and tests must remain consistent with the contract.

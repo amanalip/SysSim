@@ -29,7 +29,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
       id: 'db_crash',
       name: 'Primary Database Outage',
       category: 'Storage Resilience',
-      description: 'Crashes the primary SQL database to test automated read replica failover.',
+      description: 'Marks one database node down. Automatic read-replica failover is not currently modeled.',
       icon: <Database size={16} color="var(--error)" />,
       execute: () => {
         const db = nodes.find((n) => n.data.config.type === 'sql_db' || n.data.config.type === 'nosql_db');
@@ -47,7 +47,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
       id: 'cache_stampede',
       name: 'Cache Stampede / Flush',
       category: 'Caching Resilience',
-      description: 'Brings down all cache nodes to observe database thundering herd overload.',
+      description: 'Marks all cache nodes down so you can inspect the model’s simplified downstream behavior.',
       icon: <Zap size={16} color="var(--warning)" />,
       execute: () => {
         const caches = nodes.filter((n) =>
@@ -67,7 +67,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
       id: 'flash_crowd',
       name: '5x Flash Crowd Surge',
       category: 'Traffic Spike',
-      description: 'Multiplies inbound traffic 5x to test autoscaling capacity exhaustion.',
+      description: 'Multiplies configured traffic by 5. Automatic scaling is not currently modeled.',
       icon: <Activity size={16} color="var(--accent-primary)" />,
       execute: () => {
         const currentQps = trafficConfig.baseQps || 500;
@@ -100,9 +100,9 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
     },
     {
       id: 'latency_jitter',
-      name: 'High Network Latency (400ms)',
+      name: 'Application Server Degradation',
       category: 'Degradation',
-      description: 'Simulates cross-region WAN link degradation and packet delay.',
+      description: 'Marks application servers degraded using the current simplified health-state model.',
       icon: <Clock size={16} color="var(--warning)" />,
       execute: () => {
         const appServers = nodes.filter((n) => n.data.config.type === 'app_server');
@@ -110,7 +110,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
           appServers.forEach((srv) => setNodeHealthOverride(srv.id, 'degraded'));
           simBridge.syncGraph();
           setActiveDrill('latency_jitter');
-          addToast(`Chaos Drill: Injected 400ms latency overhead on ${appServers.length} servers`, 'warning');
+          addToast(`Chaos Drill: Marked ${appServers.length} application servers degraded`, 'warning');
         } else {
           addToast('No application servers found on canvas to inject latency', 'warning');
         }
@@ -151,7 +151,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
             <div>
               <div className={styles.modalTitle}>Chaos Engineering Drills</div>
               <div className={styles.modalSubtitle}>
-                Targeted failure injection experiments to validate fault tolerance
+                Explore simplified failure states; results do not certify fault tolerance
               </div>
             </div>
           </div>
@@ -163,7 +163,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
         {activeDrill && (
           <div className={styles.activeBanner}>
             <AlertTriangle size={14} color="var(--error)" />
-            <span>Chaos experiment active! System resilience under test.</span>
+            <span>Synthetic chaos state active for inspection.</span>
             <button className={styles.restoreBtn} onClick={handleRestore}>
               <RotateCcw size={12} />
               <span>Restore System</span>
