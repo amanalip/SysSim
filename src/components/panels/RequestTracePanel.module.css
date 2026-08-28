@@ -222,6 +222,25 @@
   font-family: var(--font-mono);
 }
 
+.cacheStatePill {
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-full);
+  color: var(--warning);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+}
+
+.cacheStateHit {
+  border-color: #06b6d4;
+  color: #06b6d4;
+}
+
+.cacheStateMiss {
+  background-color: rgba(210, 153, 34, 0.08);
+}
+
 .rootCausePill {
   display: flex;
   align-items: center;

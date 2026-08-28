@@ -44,6 +44,12 @@ interface TraversalResult {
   usedAsync: boolean;
 }
 
+interface PendingCacheFill {
+  cacheNodeId: string;
+  cacheKey: string;
+  readyAtMs: number;
+}
+
 export class SysSimEngine {
   private graph: SimGraph = { nodes: [], edges: [] };
   private config: TrafficConfig = {
@@ -79,6 +85,8 @@ export class SysSimEngine {
       latencies: number[];
       hits: number;
       misses: number;
+      bypasses: number;
+      coalescedRequests: number;
       queueDepth: number;
     }
   > = {};
@@ -92,6 +100,7 @@ export class SysSimEngine {
   private queueModels: Map<string, QueueModel> = new Map();
   private dbModels: Map<string, DatabaseModel> = new Map();
   private activeConnections: Record<string, number> = {};
+  private pendingCacheFills = new Map<string, PendingCacheFill>();
 
   constructor(graph?: SimGraph, config?: TrafficConfig) {
     if (graph) this.setGraph(graph);
@@ -105,6 +114,7 @@ export class SysSimEngine {
     this.rateLimiters.clear();
     this.queueModels.clear();
     this.dbModels.clear();
+    this.pendingCacheFills.clear();
 
     const validNodeIds = new Set(graph.nodes.map((n) => n.id));
     for (const id of Object.keys(this.nodeStats)) {
@@ -123,6 +133,8 @@ export class SysSimEngine {
           latencies: [],
           hits: 0,
           misses: 0,
+          bypasses: 0,
+          coalescedRequests: 0,
           queueDepth: 0,
         };
       }
@@ -256,6 +268,7 @@ export class SysSimEngine {
     this.queueModels.forEach((q) => q.reset());
     this.dbModels.forEach((db) => db.reset());
     this.cacheModels.forEach((c) => c.reset());
+    this.pendingCacheFills.clear();
     this.graph.nodes.forEach((n) => {
       this.nodeStats[n.id] = {
         totalRequests: 0,
@@ -264,6 +277,8 @@ export class SysSimEngine {
         latencies: [],
         hits: 0,
         misses: 0,
+        bypasses: 0,
+        coalescedRequests: 0,
         queueDepth: 0,
       };
       this.activeConnections[n.id] = 0;
@@ -313,6 +328,7 @@ export class SysSimEngine {
 
     const scaledDelta = deltaMs * this.speedMultiplier;
     this.elapsedSimulationMs += scaledDelta;
+    this.flushReadyCacheFills();
     const elapsedSec = this.elapsedSimulationMs / 1000;
 
     // Drain queues and database connections
@@ -364,6 +380,10 @@ export class SysSimEngine {
         errorRatePercent: snap.overallErrorRatePercent,
         cacheHitRatioPercent: snap.overallCacheHitRatioPercent,
         activeRequests: this.activeRequests.length,
+        cacheHits: snap.totalCacheHits || 0,
+        cacheMisses: snap.totalCacheMisses || 0,
+        cacheBypasses: snap.totalCacheBypasses || 0,
+        cacheCoalescedRequests: snap.totalCacheCoalescedRequests || 0,
       });
 
       if (this.timeSeries.length > 60) {
@@ -378,6 +398,7 @@ export class SysSimEngine {
   }
 
   private processRequest(req: SimRequest): void {
+    this.flushReadyCacheFills();
     this.totalSent++;
     const result = this.traverseNode(
       req.sourceNodeId,
@@ -470,9 +491,10 @@ export class SysSimEngine {
       startTimeMs,
       viaEdgePurpose,
     );
-    if (!nodeResult.success) return nodeResult;
+    const cacheNode = this.isCacheNode(node);
+    if (!nodeResult.success && !cacheNode) return nodeResult;
 
-    if (this.isCacheNode(node) && nodeResult.hops[0]?.status === 'hit') {
+    if (cacheNode && nodeResult.success && nodeResult.hops[0]?.status === 'hit') {
       return nodeResult;
     }
 
@@ -485,7 +507,7 @@ export class SysSimEngine {
     let latencyMs = nodeResult.latencyMs;
     const hops = [...nodeResult.hops];
     let usedAsync = false;
-    let primaryFailure: TraversalResult | null = null;
+    let primaryFailure: TraversalResult | null = nodeResult.success ? null : nodeResult;
 
     for (const edge of [
       ...edgesByPurpose('replication'),
@@ -538,6 +560,32 @@ export class SysSimEngine {
     const requestEdges = edgesByPurpose('request');
     const fanoutEdges = edgesByPurpose('fanout');
     const fallbackEdges = edgesByPurpose('fallback');
+
+    if (cacheNode && nodeResult.cacheMiss && this.isRequestCoalescingEnabled(node)) {
+      const pendingKey = this.getPendingCacheFillKey(node, requestKey, sourceNodeId);
+      const pending = this.pendingCacheFills.get(pendingKey);
+      if (pending) {
+        const waitMs = Math.max(0, pending.readyAtMs - this.elapsedSimulationMs);
+        const stats = this.nodeStats[node.id];
+        if (stats) stats.coalescedRequests++;
+        if (hops[0]) {
+          hops[0] = {
+            ...hops[0],
+            exitTimeMs: hops[0].exitTimeMs + waitMs,
+            latencyMs: hops[0].latencyMs + waitMs,
+            info: 'Cache miss — coalesced behind in-flight origin fill',
+          };
+        }
+        return {
+          success: true,
+          status: 'success',
+          latencyMs: latencyMs + waitMs,
+          hops,
+          cacheMiss: true,
+          usedAsync,
+        };
+      }
+    }
 
     if (!nodeResult.cacheMiss && !primaryFailure && requestEdges.length > 0) {
       const selectedRequestEdges =
@@ -602,6 +650,11 @@ export class SysSimEngine {
 
     const needsFallback = nodeResult.cacheMiss || primaryFailure !== null;
     if (needsFallback && fallbackEdges.length > 0) {
+      if (cacheNode && !nodeResult.success) {
+        const stats = this.nodeStats[node.id];
+        if (stats) stats.bypasses++;
+        if (hops[0]) hops[0].info = 'Cache unavailable — bypassing to origin fallback';
+      }
       for (const edge of fallbackEdges) {
         const edgeLatency = this.getEdgeLatency(edge);
         const fallback = this.traverseNode(
@@ -618,16 +671,13 @@ export class SysSimEngine {
         hops.push(...fallback.hops);
         usedAsync ||= fallback.usedAsync;
         if (fallback.success) {
-          if (this.isCacheNode(node) && nodeResult.cacheMiss) {
-            const configuredCacheability = 'hitRatioPercent' in node.config
-              ? Math.min(100, Math.max(0, node.config.hitRatioPercent))
-              : 100;
-            if (this.random() * 100 < configuredCacheability) {
-              this.cacheModels.get(node.id)?.put(
-                this.getCacheKey(node, requestKey, sourceNodeId),
-                this.elapsedSimulationMs,
-              );
-            }
+          if (cacheNode && nodeResult.cacheMiss) {
+            this.scheduleCacheFill(
+              node,
+              requestKey,
+              sourceNodeId,
+              Math.max(1, fallback.latencyMs),
+            );
           }
           return {
             success: true,
@@ -695,6 +745,8 @@ export class SysSimEngine {
       latencies: [],
       hits: 0,
       misses: 0,
+      bypasses: 0,
+      coalescedRequests: 0,
       queueDepth: 0,
     };
     this.nodeStats[node.id] = stats;
@@ -725,7 +777,11 @@ export class SysSimEngine {
     };
 
     if (config.health === 'down') {
-      return failure('error', 1, 'Component is down');
+      return failure(
+        'error',
+        1,
+        this.isCacheNode(node) ? 'Cache unavailable' : 'Component is down',
+      );
     }
 
     if (config.failureRatePercent && this.random() * 100 < config.failureRatePercent) {
@@ -754,21 +810,23 @@ export class SysSimEngine {
       config.type === 'browser_cache'
     ) {
       const cacheModel = this.cacheModels.get(node.id);
+      const targetHitPercent = Math.min(100, Math.max(0, config.hitRatioPercent));
       const cacheAccess = cacheModel
         ? cacheModel.access(
             this.getCacheKey(node, requestKey, sourceNodeId),
             this.elapsedSimulationMs,
+            this.random() * 100 < targetHitPercent,
           )
         : { hit: false, latencyMs: 2 };
       if (cacheAccess.hit) {
         hopLatency = cacheAccess.latencyMs;
         hopStatus = 'hit';
-        hopInfo = 'Cache hit';
+        hopInfo = 'Cache hit — served without origin';
         stats.hits++;
       } else {
         hopLatency = cacheAccess.latencyMs;
         hopStatus = 'miss';
-        hopInfo = 'Cache miss';
+        hopInfo = 'Cache miss — forwarding to origin fallback';
         stats.misses++;
       }
     } else if (config.type === 'rate_limiter') {
@@ -876,6 +934,49 @@ export class SysSimEngine {
       : requestKey;
   }
 
+  private isRequestCoalescingEnabled(node: SimNode): boolean {
+    return this.isCacheNode(node) && 'requestCoalescingEnabled' in node.config
+      ? node.config.requestCoalescingEnabled
+      : node.config.type === 'cdn_cache' || node.config.type === 'browser_cache';
+  }
+
+  private getPendingCacheFillKey(node: SimNode, requestKey: string, sourceNodeId: string): string {
+    return `${node.id}:${this.getCacheKey(node, requestKey, sourceNodeId)}`;
+  }
+
+  private scheduleCacheFill(
+    node: SimNode,
+    requestKey: string,
+    sourceNodeId: string,
+    originLatencyMs: number,
+  ): void {
+    const cacheKey = this.getCacheKey(node, requestKey, sourceNodeId);
+    const pendingKey = this.getPendingCacheFillKey(node, requestKey, sourceNodeId);
+    const readyAtMs = this.elapsedSimulationMs + originLatencyMs;
+    const existing = this.pendingCacheFills.get(pendingKey);
+    if (!existing || readyAtMs < existing.readyAtMs) {
+      this.pendingCacheFills.set(pendingKey, {
+        cacheNodeId: node.id,
+        cacheKey,
+        readyAtMs,
+      });
+    }
+  }
+
+  private flushReadyCacheFills(): void {
+    for (const [pendingKey, pending] of this.pendingCacheFills) {
+      if (pending.readyAtMs > this.elapsedSimulationMs) continue;
+      const node = this.graph.nodes.find((candidate) => candidate.id === pending.cacheNodeId);
+      if (node?.config.health !== 'down') {
+        this.cacheModels.get(pending.cacheNodeId)?.put(
+          pending.cacheKey,
+          this.elapsedSimulationMs,
+        );
+      }
+      this.pendingCacheFills.delete(pendingKey);
+    }
+  }
+
   private normalizeSeed(seed: number): number {
     const normalized = Math.floor(seed) >>> 0;
     return normalized || 1;
@@ -946,6 +1047,8 @@ export class SysSimEngine {
 
     let totalHits = 0;
     let totalMisses = 0;
+    let totalBypasses = 0;
+    let totalCoalescedRequests = 0;
     const componentMetrics: Record<string, ComponentMetricSnapshot> = {};
 
     let busiestNodeId: string | undefined;
@@ -961,11 +1064,15 @@ export class SysSimEngine {
         latencies: [],
         hits: 0,
         misses: 0,
+        bypasses: 0,
+        coalescedRequests: 0,
         queueDepth: 0,
       };
 
       totalHits += stats.hits;
       totalMisses += stats.misses;
+      totalBypasses += stats.bypasses;
+      totalCoalescedRequests += stats.coalescedRequests;
 
       const nodeAvgLat =
         stats.latencies.length > 0
@@ -1005,6 +1112,10 @@ export class SysSimEngine {
         totalRequests: stats.totalRequests,
         successfulRequests: stats.successfulRequests,
         failedRequests: stats.failedRequests,
+        cacheHits: stats.hits,
+        cacheMisses: stats.misses,
+        cacheBypasses: stats.bypasses,
+        cacheCoalescedRequests: stats.coalescedRequests,
       };
 
       if (stats.totalRequests > maxNodeReqs) {
@@ -1034,6 +1145,10 @@ export class SysSimEngine {
       p99LatencyMs: Math.round(p99 * 10) / 10,
       overallErrorRatePercent: Math.round(overallErrorRate * 10) / 10,
       overallCacheHitRatioPercent: Math.round(overallCacheHit * 10) / 10,
+      totalCacheHits: totalHits,
+      totalCacheMisses: totalMisses,
+      totalCacheBypasses: totalBypasses,
+      totalCacheCoalescedRequests: totalCoalescedRequests,
       busiestNodeId,
       slowestNodeId,
       timeSeries: this.timeSeries,

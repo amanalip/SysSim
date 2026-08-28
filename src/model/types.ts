@@ -217,6 +217,7 @@ export interface RedisCacheConfig extends BaseComponentConfig {
   readLatencyMs: number;
   ttlSec: number;
   entrySizeKb: number;
+  requestCoalescingEnabled: boolean;
 }
 
 export interface LocalCacheConfig extends BaseComponentConfig {
@@ -227,6 +228,7 @@ export interface LocalCacheConfig extends BaseComponentConfig {
   evictionPolicy: CacheEvictionPolicy;
   readLatencyMs: number;
   entrySizeKb: number;
+  requestCoalescingEnabled: boolean;
 }
 
 export interface CdnCacheConfig extends BaseComponentConfig {
@@ -234,6 +236,7 @@ export interface CdnCacheConfig extends BaseComponentConfig {
   ttlSec: number;
   hitRatioPercent: number;
   readLatencyMs: number;
+  requestCoalescingEnabled: boolean;
 }
 
 export interface BrowserCacheConfig extends BaseComponentConfig {
@@ -241,6 +244,7 @@ export interface BrowserCacheConfig extends BaseComponentConfig {
   ttlSec: number;
   hitRatioPercent: number;
   readLatencyMs: number;
+  requestCoalescingEnabled: boolean;
 }
 
 export interface MessageQueueConfig extends BaseComponentConfig {
@@ -399,6 +403,10 @@ export interface ComponentMetricSnapshot {
   totalRequests: number;
   successfulRequests: number;
   failedRequests: number;
+  cacheHits?: number;
+  cacheMisses?: number;
+  cacheBypasses?: number;
+  cacheCoalescedRequests?: number;
 }
 
 export interface TimeSeriesDataPoint {
@@ -410,6 +418,10 @@ export interface TimeSeriesDataPoint {
   errorRatePercent: number;
   cacheHitRatioPercent: number;
   activeRequests: number;
+  cacheHits?: number;
+  cacheMisses?: number;
+  cacheBypasses?: number;
+  cacheCoalescedRequests?: number;
 }
 
 export interface OverallMetrics {
@@ -423,6 +435,10 @@ export interface OverallMetrics {
   p99LatencyMs: number;
   overallErrorRatePercent: number;
   overallCacheHitRatioPercent: number;
+  totalCacheHits?: number;
+  totalCacheMisses?: number;
+  totalCacheBypasses?: number;
+  totalCacheCoalescedRequests?: number;
   busiestNodeId?: string;
   slowestNodeId?: string;
   timeSeries: TimeSeriesDataPoint[];

@@ -47,10 +47,14 @@ export class CacheModel {
     };
   }
 
-  public access(key: string, nowMs: number = Date.now()): { hit: boolean; latencyMs: number } {
+  public access(
+    key: string,
+    nowMs: number = Date.now(),
+    allowConfiguredHit: boolean = true,
+  ): { hit: boolean; latencyMs: number } {
     this.deleteIfExpired(key, nowMs);
     const entry = this.cache.get(key);
-    if (!entry) {
+    if (!entry || !allowConfiguredHit) {
       this.misses++;
       return { hit: false, latencyMs: this.options.readLatencyMs };
     }
@@ -113,6 +117,10 @@ export class CacheModel {
   public getHitRatioPercent(): number {
     const total = this.hits + this.misses;
     return total > 0 ? (this.hits / total) * 100 : 0;
+  }
+
+  public getCounts(): { hits: number; misses: number } {
+    return { hits: this.hits, misses: this.misses };
   }
 
   public getSize(): number {

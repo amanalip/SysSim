@@ -177,6 +177,12 @@
   line-height: 1.45;
 }
 
+.coalescingActive {
+  border-color: var(--accent-primary);
+  background-color: var(--accent-subtle);
+  color: var(--accent-primary);
+}
+
 .footerActions {
   display: flex;
   align-items: center;

@@ -112,6 +112,7 @@ describe('cache correctness', () => {
     };
     const engine = new SysSimEngine(graph, { pattern: 'steady', baseQps: 1, burstMultiplier: 1, rampDurationSec: 1, spikeFrequencySec: 1, seed: 2 });
     const miss = execute(engine, 'cache', 'product:1', 1);
+    (engine as any).elapsedSimulationMs = 100;
     const hit = execute(engine, 'cache', 'product:1', 2);
     expect(miss.path.map((hop) => hop.nodeId)).toEqual(['cache', 'origin']);
     expect(hit.path.map((hop) => hop.nodeId)).toEqual(['cache']);

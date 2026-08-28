@@ -264,7 +264,7 @@ export const PropertiesPanel: React.FC = () => {
           {'hitRatioPercent' in config && (
             <div className={styles.fieldGroup}>
               <div className={styles.fieldLabel}>
-                <span>Cacheable Responses</span>
+                <span>Cache Hit Target</span>
                 <span className={styles.fieldValueBadge}>{config.hitRatioPercent}%</span>
               </div>
               <div className={styles.rangeContainer}>
@@ -281,6 +281,25 @@ export const PropertiesPanel: React.FC = () => {
                   }
                 />
               </div>
+            </div>
+          )}
+
+          {isCacheConfig && 'requestCoalescingEnabled' in config && (
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Stampede Mitigation</label>
+              <button
+                type="button"
+                className={`${styles.actionBtn} ${config.requestCoalescingEnabled ? styles.coalescingActive : ''}`}
+                aria-pressed={config.requestCoalescingEnabled}
+                onClick={() => updateNodeConfig(config.id, {
+                  requestCoalescingEnabled: !config.requestCoalescingEnabled,
+                } as Partial<typeof config>)}
+              >
+                Request coalescing {config.requestCoalescingEnabled ? 'ON' : 'OFF'}
+              </button>
+              <p className={styles.fieldHint}>
+                Coalesces concurrent misses for the same key behind one origin fill.
+              </p>
             </div>
           )}
 

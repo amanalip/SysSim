@@ -191,6 +191,10 @@ const initialMetrics: OverallMetrics = {
   p99LatencyMs: 0,
   overallErrorRatePercent: 0,
   overallCacheHitRatioPercent: 0,
+  totalCacheHits: 0,
+  totalCacheMisses: 0,
+  totalCacheBypasses: 0,
+  totalCacheCoalescedRequests: 0,
   timeSeries: [],
   componentMetrics: {},
 };

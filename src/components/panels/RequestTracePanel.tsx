@@ -1,10 +1,21 @@
 import React, { useState } from 'react';
 import { Network, AlertTriangle, Eye } from 'lucide-react';
 import { useStore } from '../../store/use-store';
-import { SimRequest } from '../../model/types';
+import { RequestHop, SimRequest } from '../../model/types';
 import { ComponentIcon } from '../icons/ComponentIcon';
 import { ModelNotice } from '../ui/ModelNotice';
 import styles from './RequestTracePanel.module.css';
+
+const CACHE_TYPES = new Set(['redis_cache', 'local_cache', 'cdn_cache', 'browser_cache']);
+
+function getCacheStateLabel(hop: RequestHop): string | null {
+  if (!CACHE_TYPES.has(hop.nodeType)) return null;
+  if (hop.info?.includes('bypassing')) return 'BYPASS';
+  if (hop.info?.includes('coalesced')) return 'COALESCED';
+  if (hop.status === 'hit') return 'HIT';
+  if (hop.status === 'miss') return 'MISS → ORIGIN';
+  return null;
+}
 
 export const RequestTracePanel: React.FC = () => {
   const { activeRequests, selectNode, setIsPropertiesPanelOpen } = useStore();
@@ -111,7 +122,8 @@ export const RequestTracePanel: React.FC = () => {
                 </span>
                 <span className={styles.waterfallMeta}>
                   Total Latency: <b>{totalLatency.toFixed(1)}ms</b> • Hops:{' '}
-                  <b>{hops.length}</b> • Status: <b>{selectedTrace.status}</b>
+                  <b>{hops.length}</b> • Status: <b>{selectedTrace.status}</b> • Key:{' '}
+                  <b>{selectedTrace.requestKey || 'legacy'}</b>
                 </span>
               </div>
             </div>
@@ -122,6 +134,7 @@ export const RequestTracePanel: React.FC = () => {
                   (hop.latencyMs / Math.max(1, totalLatency)) * 100,
                 );
                 const isSlowest = hop.latencyMs === maxHopLatency && hops.length > 1;
+                const cacheStateLabel = getCacheStateLabel(hop);
 
                 return (
                   <div
@@ -139,6 +152,15 @@ export const RequestTracePanel: React.FC = () => {
                       <div className={styles.hopNameRow}>
                         <span className={styles.hopName}>{hop.nodeName}</span>
                         <span className={styles.hopType}>{hop.nodeType}</span>
+                        {cacheStateLabel ? (
+                          <span
+                            className={`${styles.cacheStatePill} ${
+                              cacheStateLabel === 'HIT' ? styles.cacheStateHit : styles.cacheStateMiss
+                            }`}
+                          >
+                            {cacheStateLabel}
+                          </span>
+                        ) : null}
                         {isSlowest && (
                           <span className={styles.rootCausePill}>
                             <AlertTriangle size={10} /> Root-Cause Delay ({hopPercent}%)

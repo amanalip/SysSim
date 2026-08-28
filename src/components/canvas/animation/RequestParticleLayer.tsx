@@ -117,6 +117,9 @@ export const RequestParticleLayer: React.FC = () => {
           <div
             key={p.id}
             className={styles.particle}
+            data-testid="request-particle"
+            data-request-color={p.color}
+            aria-hidden="true"
             style={{
               left: screenX,
               top: screenY,

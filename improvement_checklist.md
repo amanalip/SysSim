@@ -126,19 +126,19 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 48. Use configured cache size rather than a hard-coded entry limit.
 - [x] 49. Use configured cache read latency for Redis and local cache types.
 - [x] 50. Define CDN and browser-cache behavior separately from server-side cache behavior.
-- [ ] 51. Model cache failure and bypass behavior.
-- [ ] 52. Model cache stampede behavior and an optional request-coalescing mitigation.
-- [ ] 53. Ensure cache hits set consistent hop metadata and the intended particle color.
-- [ ] 54. Ensure cache hit/miss metrics agree between the cache model, component metrics, overall metrics, traces, and exports.
-- [ ] 55. Add seeded tests for expected hit ratios within a stated tolerance.
-- [ ] 56. Add tests proving that a higher hit rate reduces database QPS.
-- [ ] 57. Add tests proving that a cache outage increases origin load instead of arbitrarily failing half of requests.
+- [x] 51. Model cache failure and bypass behavior.
+- [x] 52. Model cache stampede behavior and an optional request-coalescing mitigation.
+- [x] 53. Ensure cache hits set consistent hop metadata and the intended particle color.
+- [x] 54. Ensure cache hit/miss metrics agree between the cache model, component metrics, overall metrics, traces, and exports.
+- [x] 55. Add seeded tests for expected hit ratios within a stated tolerance.
+- [x] 56. Add tests proving that a higher hit rate reduces database QPS.
+- [x] 57. Add tests proving that a cache outage increases origin load instead of arbitrarily failing half of requests.
 
 ### Acceptance criteria
 
-- [ ] 58. A 90% cache-hit configuration produces approximately 10% origin read traffic under a representative seeded workload.
-- [ ] 59. Trace output clearly shows hit termination or miss-to-origin behavior.
-- [ ] 60. The cyan cache-hit visualization is reachable and covered by a test.
+- [x] 58. A 90% cache-hit configuration produces approximately 10% origin read traffic under a representative seeded workload.
+- [x] 59. Trace output clearly shows hit termination or miss-to-origin behavior.
+- [x] 60. The cyan cache-hit visualization is reachable and covered by a test.
 
 ## Implement correct asynchronous messaging — P0
 

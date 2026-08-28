@@ -26,6 +26,7 @@ import { HealthRadarPanel } from './HealthRadarPanel';
 import { RequestTracePanel } from './RequestTracePanel';
 import { CostEstimatorPanel } from './CostEstimatorPanel';
 import { ModelNotice } from '../ui/ModelNotice';
+import { buildMetricsCsv } from '../../utils/metrics-export';
 import styles from './MetricsDashboard.module.css';
 
 export const MetricsDashboard: React.FC = () => {
@@ -101,28 +102,9 @@ export const MetricsDashboard: React.FC = () => {
       return;
     }
 
-    const headers = [
-      'TimestampSec',
-      'P50LatencyMs',
-      'P95LatencyMs',
-      'P99LatencyMs',
-      'ThroughputQPS',
-      'ErrorRatePercent',
-      'CacheHitRatioPercent',
-    ];
-    const rows = metrics.timeSeries.map((d) => [
-      d.timestampSec,
-      d.p50LatencyMs,
-      d.p95LatencyMs,
-      d.p99LatencyMs,
-      d.throughputQps,
-      d.errorRatePercent,
-      d.cacheHitRatioPercent,
-    ]);
-
     const csvContent =
       'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+      buildMetricsCsv(metrics.timeSeries);
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -403,12 +385,13 @@ export const MetricsDashboard: React.FC = () => {
                       <th>Error Rate</th>
                       <th>Processed</th>
                       <th>Dropped</th>
+                      <th>Cache H/M/B/C</th>
                     </tr>
                   </thead>
                   <tbody>
                     {compList.length === 0 ? (
                       <tr>
-                        <td colSpan={9} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                        <td colSpan={10} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                           No component telemetry recorded yet. Start simulation to observe metrics.
                         </td>
                       </tr>
@@ -453,6 +436,9 @@ export const MetricsDashboard: React.FC = () => {
                             }}
                           >
                             {c.failedRequests.toLocaleString()}
+                          </td>
+                          <td style={{ fontFamily: 'var(--font-mono)' }}>
+                            {c.cacheHits || 0}/{c.cacheMisses || 0}/{c.cacheBypasses || 0}/{c.cacheCoalescedRequests || 0}
                           </td>
                         </tr>
                       ))
