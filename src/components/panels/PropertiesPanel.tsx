@@ -9,7 +9,9 @@ import { ComponentIcon } from '../icons/ComponentIcon';
 import { createDefaultConfig } from '../../model/component-defaults';
 import {
   CacheEvictionPolicy,
+  DeliveryGuarantee,
   LoadBalancerAlgorithm,
+  MessageOrdering,
   NodeHealthStatus,
   RateLimiterAlgorithm,
 } from '../../model/types';
@@ -47,6 +49,7 @@ export const PropertiesPanel: React.FC = () => {
 
   const config = selectedNode.data.config;
   const isCacheConfig = ['redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(config.type);
+  const isMessagingConfig = ['message_queue', 'task_queue', 'pubsub', 'event_bus'].includes(config.type);
 
   const handleClose = () => {
     setIsPropertiesPanelOpen(false);
@@ -582,6 +585,197 @@ export const PropertiesPanel: React.FC = () => {
               </div>
             </>
           )}
+
+          {isMessagingConfig ? (
+            <>
+              {'consumerGroups' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Consumer Groups</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className={styles.input}
+                    value={config.consumerGroups}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      consumerGroups: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    } as Partial<typeof config>)}
+                  />
+                  <p className={styles.fieldHint}>Each group receives one logical copy; members within a group share partitions.</p>
+                </div>
+              ) : null}
+
+              {'subscribersPerTopic' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Subscribers per Topic</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className={styles.input}
+                    value={config.subscribersPerTopic}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      subscribersPerTopic: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    } as Partial<typeof config>)}
+                  />
+                </div>
+              ) : null}
+
+              {'fanoutFactor' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Fanout Factor</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className={styles.input}
+                    value={config.fanoutFactor}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      fanoutFactor: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    } as Partial<typeof config>)}
+                  />
+                </div>
+              ) : null}
+
+              {'deliveryGuarantee' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Delivery Guarantee</label>
+                  <select
+                    className={styles.select}
+                    value={config.deliveryGuarantee}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      deliveryGuarantee: event.target.value as DeliveryGuarantee,
+                    } as Partial<typeof config>)}
+                  >
+                    <option value="at_most_once">At most once</option>
+                    <option value="at_least_once">At least once</option>
+                    <option value="exactly_once">Exactly once (simulated deduplication)</option>
+                  </select>
+                </div>
+              ) : null}
+
+              {'orderingGuarantee' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Ordering Guarantee</label>
+                  <select
+                    className={styles.select}
+                    value={config.orderingGuarantee}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      orderingGuarantee: event.target.value as MessageOrdering,
+                    } as Partial<typeof config>)}
+                  >
+                    <option value="FIFO">Global FIFO</option>
+                    <option value="Partition Key">Partition-key order</option>
+                    <option value="None">No ordering</option>
+                  </select>
+                </div>
+              ) : null}
+
+              {'producerAckLatencyMs' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Producer Ack Latency (ms)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className={styles.input}
+                    value={config.producerAckLatencyMs}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      producerAckLatencyMs: Math.max(0, Number(event.target.value) || 0),
+                    } as Partial<typeof config>)}
+                  />
+                </div>
+              ) : null}
+
+              {'consumerProcessingLatencyMs' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Consumer Processing Latency (ms)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className={styles.input}
+                    value={config.consumerProcessingLatencyMs}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      consumerProcessingLatencyMs: Math.max(1, Number(event.target.value) || 1),
+                    } as Partial<typeof config>)}
+                  />
+                </div>
+              ) : null}
+
+              {'consumerThroughputPerSec' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Per-Partition Consumer Rate (/sec)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className={styles.input}
+                    value={config.consumerThroughputPerSec}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      consumerThroughputPerSec: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    } as Partial<typeof config>)}
+                  />
+                </div>
+              ) : null}
+
+              {'retryLimit' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Retry Limit</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className={styles.input}
+                    value={config.retryLimit}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      retryLimit: Math.max(0, parseInt(event.target.value, 10) || 0),
+                    } as Partial<typeof config>)}
+                  />
+                </div>
+              ) : null}
+
+              {'retryDelayMs' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Initial Retry Delay (ms)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className={styles.input}
+                    value={config.retryDelayMs}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      retryDelayMs: Math.max(0, parseInt(event.target.value, 10) || 0),
+                    } as Partial<typeof config>)}
+                  />
+                  <p className={styles.fieldHint}>Retries use deterministic exponential backoff.</p>
+                </div>
+              ) : null}
+
+              {'deadLetterQueue' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Failed Delivery Destination</label>
+                  <button
+                    type="button"
+                    className={styles.actionBtn}
+                    aria-pressed={config.deadLetterQueue}
+                    onClick={() => updateNodeConfig(config.id, {
+                      deadLetterQueue: !config.deadLetterQueue,
+                    } as Partial<typeof config>)}
+                  >
+                    Dead-letter queue {config.deadLetterQueue ? 'ON' : 'OFF'}
+                  </button>
+                </div>
+              ) : null}
+
+              {'maxDepth' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Maximum Pending Deliveries</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className={styles.input}
+                    value={config.maxDepth}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      maxDepth: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    } as Partial<typeof config>)}
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : null}
 
           {/* Queue Partitions & Throughput */}
           {'partitions' in config && (

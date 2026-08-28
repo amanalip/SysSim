@@ -142,16 +142,16 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 ## Implement correct asynchronous messaging — P0
 
-- [ ] 61. Model message queue, task queue, pub/sub, and event bus as distinct behaviors.
-- [ ] 62. Separate producer acknowledgement latency from consumer processing latency.
-- [ ] 63. Make queue depth depend on arrival and drain rates over simulation time.
-- [ ] 64. Use worker replica, concurrency, and processing-rate configuration when draining work.
-- [ ] 65. Use queue partition counts to limit or increase parallelism according to documented rules.
-- [ ] 66. Implement consumer groups and clarify whether each group receives each message.
-- [ ] 67. Implement pub/sub subscriber fanout.
-- [ ] 68. Implement delivery guarantees: at-most-once, at-least-once, and simulated exactly-once semantics.
-- [ ] 69. Model retries, retry delay/backoff, and dead-letter queues.
-- [ ] 70. Model ordering guarantees and partition-key ordering.
+- [x] 61. Model message queue, task queue, pub/sub, and event bus as distinct behaviors.
+- [x] 62. Separate producer acknowledgement latency from consumer processing latency.
+- [x] 63. Make queue depth depend on arrival and drain rates over simulation time.
+- [x] 64. Use worker replica, concurrency, and processing-rate configuration when draining work.
+- [x] 65. Use queue partition counts to limit or increase parallelism according to documented rules.
+- [x] 66. Implement consumer groups and clarify whether each group receives each message.
+- [x] 67. Implement pub/sub subscriber fanout.
+- [x] 68. Implement delivery guarantees: at-most-once, at-least-once, and simulated exactly-once semantics.
+- [x] 69. Model retries, retry delay/backoff, and dead-letter queues.
+- [x] 70. Model ordering guarantees and partition-key ordering.
 - [ ] 71. Model queue retention and overflow/drop behavior.
 - [ ] 72. Avoid counting successful enqueue as successful downstream processing unless the metric explicitly means acceptance.
 - [ ] 73. Report producer success, consumer success, retry count, queue age, and dropped-message count separately.

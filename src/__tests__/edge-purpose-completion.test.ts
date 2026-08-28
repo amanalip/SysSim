@@ -48,12 +48,31 @@ describe('edge-purpose completion', () => {
       nodes,
       edges: [{ id: 'edge', source: 'cache', target: 'db', data: { protocol: 'TCP' } }],
     });
-    expect(legacy.version).toBe(2);
+    expect(legacy.version).toBe(3);
     expect(legacy.edges[0].data.purpose).toBe('fallback');
 
     useStore.setState({ nodes: nodes as any, edges: [{ ...legacy.edges[0], type: 'protocolEdge' }] as any, zones: [] });
     expect(serializeCanvasState().edges[0].data.purpose).toBe('fallback');
     expect(decodeStateFromUrlHash(encodeStateToUrlHash())?.edges[0].data.purpose).toBe('fallback');
+  });
+
+  it('adds messaging execution defaults to older saved nodes', () => {
+    const legacyQueue = createDefaultConfig('message_queue', 'queue') as any;
+    delete legacyQueue.producerAckLatencyMs;
+    delete legacyQueue.consumerProcessingLatencyMs;
+    delete legacyQueue.deliveryGuarantee;
+    delete legacyQueue.retryDelayMs;
+    const migrated = migrateCanvasState({
+      version: 2,
+      nodes: [{ id: 'queue', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: legacyQueue } }],
+      edges: [],
+    });
+    const config = migrated.nodes[0].data.config as any;
+    expect(migrated.version).toBe(3);
+    expect(config.producerAckLatencyMs).toBe(4);
+    expect(config.consumerProcessingLatencyMs).toBe(10);
+    expect(config.deliveryGuarantee).toBe('at_least_once');
+    expect(config.retryDelayMs).toBe(100);
   });
 
   it('preserves purpose in locally saved snapshot slots', () => {

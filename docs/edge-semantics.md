@@ -66,4 +66,4 @@ Each branch carries its visited-node set and a 64-hop TTL. Revisiting a node or 
 
 - Branch traces use a flat hop list; structured parent/child spans are future trace work.
 - Detached work executes immediately inside the current simulation step rather than through a scheduled job/event queue.
-- Messaging component distinctions, retries, consumer groups, and backlog timing remain tasks 61–78.
+- Messaging component distinctions, acknowledgement/consumer timing, backlog drain, partitions, consumer groups, fanout, delivery guarantees, retries, DLQ, and ordering are defined in [Messaging Semantics](messaging-semantics.md). Retention and messaging telemetry follow-ups remain tasks 71–75.

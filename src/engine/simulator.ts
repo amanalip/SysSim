@@ -15,7 +15,12 @@ import { createSimRequest } from './request';
 import { LoadBalancerRouter } from './routing/load-balancer';
 import { CacheModel } from './components/cache-model';
 import { RateLimiterModel } from './components/rate-limiter-model';
-import { QueueModel } from './components/queue-model';
+import {
+  DeliveryGuarantee,
+  MessageOrdering,
+  MessagingModel,
+  MessagingKind,
+} from './components/messaging-model';
 import { DatabaseModel } from './components/db-model';
 
 export interface SimNode {
@@ -97,7 +102,7 @@ export class SysSimEngine {
   private lbRouters: Map<string, LoadBalancerRouter> = new Map();
   private cacheModels: Map<string, CacheModel> = new Map();
   private rateLimiters: Map<string, RateLimiterModel> = new Map();
-  private queueModels: Map<string, QueueModel> = new Map();
+  private queueModels: Map<string, MessagingModel> = new Map();
   private dbModels: Map<string, DatabaseModel> = new Map();
   private activeConnections: Record<string, number> = {};
   private pendingCacheFills = new Map<string, PendingCacheFill>();
@@ -198,15 +203,8 @@ export class SysSimEngine {
             n.config.windowSizeSec || 1
           )
         );
-      } else if (n.config.type === 'message_queue') {
-        this.queueModels.set(
-          n.id,
-          new QueueModel(
-            n.config.maxDepth || 50000,
-            n.config.consumerThroughputPerSec || 2000,
-            n.config.partitions || 8
-          )
-        );
+      } else if (this.isMessagingNode(n)) {
+        this.queueModels.set(n.id, this.createMessagingModel(n));
       } else if (n.config.type === 'sql_db' || n.config.type === 'nosql_db') {
         const replicas = (n.config as any).readReplicasCount || 0;
         this.dbModels.set(
@@ -331,8 +329,8 @@ export class SysSimEngine {
     this.flushReadyCacheFills();
     const elapsedSec = this.elapsedSimulationMs / 1000;
 
-    // Drain queues and database connections
-    this.queueModels.forEach((q) => q.drain(scaledDelta));
+    // Consumer processing is independent of producer acknowledgement.
+    this.drainMessaging(scaledDelta);
     this.dbModels.forEach((db) => db.drainConnections(scaledDelta));
 
     // Determine current rate and accumulate fractional requests per tick
@@ -486,6 +484,7 @@ export class SysSimEngine {
     branchVisited.add(nodeId);
     const nodeResult = this.processNode(
       node,
+      requestId,
       requestKey,
       sourceNodeId,
       startTimeMs,
@@ -497,6 +496,10 @@ export class SysSimEngine {
     if (cacheNode && nodeResult.success && nodeResult.hops[0]?.status === 'hit') {
       return nodeResult;
     }
+
+    // Messaging hops acknowledge enqueue only. Consumers run during later
+    // simulation steps so their processing is not charged to producer latency.
+    if (this.isMessagingNode(node) && nodeResult.success) return nodeResult;
 
     const outgoingEdges = this.graph.edges.filter(
       (edge) => edge.source === nodeId && !edge.data?.isCut,
@@ -732,6 +735,7 @@ export class SysSimEngine {
 
   private processNode(
     node: SimNode,
+    requestId: string,
     requestKey: string,
     sourceNodeId: string,
     startTimeMs: number,
@@ -832,14 +836,21 @@ export class SysSimEngine {
     } else if (config.type === 'rate_limiter') {
       const allowed = this.rateLimiters.get(node.id)?.allowRequest(this.elapsedSimulationMs) ?? true;
       if (!allowed) return failure('rate_limited', 1, 'Request rejected by rate limiter');
-    } else if (config.type === 'message_queue') {
-      const enqueue = this.queueModels.get(node.id)?.enqueue();
+    } else if (this.isMessagingNode(node)) {
+      const enqueue = this.queueModels.get(node.id)?.enqueue(
+        requestId,
+        requestKey,
+        this.elapsedSimulationMs,
+      );
       if (enqueue) {
         stats.queueDepth = enqueue.depth;
         if (!enqueue.accepted) return failure('dropped', 4, 'Queue capacity exceeded');
       }
-      hopLatency = 4;
+      hopLatency = enqueue?.acknowledgementLatencyMs ?? 4;
       hopStatus = 'queued';
+      hopInfo = enqueue
+        ? `Producer acknowledged; partition ${enqueue.partition}; ${enqueue.deliveryCopies} delivery copy${enqueue.deliveryCopies === 1 ? '' : 'ies'} queued`
+        : 'Producer acknowledged';
     } else if (config.type === 'auth_service') {
       hopLatency = Math.max(1, config.validationLatencyMs || 4);
     } else if (config.type === 'encryption_service') {
@@ -926,6 +937,133 @@ export class SysSimEngine {
 
   private isCacheNode(node: SimNode): boolean {
     return ['redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(node.config.type);
+  }
+
+  private isMessagingNode(node: SimNode): boolean {
+    return ['message_queue', 'task_queue', 'pubsub', 'event_bus'].includes(node.config.type);
+  }
+
+  private createMessagingModel(node: SimNode): MessagingModel {
+    const config = node.config;
+    const common = {
+      kind: config.type as MessagingKind,
+      producerAckLatencyMs: 'producerAckLatencyMs' in config ? config.producerAckLatencyMs : 4,
+      consumerProcessingLatencyMs: 'consumerProcessingLatencyMs' in config
+        ? config.consumerProcessingLatencyMs
+        : 10,
+      deliveryGuarantee: ('deliveryGuarantee' in config
+        ? config.deliveryGuarantee
+        : 'at_least_once') as DeliveryGuarantee,
+      orderingGuarantee: ('orderingGuarantee' in config
+        ? config.orderingGuarantee
+        : 'None') as MessageOrdering,
+      retryLimit: 'retryLimit' in config ? config.retryLimit : 3,
+      retryDelayMs: 'retryDelayMs' in config ? config.retryDelayMs : 100,
+      deadLetterQueue: 'deadLetterQueue' in config ? config.deadLetterQueue : true,
+    };
+
+    if (config.type === 'message_queue') {
+      return new MessagingModel({
+        ...common,
+        kind: config.type,
+        maxDepth: config.maxDepth || 50000,
+        partitions: config.partitions || 8,
+        consumerGroups: config.consumerGroups || 1,
+        subscribersPerTopic: 1,
+        fanoutFactor: 1,
+        throughputPerPartitionPerSec: config.consumerThroughputPerSec || 2000,
+      });
+    }
+    if (config.type === 'pubsub') {
+      return new MessagingModel({
+        ...common,
+        kind: config.type,
+        maxDepth: config.maxDepth || 50000,
+        partitions: config.topicCount || 1,
+        consumerGroups: 1,
+        subscribersPerTopic: config.subscribersPerTopic || 1,
+        fanoutFactor: 1,
+        throughputPerPartitionPerSec: config.consumerThroughputPerSec || 2000,
+      });
+    }
+    if (config.type === 'event_bus') {
+      const fanout = Math.max(1, config.fanoutFactor || 1);
+      return new MessagingModel({
+        ...common,
+        kind: config.type,
+        maxDepth: config.maxDepth || 50000,
+        partitions: fanout,
+        consumerGroups: 1,
+        subscribersPerTopic: 1,
+        fanoutFactor: fanout,
+        throughputPerPartitionPerSec: Math.max(1, (config.throughputPerSec || 10000) / fanout),
+      });
+    }
+    if (config.type === 'task_queue') {
+      return new MessagingModel({
+        ...common,
+        kind: config.type,
+        maxDepth: config.maxDepth || 10000,
+        partitions: 1,
+        consumerGroups: 1,
+        subscribersPerTopic: 1,
+        fanoutFactor: 1,
+        throughputPerPartitionPerSec: config.consumerThroughputPerSec || 500,
+      });
+    }
+    throw new Error(`Unsupported messaging component: ${config.type}`);
+  }
+
+  private drainMessaging(deltaMs: number): void {
+    for (const [nodeId, model] of this.queueModels) {
+      const edges = this.graph.edges.filter((edge) => {
+        if (edge.source !== nodeId || edge.data?.isCut) return false;
+        const purpose = getEdgePurpose(edge.data);
+        return purpose === 'request' || purpose === 'fanout' || purpose === 'async';
+      });
+      if (edges.length === 0) continue;
+
+      let totalRate = 0;
+      let totalConcurrency = 0;
+      for (const edge of edges) {
+        const target = this.graph.nodes.find((node) => node.id === edge.target);
+        if (!target || target.config.health === 'down') continue;
+        if (target.config.type === 'worker') {
+          const replicas = Math.max(1, target.config.replicas || 1);
+          totalRate += Math.max(0, target.config.jobProcessingRatePerSec || 0) * replicas;
+          totalConcurrency += Math.max(1, target.config.concurrencyLimit || 1) * replicas;
+        } else if (target.config.type === 'serverless') {
+          totalRate += Math.max(1, target.config.maxThroughputQps || 1);
+          totalConcurrency += Math.max(1, target.config.concurrencyLimit || 1);
+        } else {
+          totalRate += Math.max(1, target.config.maxThroughputQps || 100);
+          totalConcurrency += 1;
+        }
+      }
+      if (totalRate <= 0 || totalConcurrency <= 0) continue;
+
+      model.drain(
+        deltaMs,
+        this.elapsedSimulationMs,
+        { replicas: 1, concurrencyLimit: totalConcurrency, processingRatePerSec: totalRate },
+        (attempt) => {
+          const edge = edges[attempt.recipientIndex % edges.length];
+          const result = this.traverseNode(
+            edge.target,
+            `${attempt.deliveryId}:attempt-${attempt.attempt}`,
+            attempt.requestKey,
+            nodeId,
+            0,
+            new Set([nodeId]),
+            getEdgePurpose(edge.data),
+            1,
+          );
+          return result.success;
+        },
+      );
+      const stats = this.nodeStats[nodeId];
+      if (stats) stats.queueDepth = model.getDepth();
+    }
   }
 
   private getCacheKey(node: SimNode, requestKey: string, sourceNodeId: string): string {

@@ -197,7 +197,10 @@ describe('Explicit edge-purpose semantics', () => {
     expect(request.path.map((hop) => hop.nodeId)).toEqual(['source', 'queue']);
     expect(request.totalLatencyMs).toBe(16);
     expect(request.color).toBe('#a855f7');
-    expect(engine.getMetricsSnapshot().componentMetrics.worker.failedRequests).toBe(1);
+    expect(engine.getMetricsSnapshot().componentMetrics.worker.failedRequests).toBe(0);
+    engine.start();
+    engine.step(100);
+    expect(engine.getMetricsSnapshot().componentMetrics.queue.queueDepth).toBeGreaterThan(0);
 
     const unavailableQueue: SimNode = {
       ...queue,

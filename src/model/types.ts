@@ -69,6 +69,8 @@ export type RateLimiterAlgorithm =
 export type CacheEvictionPolicy = 'LRU' | 'LFU' | 'TTL' | 'FIFO';
 
 export type RequestKeyDistribution = 'uniform' | 'zipfian' | 'custom';
+export type DeliveryGuarantee = 'at_most_once' | 'at_least_once' | 'exactly_once';
+export type MessageOrdering = 'FIFO' | 'Partition Key' | 'None';
 
 export interface CustomRequestKey {
   key: string;
@@ -252,22 +254,44 @@ export interface MessageQueueConfig extends BaseComponentConfig {
   partitions: number;
   consumerGroups: number;
   maxDepth: number;
-  orderingGuarantee: 'FIFO' | 'Partition Key' | 'None';
+  orderingGuarantee: MessageOrdering;
   retentionHours: number;
   consumerThroughputPerSec: number;
+  producerAckLatencyMs: number;
+  consumerProcessingLatencyMs: number;
+  deliveryGuarantee: DeliveryGuarantee;
+  retryLimit: number;
+  retryDelayMs: number;
+  deadLetterQueue: boolean;
 }
 
 export interface PubSubConfig extends BaseComponentConfig {
   type: 'pubsub';
   topicCount: number;
   subscribersPerTopic: number;
-  deliveryGuarantee: 'at_most_once' | 'at_least_once' | 'exactly_once';
+  deliveryGuarantee: DeliveryGuarantee;
+  maxDepth: number;
+  consumerThroughputPerSec: number;
+  producerAckLatencyMs: number;
+  consumerProcessingLatencyMs: number;
+  retryLimit: number;
+  retryDelayMs: number;
+  deadLetterQueue: boolean;
+  orderingGuarantee: MessageOrdering;
 }
 
 export interface EventBusConfig extends BaseComponentConfig {
   type: 'event_bus';
   throughputPerSec: number;
   fanoutFactor: number;
+  maxDepth: number;
+  producerAckLatencyMs: number;
+  consumerProcessingLatencyMs: number;
+  deliveryGuarantee: DeliveryGuarantee;
+  retryLimit: number;
+  retryDelayMs: number;
+  deadLetterQueue: boolean;
+  orderingGuarantee: MessageOrdering;
 }
 
 export interface TaskQueueConfig extends BaseComponentConfig {
@@ -275,6 +299,13 @@ export interface TaskQueueConfig extends BaseComponentConfig {
   priorityLevels: number;
   retryLimit: number;
   deadLetterQueue: boolean;
+  maxDepth: number;
+  consumerThroughputPerSec: number;
+  producerAckLatencyMs: number;
+  consumerProcessingLatencyMs: number;
+  deliveryGuarantee: DeliveryGuarantee;
+  retryDelayMs: number;
+  orderingGuarantee: MessageOrdering;
 }
 
 export interface RateLimiterConfig extends BaseComponentConfig {
@@ -495,7 +526,7 @@ export interface ScenarioConstraints {
 }
 
 export interface SerializedCanvasState {
-  version?: 2;
+  version?: 2 | 3;
   nodes: Array<{
     id: string;
     type: string;
