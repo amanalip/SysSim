@@ -8,7 +8,8 @@ import {
   EdgeProps,
 } from '@xyflow/react';
 import { ChevronDown, X, Scissors } from 'lucide-react';
-import { EdgeProtocol, ProtocolEdgeData } from '../../../model/types';
+import { EdgeProtocol, EdgePurpose, ProtocolEdgeData } from '../../../model/types';
+import { EDGE_PURPOSES, getEdgePurpose, validateEdgePurpose } from '../../../model/edge-semantics';
 import { useStore } from '../../../store/use-store';
 import styles from './ProtocolEdge.module.css';
 
@@ -23,6 +24,8 @@ const PROTOCOL_OPTIONS: EdgeProtocol[] = [
 
 export const ProtocolEdge: React.FC<EdgeProps> = ({
   id,
+  source,
+  target,
   sourceX,
   sourceY,
   targetX,
@@ -34,7 +37,16 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
   selected,
   data,
 }) => {
-  const { edgeRouting, updateEdgeProtocol, removeEdge, selectEdge, toggleCutEdge, addToast } = useStore();
+  const {
+    edgeRouting,
+    nodes,
+    updateEdgeProtocol,
+    updateEdgePurpose,
+    removeEdge,
+    selectEdge,
+    toggleCutEdge,
+    addToast,
+  } = useStore();
 
   let edgePath = '';
   let labelX = 0;
@@ -59,9 +71,10 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
 
   const edgeData = (data as unknown as ProtocolEdgeData) || { protocol: 'HTTP' };
   const currentProtocol = edgeData.protocol || 'HTTP';
+  const currentPurpose = getEdgePurpose(edgeData);
   const isCut = edgeData.isCut;
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<'protocol' | 'purpose' | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,15 +83,15 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
-        setIsOpen(false);
+        setOpenMenu(null);
       }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsOpen(false);
+        setOpenMenu(null);
       }
     };
-    if (isOpen) {
+    if (openMenu) {
       document.addEventListener('mousedown', handleClickOutside);
       window.addEventListener('keydown', handleKeyDown);
     }
@@ -86,14 +99,24 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen]);
+  }, [openMenu]);
 
   const handleProtocolSelect = (protocol: EdgeProtocol, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     updateEdgeProtocol(id, protocol);
-    setIsOpen(false);
+    setOpenMenu(null);
   };
+
+  const handlePurposeSelect = (purpose: EdgePurpose, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    updateEdgePurpose(id, purpose);
+    setOpenMenu(null);
+  };
+
+  const sourceType = nodes.find((node) => node.id === source)?.data.config.type;
+  const targetType = nodes.find((node) => node.id === target)?.data.config.type;
 
   const handleToggleCut = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -116,7 +139,7 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
         style={{
           ...style,
         }}
-        className={`${styles.edgePath} ${selected ? styles.edgePathSelected : ''} ${
+        className={`${styles.edgePath} ${styles[`purpose_${currentPurpose}`]} ${selected ? styles.edgePathSelected : ''} ${
           isCut ? styles.edgePathCut : ''
         }`}
       />
@@ -130,17 +153,35 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
           onClick={() => selectEdge(id)}
           ref={dropdownRef}
         >
-          <div
+          <button
+            type="button"
             className={`${styles.protocolBadge} ${isCut ? styles.protocolBadgeCut : ''}`}
             onClick={(e) => {
               e.stopPropagation();
-              setIsOpen(!isOpen);
+              setOpenMenu(openMenu === 'protocol' ? null : 'protocol');
             }}
+            aria-label={`Transport protocol: ${currentProtocol}. Click to change.`}
+            aria-expanded={openMenu === 'protocol'}
             title={isCut ? 'Connection is CUT (Click to change protocol)' : 'Click to change transport protocol'}
           >
             <span>{isCut ? `[CUT] ${currentProtocol}` : currentProtocol}</span>
             <ChevronDown size={10} />
-          </div>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.purposeBadge} ${styles[`badge_${currentPurpose}`]}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenMenu(openMenu === 'purpose' ? null : 'purpose');
+            }}
+            aria-label={`Edge purpose: ${currentPurpose}. Click to change.`}
+            aria-expanded={openMenu === 'purpose'}
+            title={`Execution purpose: ${currentPurpose}`}
+          >
+            <span>{currentPurpose}</span>
+            <ChevronDown size={10} />
+          </button>
 
           <button
             className={styles.edgeCutBtn}
@@ -159,7 +200,7 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
             <X size={10} />
           </button>
 
-          {isOpen && (
+          {openMenu === 'protocol' && (
             <div className={styles.protocolSelect}>
               {PROTOCOL_OPTIONS.map((proto) => (
                 <button
@@ -172,6 +213,28 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
                   {proto}
                 </button>
               ))}
+            </div>
+          )}
+
+          {openMenu === 'purpose' && (
+            <div className={`${styles.protocolSelect} ${styles.purposeSelect}`} role="menu" aria-label="Edge purpose options">
+              {EDGE_PURPOSES.map((purpose) => {
+                const validation = sourceType && targetType
+                  ? validateEdgePurpose(sourceType, targetType, currentProtocol, purpose)
+                  : { valid: purpose === 'request', reason: 'Missing endpoint metadata' };
+                return (
+                  <button
+                    key={purpose}
+                    className={`${styles.protocolOption} ${purpose === currentPurpose ? styles.protocolOptionActive : ''}`}
+                    onClick={(e) => handlePurposeSelect(purpose, e)}
+                    disabled={!validation.valid}
+                    title={validation.reason}
+                    role="menuitem"
+                  >
+                    {purpose}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

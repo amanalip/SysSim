@@ -17,7 +17,8 @@ import {
 } from '../model/types';
 import { createDefaultConfig } from '../model/component-defaults';
 import { validateConnection } from '../model/validation';
-import { inferEdgePurpose } from '../model/edge-semantics';
+import { inferEdgePurpose, validateEdgePurpose } from '../model/edge-semantics';
+import { migrateCanvasState } from '../model/canvas-migrations';
 import { computeAutoLayout } from '../layout/auto-layout';
 import { simBridge } from '../engine/sim-bridge';
 import { ThemeMode } from '../theme';
@@ -174,6 +175,9 @@ const initialTrafficConfig: TrafficConfig = {
   burstMultiplier: 3,
   rampDurationSec: 30,
   spikeFrequencySec: 10,
+  seed: 1,
+  requestKeyDistribution: 'uniform',
+  requestKeySpaceSize: 100,
 };
 
 const initialMetrics: OverallMetrics = {
@@ -381,6 +385,18 @@ export const useStore = create<SysSimState>((set, get) => ({
       (sourceNode && targetNode
         ? inferEdgePurpose(sourceNode.data.config.type, targetNode.data.config.type, protocol)
         : 'request');
+    if (sourceNode && targetNode) {
+      const purposeValidation = validateEdgePurpose(
+        sourceNode.data.config.type,
+        targetNode.data.config.type,
+        protocol,
+        purpose,
+      );
+      if (!purposeValidation.valid) {
+        get().addToast(purposeValidation.reason || 'Invalid edge purpose', 'error');
+        return false;
+      }
+    }
     const newEdge: CanvasEdge = {
       id,
       source,
@@ -399,6 +415,21 @@ export const useStore = create<SysSimState>((set, get) => ({
   },
 
   updateEdgeProtocol: (edgeId, protocol) => {
+    const edge = get().edges.find((candidate) => candidate.id === edgeId);
+    const source = get().nodes.find((node) => node.id === edge?.source);
+    const target = get().nodes.find((node) => node.id === edge?.target);
+    if (edge && source && target) {
+      const validation = validateEdgePurpose(
+        source.data.config.type,
+        target.data.config.type,
+        protocol,
+        edge.data.purpose || 'request',
+      );
+      if (!validation.valid) {
+        get().addToast(validation.reason || 'Protocol is incompatible with this edge purpose', 'error');
+        return;
+      }
+    }
     get().pushHistory();
     set((state) => ({
       edges: state.edges.map((e) =>
@@ -409,6 +440,21 @@ export const useStore = create<SysSimState>((set, get) => ({
   },
 
   updateEdgePurpose: (edgeId, purpose) => {
+    const edge = get().edges.find((candidate) => candidate.id === edgeId);
+    const source = get().nodes.find((node) => node.id === edge?.source);
+    const target = get().nodes.find((node) => node.id === edge?.target);
+    if (edge && source && target) {
+      const validation = validateEdgePurpose(
+        source.data.config.type,
+        target.data.config.type,
+        edge.data.protocol || 'HTTP',
+        purpose,
+      );
+      if (!validation.valid) {
+        get().addToast(validation.reason || 'Invalid edge purpose', 'error');
+        return;
+      }
+    }
     get().pushHistory();
     set((state) => ({
       edges: state.edges.map((e) =>
@@ -516,11 +562,21 @@ export const useStore = create<SysSimState>((set, get) => ({
   },
 
   loadCanvasState: (nodes, edges, zones = []) => {
-    get().pushHistory();
-    set({
+    const migrated = migrateCanvasState({
       nodes,
       edges,
       zones,
+    } as SerializedCanvasState);
+    const migratedEdges = edges.map((edge, index) => ({
+      ...edge,
+      type: edge.type || 'protocolEdge',
+      data: migrated.edges[index].data,
+    }));
+    get().pushHistory();
+    set({
+      nodes: migrated.nodes as CanvasNode[],
+      edges: migratedEdges,
+      zones: migrated.zones || [],
       selectedNodeId: null,
       selectedEdgeId: null,
       isPropertiesPanelOpen: false,
@@ -664,11 +720,12 @@ export const useStore = create<SysSimState>((set, get) => ({
   },
 
   loadReferenceDesign: (refDesign) => {
+    const migrated = migrateCanvasState(refDesign);
     get().pushHistory();
     set({
-      nodes: refDesign.nodes as unknown as CanvasNode[],
-      edges: refDesign.edges as unknown as CanvasEdge[],
-      zones: (refDesign.zones || []) as ZoneData[],
+      nodes: migrated.nodes as unknown as CanvasNode[],
+      edges: migrated.edges.map((edge) => ({ ...edge, type: 'protocolEdge' })) as CanvasEdge[],
+      zones: (migrated.zones || []) as ZoneData[],
       selectedNodeId: null,
       selectedEdgeId: null,
       isPropertiesPanelOpen: false,

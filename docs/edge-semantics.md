@@ -1,24 +1,25 @@
 # Edge Semantics
 
-**Model version:** 1.0
-**Last reviewed:** August 27, 2026
+**Model version:** 1.1
+**Last reviewed:** August 28, 2026
 
-This document defines how the simulation engine interprets directed edges. It is normative for the current engine; canvas visuals and saved-data migration remain follow-up work in checklist tasks 31–34.
+This document defines how the simulation engine interprets directed edges. It is normative for the engine, editor, and version-2 saved canvas format.
 
 ## Purpose selection policy
 
 Every new edge receives a `data.purpose` value. The stored value is authoritative.
 
-Until the purpose selector is added in task 32, the editor chooses an initial value from the endpoint types and protocol:
+The editor chooses an initial value from the endpoint types and protocol:
 
-1. database-to-database edges start as `replication`;
-2. edges leaving pub/sub or event-bus nodes start as `fanout`;
-3. edges entering or leaving messaging components, and `pub/sub` or MQTT protocol edges, start as `async`;
-4. every other new edge starts as `request`.
+1. edges leaving a cache start as `fallback`;
+2. database-to-database edges start as `replication`;
+3. edges leaving pub/sub or event-bus nodes start as `fanout`;
+4. edges entering or leaving messaging components, and `pub/sub` or MQTT protocol edges, start as `async`;
+5. every other new edge starts as `request`.
 
 Inference occurs only when the edge is created. It does not silently change an explicitly stored purpose after a component or protocol edit.
 
-Older graphs without `data.purpose` execute as `request` edges. This conservative runtime fallback avoids silently reinterpreting existing diagrams. Persisted migration and migration tests remain task 34.
+The canvas shows protocol and purpose as independently accessible buttons. Invalid purpose/component combinations are disabled and rejected by store actions. Version-1 graphs without `data.purpose` are migrated once using the inference policy above. JSON export, URL sharing, snapshots, history, undo, and redo retain the explicit value.
 
 ## Purpose definitions
 
@@ -57,12 +58,12 @@ The parent trace includes the first async target hop because it represents enque
 
 Replication traffic is detached from the user request. Replica processing and failures affect replica component metrics, but replication nodes are omitted from the end-user request path and latency. Replication lag, quorum, durability, and failover are not modeled yet.
 
+### Cycles and hop TTL
+
+Each branch carries its visited-node set and a 64-hop TTL. Revisiting a node or exhausting that TTL produces an `error` hop with an explicit trace reason. A cycle is never silently accepted as a successful terminal route. A disconnected root with no outgoing execution edges is a valid terminal path.
+
 ## Known limits
 
-- Invalid purpose/component combinations are not blocked until task 31.
-- Purpose is not yet displayed or editable on the canvas until task 32.
-- Full round-trip persistence coverage and legacy migration are tasks 33–34.
 - Branch traces use a flat hop list; structured parent/child spans are future trace work.
 - Detached work executes immediately inside the current simulation step rather than through a scheduled job/event queue.
-- Cycles are currently stopped by visited-node detection; explicit hop-limit failure semantics remain task 40.
 - Messaging component distinctions, retries, consumer groups, and backlog timing remain tasks 61–78.

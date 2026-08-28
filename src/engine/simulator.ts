@@ -52,9 +52,15 @@ export class SysSimEngine {
     burstMultiplier: 3,
     rampDurationSec: 30,
     spikeFrequencySec: 10,
+    seed: 1,
+    requestKeyDistribution: 'uniform',
+    requestKeySpaceSize: 100,
   };
   private speedMultiplier = 1;
   private state: SimulationState = 'idle';
+  private randomState = 1;
+  private requestSequence = 0;
+  private zipfCumulativeWeights = new Map<number, number[]>();
 
   private elapsedSimulationMs = 0;
   private completedRequests: SimRequest[] = [];
@@ -142,13 +148,35 @@ export class SysSimEngine {
         n.config.type === 'cdn_cache' ||
         n.config.type === 'browser_cache'
       ) {
-        const hitRatio =
-          n.config.hitRatioPercent !== undefined ? n.config.hitRatioPercent : 80;
-        const eviction = (n.config as any).evictionPolicy || 'LRU';
-        this.cacheModels.set(
-          n.id,
-          new CacheModel(1000, eviction, hitRatio)
-        );
+        const config = n.config;
+        const isServerCache = config.type === 'redis_cache' || config.type === 'local_cache';
+        const sizeMb = isServerCache ? config.sizeMb : config.type === 'browser_cache' ? 1 : 100;
+        const entrySizeKb = isServerCache ? config.entrySizeKb || 1 : 1;
+        const sizeLimit = Math.max(1, Math.floor((sizeMb * 1024) / entrySizeKb));
+        const defaultTtlSec = config.type === 'redis_cache'
+          ? 300
+          : config.type === 'local_cache'
+            ? 60
+            : config.type === 'cdn_cache'
+              ? 3600
+              : 86400;
+        const defaultReadLatencyMs = config.type === 'redis_cache'
+          ? 2
+          : config.type === 'local_cache'
+            ? 0.5
+            : config.type === 'cdn_cache'
+              ? 8
+              : 0.2;
+        this.cacheModels.set(n.id, new CacheModel({
+          sizeLimit,
+          evictionPolicy: 'evictionPolicy' in config && config.evictionPolicy
+            ? config.evictionPolicy
+            : isServerCache ? 'LRU' : 'TTL',
+          ttlMs: Math.max(1, Number(config.ttlSec) || defaultTtlSec) * 1000,
+          readLatencyMs: Number.isFinite(config.readLatencyMs)
+            ? config.readLatencyMs
+            : defaultReadLatencyMs,
+        }));
       } else if (n.config.type === 'rate_limiter') {
         this.rateLimiters.set(
           n.id,
@@ -174,7 +202,8 @@ export class SysSimEngine {
           new DatabaseModel(
             n.config.baseLatencyMs || 20,
             (n.config as any).maxConnections || 500,
-            replicas
+            replicas,
+            () => this.random(),
           )
         );
       }
@@ -183,6 +212,7 @@ export class SysSimEngine {
 
   public setConfig(config: Partial<TrafficConfig>): void {
     this.config = { ...this.config, ...config };
+    if (config.seed !== undefined) this.randomState = this.normalizeSeed(config.seed);
   }
 
   public setSpeedMultiplier(multiplier: number): void {
@@ -213,6 +243,8 @@ export class SysSimEngine {
     this.state = 'idle';
     this.elapsedSimulationMs = 0;
     this.fractionalRequestAccumulator = 0;
+    this.requestSequence = 0;
+    this.randomState = this.normalizeSeed(this.config.seed ?? 1);
     this.completedRequests = [];
     this.activeRequests = [];
     this.totalSent = 0;
@@ -300,7 +332,13 @@ export class SysSimEngine {
     if (sourceNodes.length > 0) {
       for (let i = 0; i < requestsToGenerate; i++) {
         const source = sourceNodes[i % sourceNodes.length];
-        const req = createSimRequest(source.id, this.elapsedSimulationMs);
+        const requestKey = this.generateRequestKey();
+        const req = createSimRequest(
+          source.id,
+          this.elapsedSimulationMs,
+          requestKey,
+          this.requestSequence++,
+        );
         this.processRequest(req);
       }
     }
@@ -341,7 +379,14 @@ export class SysSimEngine {
 
   private processRequest(req: SimRequest): void {
     this.totalSent++;
-    const result = this.traverseNode(req.sourceNodeId, req.id, 0, new Set());
+    const result = this.traverseNode(
+      req.sourceNodeId,
+      req.id,
+      req.requestKey || 'resource:0',
+      req.sourceNodeId,
+      0,
+      new Set(),
+    );
 
     req.path = result.hops;
     req.totalLatencyMs = result.latencyMs;
@@ -374,21 +419,13 @@ export class SysSimEngine {
   private traverseNode(
     nodeId: string,
     requestId: string,
+    requestKey: string,
+    sourceNodeId: string,
     startTimeMs: number,
     visited: Set<string>,
     viaEdgePurpose?: EdgePurpose,
+    hopCount: number = 0,
   ): TraversalResult {
-    if (visited.has(nodeId)) {
-      return {
-        success: true,
-        status: 'success',
-        latencyMs: 0,
-        hops: [],
-        cacheMiss: false,
-        usedAsync: false,
-      };
-    }
-
     const node = this.graph.nodes.find((candidate) => candidate.id === nodeId);
     if (!node) {
       return {
@@ -401,10 +438,43 @@ export class SysSimEngine {
       };
     }
 
+    if (visited.has(nodeId) || hopCount >= 64) {
+      return {
+        success: false,
+        status: 'error',
+        latencyMs: 0,
+        hops: [{
+          nodeId: node.id,
+          nodeName: node.config.name,
+          nodeType: node.config.type,
+          enterTimeMs: startTimeMs,
+          exitTimeMs: startTimeMs,
+          latencyMs: 0,
+          status: 'error',
+          viaEdgePurpose,
+          info: visited.has(nodeId)
+            ? 'Traversal stopped: cycle detected (64-hop TTL)'
+            : 'Traversal stopped: 64-hop TTL exhausted',
+        }],
+        cacheMiss: false,
+        usedAsync: false,
+      };
+    }
+
     const branchVisited = new Set(visited);
     branchVisited.add(nodeId);
-    const nodeResult = this.processNode(node, requestId, startTimeMs, viaEdgePurpose);
+    const nodeResult = this.processNode(
+      node,
+      requestKey,
+      sourceNodeId,
+      startTimeMs,
+      viaEdgePurpose,
+    );
     if (!nodeResult.success) return nodeResult;
+
+    if (this.isCacheNode(node) && nodeResult.hops[0]?.status === 'hit') {
+      return nodeResult;
+    }
 
     const outgoingEdges = this.graph.edges.filter(
       (edge) => edge.source === nodeId && !edge.data?.isCut,
@@ -421,7 +491,16 @@ export class SysSimEngine {
       ...edgesByPurpose('replication'),
       ...edgesByPurpose('observability'),
     ]) {
-      this.traverseNode(edge.target, requestId, 0, branchVisited, getEdgePurpose(edge.data));
+      this.traverseNode(
+        edge.target,
+        requestId,
+        requestKey,
+        sourceNodeId,
+        0,
+        branchVisited,
+        getEdgePurpose(edge.data),
+        hopCount + 1,
+      );
     }
 
     for (const edge of edgesByPurpose('async')) {
@@ -429,9 +508,12 @@ export class SysSimEngine {
       const asyncBranch = this.traverseNode(
         edge.target,
         requestId,
+        requestKey,
+        sourceNodeId,
         startTimeMs + latencyMs + edgeLatency,
         branchVisited,
         'async',
+        hopCount + 1,
       );
       const acknowledgementHop = asyncBranch.hops[0];
       latencyMs += edgeLatency + (acknowledgementHop?.latencyMs || 0);
@@ -475,9 +557,12 @@ export class SysSimEngine {
           const child = this.traverseNode(
             edge.target,
             requestId,
+            requestKey,
+            sourceNodeId,
             startTimeMs + latencyMs + edgeLatency,
             branchVisited,
             'request',
+            hopCount + 1,
           );
           latencyMs += edgeLatency + child.latencyMs;
           hops.push(...child.hops);
@@ -497,9 +582,12 @@ export class SysSimEngine {
         const child = this.traverseNode(
           edge.target,
           requestId,
+          requestKey,
+          sourceNodeId,
           fanoutStart + edgeLatency,
           branchVisited,
           'fanout',
+          hopCount + 1,
         );
         return { ...child, latencyMs: edgeLatency + child.latencyMs };
       });
@@ -519,14 +607,28 @@ export class SysSimEngine {
         const fallback = this.traverseNode(
           edge.target,
           requestId,
+          requestKey,
+          sourceNodeId,
           startTimeMs + latencyMs + edgeLatency,
           branchVisited,
           'fallback',
+          hopCount + 1,
         );
         latencyMs += edgeLatency + fallback.latencyMs;
         hops.push(...fallback.hops);
         usedAsync ||= fallback.usedAsync;
         if (fallback.success) {
+          if (this.isCacheNode(node) && nodeResult.cacheMiss) {
+            const configuredCacheability = 'hitRatioPercent' in node.config
+              ? Math.min(100, Math.max(0, node.config.hitRatioPercent))
+              : 100;
+            if (this.random() * 100 < configuredCacheability) {
+              this.cacheModels.get(node.id)?.put(
+                this.getCacheKey(node, requestKey, sourceNodeId),
+                this.elapsedSimulationMs,
+              );
+            }
+          }
           return {
             success: true,
             status: 'success',
@@ -580,7 +682,8 @@ export class SysSimEngine {
 
   private processNode(
     node: SimNode,
-    requestId: string,
+    requestKey: string,
+    sourceNodeId: string,
     startTimeMs: number,
     viaEdgePurpose?: EdgePurpose,
   ): TraversalResult {
@@ -625,7 +728,7 @@ export class SysSimEngine {
       return failure('error', 1, 'Component is down');
     }
 
-    if (config.failureRatePercent && Math.random() * 100 < config.failureRatePercent) {
+    if (config.failureRatePercent && this.random() * 100 < config.failureRatePercent) {
       return failure('error', 5, 'Simulated component fault');
     }
 
@@ -642,7 +745,7 @@ export class SysSimEngine {
     } else if (config.type === 'sql_db' || config.type === 'nosql_db') {
       const dbModel = this.dbModels.get(node.id);
       hopLatency = dbModel
-        ? dbModel.executeQuery(Math.random() < 0.1).latencyMs
+        ? dbModel.executeQuery(this.random() < 0.1).latencyMs
         : config.baseLatencyMs || 20;
     } else if (
       config.type === 'redis_cache' ||
@@ -652,15 +755,18 @@ export class SysSimEngine {
     ) {
       const cacheModel = this.cacheModels.get(node.id);
       const cacheAccess = cacheModel
-        ? cacheModel.access(requestId, this.elapsedSimulationMs)
-        : { hit: Math.random() < 0.8, latencyMs: 2 };
+        ? cacheModel.access(
+            this.getCacheKey(node, requestKey, sourceNodeId),
+            this.elapsedSimulationMs,
+          )
+        : { hit: false, latencyMs: 2 };
       if (cacheAccess.hit) {
         hopLatency = cacheAccess.latencyMs;
         hopStatus = 'hit';
         hopInfo = 'Cache hit';
         stats.hits++;
       } else {
-        hopLatency = 5;
+        hopLatency = cacheAccess.latencyMs;
         hopStatus = 'miss';
         hopInfo = 'Cache miss';
         stats.misses++;
@@ -758,6 +864,70 @@ export class SysSimEngine {
     if (protocol === 'WebSocket' || protocol === 'TCP') return 2;
     if (protocol === 'pub/sub' || protocol === 'MQTT') return 3;
     return 4;
+  }
+
+  private isCacheNode(node: SimNode): boolean {
+    return ['redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(node.config.type);
+  }
+
+  private getCacheKey(node: SimNode, requestKey: string, sourceNodeId: string): string {
+    return node.config.type === 'browser_cache'
+      ? `${sourceNodeId}:${requestKey}`
+      : requestKey;
+  }
+
+  private normalizeSeed(seed: number): number {
+    const normalized = Math.floor(seed) >>> 0;
+    return normalized || 1;
+  }
+
+  /** Mulberry32: small deterministic PRNG suitable for repeatable simulations. */
+  private random(): number {
+    let value = (this.randomState += 0x6d2b79f5);
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  }
+
+  private generateRequestKey(): string {
+    const size = Math.max(1, Math.floor(this.config.requestKeySpaceSize || 100));
+    if (this.config.requestKeyDistribution === 'custom') {
+      const keys = (this.config.customRequestKeys || []).filter(
+        (entry) => entry.key && Number.isFinite(entry.weight) && entry.weight > 0,
+      );
+      const totalWeight = keys.reduce((sum, entry) => sum + entry.weight, 0);
+      if (totalWeight > 0) {
+        let cursor = this.random() * totalWeight;
+        for (const entry of keys) {
+          cursor -= entry.weight;
+          if (cursor <= 0) return entry.key;
+        }
+        return keys[keys.length - 1].key;
+      }
+    }
+
+    if (this.config.requestKeyDistribution === 'zipfian') {
+      let cumulative = this.zipfCumulativeWeights.get(size);
+      if (!cumulative) {
+        let sum = 0;
+        cumulative = Array.from({ length: size }, (_, index) => {
+          sum += 1 / (index + 1);
+          return sum;
+        });
+        this.zipfCumulativeWeights.set(size, cumulative);
+      }
+      const cursor = this.random() * cumulative[cumulative.length - 1];
+      let low = 0;
+      let high = cumulative.length - 1;
+      while (low < high) {
+        const mid = Math.floor((low + high) / 2);
+        if (cumulative[mid] < cursor) low = mid + 1;
+        else high = mid;
+      }
+      return `resource:${low}`;
+    }
+
+    return `resource:${Math.floor(this.random() * size)}`;
   }
 
   public getMetricsSnapshot(): OverallMetrics {

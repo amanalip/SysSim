@@ -68,6 +68,13 @@ export type RateLimiterAlgorithm =
 
 export type CacheEvictionPolicy = 'LRU' | 'LFU' | 'TTL' | 'FIFO';
 
+export type RequestKeyDistribution = 'uniform' | 'zipfian' | 'custom';
+
+export interface CustomRequestKey {
+  key: string;
+  weight: number;
+}
+
 export interface BaseComponentConfig {
   id: string;
   name: string;
@@ -208,6 +215,8 @@ export interface RedisCacheConfig extends BaseComponentConfig {
   hitRatioPercent: number;
   replicas: number;
   readLatencyMs: number;
+  ttlSec: number;
+  entrySizeKb: number;
 }
 
 export interface LocalCacheConfig extends BaseComponentConfig {
@@ -215,18 +224,23 @@ export interface LocalCacheConfig extends BaseComponentConfig {
   sizeMb: number;
   ttlSec: number;
   hitRatioPercent: number;
+  evictionPolicy: CacheEvictionPolicy;
+  readLatencyMs: number;
+  entrySizeKb: number;
 }
 
 export interface CdnCacheConfig extends BaseComponentConfig {
   type: 'cdn_cache';
   ttlSec: number;
   hitRatioPercent: number;
+  readLatencyMs: number;
 }
 
 export interface BrowserCacheConfig extends BaseComponentConfig {
   type: 'browser_cache';
   ttlSec: number;
   hitRatioPercent: number;
+  readLatencyMs: number;
 }
 
 export interface MessageQueueConfig extends BaseComponentConfig {
@@ -337,6 +351,10 @@ export interface TrafficConfig {
   rampDurationSec: number;
   spikeFrequencySec: number;
   customSchedule?: Array<{ timeSec: number; qps: number }>;
+  seed?: number;
+  requestKeyDistribution?: RequestKeyDistribution;
+  requestKeySpaceSize?: number;
+  customRequestKeys?: CustomRequestKey[];
 }
 
 export type SimulationState = 'idle' | 'running' | 'paused' | 'stopped';
@@ -357,6 +375,7 @@ export interface SimRequest {
   id: string;
   timestamp: number;
   sourceNodeId: string;
+  requestKey?: string;
   currentEdgeId?: string;
   currentEdgeProgress?: number; // 0 to 1
   path: RequestHop[];
@@ -460,6 +479,7 @@ export interface ScenarioConstraints {
 }
 
 export interface SerializedCanvasState {
+  version?: 2;
   nodes: Array<{
     id: string;
     type: string;

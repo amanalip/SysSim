@@ -33,7 +33,7 @@ export const CORE_SCENARIOS: Scenario[] = [
         { id: 'e1', source: 'c1', target: 'lb1', data: { protocol: 'HTTP' } },
         { id: 'e2', source: 'lb1', target: 'app1', data: { protocol: 'HTTP' } },
         { id: 'e3', source: 'app1', target: 'cache1', data: { protocol: 'TCP' } },
-        { id: 'e4', source: 'app1', target: 'db1', data: { protocol: 'TCP' } },
+        { id: 'e4', source: 'cache1', target: 'db1', data: { protocol: 'TCP', purpose: 'fallback' } },
       ],
     },
     discussionPoints: [

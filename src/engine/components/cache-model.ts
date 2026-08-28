@@ -1,71 +1,127 @@
 import { CacheEvictionPolicy } from '../../model/types';
 
+interface CacheEntry {
+  insertedAt: number;
+  lastAccessed: number;
+  frequency: number;
+  expiresAt: number;
+}
+
+export interface CacheModelOptions {
+  sizeLimit: number;
+  evictionPolicy: CacheEvictionPolicy;
+  ttlMs: number;
+  readLatencyMs: number;
+}
+
+/** Stateful cache-aside store with deterministic, policy-specific eviction. */
 export class CacheModel {
-  private cache = new Map<string, { lastAccessed: number; frequency: number }>();
+  private cache = new Map<string, CacheEntry>();
   private hits = 0;
   private misses = 0;
+  private readonly options: CacheModelOptions;
 
   constructor(
-    private sizeLimit: number = 1000,
-    private evictionPolicy: CacheEvictionPolicy = 'LRU',
-    private defaultHitRatio: number = 80
-  ) {}
+    options: CacheModelOptions | number = {
+      sizeLimit: 1000,
+      evictionPolicy: 'LRU',
+      ttlMs: Number.MAX_SAFE_INTEGER,
+      readLatencyMs: 2,
+    },
+    legacyEvictionPolicy: CacheEvictionPolicy = 'LRU',
+    _legacyHitRatio: number = 100,
+  ) {
+    const normalizedOptions: CacheModelOptions = typeof options === 'number'
+      ? {
+          sizeLimit: options,
+          evictionPolicy: legacyEvictionPolicy,
+          ttlMs: Number.MAX_SAFE_INTEGER,
+          readLatencyMs: 2,
+        }
+      : options;
+    this.options = {
+      ...normalizedOptions,
+      sizeLimit: Math.max(1, Math.floor(normalizedOptions.sizeLimit)),
+      ttlMs: Math.max(1, normalizedOptions.ttlMs),
+      readLatencyMs: Math.max(0, normalizedOptions.readLatencyMs),
+    };
+  }
 
   public access(key: string, nowMs: number = Date.now()): { hit: boolean; latencyMs: number } {
-    // Probabilistic hit ratio check combined with stateful cache lookup
-    const isHit = this.cache.has(key) || Math.random() * 100 < this.defaultHitRatio;
-
-    if (isHit) {
-      this.hits++;
-      const entry = this.cache.get(key) || { lastAccessed: nowMs, frequency: 0 };
-      entry.lastAccessed = nowMs;
-      entry.frequency++;
-      this.cache.set(key, entry);
-      return { hit: true, latencyMs: 2 };
-    } else {
+    this.deleteIfExpired(key, nowMs);
+    const entry = this.cache.get(key);
+    if (!entry) {
       this.misses++;
-      this.put(key, nowMs);
-      return { hit: false, latencyMs: 15 };
+      return { hit: false, latencyMs: this.options.readLatencyMs };
+    }
+
+    this.hits++;
+    entry.lastAccessed = nowMs;
+    entry.frequency++;
+    return { hit: true, latencyMs: this.options.readLatencyMs };
+  }
+
+  /** Populates only after a successful origin response. */
+  public put(key: string, nowMs: number = Date.now()): boolean {
+    this.purgeExpired(nowMs);
+    if (!this.cache.has(key) && this.cache.size >= this.options.sizeLimit) {
+      this.evict(nowMs);
+    }
+    this.cache.set(key, {
+      insertedAt: nowMs,
+      lastAccessed: nowMs,
+      frequency: 1,
+      expiresAt: nowMs + this.options.ttlMs,
+    });
+    return true;
+  }
+
+  private deleteIfExpired(key: string, nowMs: number): void {
+    const entry = this.cache.get(key);
+    if (entry && entry.expiresAt <= nowMs) this.cache.delete(key);
+  }
+
+  private purgeExpired(nowMs: number): void {
+    for (const [key, entry] of this.cache) {
+      if (entry.expiresAt <= nowMs) this.cache.delete(key);
     }
   }
 
-  public put(key: string, nowMs: number = Date.now()): void {
-    if (this.cache.size >= this.sizeLimit) {
-      this.evict();
-    }
-    this.cache.set(key, { lastAccessed: nowMs, frequency: 1 });
-  }
-
-  private evict(): void {
+  private evict(nowMs: number): void {
     if (this.cache.size === 0) return;
+    let targetKey: string | undefined;
+    let targetScore = Infinity;
 
-    if (this.evictionPolicy === 'LFU') {
-      let minFreq = Infinity;
-      let targetKey: string | null = null;
-      for (const [k, v] of this.cache.entries()) {
-        if (v.frequency < minFreq) {
-          minFreq = v.frequency;
-          targetKey = k;
-        }
+    for (const [key, entry] of this.cache) {
+      const score = this.options.evictionPolicy === 'LFU'
+        ? entry.frequency
+        : this.options.evictionPolicy === 'FIFO'
+          ? entry.insertedAt
+          : this.options.evictionPolicy === 'TTL'
+            ? entry.expiresAt
+            : entry.lastAccessed;
+      if (score < targetScore) {
+        targetKey = key;
+        targetScore = score;
       }
-      if (targetKey) this.cache.delete(targetKey);
-    } else {
-      // LRU / FIFO fallback
-      let oldest = Infinity;
-      let targetKey: string | null = null;
-      for (const [k, v] of this.cache.entries()) {
-        if (v.lastAccessed < oldest) {
-          oldest = v.lastAccessed;
-          targetKey = k;
-        }
-      }
-      if (targetKey) this.cache.delete(targetKey);
     }
+
+    if (targetKey) this.cache.delete(targetKey);
+    this.purgeExpired(nowMs);
   }
 
   public getHitRatioPercent(): number {
     const total = this.hits + this.misses;
-    return total > 0 ? (this.hits / total) * 100 : this.defaultHitRatio;
+    return total > 0 ? (this.hits / total) * 100 : 0;
+  }
+
+  public getSize(): number {
+    return this.cache.size;
+  }
+
+  public has(key: string, nowMs: number = Date.now()): boolean {
+    this.deleteIfExpired(key, nowMs);
+    return this.cache.has(key);
   }
 
   public reset(): void {

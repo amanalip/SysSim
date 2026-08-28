@@ -46,6 +46,7 @@ export const PropertiesPanel: React.FC = () => {
   }
 
   const config = selectedNode.data.config;
+  const isCacheConfig = ['redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(config.type);
 
   const handleClose = () => {
     setIsPropertiesPanelOpen(false);
@@ -263,7 +264,7 @@ export const PropertiesPanel: React.FC = () => {
           {'hitRatioPercent' in config && (
             <div className={styles.fieldGroup}>
               <div className={styles.fieldLabel}>
-                <span>Cache Hit Ratio</span>
+                <span>Cacheable Responses</span>
                 <span className={styles.fieldValueBadge}>{config.hitRatioPercent}%</span>
               </div>
               <div className={styles.rangeContainer}>
@@ -282,6 +283,81 @@ export const PropertiesPanel: React.FC = () => {
               </div>
             </div>
           )}
+
+          {isCacheConfig && 'ttlSec' in config && (
+            <div className={styles.fieldGroup}>
+              <div className={styles.fieldLabel}>
+                <span>Entry TTL</span>
+                <span className={styles.fieldValueBadge}>{config.ttlSec}s</span>
+              </div>
+              <input
+                type="number"
+                min="1"
+                className={styles.input}
+                value={config.ttlSec}
+                onChange={(event) => updateNodeConfig(config.id, {
+                  ttlSec: Math.max(1, parseInt(event.target.value, 10) || 1),
+                } as Partial<typeof config>)}
+              />
+            </div>
+          )}
+
+          {isCacheConfig && 'readLatencyMs' in config && (
+            <div className={styles.fieldGroup}>
+              <div className={styles.fieldLabel}>
+                <span>Cache Read Latency</span>
+                <span className={styles.fieldValueBadge}>{config.readLatencyMs}ms</span>
+              </div>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                className={styles.input}
+                value={config.readLatencyMs}
+                onChange={(event) => updateNodeConfig(config.id, {
+                  readLatencyMs: Math.max(0, Number(event.target.value) || 0),
+                } as Partial<typeof config>)}
+              />
+            </div>
+          )}
+
+          {isCacheConfig && 'sizeMb' in config && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Cache Capacity (MB)</label>
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.sizeMb}
+                  onChange={(event) => updateNodeConfig(config.id, {
+                    sizeMb: Math.max(1, parseInt(event.target.value, 10) || 1),
+                  } as Partial<typeof config>)}
+                />
+              </div>
+              {'entrySizeKb' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Average Entry Size (KB)</label>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    className={styles.input}
+                    value={config.entrySizeKb}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      entrySizeKb: Math.max(0.1, Number(event.target.value) || 0.1),
+                    } as Partial<typeof config>)}
+                  />
+                </div>
+              ) : null}
+            </>
+          )}
+
+          {config.type === 'browser_cache' ? (
+            <p className={styles.fieldHint}>Browser entries are isolated per client and terminate before a network request on hit.</p>
+          ) : config.type === 'cdn_cache' ? (
+            <p className={styles.fieldHint}>CDN entries are shared at the edge and forward misses to the configured origin fallback.</p>
+          ) : null}
 
           {/* Cache Eviction Policy */}
           {'evictionPolicy' in config && (

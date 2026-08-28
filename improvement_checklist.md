@@ -33,12 +33,12 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 ## Current verified baseline
 
 - [x] Production build completes with TypeScript strict checks.
-- [x] 192 unit tests across 46 test files pass as of the August 2026 audit.
-- [x] The existing Chromium Playwright smoke test passes.
+- [x] 221 unit tests across 52 test files pass as of the August 28, 2026 edge-and-cache milestone.
+- [x] Seven Chromium Playwright tests pass, covering the app shell and all six edge purposes.
 - [x] Production and full dependency audits report zero known vulnerabilities as of the August 2026 audit.
 - [x] The application starts and the Web Worker simulation path runs in Chromium.
 - [x] The repository was reviewed across UI, store, engine, scenarios, CI, documentation, dependencies, and live desktop/mobile behavior.
-- [ ] Re-run and update this baseline after each major milestone.
+- [x] Re-run and update this baseline after each major milestone.
 
 ## Definition of a defensible 100/100
 
@@ -100,32 +100,32 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 28. Implement fallback edges that run only after a failure or cache miss.
 - [x] 29. Implement asynchronous edges whose producer latency stops at enqueue acknowledgement.
 - [x] 30. Implement replication edges that do not count as end-user request paths.
-- [ ] 31. Prevent invalid edge-purpose and component combinations.
-- [ ] 32. Display edge purpose visually and accessibly on the canvas.
-- [ ] 33. Preserve edge purpose in JSON export, URL sharing, snapshots, undo, and redo.
-- [ ] 34. Add migrations for older saved graphs that do not contain edge purpose.
-- [ ] 35. Add deterministic unit tests for single path, branching, fanout, fallback, cycles, and disconnected graphs.
-- [ ] 36. Add E2E tests that create and simulate each edge-purpose pattern.
+- [x] 31. Prevent invalid edge-purpose and component combinations.
+- [x] 32. Display edge purpose visually and accessibly on the canvas.
+- [x] 33. Preserve edge purpose in JSON export, URL sharing, snapshots, undo, and redo.
+- [x] 34. Add migrations for older saved graphs that do not contain edge purpose.
+- [x] 35. Add deterministic unit tests for single path, branching, fanout, fallback, cycles, and disconnected graphs.
+- [x] 36. Add E2E tests that create and simulate each edge-purpose pattern.
 
 ### Acceptance criteria
 
-- [ ] 37. The same graph and seed always produce the same route counts.
-- [ ] 38. A multi-edge app server does not silently load-balance unrelated dependencies.
-- [ ] 39. Fanout visits every intended branch and aggregates completion according to documented rules.
-- [ ] 40. Cycles terminate through documented TTL/hop-limit behavior rather than being silently treated as success.
+- [x] 37. The same graph and seed always produce the same route counts.
+- [x] 38. A multi-edge app server does not silently load-balance unrelated dependencies.
+- [x] 39. Fanout visits every intended branch and aggregates completion according to documented rules.
+- [x] 40. Cycles terminate through documented TTL/hop-limit behavior rather than being silently treated as success.
 
 ## Correct cache behavior — P0
 
-- [ ] 41. Define a request key independent of the unique request ID so repeat accesses can hit cached content.
-- [ ] 42. Define configurable key distributions such as uniform, Zipfian/hot-key, and custom distributions.
-- [ ] 43. Make a cache hit terminate the configured cache-aside read path.
-- [ ] 44. Route cache misses to the origin/database fallback path.
-- [ ] 45. Populate the cache after a successful origin response.
-- [ ] 46. Model cache entry TTL where supported by configuration.
-- [ ] 47. Implement distinct LRU, LFU, FIFO, and TTL eviction behavior.
-- [ ] 48. Use configured cache size rather than a hard-coded entry limit.
-- [ ] 49. Use configured cache read latency for Redis and local cache types.
-- [ ] 50. Define CDN and browser-cache behavior separately from server-side cache behavior.
+- [x] 41. Define a request key independent of the unique request ID so repeat accesses can hit cached content.
+- [x] 42. Define configurable key distributions such as uniform, Zipfian/hot-key, and custom distributions.
+- [x] 43. Make a cache hit terminate the configured cache-aside read path.
+- [x] 44. Route cache misses to the origin/database fallback path.
+- [x] 45. Populate the cache after a successful origin response.
+- [x] 46. Model cache entry TTL where supported by configuration.
+- [x] 47. Implement distinct LRU, LFU, FIFO, and TTL eviction behavior.
+- [x] 48. Use configured cache size rather than a hard-coded entry limit.
+- [x] 49. Use configured cache read latency for Redis and local cache types.
+- [x] 50. Define CDN and browser-cache behavior separately from server-side cache behavior.
 - [ ] 51. Model cache failure and bypass behavior.
 - [ ] 52. Model cache stampede behavior and an optional request-coalescing mitigation.
 - [ ] 53. Ensure cache hits set consistent hop metadata and the intended particle color.

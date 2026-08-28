@@ -35,13 +35,14 @@ describe('Routing Algorithms & Component Models Tests (Milestone 7)', () => {
     const cache = new CacheModel(2, 'LRU', 0); // 0% random hit, rely on memory
     const miss = cache.access('item1');
     expect(miss.hit).toBe(false);
+    cache.put('item1');
 
     const hit = cache.access('item1');
     expect(hit.hit).toBe(true);
 
     // Fill beyond size 2
-    cache.access('item2');
-    cache.access('item3'); // Should evict oldest
+    cache.put('item2');
+    cache.put('item3'); // Should evict oldest
 
     expect(cache.getHitRatioPercent()).toBeGreaterThan(0);
   });

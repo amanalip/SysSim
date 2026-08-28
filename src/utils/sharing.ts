@@ -2,10 +2,12 @@ import LZString from 'lz-string';
 import { toPng } from 'html-to-image';
 import { CanvasEdge, CanvasNode, useStore } from '../store/use-store';
 import { SerializedCanvasState, ZoneData } from '../model/types';
+import { CURRENT_CANVAS_VERSION, migrateCanvasState } from '../model/canvas-migrations';
 
 export function serializeCanvasState(): SerializedCanvasState {
   const { nodes, edges, zones } = useStore.getState();
   return {
+    version: CURRENT_CANVAS_VERSION,
     nodes: nodes.map((n) => ({
       id: n.id,
       type: n.type,
@@ -18,6 +20,9 @@ export function serializeCanvasState(): SerializedCanvasState {
       target: e.target,
       data: {
         protocol: e.data?.protocol || 'HTTP',
+        purpose: e.data?.purpose || 'request',
+        bandwidthMbps: e.data?.bandwidthMbps,
+        latencyMs: e.data?.latencyMs,
         isCut: !!e.data?.isCut,
       },
     })),
@@ -51,7 +56,7 @@ export function decodeStateFromUrlHash(hash: string): SerializedCanvasState | nu
     if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
       return null;
     }
-    return parsed as SerializedCanvasState;
+    return migrateCanvasState(parsed as SerializedCanvasState);
   } catch {
     return null;
   }
@@ -82,10 +87,11 @@ export function importArchitectureJson(file: File, onSuccess: () => void, onErro
         onError('Invalid SysSim architecture JSON schema');
         return;
       }
+      const migrated = migrateCanvasState(parsed);
       useStore.getState().loadCanvasState(
-        parsed.nodes as unknown as CanvasNode[],
-        parsed.edges as unknown as CanvasEdge[],
-        (parsed.zones || []) as ZoneData[]
+        migrated.nodes as unknown as CanvasNode[],
+        migrated.edges as unknown as CanvasEdge[],
+        (migrated.zones || []) as ZoneData[]
       );
       onSuccess();
     } catch {

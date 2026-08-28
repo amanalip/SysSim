@@ -170,6 +170,13 @@
   border-radius: 50%;
 }
 
+.fieldHint {
+  margin: -2px 0 8px;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .footerActions {
   display: flex;
   align-items: center;

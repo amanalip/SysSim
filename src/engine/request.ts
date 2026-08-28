@@ -2,13 +2,18 @@ import { ComponentType, NodeHealthStatus, SimRequest } from '../model/types';
 
 export function createSimRequest(
   sourceNodeId: string,
-  timestampMs: number = Date.now()
+  timestampMs: number = Date.now(),
+  requestKey: string = 'resource:0',
+  requestSequence?: number,
 ): SimRequest {
-  const id = `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const id = requestSequence === undefined
+    ? `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+    : `req_${requestSequence}`;
   return {
     id,
     timestamp: timestampMs,
     sourceNodeId,
+    requestKey,
     path: [],
     totalLatencyMs: 0,
     status: 'in_flight',

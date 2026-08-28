@@ -59,12 +59,14 @@ describe('Post-Audit Verified Bug Fixes & Day/Night Mode Contrast', () => {
 
   it('Bug 3: CacheModel reset clears cached entries and hit/miss counters', () => {
     const cache = new CacheModel(100, 'LRU', 100);
+    cache.put('user_123');
+    cache.put('user_456');
     cache.access('user_123');
     cache.access('user_456');
     expect(cache.getHitRatioPercent()).toBe(100);
 
     cache.reset();
-    expect(cache.getHitRatioPercent()).toBe(100);
+    expect(cache.getHitRatioPercent()).toBe(0);
   });
 
   it('Bug 4: loadCanvasState loads nodes, edges, zones, and pushes history', () => {

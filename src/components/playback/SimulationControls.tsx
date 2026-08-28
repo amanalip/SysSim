@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { simBridge } from '../../engine/sim-bridge';
-import { TrafficPattern } from '../../model/types';
+import { RequestKeyDistribution, TrafficPattern } from '../../model/types';
 import styles from './SimulationControls.module.css';
 
 export const SimulationControls: React.FC = () => {
@@ -32,6 +32,9 @@ export const SimulationControls: React.FC = () => {
   } = useStore();
 
   const [qpsText, setQpsText] = React.useState(String(trafficConfig.baseQps));
+  const [customKeysText, setCustomKeysText] = React.useState(() =>
+    (trafficConfig.customRequestKeys || []).map((entry) => `${entry.key}:${entry.weight}`).join(','),
+  );
 
   React.useEffect(() => {
     setQpsText(String(trafficConfig.baseQps));
@@ -66,6 +69,26 @@ export const SimulationControls: React.FC = () => {
   const handlePatternChange = (pattern: TrafficPattern) => {
     setTrafficConfig({ pattern });
     simBridge.syncConfig({ pattern });
+  };
+
+  const handleKeyDistributionChange = (requestKeyDistribution: RequestKeyDistribution) => {
+    setTrafficConfig({ requestKeyDistribution });
+    simBridge.syncConfig({ requestKeyDistribution });
+  };
+
+  const handleCustomKeysBlur = () => {
+    const customRequestKeys = customKeysText
+      .split(',')
+      .map((token) => {
+        const separator = token.lastIndexOf(':');
+        return {
+          key: token.slice(0, separator).trim(),
+          weight: Number(token.slice(separator + 1)),
+        };
+      })
+      .filter((entry) => entry.key && Number.isFinite(entry.weight) && entry.weight > 0);
+    setTrafficConfig({ customRequestKeys });
+    simBridge.syncConfig({ customRequestKeys });
   };
 
   const handleQpsChange = (raw: string) => {
@@ -154,6 +177,32 @@ export const SimulationControls: React.FC = () => {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className={styles.configGroup}>
+        <label className={styles.label} htmlFor="request-key-distribution">Keys</label>
+        <select
+          id="request-key-distribution"
+          className={styles.compactSelect}
+          value={trafficConfig.requestKeyDistribution || 'uniform'}
+          onChange={(event) => handleKeyDistributionChange(event.target.value as RequestKeyDistribution)}
+          title="Request-key popularity distribution"
+        >
+          <option value="uniform">Uniform</option>
+          <option value="zipfian">Hot-key (Zipf)</option>
+          <option value="custom">Custom</option>
+        </select>
+        {trafficConfig.requestKeyDistribution === 'custom' ? (
+          <input
+            className={styles.customKeysInput}
+            value={customKeysText}
+            onChange={(event) => setCustomKeysText(event.target.value)}
+            onBlur={handleCustomKeysBlur}
+            aria-label="Custom request keys and weights"
+            placeholder="home:5,search:2"
+            title="Comma-separated key:weight pairs"
+          />
+        ) : null}
       </div>
 
       <div className={styles.configGroup}>

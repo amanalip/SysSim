@@ -188,6 +188,19 @@
   font-weight: 600;
 }
 
+.compactSelect,
+.customKeysInput {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 10px;
+  padding: 4px 5px;
+}
+
+.compactSelect { max-width: 92px; }
+.customKeysInput { width: 118px; font-family: var(--font-mono); }
+
 .speedSegmentedGroup {
   display: flex;
   background-color: var(--bg-primary);

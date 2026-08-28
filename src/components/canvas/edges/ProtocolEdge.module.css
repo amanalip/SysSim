@@ -5,6 +5,12 @@
   transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
 
+.purpose_fallback { stroke-dasharray: 8 4; }
+.purpose_async { stroke: #a855f7; stroke-dasharray: 3 4; }
+.purpose_fanout { stroke: #f59e0b; }
+.purpose_replication { stroke: #22c55e; stroke-dasharray: 10 3; }
+.purpose_observability { stroke: #94a3b8; stroke-dasharray: 2 5; }
+
 .edgePathSelected {
   stroke: #60a5fa !important;
   stroke-width: 3 !important;
@@ -41,6 +47,19 @@
   user-select: none;
   transition: all 0.15s ease;
 }
+
+.purposeBadge {
+  composes: protocolBadge;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+}
+
+.badge_request { color: var(--accent-primary); }
+.badge_fallback { color: var(--warning); }
+.badge_async { color: #c084fc; }
+.badge_fanout { color: #f59e0b; }
+.badge_replication { color: #4ade80; }
+.badge_observability { color: var(--text-secondary); }
 
 .protocolBadge:hover {
   background-color: var(--bg-tertiary);
@@ -85,6 +104,16 @@
 .protocolOptionActive {
   background-color: var(--accent-subtle);
   color: var(--accent-primary);
+}
+
+.protocolOption:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.purposeSelect {
+  left: calc(50% + 52px);
+  min-width: 125px;
 }
 
 .protocolBadgeCut {
