@@ -1,5 +1,4 @@
 import LZString from 'lz-string';
-import { toPng } from 'html-to-image';
 import { CanvasEdge, CanvasNode, useStore } from '../store/use-store';
 import { SerializedCanvasState, ZoneData } from '../model/types';
 import { CURRENT_CANVAS_VERSION, migrateCanvasState } from '../model/canvas-migrations';
@@ -107,6 +106,7 @@ export async function exportCanvasToPng(canvasElementId: string = 'syssim-canvas
     throw new Error('Canvas element not found for export');
   }
 
+  const { toPng } = await import('html-to-image');
   const dataUrl = await toPng(element, {
     backgroundColor: getComputedStyle(document.documentElement)
       .getPropertyValue('--bg-primary')

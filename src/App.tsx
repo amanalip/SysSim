@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useStore, CanvasNode, CanvasEdge } from './store/use-store';
 import { ZoneData } from './model/types';
 import { Header } from './components/layout/Header';
@@ -7,17 +7,24 @@ import { ComponentPalette } from './components/palette/ComponentPalette';
 import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { PropertiesPanel } from './components/panels/PropertiesPanel';
 import { SimulationControls } from './components/playback/SimulationControls';
-import { MetricsDashboard } from './components/panels/MetricsDashboard';
 import { EnvelopeCalculator } from './components/panels/EnvelopeCalculator';
-import { ScenarioManager } from './components/scenarios/ScenarioManager';
 import { ShortcutsModal } from './components/modals/ShortcutsModal';
-import { CommandPalette } from './components/modals/CommandPalette';
 import { ToastContainer } from './components/ui/Toast';
 import { chaosRunner } from './engine/metrics/chaos-runner';
 import { simBridge } from './engine/sim-bridge';
 import { decodeStateFromUrlHash } from './utils/sharing';
-import { ALL_SCENARIOS } from './scenarios';
+import { CORE_SCENARIOS } from './scenarios/core';
 import styles from './App.module.css';
+
+const MetricsDashboard = lazy(() => import('./components/panels/MetricsDashboard').then(
+  (module) => ({ default: module.MetricsDashboard }),
+));
+const ScenarioManager = lazy(() => import('./components/scenarios/ScenarioManager').then(
+  (module) => ({ default: module.ScenarioManager }),
+));
+const CommandPalette = lazy(() => import('./components/modals/CommandPalette').then(
+  (module) => ({ default: module.CommandPalette }),
+));
 
 export function App() {
   const {
@@ -61,7 +68,7 @@ export function App() {
 
     // Load initial starter architecture if canvas is empty
     if (nodes.length === 0) {
-      const starter = ALL_SCENARIOS[0]; // URL Shortener
+      const starter = CORE_SCENARIOS[0]; // URL Shortener
       loadScenario(starter);
       loadReferenceDesign(starter.referenceDesign);
       simBridge.syncGraph();
@@ -159,7 +166,11 @@ export function App() {
       <div className={styles.mainLayout}>
         <Sidebar
           paletteSlot={<ComponentPalette />}
-          scenariosSlot={<ScenarioManager />}
+          scenariosSlot={(
+            <Suspense fallback={<div className={styles.lazyFallback}>Loading scenarios…</div>}>
+              <ScenarioManager />
+            </Suspense>
+          )}
           calculatorSlot={<EnvelopeCalculator />}
         />
 
@@ -176,7 +187,9 @@ export function App() {
             )}
             <SimulationControls />
           </div>
-          <MetricsDashboard />
+          <Suspense fallback={null}>
+            <MetricsDashboard />
+          </Suspense>
         </main>
 
         <PropertiesPanel />
@@ -186,10 +199,14 @@ export function App() {
         isOpen={isShortcutsModalOpen}
         onClose={() => setIsShortcutsModalOpen(false)}
       />
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-      />
+      {isCommandPaletteOpen ? (
+        <Suspense fallback={null}>
+          <CommandPalette
+            isOpen
+            onClose={() => setIsCommandPaletteOpen(false)}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

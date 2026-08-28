@@ -3,10 +3,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import App from '../App';
 
 describe('Product contract labels', () => {
-  it('labels modeled telemetry, analysis, traces, costs, and calculator results', () => {
+  it('labels modeled telemetry, analysis, traces, costs, and calculator results', async () => {
     render(<App />);
 
-    expect(screen.getByText('Illustrative')).toBeInTheDocument();
+    expect(await screen.findByText('Illustrative', undefined, { timeout: 10_000 })).toBeInTheDocument();
 
     fireEvent.click(screen.getByTitle('Click to open full Metrics & Telemetry Dashboard (M)'));
     expect(
