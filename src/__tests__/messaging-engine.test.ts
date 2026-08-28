@@ -121,4 +121,25 @@ describe('messaging engine integration', () => {
     expect(metrics.componentMetrics['worker-a'].totalRequests + metrics.componentMetrics['worker-b'].totalRequests).toBe(3);
     expect(metrics.componentMetrics.pubsub.queueDepth).toBe(0);
   });
+
+  it('reports worker busy, queued, processing, failure, and effective retry metrics', () => {
+    const engine = new SysSimEngine({
+      nodes: [
+        { id: 'queue', config: queueConfig({ retryLimit: 5, retryDelayMs: 100 }) },
+        { id: 'worker', config: workerConfig('worker', {
+          failureRatePercent: 100, retryLimit: 1, processingLatencyMs: 40,
+        }) },
+      ],
+      edges: [{ id: 'consume', source: 'queue', target: 'worker', data: { protocol: 'TCP', purpose: 'request' } }],
+    }, traffic);
+    execute(engine, 'queue', 1);
+    engine.start();
+    engine.step(1000);
+    const metrics = engine.getMetricsSnapshot().componentMetrics;
+    expect(metrics.worker).toMatchObject({
+      busyWorkers: 1, queuedWork: 1, workerProcessingLatencyMs: 100,
+      failedRequests: 1, workerRetries: 1,
+    });
+    expect(metrics.queue).toMatchObject({ queueDepth: 1, consumerFailed: 1, messageRetries: 1 });
+  });
 });

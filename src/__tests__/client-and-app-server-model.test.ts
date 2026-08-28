@@ -63,4 +63,24 @@ describe('application server capacity model', () => {
     expect(two.map((result) => result.processingLatencyMs)).toEqual([20, 20]);
     expect(two.map((result) => result.queueLatencyMs)).toEqual([0, 0]);
   });
+
+  it('enforces per-replica connection slots and exposes queue/load telemetry', () => {
+    const server = new AppServerModel(1, 20, 1000, 2);
+    const results = [server.process(0), server.process(0), server.process(0)];
+    expect(results.map((result) => result.queueLatencyMs)).toEqual([0, 1, 20]);
+    expect(results[2].queuedRequests).toBeGreaterThan(0);
+    expect(results[2].cpuUtilizationPercent).toBeGreaterThan(0);
+
+    const scaled = new AppServerModel(2, 20, 1000, 2);
+    expect(Array.from({ length: 4 }, () => scaled.process(0).queueLatencyMs)).toEqual([0, 0, 1, 1]);
+    expect(scaled.process(0).processingLatencyMs).toBe(20);
+  });
+
+  it('defines degraded service as half replica capacity and doubled intrinsic latency', () => {
+    const degraded = new AppServerModel(4, 20, 1000, 1, true);
+    const results = [degraded.process(0), degraded.process(0), degraded.process(0)];
+    expect(results[0]).toMatchObject({ processingLatencyMs: 40, degraded: true, queueLatencyMs: 0 });
+    expect(results[1].queueLatencyMs).toBe(0);
+    expect(results[2].queueLatencyMs).toBe(40);
+  });
 });

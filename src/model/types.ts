@@ -117,6 +117,7 @@ export interface WorkerConfig extends BaseComponentConfig {
   jobProcessingRatePerSec: number;
   retryLimit: number;
   concurrencyLimit: number;
+  processingLatencyMs: number;
 }
 
 export interface ServerlessConfig extends BaseComponentConfig {
@@ -125,6 +126,9 @@ export interface ServerlessConfig extends BaseComponentConfig {
   concurrencyLimit: number;
   timeoutMs: number;
   memoryMb: number;
+  baseExecutionLatencyMs: number;
+  warmInstances: number;
+  idleTimeoutSec: number;
 }
 
 export interface LoadBalancerConfig extends BaseComponentConfig {
@@ -463,6 +467,15 @@ export interface ComponentMetricSnapshot {
   messagesDropped?: number;
   messagesExpired?: number;
   deadLettered?: number;
+  cpuUtilizationPercent?: number;
+  busyWorkers?: number;
+  queuedWork?: number;
+  workerProcessingLatencyMs?: number;
+  workerRetries?: number;
+  coldStarts?: number;
+  warmStarts?: number;
+  serverlessTimeouts?: number;
+  coldStartProbabilityPercent?: number;
 }
 
 export interface TimeSeriesDataPoint {
@@ -559,7 +572,7 @@ export interface ScenarioConstraints {
 }
 
 export interface SerializedCanvasState {
-  version?: 2 | 3 | 4;
+  version?: 2 | 3 | 4 | 5;
   nodes: Array<{
     id: string;
     type: string;

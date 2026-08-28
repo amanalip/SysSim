@@ -39,6 +39,11 @@ export interface DeliveryAttempt {
   operationType?: 'read' | 'write';
 }
 
+export interface DeliveryOutcome {
+  success: boolean;
+  retryLimit?: number;
+}
+
 export interface EnqueueResult {
   accepted: boolean;
   depth: number;
@@ -181,7 +186,7 @@ export class MessagingModel {
     deltaMs: number,
     nowMs: number,
     workers: WorkerCapacity,
-    deliver: (attempt: DeliveryAttempt) => boolean,
+    deliver: (attempt: DeliveryAttempt) => boolean | DeliveryOutcome,
   ): DrainResult {
     this.expireRetained(nowMs);
     const budget = this.calculateBudget(deltaMs, workers);
@@ -209,7 +214,8 @@ export class MessagingModel {
         continue;
       }
 
-      const succeeded = deliver({ ...delivery, attempt: delivery.attempt + 1 });
+      const outcome = deliver({ ...delivery, attempt: delivery.attempt + 1 });
+      const succeeded = typeof outcome === 'boolean' ? outcome : outcome.success;
       if (succeeded) {
         this.deliveredIds.add(delivery.deliveryId);
         result.delivered++;
@@ -221,7 +227,10 @@ export class MessagingModel {
 
       const nextAttempt = delivery.attempt + 1;
       const retryable = this.options.deliveryGuarantee !== 'at_most_once';
-      if (retryable && nextAttempt <= clampInteger(this.options.retryLimit, 0)) {
+      const consumerRetryLimit = typeof outcome === 'boolean' || outcome.retryLimit === undefined
+        ? clampInteger(this.options.retryLimit, 0)
+        : Math.min(clampInteger(this.options.retryLimit, 0), clampInteger(outcome.retryLimit, 0));
+      if (retryable && nextAttempt <= consumerRetryLimit) {
         const retryDelay = Math.max(0, this.options.retryDelayMs) * 2 ** Math.max(0, nextAttempt - 1);
         this.pending.push({
           ...delivery,

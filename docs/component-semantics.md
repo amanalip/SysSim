@@ -1,6 +1,6 @@
-# Client and Application Server Semantics
+# Compute Component Semantics
 
-**Model version:** 1.0
+**Model version:** 2.0
 **Last reviewed:** August 28, 2026
 
 ## Client traffic
@@ -18,11 +18,25 @@ These overhead constants are illustrative protocol setup/serialization assumptio
 
 ## Application server capacity
 
-Application servers use deterministic fixed-service-time replica slots. Every replica contributes one concurrent service slot in this version. An arriving request takes the earliest available slot:
+Application servers use deterministic fixed-service-time connection slots. `maxConnections` is a per-replica concurrent-connection limit, so total slots equal replicas multiplied by maximum connections. An arriving request takes the earliest slot on a replica whose throughput admission interval also permits work:
 
 1. queue latency is the time until that slot becomes available;
 2. processing latency is always the configured `processingLatencyMs`;
 3. response latency is queue latency plus processing latency;
-4. `maxThroughputQps` places a per-replica lower bound on slot occupancy (`1000 / maxThroughputQps`).
+4. `maxThroughputQps` is enforced per replica as a minimum interval between admissions (`1000 / maxThroughputQps`), independent of its connection count.
 
-Adding replicas therefore increases capacity and reduces waiting, but never divides or otherwise lowers intrinsic processing time. This replaces the former square-root latency heuristic. Maximum-connection enforcement, richer concurrent connections per replica, utilization, and degraded-state behavior remain tasks 81–85.
+Adding replicas increases both connection and throughput capacity and can reduce waiting, but never divides intrinsic processing time. The model reports active connection slots, scheduled queued requests, and rolling one-second CPU utilization as the greater of throughput load and connection occupancy, capped at 100%.
+
+A degraded application-server node keeps `ceil(replicas / 2)` effective replicas and doubles intrinsic processing latency. A down node rejects work through the common health check. This explicit degraded rule is a teaching assumption, not a provider autoscaling or failover guarantee.
+
+## Worker execution
+
+Workers expose per-replica concurrency and processing-rate limits. Aggregate broker drain capacity multiplies both values by replicas. A worker hop takes the greater of configured processing latency and the reciprocal rate latency (`1000 / jobs per second`), so raising replicas increases capacity without making one job intrinsically faster. The lower of broker and worker retry limits applies to a failed delivery.
+
+Telemetry reports peak busy slots in the latest simulation step, broker work queued for connected workers, effective processing latency, completed and failed attempts, and scheduled retries. Busy and queued figures are synthetic step-level values, not operating-system thread measurements.
+
+## Serverless execution
+
+Serverless functions maintain up to `concurrencyLimit` virtual instance slots. `warmInstances` provisions slots that remain warm; other slots have a cold-start probability that grows linearly from zero to 100% across `idleTimeoutSec`. A seeded random draw makes the outcome reproducible. Brand-new unprovisioned slots always cold-start.
+
+When all slots are busy, invocations wait for the earliest slot and expose concurrency queue latency. Throttling is deliberately deferred to task 91. Execution time is the 512 MB baseline multiplied by `sqrt(512 / memoryMb)` (with memory floored at 128 MB). Cold-start time plus execution time is capped by `timeoutMs`; an over-limit invocation fails with `timeout`. Telemetry separates warm starts, cold starts, timeouts, current cold probability, active invocations, and queued invocations.

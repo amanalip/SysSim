@@ -532,6 +532,22 @@ export const PropertiesPanel: React.FC = () => {
           {config.type === 'serverless' && (
             <>
               <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Base Execution Latency (ms)</label>
+                <input type="number" min="1" className={styles.input} value={config.baseExecutionLatencyMs}
+                  onChange={(e) => updateNodeConfig(config.id, { baseExecutionLatencyMs: Math.max(1, Number(e.target.value) || 1) })} />
+                <p className={styles.fieldHint}>512 MB baseline; memory changes modeled execution time.</p>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Provisioned Warm Instances</label>
+                <input type="number" min="0" max={config.concurrencyLimit} className={styles.input} value={config.warmInstances}
+                  onChange={(e) => updateNodeConfig(config.id, { warmInstances: Math.max(0, parseInt(e.target.value, 10) || 0) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Warm Idle Timeout (sec)</label>
+                <input type="number" min="1" className={styles.input} value={config.idleTimeoutSec}
+                  onChange={(e) => updateNodeConfig(config.id, { idleTimeoutSec: Math.max(1, parseInt(e.target.value, 10) || 1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
                 <div className={styles.fieldLabel}>
                   <span>Allocated Memory (MB)</span>
                   <span className={styles.fieldValueBadge}>{config.memoryMb} MB</span>
@@ -585,6 +601,32 @@ export const PropertiesPanel: React.FC = () => {
                     })
                   }
                 />
+              </div>
+            </>
+          )}
+
+          {config.type === 'worker' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Per-Replica Concurrency</label>
+                <input type="number" min="1" className={styles.input} value={config.concurrencyLimit}
+                  onChange={(e) => updateNodeConfig(config.id, { concurrencyLimit: Math.max(1, parseInt(e.target.value, 10) || 1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Per-Replica Processing Rate (/sec)</label>
+                <input type="number" min="1" className={styles.input} value={config.jobProcessingRatePerSec}
+                  onChange={(e) => updateNodeConfig(config.id, { jobProcessingRatePerSec: Math.max(1, Number(e.target.value) || 1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Processing Latency (ms)</label>
+                <input type="number" min="0" className={styles.input} value={config.processingLatencyMs}
+                  onChange={(e) => updateNodeConfig(config.id, { processingLatencyMs: Math.max(0, Number(e.target.value) || 0) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Worker Retry Limit</label>
+                <input type="number" min="0" className={styles.input} value={config.retryLimit}
+                  onChange={(e) => updateNodeConfig(config.id, { retryLimit: Math.max(0, parseInt(e.target.value, 10) || 0) })} />
+                <p className={styles.fieldHint}>The lower of broker and worker retry limits is enforced.</p>
               </div>
             </>
           )}

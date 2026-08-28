@@ -68,7 +68,7 @@ Retries use deterministic exponential backoff: `retryDelayMs × 2^(attempt - 1)`
 - Exactly-once mode represents deduplication by delivery ID and does not claim atomic database writes, distributed transactions, or broker-specific guarantees.
 - Retry and dead-letter state is deterministic and in-memory for the current run.
 - Retention is an in-memory simulation-time limit; disk segments, compaction, storage quotas, and replay offsets are not modeled.
-- Worker service-time and utilization will be refined further by the component-specific worker tasks 86–88.
+- Worker service time, per-replica concurrency/rate, retry ceilings, busy slots, queued work, and failure/retry telemetry follow the compute rules in [Client and Application Server Semantics](component-semantics.md). Broker retry policy still supplies the outer retry ceiling.
 
 ## Blueprint validation
 

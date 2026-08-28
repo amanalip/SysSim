@@ -23,6 +23,8 @@ import {
 } from './components/messaging-model';
 import { DatabaseModel } from './components/db-model';
 import { AppServerModel } from './components/app-server-model';
+import { WorkerModel } from './components/worker-model';
+import { ServerlessModel } from './components/serverless-model';
 
 export interface SimNode {
   id: string;
@@ -110,6 +112,8 @@ export class SysSimEngine {
   private queueModels: Map<string, MessagingModel> = new Map();
   private dbModels: Map<string, DatabaseModel> = new Map();
   private appServerModels: Map<string, AppServerModel> = new Map();
+  private workerModels: Map<string, WorkerModel> = new Map();
+  private serverlessModels: Map<string, ServerlessModel> = new Map();
   private activeConnections: Record<string, number> = {};
   private pendingCacheFills = new Map<string, PendingCacheFill>();
 
@@ -126,6 +130,8 @@ export class SysSimEngine {
     this.queueModels.clear();
     this.dbModels.clear();
     this.appServerModels.clear();
+    this.workerModels.clear();
+    this.serverlessModels.clear();
     this.clientSelectionCredits.clear();
     this.pendingCacheFills.clear();
 
@@ -172,6 +178,19 @@ export class SysSimEngine {
           n.config.replicas,
           n.config.processingLatencyMs,
           Math.max(0, n.config.maxThroughputQps || 0),
+          n.config.maxConnections,
+          n.config.health === 'degraded',
+        ));
+      } else if (n.config.type === 'worker') {
+        this.workerModels.set(n.id, new WorkerModel(
+          n.config.replicas, n.config.concurrencyLimit, n.config.jobProcessingRatePerSec,
+          n.config.processingLatencyMs, n.config.retryLimit,
+        ));
+      } else if (n.config.type === 'serverless') {
+        this.serverlessModels.set(n.id, new ServerlessModel(
+          n.config.concurrencyLimit, n.config.timeoutMs, n.config.memoryMb,
+          n.config.coldStartLatencyMs, n.config.baseExecutionLatencyMs,
+          n.config.warmInstances, n.config.idleTimeoutSec, () => this.random(),
         ));
       } else if (
         n.config.type === 'redis_cache' ||
@@ -280,6 +299,8 @@ export class SysSimEngine {
     this.queueModels.forEach((q) => q.reset());
     this.dbModels.forEach((db) => db.reset());
     this.appServerModels.forEach((server) => server.reset());
+    this.workerModels.forEach((worker) => worker.reset());
+    this.serverlessModels.forEach((serverless) => serverless.reset());
     this.cacheModels.forEach((c) => c.reset());
     this.pendingCacheFills.clear();
     this.graph.nodes.forEach((n) => {
@@ -839,9 +860,16 @@ export class SysSimEngine {
     } else if (config.type === 'app_server') {
       const service = this.appServerModels.get(node.id)?.process(this.currentRequestArrivalMs);
       hopLatency = service?.totalLatencyMs ?? Math.max(0, config.processingLatencyMs);
+      if (service) {
+        this.activeConnections[node.id] = service.activeConnections;
+        stats.queueDepth = service.queuedRequests;
+      }
       hopInfo = service && service.queueLatencyMs > 0
-        ? `Fixed ${service.processingLatencyMs}ms service + ${Math.round(service.queueLatencyMs * 10) / 10}ms replica queue`
-        : `Fixed ${service?.processingLatencyMs ?? config.processingLatencyMs}ms service; no replica queue`;
+        ? `${service.processingLatencyMs}ms service + ${Math.round(service.queueLatencyMs * 10) / 10}ms connection queue${service.degraded ? '; degraded capacity' : ''}`
+        : `${service?.processingLatencyMs ?? config.processingLatencyMs}ms service; no connection queue${service?.degraded ? '; degraded capacity' : ''}`;
+    } else if (config.type === 'worker') {
+      hopLatency = this.workerModels.get(node.id)?.getProcessingLatencyMs() ?? config.processingLatencyMs;
+      hopInfo = `${config.replicas} replica${config.replicas === 1 ? '' : 's'} × ${config.concurrencyLimit} concurrent; retry limit ${config.retryLimit}`;
     } else if (config.type === 'sql_db' || config.type === 'nosql_db') {
       const dbModel = this.dbModels.get(node.id);
       hopLatency = dbModel
@@ -900,7 +928,14 @@ export class SysSimEngine {
     } else if (config.type === 'encryption_service') {
       hopLatency = Math.max(1, config.overheadLatencyMs || 3);
     } else if (config.type === 'serverless') {
-      hopLatency = stats.totalRequests <= 1 ? config.coldStartLatencyMs || 25 : 5;
+      const invocation = this.serverlessModels.get(node.id)?.invoke(this.currentRequestArrivalMs);
+      if (invocation) {
+        hopLatency = invocation.totalLatencyMs;
+        this.activeConnections[node.id] = invocation.activeInvocations;
+        stats.queueDepth = invocation.queuedInvocations;
+        hopInfo = `${invocation.coldStart ? 'Cold' : 'Warm'} start (${invocation.coldStartProbabilityPercent}% cold probability); ${Math.round(invocation.executionLatencyMs * 10) / 10}ms memory-scaled execution${invocation.queueLatencyMs ? ` + ${Math.round(invocation.queueLatencyMs * 10) / 10}ms concurrency queue` : ''}`;
+        if (invocation.timedOut) return failure('timeout', hopLatency, `${hopInfo}; timed out at ${config.timeoutMs}ms`);
+      }
     }
 
     stats.latencies.push(hopLatency);
@@ -1061,6 +1096,7 @@ export class SysSimEngine {
   }
 
   private drainMessaging(deltaMs: number): void {
+    this.workerModels.forEach((worker) => worker.beginStep());
     for (const [nodeId, model] of this.queueModels) {
       const edges = this.graph.edges.filter((edge) => {
         if (edge.source !== nodeId || edge.data?.isCut) return false;
@@ -1107,11 +1143,30 @@ export class SysSimEngine {
             getEdgePurpose(edge.data),
             1,
           );
+          const target = this.graph.nodes.find((candidate) => candidate.id === edge.target);
+          if (target?.config.type === 'worker') {
+            const worker = this.workerModels.get(target.id);
+            const retryLimit = worker?.retryLimit ?? target.config.retryLimit;
+            const broker = this.graph.nodes.find((candidate) => candidate.id === nodeId);
+            const brokerRetryLimit = broker && 'retryLimit' in broker.config
+              ? broker.config.retryLimit
+              : retryLimit;
+            worker?.recordAttempt(
+              result.success,
+              !result.success && attempt.attempt <= Math.min(retryLimit, brokerRetryLimit),
+            );
+            return { success: result.success, retryLimit };
+          }
           return result.success;
         },
       );
       const stats = this.nodeStats[nodeId];
       if (stats) stats.queueDepth = model.getDepth();
+      const workers = edges
+        .map((edge) => this.graph.nodes.find((candidate) => candidate.id === edge.target))
+        .filter((target) => target?.config.type === 'worker');
+      const queuedPerWorker = workers.length > 0 ? Math.ceil(model.getDepth() / workers.length) : 0;
+      workers.forEach((target) => target && this.workerModels.get(target.id)?.setQueuedWork(queuedPerWorker));
     }
   }
 
@@ -1326,6 +1381,9 @@ export class SysSimEngine {
       const nodeQps = stats.totalRequests > 0 ? Math.round(stats.totalRequests / Math.max(1, this.elapsedSimulationMs / 1000)) : 0;
       const ratedMaxQps = Math.max(10, n.config.maxThroughputQps || 5000);
       const messagingMetrics = this.queueModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
+      const appMetrics = this.appServerModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
+      const workerMetrics = this.workerModels.get(n.id)?.getMetrics();
+      const serverlessMetrics = this.serverlessModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
       if (messagingMetrics) {
         totalProducerAccepted += messagingMetrics.producerAccepted;
         totalProducerRejected += messagingMetrics.producerRejected;
@@ -1345,10 +1403,10 @@ export class SysSimEngine {
         avgLatencyMs: Math.round(nodeAvgLat * 10) / 10,
         p95LatencyMs: Math.round(nodeP95 * 10) / 10,
         errorRatePercent: Math.round(nodeErrorRate * 10) / 10,
-        activeConnections: this.activeConnections[n.id] || 0,
-        queueDepth: stats.queueDepth,
+        activeConnections: appMetrics?.activeConnections ?? workerMetrics?.busyWorkers ?? serverlessMetrics?.activeInvocations ?? (this.activeConnections[n.id] || 0),
+        queueDepth: appMetrics?.queuedRequests ?? workerMetrics?.queuedWork ?? serverlessMetrics?.queuedInvocations ?? stats.queueDepth,
         cacheHitRatioPercent: Math.round(nodeCacheRatio * 10) / 10,
-        utilizationPercent: Math.min(100, Math.round((nodeQps / ratedMaxQps) * 100)),
+        utilizationPercent: appMetrics?.cpuUtilizationPercent ?? workerMetrics?.utilizationPercent ?? serverlessMetrics?.utilizationPercent ?? Math.min(100, Math.round((nodeQps / ratedMaxQps) * 100)),
         totalRequests: stats.totalRequests,
         successfulRequests: stats.successfulRequests,
         failedRequests: stats.failedRequests,
@@ -1365,6 +1423,15 @@ export class SysSimEngine {
         messagesDropped: messagingMetrics?.dropped,
         messagesExpired: messagingMetrics?.expired,
         deadLettered: messagingMetrics?.deadLettered,
+        cpuUtilizationPercent: appMetrics?.cpuUtilizationPercent,
+        busyWorkers: workerMetrics?.busyWorkers,
+        queuedWork: workerMetrics?.queuedWork,
+        workerProcessingLatencyMs: workerMetrics?.processingLatencyMs,
+        workerRetries: workerMetrics?.retriesScheduled,
+        coldStarts: serverlessMetrics?.coldStarts,
+        warmStarts: serverlessMetrics?.warmStarts,
+        serverlessTimeouts: serverlessMetrics?.timeouts,
+        coldStartProbabilityPercent: serverlessMetrics?.coldStartProbabilityPercent,
       };
 
       if (stats.totalRequests > maxNodeReqs) {

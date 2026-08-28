@@ -401,12 +401,13 @@ export const MetricsDashboard: React.FC = () => {
                       <th>Dropped</th>
                       <th>Cache H/M/B/C</th>
                       <th>Messaging A/R · C✓/C✕ · Retry/Drop · Age</th>
+                      <th>Compute Detail</th>
                     </tr>
                   </thead>
                   <tbody>
                     {compList.length === 0 ? (
                       <tr>
-                        <td colSpan={11} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                        <td colSpan={12} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                           No component telemetry recorded yet. Start simulation to observe metrics.
                         </td>
                       </tr>
@@ -459,6 +460,15 @@ export const MetricsDashboard: React.FC = () => {
                             {c.producerAccepted === undefined
                               ? '—'
                               : `${c.producerAccepted}/${c.producerRejected || 0} · ${c.consumerSucceeded || 0}/${c.consumerFailed || 0} · ${c.messageRetries || 0}/${c.messagesDropped || 0} · ${Math.round(c.messageQueueAgeMs || 0)}ms`}
+                          </td>
+                          <td style={{ fontFamily: 'var(--font-mono)' }}>
+                            {c.nodeType === 'app_server'
+                              ? `CPU ${c.cpuUtilizationPercent || 0}% · queue ${c.queueDepth}`
+                              : c.nodeType === 'worker'
+                                ? `busy ${c.busyWorkers || 0} · queue ${c.queuedWork || 0} · ${Math.round(c.workerProcessingLatencyMs || 0)}ms · retry ${c.workerRetries || 0}`
+                                : c.nodeType === 'serverless'
+                                  ? `cold/warm ${c.coldStarts || 0}/${c.warmStarts || 0} · timeout ${c.serverlessTimeouts || 0} · P(cold) ${c.coldStartProbabilityPercent || 0}%`
+                                  : '—'}
                           </td>
                         </tr>
                       ))

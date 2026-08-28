@@ -171,22 +171,22 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 ### Application server
 
 - [x] 80. Replace the square-root latency reduction heuristic with a documented capacity/concurrency model.
-- [ ] 81. Enforce maximum connections.
-- [ ] 82. Model queueing latency when capacity is exceeded.
-- [ ] 83. Use replicas to scale capacity without unrealistically lowering intrinsic processing latency.
-- [ ] 84. Model CPU utilization from load and configured capacity.
-- [ ] 85. Define degraded-state behavior.
+- [x] 81. Enforce maximum connections.
+- [x] 82. Model queueing latency when capacity is exceeded.
+- [x] 83. Use replicas to scale capacity without unrealistically lowering intrinsic processing latency.
+- [x] 84. Model CPU utilization from load and configured capacity.
+- [x] 85. Define degraded-state behavior.
 
 ### Worker
 
-- [ ] 86. Use replica count, concurrency limit, processing rate, and retry limit.
-- [ ] 87. Track busy workers and queued work.
-- [ ] 88. Report processing latency and failure/retry metrics.
+- [x] 86. Use replica count, concurrency limit, processing rate, and retry limit.
+- [x] 87. Track busy workers and queued work.
+- [x] 88. Report processing latency and failure/retry metrics.
 
 ### Serverless
 
-- [ ] 89. Model warm-instance pools and cold-start probability over idle time.
-- [ ] 90. Enforce concurrency limits, timeout, and memory-related performance assumptions.
+- [x] 89. Model warm-instance pools and cold-start probability over idle time.
+- [x] 90. Enforce concurrency limits, timeout, and memory-related performance assumptions.
 - [ ] 91. Model throttling when concurrency is exhausted.
 - [ ] 92. Distinguish invocation failures from downstream failures.
 
