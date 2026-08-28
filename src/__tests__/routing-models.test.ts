@@ -31,6 +31,24 @@ describe('Routing Algorithms & Component Models Tests (Milestone 7)', () => {
     expect(chosen).toBe('srv2');
   });
 
+  it('routes fairly across least-connection ties and honors deterministic algorithm keys', () => {
+    const least = new LoadBalancerRouter('least_connections', ['a', 'b']);
+    expect([0, 1, 2, 3].map(() => least.selectTarget('key', { a: 2, b: 2 }))).toEqual(['a', 'b', 'a', 'b']);
+
+    const weighted = new LoadBalancerRouter('weighted', ['a', 'b'], { a: 3, b: 1 });
+    const selections = Array.from({ length: 8 }, () => weighted.selectTarget('key'));
+    expect(selections.filter((target) => target === 'a')).toHaveLength(6);
+    expect(selections.filter((target) => target === 'b')).toHaveLength(2);
+
+    const consistent = new LoadBalancerRouter('consistent_hashing', ['a', 'b', 'c']);
+    expect(consistent.selectTarget({ requestKey: 'account:7', clientKey: 'client-a' }))
+      .toBe(consistent.selectTarget({ requestKey: 'account:7', clientKey: 'client-b' }));
+
+    const ipHash = new LoadBalancerRouter('ip_hash', ['a', 'b', 'c']);
+    expect(ipHash.selectTarget({ requestKey: 'one', clientKey: 'client-a' }))
+      .toBe(ipHash.selectTarget({ requestKey: 'two', clientKey: 'client-a' }));
+  });
+
   it('cache model tracks hits, misses, and evicts entries', () => {
     const cache = new CacheModel(2, 'LRU', 0); // 0% random hit, rely on memory
     const miss = cache.access('item1');

@@ -33,14 +33,13 @@ describe('worker execution semantics', () => {
 });
 
 describe('serverless execution semantics', () => {
-  it('keeps provisioned instances warm and queues beyond concurrency', () => {
+  it('keeps provisioned instances warm and throttles beyond concurrency', () => {
     const model = new ServerlessModel(1, 1000, 512, 100, 50, 1, 60, () => 0);
     const first = model.invoke(0);
     const second = model.invoke(0);
     expect(first).toMatchObject({ coldStart: false, queueLatencyMs: 0, executionLatencyMs: 50 });
-    expect(second.queueLatencyMs).toBe(50);
-    expect(second.coldStart).toBe(false);
-    expect(model.getMetrics(0)).toMatchObject({ activeInvocations: 1, warmStarts: 2, utilizationPercent: 100 });
+    expect(second).toMatchObject({ throttled: true, queueLatencyMs: 0, totalLatencyMs: 1 });
+    expect(model.getMetrics(0)).toMatchObject({ activeInvocations: 1, warmStarts: 1, throttles: 1, utilizationPercent: 100 });
   });
 
   it('models cold probability over idle time, memory scaling, and timeout', () => {
@@ -52,6 +51,6 @@ describe('serverless execution semantics', () => {
 
     const timeout = new ServerlessModel(1, 50, 128, 100, 100, 0, 10, () => 0);
     expect(timeout.invoke(0)).toMatchObject({ timedOut: true, totalLatencyMs: 50 });
-    expect(timeout.getMetrics(0).timeouts).toBe(1);
+    expect(timeout.getMetrics(0)).toMatchObject({ timeouts: 1, invocationFailures: 1 });
   });
 });

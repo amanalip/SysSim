@@ -476,6 +476,9 @@ export interface ComponentMetricSnapshot {
   warmStarts?: number;
   serverlessTimeouts?: number;
   coldStartProbabilityPercent?: number;
+  serverlessThrottles?: number;
+  serverlessInvocationFailures?: number;
+  serverlessDownstreamFailures?: number;
 }
 
 export interface TimeSeriesDataPoint {

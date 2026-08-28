@@ -1,6 +1,6 @@
 # Compute Component Semantics
 
-**Model version:** 2.0
+**Model version:** 3.0
 **Last reviewed:** August 28, 2026
 
 ## Client traffic
@@ -39,4 +39,18 @@ Telemetry reports peak busy slots in the latest simulation step, broker work que
 
 Serverless functions maintain up to `concurrencyLimit` virtual instance slots. `warmInstances` provisions slots that remain warm; other slots have a cold-start probability that grows linearly from zero to 100% across `idleTimeoutSec`. A seeded random draw makes the outcome reproducible. Brand-new unprovisioned slots always cold-start.
 
-When all slots are busy, invocations wait for the earliest slot and expose concurrency queue latency. Throttling is deliberately deferred to task 91. Execution time is the 512 MB baseline multiplied by `sqrt(512 / memoryMb)` (with memory floored at 128 MB). Cold-start time plus execution time is capped by `timeoutMs`; an over-limit invocation fails with `timeout`. Telemetry separates warm starts, cold starts, timeouts, current cold probability, active invocations, and queued invocations.
+When all slots are busy, a new invocation is throttled immediately with `rate_limited`; it is not silently queued. Execution time is the 512 MB baseline multiplied by `sqrt(512 / memoryMb)` (with memory floored at 128 MB). Cold-start time plus execution time is capped by `timeoutMs`; an over-limit invocation fails with `timeout`.
+
+Telemetry separates throttles from invocation failures. Invocation failures include modeled platform faults, down functions, and execution timeouts. A dependency failure after the function starts increments the downstream-failure counter instead, even when the overall request later recovers through a fallback. Warm starts, cold starts, timeouts, current cold probability, and active invocations remain independently visible.
+
+## Load-balancer routing
+
+A load balancer selects exactly one eligible `request` edge. Targets marked `down` are excluded immediately; degraded and overloaded targets remain eligible until health-check timing and recovery semantics are implemented in task 96.
+
+- Round robin rotates over the current eligible target list.
+- Least connections chooses the smallest current in-flight count and round-robins ties.
+- Consistent hashing maps the request key through a virtual-node ring.
+- Weighted routing uses smooth weighted round robin. Until task 98 exposes weights in the editor, unspecified targets have equal weight.
+- IP hash applies a stable hash to the originating client node identity, not the request ID or resource key.
+
+Each routed dependency records a connection end time from its modeled edge and downstream duration. Expired connections are pruned at the next arrival, allowing least-connections decisions and load-balancer telemetry to reflect overlapping work rather than lifetime request totals.

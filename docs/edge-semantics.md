@@ -40,7 +40,7 @@ Cut edges do not participate in any purpose.
 
 For a generic component with multiple `request` edges, dependencies run in stored edge order. The caller waits for each response, so their edge and service latencies accumulate. This is deliberately not load balancing.
 
-A load balancer is the only current component that selects one of multiple `request` edges. Its configured algorithm owns that selection.
+A load balancer is the only current component that selects one of multiple `request` edges. Its configured algorithm owns that selection, uses request keys or originating-client identity where appropriate, and considers only targets not marked down. Detailed algorithm and connection-lifetime rules are documented in [Compute Component Semantics](component-semantics.md#load-balancer-routing).
 
 ### Fanout
 

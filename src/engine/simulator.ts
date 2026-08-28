@@ -115,6 +115,7 @@ export class SysSimEngine {
   private workerModels: Map<string, WorkerModel> = new Map();
   private serverlessModels: Map<string, ServerlessModel> = new Map();
   private activeConnections: Record<string, number> = {};
+  private loadBalancerConnectionEnds = new Map<string, number[]>();
   private pendingCacheFills = new Map<string, PendingCacheFill>();
 
   constructor(graph?: SimGraph, config?: TrafficConfig) {
@@ -132,6 +133,7 @@ export class SysSimEngine {
     this.appServerModels.clear();
     this.workerModels.clear();
     this.serverlessModels.clear();
+    this.loadBalancerConnectionEnds.clear();
     this.clientSelectionCredits.clear();
     this.pendingCacheFills.clear();
 
@@ -295,6 +297,7 @@ export class SysSimEngine {
     this.totalFailed = 0;
     this.timeSeries = [];
     this.activeConnections = {};
+    this.loadBalancerConnectionEnds.clear();
     this.rateLimiters.forEach((rl) => rl.reset());
     this.queueModels.forEach((q) => q.reset());
     this.dbModels.forEach((db) => db.reset());
@@ -646,7 +649,7 @@ export class SysSimEngine {
     if (!nodeResult.cacheMiss && !primaryFailure && requestEdges.length > 0) {
       const selectedRequestEdges =
         node.config.type === 'load_balancer'
-          ? this.selectLoadBalancerEdge(node.id, requestId, requestEdges)
+          ? this.selectLoadBalancerEdge(node.id, requestKey, sourceNodeId, requestEdges)
           : requestEdges;
 
       if (selectedRequestEdges.length === 0) {
@@ -668,10 +671,21 @@ export class SysSimEngine {
             'request',
             hopCount + 1,
           );
+          if (node.config.type === 'load_balancer') {
+            this.recordLoadBalancerConnection(
+              node.id,
+              edge.target,
+              this.currentRequestArrivalMs,
+              this.currentRequestArrivalMs + edgeLatency + child.latencyMs,
+            );
+          }
           latencyMs += edgeLatency + child.latencyMs;
           hops.push(...child.hops);
           usedAsync ||= child.usedAsync;
           if (!child.success) {
+            if (node.config.type === 'serverless') {
+              this.serverlessModels.get(node.id)?.recordDownstreamFailure();
+            }
             primaryFailure = child;
             break;
           }
@@ -834,6 +848,7 @@ export class SysSimEngine {
     };
 
     if (config.health === 'down') {
+      if (config.type === 'serverless') this.serverlessModels.get(node.id)?.recordInvocationFailure();
       return failure(
         'error',
         1,
@@ -842,6 +857,7 @@ export class SysSimEngine {
     }
 
     if (config.failureRatePercent && this.random() * 100 < config.failureRatePercent) {
+      if (config.type === 'serverless') this.serverlessModels.get(node.id)?.recordInvocationFailure();
       return failure('error', 5, 'Simulated component fault');
     }
 
@@ -930,6 +946,9 @@ export class SysSimEngine {
     } else if (config.type === 'serverless') {
       const invocation = this.serverlessModels.get(node.id)?.invoke(this.currentRequestArrivalMs);
       if (invocation) {
+        if (invocation.throttled) {
+          return failure('rate_limited', invocation.totalLatencyMs, 'Invocation throttled: concurrency limit exhausted');
+        }
         hopLatency = invocation.totalLatencyMs;
         this.activeConnections[node.id] = invocation.activeInvocations;
         stats.queueDepth = invocation.queuedInvocations;
@@ -966,15 +985,58 @@ export class SysSimEngine {
 
   private selectLoadBalancerEdge(
     nodeId: string,
-    requestId: string,
+    requestKey: string,
+    sourceNodeId: string,
     requestEdges: SimEdge[],
   ): SimEdge[] {
-    const target = this.lbRouters
-      .get(nodeId)
-      ?.selectTarget(requestId, this.activeConnections);
+    const eligibleEdges = requestEdges.filter((edge) => {
+      const target = this.graph.nodes.find((candidate) => candidate.id === edge.target);
+      return target?.config.health !== 'down';
+    });
+    const router = this.lbRouters.get(nodeId);
+    router?.updateTargets(eligibleEdges.map((edge) => edge.target));
+    const activeConnections = this.getLoadBalancerActiveConnections(
+      nodeId,
+      eligibleEdges.map((edge) => edge.target),
+      this.currentRequestArrivalMs,
+    );
+    this.activeConnections[nodeId] = Object.values(activeConnections).reduce((sum, value) => sum + value, 0);
+    const target = router?.selectTarget({ requestKey, clientKey: sourceNodeId, activeConnections });
     if (!target) return [];
-    const selected = requestEdges.find((edge) => edge.target === target);
+    const selected = eligibleEdges.find((edge) => edge.target === target);
     return selected ? [selected] : [];
+  }
+
+  private getLoadBalancerActiveConnections(loadBalancerId: string, targetIds: string[], nowMs: number): Record<string, number> {
+    const result: Record<string, number> = {};
+    for (const targetId of targetIds) {
+      const connectionKey = `${loadBalancerId}:${targetId}`;
+      const activeEnds = (this.loadBalancerConnectionEnds.get(connectionKey) || []).filter((endAt) => endAt > nowMs);
+      this.loadBalancerConnectionEnds.set(connectionKey, activeEnds);
+      result[targetId] = activeEnds.length;
+    }
+    return result;
+  }
+
+  private recordLoadBalancerConnection(
+    loadBalancerId: string,
+    targetId: string,
+    startAtMs: number,
+    endAtMs: number,
+  ): void {
+    const connectionKey = `${loadBalancerId}:${targetId}`;
+    const activeEnds = (this.loadBalancerConnectionEnds.get(connectionKey) || []).filter((endAt) => endAt > startAtMs);
+    activeEnds.push(Math.max(startAtMs, endAtMs));
+    this.loadBalancerConnectionEnds.set(connectionKey, activeEnds);
+    const loadBalancer = this.graph.nodes.find((node) => node.id === loadBalancerId);
+    if (loadBalancer) {
+      const targets = this.graph.edges
+        .filter((edge) => edge.source === loadBalancerId && getEdgePurpose(edge.data) === 'request' && !edge.data?.isCut)
+        .map((edge) => edge.target);
+      this.activeConnections[loadBalancerId] = Object.values(
+        this.getLoadBalancerActiveConnections(loadBalancerId, targets, startAtMs),
+      ).reduce((sum, value) => sum + value, 0);
+    }
   }
 
   private createRoutingFailure(
@@ -1384,6 +1446,15 @@ export class SysSimEngine {
       const appMetrics = this.appServerModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
       const workerMetrics = this.workerModels.get(n.id)?.getMetrics();
       const serverlessMetrics = this.serverlessModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
+      const loadBalancerActiveConnections = n.config.type === 'load_balancer'
+        ? Object.values(this.getLoadBalancerActiveConnections(
+            n.id,
+            this.graph.edges
+              .filter((edge) => edge.source === n.id && getEdgePurpose(edge.data) === 'request' && !edge.data?.isCut)
+              .map((edge) => edge.target),
+            this.elapsedSimulationMs,
+          )).reduce((sum, value) => sum + value, 0)
+        : undefined;
       if (messagingMetrics) {
         totalProducerAccepted += messagingMetrics.producerAccepted;
         totalProducerRejected += messagingMetrics.producerRejected;
@@ -1403,7 +1474,7 @@ export class SysSimEngine {
         avgLatencyMs: Math.round(nodeAvgLat * 10) / 10,
         p95LatencyMs: Math.round(nodeP95 * 10) / 10,
         errorRatePercent: Math.round(nodeErrorRate * 10) / 10,
-        activeConnections: appMetrics?.activeConnections ?? workerMetrics?.busyWorkers ?? serverlessMetrics?.activeInvocations ?? (this.activeConnections[n.id] || 0),
+        activeConnections: appMetrics?.activeConnections ?? workerMetrics?.busyWorkers ?? serverlessMetrics?.activeInvocations ?? loadBalancerActiveConnections ?? (this.activeConnections[n.id] || 0),
         queueDepth: appMetrics?.queuedRequests ?? workerMetrics?.queuedWork ?? serverlessMetrics?.queuedInvocations ?? stats.queueDepth,
         cacheHitRatioPercent: Math.round(nodeCacheRatio * 10) / 10,
         utilizationPercent: appMetrics?.cpuUtilizationPercent ?? workerMetrics?.utilizationPercent ?? serverlessMetrics?.utilizationPercent ?? Math.min(100, Math.round((nodeQps / ratedMaxQps) * 100)),
@@ -1432,6 +1503,9 @@ export class SysSimEngine {
         warmStarts: serverlessMetrics?.warmStarts,
         serverlessTimeouts: serverlessMetrics?.timeouts,
         coldStartProbabilityPercent: serverlessMetrics?.coldStartProbabilityPercent,
+        serverlessThrottles: serverlessMetrics?.throttles,
+        serverlessInvocationFailures: serverlessMetrics?.invocationFailures,
+        serverlessDownstreamFailures: serverlessMetrics?.downstreamFailures,
       };
 
       if (stats.totalRequests > maxNodeReqs) {

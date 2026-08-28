@@ -187,14 +187,14 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 - [x] 89. Model warm-instance pools and cold-start probability over idle time.
 - [x] 90. Enforce concurrency limits, timeout, and memory-related performance assumptions.
-- [ ] 91. Model throttling when concurrency is exhausted.
-- [ ] 92. Distinguish invocation failures from downstream failures.
+- [x] 91. Model throttling when concurrency is exhausted.
+- [x] 92. Distinguish invocation failures from downstream failures.
 
 ### Load balancer
 
-- [ ] 93. Model round-robin, least-connections, consistent hashing, weighted routing, and IP hashing accurately.
-- [ ] 94. Maintain meaningful active-connection counts over request duration.
-- [ ] 95. Exclude unhealthy downstream targets.
+- [x] 93. Model round-robin, least-connections, consistent hashing, weighted routing, and IP hashing accurately.
+- [x] 94. Maintain meaningful active-connection counts over request duration.
+- [x] 95. Exclude unhealthy downstream targets.
 - [ ] 96. Implement health-check intervals and recovery delay.
 - [ ] 97. Model sticky sessions.
 - [ ] 98. Accept configurable weights for weighted routing.

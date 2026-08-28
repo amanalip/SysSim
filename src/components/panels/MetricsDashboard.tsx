@@ -467,7 +467,7 @@ export const MetricsDashboard: React.FC = () => {
                               : c.nodeType === 'worker'
                                 ? `busy ${c.busyWorkers || 0} · queue ${c.queuedWork || 0} · ${Math.round(c.workerProcessingLatencyMs || 0)}ms · retry ${c.workerRetries || 0}`
                                 : c.nodeType === 'serverless'
-                                  ? `cold/warm ${c.coldStarts || 0}/${c.warmStarts || 0} · timeout ${c.serverlessTimeouts || 0} · P(cold) ${c.coldStartProbabilityPercent || 0}%`
+                                  ? `cold/warm ${c.coldStarts || 0}/${c.warmStarts || 0} · throttle ${c.serverlessThrottles || 0} · timeout ${c.serverlessTimeouts || 0} · invoke/downstream fail ${c.serverlessInvocationFailures || 0}/${c.serverlessDownstreamFailures || 0} · P(cold) ${c.coldStartProbabilityPercent || 0}%`
                                   : '—'}
                           </td>
                         </tr>
