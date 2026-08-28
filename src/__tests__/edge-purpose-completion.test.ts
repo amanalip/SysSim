@@ -48,7 +48,7 @@ describe('edge-purpose completion', () => {
       nodes,
       edges: [{ id: 'edge', source: 'cache', target: 'db', data: { protocol: 'TCP' } }],
     });
-    expect(legacy.version).toBe(3);
+    expect(legacy.version).toBe(4);
     expect(legacy.edges[0].data.purpose).toBe('fallback');
 
     useStore.setState({ nodes: nodes as any, edges: [{ ...legacy.edges[0], type: 'protocolEdge' }] as any, zones: [] });
@@ -62,17 +62,43 @@ describe('edge-purpose completion', () => {
     delete legacyQueue.consumerProcessingLatencyMs;
     delete legacyQueue.deliveryGuarantee;
     delete legacyQueue.retryDelayMs;
+    delete legacyQueue.retentionHours;
+    delete legacyQueue.overflowPolicy;
     const migrated = migrateCanvasState({
       version: 2,
       nodes: [{ id: 'queue', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: legacyQueue } }],
       edges: [],
     });
     const config = migrated.nodes[0].data.config as any;
-    expect(migrated.version).toBe(3);
+    expect(migrated.version).toBe(4);
     expect(config.producerAckLatencyMs).toBe(4);
     expect(config.consumerProcessingLatencyMs).toBe(10);
     expect(config.deliveryGuarantee).toBe('at_least_once');
     expect(config.retryDelayMs).toBe(100);
+    expect(config.retentionHours).toBe(72);
+    expect(config.overflowPolicy).toBe('reject_newest');
+  });
+
+  it('adds client workload defaults to older saved nodes', () => {
+    const legacyClient = createDefaultConfig('client', 'client') as any;
+    delete legacyClient.requestPayloadKb;
+    delete legacyClient.operationType;
+    delete legacyClient.readPercentage;
+    delete legacyClient.requestKeyDistribution;
+    delete legacyClient.requestKeySpaceSize;
+    const migrated = migrateCanvasState({
+      version: 3,
+      nodes: [{ id: 'client', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: legacyClient } }],
+      edges: [],
+    });
+    expect(migrated.version).toBe(4);
+    expect(migrated.nodes[0].data.config).toMatchObject({
+      requestPayloadKb: 2,
+      operationType: 'mixed',
+      readPercentage: 80,
+      requestKeyDistribution: 'uniform',
+      requestKeySpaceSize: 100,
+    });
   });
 
   it('preserves purpose in locally saved snapshot slots', () => {

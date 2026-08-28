@@ -223,7 +223,7 @@ export const MetricsDashboard: React.FC = () => {
                 <span className={styles.summaryValue}>{metrics.totalRequestsSent.toLocaleString()}</span>
               </div>
               <div className={styles.summaryCard}>
-                <span className={styles.summaryLabel}>Success Rate</span>
+                <span className={styles.summaryLabel}>Request / Acceptance Success</span>
                 <span className={styles.summaryValue} style={{ color: 'var(--success)' }}>
                   {metrics.totalRequestsSent > 0
                     ? `${(
@@ -263,6 +263,20 @@ export const MetricsDashboard: React.FC = () => {
                 <span className={styles.summaryLabel}>Cache Hit Ratio</span>
                 <span className={styles.summaryValue} style={{ color: 'var(--accent-primary)' }}>
                   {metrics.overallCacheHitRatioPercent}%
+                </span>
+              </div>
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryLabel}>Producer Accepted</span>
+                <span className={styles.summaryValue}>{(metrics.totalProducerAccepted || 0).toLocaleString()}</span>
+              </div>
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryLabel}>Consumer Succeeded</span>
+                <span className={styles.summaryValue}>{(metrics.totalConsumerSucceeded || 0).toLocaleString()}</span>
+              </div>
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryLabel}>Retries / Dropped</span>
+                <span className={styles.summaryValue}>
+                  {(metrics.totalMessageRetries || 0).toLocaleString()} / {(metrics.totalMessagesDropped || 0).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -383,15 +397,16 @@ export const MetricsDashboard: React.FC = () => {
                       <th>Active Conns</th>
                       <th>p95 Latency</th>
                       <th>Error Rate</th>
-                      <th>Processed</th>
+                      <th>Requests / Accepted</th>
                       <th>Dropped</th>
                       <th>Cache H/M/B/C</th>
+                      <th>Messaging A/R · C✓/C✕ · Retry/Drop · Age</th>
                     </tr>
                   </thead>
                   <tbody>
                     {compList.length === 0 ? (
                       <tr>
-                        <td colSpan={10} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                        <td colSpan={11} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                           No component telemetry recorded yet. Start simulation to observe metrics.
                         </td>
                       </tr>
@@ -439,6 +454,11 @@ export const MetricsDashboard: React.FC = () => {
                           </td>
                           <td style={{ fontFamily: 'var(--font-mono)' }}>
                             {c.cacheHits || 0}/{c.cacheMisses || 0}/{c.cacheBypasses || 0}/{c.cacheCoalescedRequests || 0}
+                          </td>
+                          <td style={{ fontFamily: 'var(--font-mono)' }}>
+                            {c.producerAccepted === undefined
+                              ? '—'
+                              : `${c.producerAccepted}/${c.producerRejected || 0} · ${c.consumerSucceeded || 0}/${c.consumerFailed || 0} · ${c.messageRetries || 0}/${c.messagesDropped || 0} · ${Math.round(c.messageQueueAgeMs || 0)}ms`}
                           </td>
                         </tr>
                       ))

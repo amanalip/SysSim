@@ -33,11 +33,12 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 ## Current verified baseline
 
 - [x] Production build completes with TypeScript strict checks.
-- [x] 221 unit tests across 52 test files pass as of the August 28, 2026 edge-and-cache milestone.
+- [x] 252 unit and integration tests across 59 test files pass as of the August 28, 2026 client, messaging, and app-server milestone.
 - [x] Seven Chromium Playwright tests pass, covering the app shell and all six edge purposes.
 - [x] Production and full dependency audits report zero known vulnerabilities as of the August 2026 audit.
 - [x] The application starts and the Web Worker simulation path runs in Chromium.
 - [x] The repository was reviewed across UI, store, engine, scenarios, CI, documentation, dependencies, and live desktop/mobile behavior.
+- [x] Live mobile QA at 390×844 verifies the app shell, responsive calculator interaction, no document-width overflow, and no console warnings/errors.
 - [x] Re-run and update this baseline after each major milestone.
 
 ## Definition of a defensible 100/100
@@ -152,24 +153,24 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 68. Implement delivery guarantees: at-most-once, at-least-once, and simulated exactly-once semantics.
 - [x] 69. Model retries, retry delay/backoff, and dead-letter queues.
 - [x] 70. Model ordering guarantees and partition-key ordering.
-- [ ] 71. Model queue retention and overflow/drop behavior.
-- [ ] 72. Avoid counting successful enqueue as successful downstream processing unless the metric explicitly means acceptance.
-- [ ] 73. Report producer success, consumer success, retry count, queue age, and dropped-message count separately.
-- [ ] 74. Add deterministic overload, recovery, retry, and DLQ tests.
-- [ ] 75. Validate the event-driven blueprint against the resulting semantics.
+- [x] 71. Model queue retention and overflow/drop behavior.
+- [x] 72. Avoid counting successful enqueue as successful downstream processing unless the metric explicitly means acceptance.
+- [x] 73. Report producer success, consumer success, retry count, queue age, and dropped-message count separately.
+- [x] 74. Add deterministic overload, recovery, retry, and DLQ tests.
+- [x] 75. Validate the event-driven blueprint against the resulting semantics.
 
 ## Implement component-specific models — P0/P1
 
 ### Client
 
-- [ ] 76. Decide how per-client `requestRateQps` interacts with global traffic QPS.
-- [ ] 77. Model multiple clients without double-counting or ignoring configured rates.
-- [ ] 78. Apply configured connection type to protocol overhead where relevant.
-- [ ] 79. Support request payload, operation type, and key distribution inputs.
+- [x] 76. Decide how per-client `requestRateQps` interacts with global traffic QPS.
+- [x] 77. Model multiple clients without double-counting or ignoring configured rates.
+- [x] 78. Apply configured connection type to protocol overhead where relevant.
+- [x] 79. Support request payload, operation type, and key distribution inputs.
 
 ### Application server
 
-- [ ] 80. Replace the square-root latency reduction heuristic with a documented capacity/concurrency model.
+- [x] 80. Replace the square-root latency reduction heuristic with a documented capacity/concurrency model.
 - [ ] 81. Enforce maximum connections.
 - [ ] 82. Model queueing latency when capacity is exceeded.
 - [ ] 83. Use replicas to scale capacity without unrealistically lowering intrinsic processing latency.

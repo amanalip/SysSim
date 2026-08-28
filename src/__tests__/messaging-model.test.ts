@@ -20,6 +20,8 @@ const options = (overrides: Partial<MessagingModelOptions> = {}): MessagingModel
   retryLimit: 2,
   retryDelayMs: 100,
   deadLetterQueue: true,
+  retentionMs: 24 * 60 * 60 * 1000,
+  overflowPolicy: 'reject_newest',
   ...overrides,
 });
 
@@ -135,5 +137,48 @@ describe('messaging model', () => {
       return attempt.messageId !== 'first';
     });
     expect(keyedOrder).toEqual(['first', 'second']);
+  });
+
+  it('expires pending deliveries after retention and reports their age and drop outcome', () => {
+    const model = new MessagingModel(options({ retentionMs: 100 }));
+    model.enqueue('old', 'key', 0);
+    expect(model.getMetrics(75)).toMatchObject({ queueAgeMs: 75, expired: 0, dropped: 0 });
+    expect(model.getMetrics(101)).toMatchObject({ queueAgeMs: 0, expired: 1, dropped: 1 });
+    expect(model.getDepth()).toBe(0);
+  });
+
+  it('supports deterministic reject-newest and drop-oldest overflow policies', () => {
+    const rejecting = new MessagingModel(options({ maxDepth: 2, overflowPolicy: 'reject_newest' }));
+    rejecting.enqueue('first', 'key', 0);
+    rejecting.enqueue('second', 'key', 0);
+    expect(rejecting.enqueue('third', 'key', 0)).toMatchObject({ accepted: false, dropped: 1, depth: 2 });
+    expect(rejecting.getMetrics(0)).toMatchObject({ producerAccepted: 2, producerRejected: 1, dropped: 1 });
+
+    const dropping = new MessagingModel(options({ maxDepth: 2, overflowPolicy: 'drop_oldest' }));
+    dropping.enqueue('first', 'key', 0);
+    dropping.enqueue('second', 'key', 0);
+    expect(dropping.enqueue('third', 'key', 0)).toMatchObject({ accepted: true, dropped: 1, depth: 2 });
+    const delivered: string[] = [];
+    dropping.drain(1000, 1, workers(), (attempt) => { delivered.push(attempt.messageId); return true; });
+    expect(delivered).toEqual(['second', 'third']);
+
+    const oversized = new MessagingModel(options({
+      kind: 'pubsub', subscribersPerTopic: 3, maxDepth: 2, overflowPolicy: 'drop_oldest',
+    }));
+    expect(oversized.enqueue('too-large', 'key', 0)).toMatchObject({ accepted: false, dropped: 3, depth: 0 });
+  });
+
+  it('recovers deterministically from overload and separates retries, failures, and DLQ outcomes', () => {
+    const model = new MessagingModel(options({ retryLimit: 1, retryDelayMs: 10, orderingGuarantee: 'None' }));
+    for (let index = 0; index < 5; index++) model.enqueue(`m-${index}`, 'key', 0);
+    expect(model.drain(1000, 0, workers({ processingRatePerSec: 0 }), () => true)).toMatchObject({ delivered: 0, depth: 5 });
+
+    let attemptCount = 0;
+    expect(model.drain(1000, 1, workers({ processingRatePerSec: 10 }), () => {
+      attemptCount++;
+      return false;
+    })).toMatchObject({ attempted: 5, retried: 5, depth: 5 });
+    expect(model.drain(1000, 11, workers({ processingRatePerSec: 2 }), () => false)).toMatchObject({ deadLettered: 2 });
+    expect(model.getMetrics(11)).toMatchObject({ consumerFailed: 7, retries: 5, deadLettered: 2 });
   });
 });

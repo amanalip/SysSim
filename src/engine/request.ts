@@ -1,10 +1,16 @@
 import { ComponentType, NodeHealthStatus, SimRequest } from '../model/types';
 
+interface RequestInputs {
+  payloadSizeKb?: number;
+  operationType?: 'read' | 'write';
+}
+
 export function createSimRequest(
   sourceNodeId: string,
   timestampMs: number = Date.now(),
   requestKey: string = 'resource:0',
   requestSequence?: number,
+  inputs: RequestInputs = {},
 ): SimRequest {
   const id = requestSequence === undefined
     ? `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
@@ -14,6 +20,8 @@ export function createSimRequest(
     timestamp: timestampMs,
     sourceNodeId,
     requestKey,
+    payloadSizeKb: inputs.payloadSizeKb,
+    operationType: inputs.operationType,
     path: [],
     totalLatencyMs: 0,
     status: 'in_flight',

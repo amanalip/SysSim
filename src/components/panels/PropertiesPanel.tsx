@@ -9,11 +9,14 @@ import { ComponentIcon } from '../icons/ComponentIcon';
 import { createDefaultConfig } from '../../model/component-defaults';
 import {
   CacheEvictionPolicy,
+  ClientOperationType,
   DeliveryGuarantee,
   LoadBalancerAlgorithm,
   MessageOrdering,
   NodeHealthStatus,
   RateLimiterAlgorithm,
+  RequestKeyDistribution,
+  QueueOverflowPolicy,
 } from '../../model/types';
 import styles from './PropertiesPanel.module.css';
 
@@ -586,6 +589,109 @@ export const PropertiesPanel: React.FC = () => {
             </>
           )}
 
+          {config.type === 'client' ? (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Traffic Share Weight (QPS)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.requestRateQps}
+                  onChange={(event) => updateNodeConfig(config.id, {
+                    requestRateQps: Math.max(0, Number(event.target.value) || 0),
+                  })}
+                />
+                <p className={styles.fieldHint}>Global traffic QPS is the total load; client QPS values divide that total proportionally.</p>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Connection Type</label>
+                <select
+                  className={styles.select}
+                  value={config.connectionType}
+                  onChange={(event) => updateNodeConfig(config.id, {
+                    connectionType: event.target.value as typeof config.connectionType,
+                  })}
+                >
+                  <option value="HTTP/2">HTTP/2</option>
+                  <option value="HTTP/3">HTTP/3</option>
+                  <option value="WebSocket">WebSocket</option>
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Request Payload (KB)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={styles.input}
+                  value={config.requestPayloadKb}
+                  onChange={(event) => updateNodeConfig(config.id, {
+                    requestPayloadKb: Math.max(0, Number(event.target.value) || 0),
+                  })}
+                />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Operation Type</label>
+                <select
+                  className={styles.select}
+                  value={config.operationType}
+                  onChange={(event) => updateNodeConfig(config.id, {
+                    operationType: event.target.value as ClientOperationType,
+                  })}
+                >
+                  <option value="read">Read</option>
+                  <option value="write">Write</option>
+                  <option value="mixed">Mixed</option>
+                </select>
+              </div>
+              {config.operationType === 'mixed' ? (
+                <div className={styles.fieldGroup}>
+                  <div className={styles.fieldLabel}>
+                    <span>Read Share</span>
+                    <span className={styles.fieldValueBadge}>{config.readPercentage}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    className={styles.rangeInput}
+                    value={config.readPercentage}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      readPercentage: parseInt(event.target.value, 10),
+                    })}
+                  />
+                </div>
+              ) : null}
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Request Key Distribution</label>
+                <select
+                  className={styles.select}
+                  value={config.requestKeyDistribution}
+                  onChange={(event) => updateNodeConfig(config.id, {
+                    requestKeyDistribution: event.target.value as RequestKeyDistribution,
+                  })}
+                >
+                  <option value="uniform">Uniform</option>
+                  <option value="zipfian">Zipfian / hot key</option>
+                  <option value="custom">Global custom weights</option>
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Request Key Space</label>
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.requestKeySpaceSize}
+                  onChange={(event) => updateNodeConfig(config.id, {
+                    requestKeySpaceSize: Math.max(1, parseInt(event.target.value, 10) || 1),
+                  })}
+                />
+              </div>
+            </>
+          ) : null}
+
           {isMessagingConfig ? (
             <>
               {'consumerGroups' in config ? (
@@ -772,6 +878,36 @@ export const PropertiesPanel: React.FC = () => {
                       maxDepth: Math.max(1, parseInt(event.target.value, 10) || 1),
                     } as Partial<typeof config>)}
                   />
+                </div>
+              ) : null}
+              {'retentionHours' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Retention (hours)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    className={styles.input}
+                    value={config.retentionHours}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      retentionHours: Math.max(0, Number(event.target.value) || 0),
+                    } as Partial<typeof config>)}
+                  />
+                </div>
+              ) : null}
+              {'overflowPolicy' in config ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Overflow Policy</label>
+                  <select
+                    className={styles.select}
+                    value={config.overflowPolicy}
+                    onChange={(event) => updateNodeConfig(config.id, {
+                      overflowPolicy: event.target.value as QueueOverflowPolicy,
+                    } as Partial<typeof config>)}
+                  >
+                    <option value="reject_newest">Reject newest message</option>
+                    <option value="drop_oldest">Drop oldest pending delivery</option>
+                  </select>
                 </div>
               ) : null}
             </>

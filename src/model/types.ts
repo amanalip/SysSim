@@ -69,8 +69,10 @@ export type RateLimiterAlgorithm =
 export type CacheEvictionPolicy = 'LRU' | 'LFU' | 'TTL' | 'FIFO';
 
 export type RequestKeyDistribution = 'uniform' | 'zipfian' | 'custom';
+export type ClientOperationType = 'read' | 'write' | 'mixed';
 export type DeliveryGuarantee = 'at_most_once' | 'at_least_once' | 'exactly_once';
 export type MessageOrdering = 'FIFO' | 'Partition Key' | 'None';
+export type QueueOverflowPolicy = 'reject_newest' | 'drop_oldest';
 
 export interface CustomRequestKey {
   key: string;
@@ -93,6 +95,11 @@ export interface ClientConfig extends BaseComponentConfig {
   type: 'client';
   requestRateQps: number;
   connectionType: 'HTTP/2' | 'HTTP/3' | 'WebSocket';
+  requestPayloadKb: number;
+  operationType: ClientOperationType;
+  readPercentage: number;
+  requestKeyDistribution: RequestKeyDistribution;
+  requestKeySpaceSize: number;
 }
 
 export interface AppServerConfig extends BaseComponentConfig {
@@ -256,6 +263,7 @@ export interface MessageQueueConfig extends BaseComponentConfig {
   maxDepth: number;
   orderingGuarantee: MessageOrdering;
   retentionHours: number;
+  overflowPolicy: QueueOverflowPolicy;
   consumerThroughputPerSec: number;
   producerAckLatencyMs: number;
   consumerProcessingLatencyMs: number;
@@ -271,6 +279,8 @@ export interface PubSubConfig extends BaseComponentConfig {
   subscribersPerTopic: number;
   deliveryGuarantee: DeliveryGuarantee;
   maxDepth: number;
+  retentionHours: number;
+  overflowPolicy: QueueOverflowPolicy;
   consumerThroughputPerSec: number;
   producerAckLatencyMs: number;
   consumerProcessingLatencyMs: number;
@@ -285,6 +295,8 @@ export interface EventBusConfig extends BaseComponentConfig {
   throughputPerSec: number;
   fanoutFactor: number;
   maxDepth: number;
+  retentionHours: number;
+  overflowPolicy: QueueOverflowPolicy;
   producerAckLatencyMs: number;
   consumerProcessingLatencyMs: number;
   deliveryGuarantee: DeliveryGuarantee;
@@ -300,6 +312,8 @@ export interface TaskQueueConfig extends BaseComponentConfig {
   retryLimit: number;
   deadLetterQueue: boolean;
   maxDepth: number;
+  retentionHours: number;
+  overflowPolicy: QueueOverflowPolicy;
   consumerThroughputPerSec: number;
   producerAckLatencyMs: number;
   consumerProcessingLatencyMs: number;
@@ -411,6 +425,8 @@ export interface SimRequest {
   timestamp: number;
   sourceNodeId: string;
   requestKey?: string;
+  payloadSizeKb?: number;
+  operationType?: 'read' | 'write';
   currentEdgeId?: string;
   currentEdgeProgress?: number; // 0 to 1
   path: RequestHop[];
@@ -438,6 +454,15 @@ export interface ComponentMetricSnapshot {
   cacheMisses?: number;
   cacheBypasses?: number;
   cacheCoalescedRequests?: number;
+  producerAccepted?: number;
+  producerRejected?: number;
+  consumerSucceeded?: number;
+  consumerFailed?: number;
+  messageRetries?: number;
+  messageQueueAgeMs?: number;
+  messagesDropped?: number;
+  messagesExpired?: number;
+  deadLettered?: number;
 }
 
 export interface TimeSeriesDataPoint {
@@ -470,6 +495,14 @@ export interface OverallMetrics {
   totalCacheMisses?: number;
   totalCacheBypasses?: number;
   totalCacheCoalescedRequests?: number;
+  totalProducerAccepted?: number;
+  totalProducerRejected?: number;
+  totalConsumerSucceeded?: number;
+  totalConsumerFailed?: number;
+  totalMessageRetries?: number;
+  totalMessagesDropped?: number;
+  totalMessagesExpired?: number;
+  totalDeadLettered?: number;
   busiestNodeId?: string;
   slowestNodeId?: string;
   timeSeries: TimeSeriesDataPoint[];
@@ -526,7 +559,7 @@ export interface ScenarioConstraints {
 }
 
 export interface SerializedCanvasState {
-  version?: 2 | 3;
+  version?: 2 | 3 | 4;
   nodes: Array<{
     id: string;
     type: string;

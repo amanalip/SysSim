@@ -1,19 +1,27 @@
 # Messaging Semantics
 
-**Model version:** 1.0
+**Model version:** 2.0
 **Last reviewed:** August 28, 2026
 
-SysSim models messaging components as asynchronous producer/consumer boundaries. This contract covers tasks 61–70. Queue retention, outcome-specific telemetry, overload/recovery acceptance tests, and full blueprint validation remain tasks 71–75.
+SysSim models messaging components as asynchronous producer/consumer boundaries. This contract covers tasks 61–75, including retention, overflow, outcome-specific telemetry, deterministic recovery tests, and the event-driven blueprint.
 
 ## Producer and consumer timeline
 
 1. A producer reaches a messaging component through an `async`, `request`, or `fanout` edge.
-2. The component creates one or more pending delivery copies. If admitting all copies would exceed `maxDepth`, it rejects the enqueue.
+2. The component creates one or more pending delivery copies. If admitting all copies would exceed `maxDepth`, it either rejects the newest producer message or evicts the oldest pending copies, according to `overflowPolicy`.
 3. A successful enqueue returns after `producerAckLatencyMs`. The producer trace contains the messaging hop and stops there; downstream consumer latency and failures are not added to producer latency.
 4. On later simulation steps, the broker drains eligible delivery copies according to elapsed simulation time, broker partition throughput, and connected consumer capacity.
 5. Each drained copy traverses its configured downstream edge independently. A failure may retry, dead-letter, or drop according to the delivery configuration.
 
-Queue depth means pending **delivery copies**, not merely unique producer messages. This makes subscriber fanout and consumer-group amplification visible. Task 73 will add separate producer, consumer, retry, age, and drop counters.
+Queue depth means pending **delivery copies**, not merely unique producer messages. This makes subscriber fanout and consumer-group amplification visible. Producer acceptance/rejection, consumer success/failure, retries, oldest queue age, drops, expiry, and DLQ totals are reported separately. The top-level request success metric means synchronous completion or asynchronous producer acceptance; it never claims that a consumer completed.
+
+## Retention and overflow
+
+- Every pending delivery records its original enqueue time. A delivery expires when its age exceeds `retentionHours`, including while it is waiting for retry backoff.
+- Expired deliveries leave the pending queue and increment both the expired and dropped counters. Retention expiry does not route to the DLQ because it is a broker lifecycle outcome, not a consumer-processing failure.
+- `reject_newest` rejects the complete producer message if all of its logical copies do not fit. Producer-rejected and dropped-copy counters increase; no partial fanout is admitted.
+- `drop_oldest` removes the oldest pending delivery copies until the new message fits. The producer is accepted and the evicted copies increase the dropped counter.
+- A configured message whose fanout copy count is itself larger than `maxDepth` is rejected even under `drop_oldest`.
 
 ## Component distinctions
 
@@ -59,5 +67,9 @@ Retries use deterministic exponential backoff: `retryDelayMs × 2^(attempt - 1)`
 - Consumer groups, subscribers, and event routes are logical counts; membership changes, offset commits, leases, and rebalances are not modeled.
 - Exactly-once mode represents deduplication by delivery ID and does not claim atomic database writes, distributed transactions, or broker-specific guarantees.
 - Retry and dead-letter state is deterministic and in-memory for the current run.
-- Retention expiry, message age, overflow/drop telemetry, and explicit producer-versus-consumer outcome panels remain tasks 71–75.
+- Retention is an in-memory simulation-time limit; disk segments, compaction, storage quotas, and replay offsets are not modeled.
 - Worker service-time and utilization will be refined further by the component-specific worker tasks 86–88.
+
+## Blueprint validation
+
+The `Messaging Pipeline Topology` blueprint is covered by a deterministic integration test. The gateway finishes at queue acknowledgement; the queue's two default consumer-group copies later drain across the two workers and both reach the sink. The test also verifies that producer acceptance and consumer success remain separate telemetry values.

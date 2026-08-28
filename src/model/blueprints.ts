@@ -140,7 +140,7 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
     id: 'event_driven_pipeline',
     name: 'Messaging Pipeline Topology',
     category: 'Messaging',
-    description: 'Gateway + Queue + 2 Workers + NoSQL Sink; asynchronous timing is simplified',
+    description: 'Gateway acknowledgement + 2 consumer-group deliveries + NoSQL sink; consumers drain independently',
     icon: 'Radio',
     create: (baseX, baseY) => {
       const ts = Date.now();

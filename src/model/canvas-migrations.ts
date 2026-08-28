@@ -2,7 +2,7 @@ import { inferEdgePurpose, validateEdgePurpose } from './edge-semantics';
 import { EdgeProtocol, SerializedCanvasState } from './types';
 import { createDefaultConfig } from './component-defaults';
 
-export const CURRENT_CANVAS_VERSION = 3 as const;
+export const CURRENT_CANVAS_VERSION = 4 as const;
 
 const MESSAGING_TYPES = new Set(['message_queue', 'task_queue', 'pubsub', 'event_bus']);
 
@@ -13,7 +13,7 @@ const MESSAGING_TYPES = new Set(['message_queue', 'task_queue', 'pubsub', 'event
 export function migrateCanvasState(input: SerializedCanvasState): SerializedCanvasState {
   const nodes = structuredClone(input.nodes || []).map((node) => {
     const config = node.data.config;
-    if (!MESSAGING_TYPES.has(config.type)) return node;
+    if (!MESSAGING_TYPES.has(config.type) && config.type !== 'client') return node;
     return {
       ...node,
       data: {

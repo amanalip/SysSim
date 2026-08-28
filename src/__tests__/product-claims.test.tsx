@@ -53,7 +53,7 @@ describe('User-facing product claims', () => {
     expect(blueprintCopy).toContain(
       'replication traffic is independent, lag/failover are not modeled',
     );
-    expect(blueprintCopy).toContain('asynchronous timing is simplified');
+    expect(blueprintCopy).toContain('consumers drain independently');
     expect(blueprintCopy).not.toContain('3 App Server Replicas');
     expect(blueprintCopy).not.toContain('replication links');
   });

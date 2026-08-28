@@ -1,6 +1,7 @@
 export type MessagingKind = 'message_queue' | 'task_queue' | 'pubsub' | 'event_bus';
 export type DeliveryGuarantee = 'at_most_once' | 'at_least_once' | 'exactly_once';
 export type MessageOrdering = 'FIFO' | 'Partition Key' | 'None';
+export type QueueOverflowPolicy = 'reject_newest' | 'drop_oldest';
 
 export interface MessagingModelOptions {
   kind: MessagingKind;
@@ -17,6 +18,8 @@ export interface MessagingModelOptions {
   retryLimit: number;
   retryDelayMs: number;
   deadLetterQueue: boolean;
+  retentionMs: number;
+  overflowPolicy: QueueOverflowPolicy;
 }
 
 export interface WorkerCapacity {
@@ -32,6 +35,8 @@ export interface DeliveryAttempt {
   partition: number;
   recipientIndex: number;
   attempt: number;
+  payloadSizeKb?: number;
+  operationType?: 'read' | 'write';
 }
 
 export interface EnqueueResult {
@@ -40,6 +45,7 @@ export interface EnqueueResult {
   acknowledgementLatencyMs: number;
   partition: number;
   deliveryCopies: number;
+  dropped: number;
 }
 
 export interface DrainResult {
@@ -49,11 +55,25 @@ export interface DrainResult {
   dropped: number;
   deadLettered: number;
   depth: number;
+  queueAgeMs: number;
+}
+
+export interface MessagingMetrics {
+  producerAccepted: number;
+  producerRejected: number;
+  consumerSucceeded: number;
+  consumerFailed: number;
+  retries: number;
+  dropped: number;
+  expired: number;
+  deadLettered: number;
+  queueAgeMs: number;
 }
 
 interface PendingDelivery extends DeliveryAttempt {
   sequence: number;
   availableAtMs: number;
+  enqueuedAtMs: number;
 }
 
 const clampInteger = (value: number, minimum: number): number =>
@@ -74,18 +94,58 @@ export class MessagingModel {
   private deliveredIds = new Set<string>();
   private sequence = 0;
   private fractionalDrainBudget = 0;
+  private counters: Omit<MessagingMetrics, 'queueAgeMs'> = {
+    producerAccepted: 0,
+    producerRejected: 0,
+    consumerSucceeded: 0,
+    consumerFailed: 0,
+    retries: 0,
+    dropped: 0,
+    expired: 0,
+    deadLettered: 0,
+  };
 
   constructor(private options: MessagingModelOptions) {}
 
-  public enqueue(messageId: string, requestKey: string, nowMs: number): EnqueueResult {
+  public enqueue(
+    messageId: string,
+    requestKey: string,
+    nowMs: number,
+    context: Pick<DeliveryAttempt, 'payloadSizeKb' | 'operationType'> = {},
+  ): EnqueueResult {
+    this.expireRetained(nowMs);
     const copies = this.getDeliveryCopies();
-    if (this.pending.length + copies > clampInteger(this.options.maxDepth, 1)) {
+    const maxDepth = clampInteger(this.options.maxDepth, 1);
+    let dropped = 0;
+    if (copies > maxDepth) {
+      this.counters.producerRejected++;
+      this.counters.dropped += copies;
       return {
         accepted: false,
         depth: this.pending.length,
         acknowledgementLatencyMs: this.options.producerAckLatencyMs,
         partition: this.getPartition(requestKey),
         deliveryCopies: 0,
+        dropped: copies,
+      };
+    }
+    if (this.pending.length + copies > maxDepth && this.options.overflowPolicy === 'drop_oldest') {
+      const required = Math.min(this.pending.length, this.pending.length + copies - maxDepth);
+      this.pending.sort((left, right) => left.sequence - right.sequence);
+      this.pending.splice(0, required);
+      dropped = required;
+      this.counters.dropped += required;
+    }
+    if (this.pending.length + copies > maxDepth) {
+      this.counters.producerRejected++;
+      this.counters.dropped += copies;
+      return {
+        accepted: false,
+        depth: this.pending.length,
+        acknowledgementLatencyMs: this.options.producerAckLatencyMs,
+        partition: this.getPartition(requestKey),
+        deliveryCopies: 0,
+        dropped: copies,
       };
     }
 
@@ -99,10 +159,13 @@ export class MessagingModel {
         partition,
         recipientIndex,
         attempt: 0,
+        ...context,
         sequence,
         availableAtMs: nowMs,
+        enqueuedAtMs: nowMs,
       });
     }
+    this.counters.producerAccepted++;
 
     return {
       accepted: true,
@@ -110,6 +173,7 @@ export class MessagingModel {
       acknowledgementLatencyMs: Math.max(0, this.options.producerAckLatencyMs),
       partition,
       deliveryCopies: copies,
+      dropped,
     };
   }
 
@@ -119,6 +183,7 @@ export class MessagingModel {
     workers: WorkerCapacity,
     deliver: (attempt: DeliveryAttempt) => boolean,
   ): DrainResult {
+    this.expireRetained(nowMs);
     const budget = this.calculateBudget(deltaMs, workers);
     const result: DrainResult = {
       attempted: 0,
@@ -127,6 +192,7 @@ export class MessagingModel {
       dropped: 0,
       deadLettered: 0,
       depth: this.pending.length,
+      queueAgeMs: this.getQueueAgeMs(nowMs),
     };
 
     for (let count = 0; count < budget; count++) {
@@ -147,8 +213,11 @@ export class MessagingModel {
       if (succeeded) {
         this.deliveredIds.add(delivery.deliveryId);
         result.delivered++;
+        this.counters.consumerSucceeded++;
         continue;
       }
+
+      this.counters.consumerFailed++;
 
       const nextAttempt = delivery.attempt + 1;
       const retryable = this.options.deliveryGuarantee !== 'at_most_once';
@@ -160,15 +229,19 @@ export class MessagingModel {
           availableAtMs: nowMs + retryDelay,
         });
         result.retried++;
+        this.counters.retries++;
       } else if (this.options.deadLetterQueue) {
         this.deadLetters.push({ ...delivery, attempt: nextAttempt });
         result.deadLettered++;
+        this.counters.deadLettered++;
       } else {
         result.dropped++;
+        this.counters.dropped++;
       }
     }
 
     result.depth = this.pending.length;
+    result.queueAgeMs = this.getQueueAgeMs(nowMs);
     return result;
   }
 
@@ -178,6 +251,11 @@ export class MessagingModel {
 
   public getDeadLetterDepth(): number {
     return this.deadLetters.length;
+  }
+
+  public getMetrics(nowMs: number): MessagingMetrics {
+    this.expireRetained(nowMs);
+    return { ...this.counters, queueAgeMs: this.getQueueAgeMs(nowMs) };
   }
 
   public getPartitions(): number {
@@ -190,6 +268,16 @@ export class MessagingModel {
     this.deliveredIds.clear();
     this.sequence = 0;
     this.fractionalDrainBudget = 0;
+    this.counters = {
+      producerAccepted: 0,
+      producerRejected: 0,
+      consumerSucceeded: 0,
+      consumerFailed: 0,
+      retries: 0,
+      dropped: 0,
+      expired: 0,
+      deadLettered: 0,
+    };
   }
 
   private getDeliveryCopies(): number {
@@ -261,5 +349,26 @@ export class MessagingModel {
     return [...earliestByPartition.values()]
       .filter((index) => this.pending[index].availableAtMs <= nowMs)
       .sort((left, right) => this.pending[left].sequence - this.pending[right].sequence)[0] ?? -1;
+  }
+
+  private expireRetained(nowMs: number): void {
+    const retentionMs = Math.max(0, this.options.retentionMs);
+    if (!Number.isFinite(retentionMs)) return;
+    const retained = this.pending.filter((delivery) => nowMs - delivery.enqueuedAtMs <= retentionMs);
+    const expired = this.pending.length - retained.length;
+    if (expired > 0) {
+      this.pending = retained;
+      this.counters.expired += expired;
+      this.counters.dropped += expired;
+    }
+  }
+
+  private getQueueAgeMs(nowMs: number): number {
+    if (this.pending.length === 0) return 0;
+    let oldest = this.pending[0].enqueuedAtMs;
+    for (let index = 1; index < this.pending.length; index++) {
+      oldest = Math.min(oldest, this.pending[index].enqueuedAtMs);
+    }
+    return Math.max(0, nowMs - oldest);
   }
 }

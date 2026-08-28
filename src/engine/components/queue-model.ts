@@ -25,6 +25,8 @@ export class QueueModel {
       retryLimit: 0,
       retryDelayMs: 0,
       deadLetterQueue: false,
+      retentionMs: Number.POSITIVE_INFINITY,
+      overflowPolicy: 'reject_newest',
     });
   }
 

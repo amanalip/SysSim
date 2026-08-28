@@ -22,6 +22,7 @@ import {
   MessagingKind,
 } from './components/messaging-model';
 import { DatabaseModel } from './components/db-model';
+import { AppServerModel } from './components/app-server-model';
 
 export interface SimNode {
   id: string;
@@ -71,6 +72,10 @@ export class SysSimEngine {
   private state: SimulationState = 'idle';
   private randomState = 1;
   private requestSequence = 0;
+  private clientSelectionCredits = new Map<string, number>();
+  private currentRequestArrivalMs = 0;
+  private currentRequestPayloadKb = 0;
+  private currentRequestOperation: 'read' | 'write' = 'read';
   private zipfCumulativeWeights = new Map<number, number[]>();
 
   private elapsedSimulationMs = 0;
@@ -104,6 +109,7 @@ export class SysSimEngine {
   private rateLimiters: Map<string, RateLimiterModel> = new Map();
   private queueModels: Map<string, MessagingModel> = new Map();
   private dbModels: Map<string, DatabaseModel> = new Map();
+  private appServerModels: Map<string, AppServerModel> = new Map();
   private activeConnections: Record<string, number> = {};
   private pendingCacheFills = new Map<string, PendingCacheFill>();
 
@@ -119,6 +125,8 @@ export class SysSimEngine {
     this.rateLimiters.clear();
     this.queueModels.clear();
     this.dbModels.clear();
+    this.appServerModels.clear();
+    this.clientSelectionCredits.clear();
     this.pendingCacheFills.clear();
 
     const validNodeIds = new Set(graph.nodes.map((n) => n.id));
@@ -159,6 +167,12 @@ export class SysSimEngine {
           n.id,
           new LoadBalancerRouter(n.config.algorithm || 'round_robin', outgoing)
         );
+      } else if (n.config.type === 'app_server') {
+        this.appServerModels.set(n.id, new AppServerModel(
+          n.config.replicas,
+          n.config.processingLatencyMs,
+          Math.max(0, n.config.maxThroughputQps || 0),
+        ));
       } else if (
         n.config.type === 'redis_cache' ||
         n.config.type === 'local_cache' ||
@@ -265,6 +279,7 @@ export class SysSimEngine {
     this.rateLimiters.forEach((rl) => rl.reset());
     this.queueModels.forEach((q) => q.reset());
     this.dbModels.forEach((db) => db.reset());
+    this.appServerModels.forEach((server) => server.reset());
     this.cacheModels.forEach((c) => c.reset());
     this.pendingCacheFills.clear();
     this.graph.nodes.forEach((n) => {
@@ -344,14 +359,28 @@ export class SysSimEngine {
     const sourceNodes = clientNodes.length > 0 ? clientNodes : this.graph.nodes.slice(0, 1);
 
     if (sourceNodes.length > 0) {
-      for (let i = 0; i < requestsToGenerate; i++) {
-        const source = sourceNodes[i % sourceNodes.length];
-        const requestKey = this.generateRequestKey();
+      const selectedSources = this.selectTrafficSources(sourceNodes, requestsToGenerate);
+      for (let i = 0; i < selectedSources.length; i++) {
+        const source = selectedSources[i];
+        const clientConfig = source.config.type === 'client' ? source.config : undefined;
+        const requestKey = this.generateRequestKey(
+          clientConfig?.requestKeyDistribution,
+          clientConfig?.requestKeySpaceSize,
+        );
+        const operationType = clientConfig?.operationType === 'mixed'
+          ? (this.random() * 100 < clientConfig.readPercentage ? 'read' : 'write')
+          : clientConfig?.operationType || 'read';
+        const arrivalTimeMs = this.elapsedSimulationMs - scaledDelta +
+          ((i + 1) * scaledDelta) / (selectedSources.length + 1);
         const req = createSimRequest(
           source.id,
-          this.elapsedSimulationMs,
+          arrivalTimeMs,
           requestKey,
           this.requestSequence++,
+          {
+            payloadSizeKb: clientConfig?.requestPayloadKb || 0,
+            operationType,
+          },
         );
         this.processRequest(req);
       }
@@ -398,6 +427,9 @@ export class SysSimEngine {
   private processRequest(req: SimRequest): void {
     this.flushReadyCacheFills();
     this.totalSent++;
+    this.currentRequestArrivalMs = req.timestamp;
+    this.currentRequestPayloadKb = Math.max(0, req.payloadSizeKb || 0);
+    this.currentRequestOperation = req.operationType || 'read';
     const result = this.traverseNode(
       req.sourceNodeId,
       req.id,
@@ -796,12 +828,20 @@ export class SysSimEngine {
     let hopStatus: RequestHop['status'] = 'processed';
     let hopInfo: string | undefined;
 
-    if (config.type === 'app_server') {
-      const replicas = config.replicas || 1;
-      hopLatency = Math.max(
-        2,
-        Math.round((config.processingLatencyMs || 15) / Math.sqrt(replicas)),
-      );
+    if (config.type === 'client') {
+      const protocolOverheadMs = config.connectionType === 'WebSocket'
+        ? 0.5
+        : config.connectionType === 'HTTP/3'
+          ? 1
+          : 2;
+      hopLatency = protocolOverheadMs + Math.max(0, config.requestPayloadKb) * 0.01;
+      hopInfo = `${config.connectionType}; ${this.currentRequestOperation}; ${this.currentRequestPayloadKb} KB payload`;
+    } else if (config.type === 'app_server') {
+      const service = this.appServerModels.get(node.id)?.process(this.currentRequestArrivalMs);
+      hopLatency = service?.totalLatencyMs ?? Math.max(0, config.processingLatencyMs);
+      hopInfo = service && service.queueLatencyMs > 0
+        ? `Fixed ${service.processingLatencyMs}ms service + ${Math.round(service.queueLatencyMs * 10) / 10}ms replica queue`
+        : `Fixed ${service?.processingLatencyMs ?? config.processingLatencyMs}ms service; no replica queue`;
     } else if (config.type === 'sql_db' || config.type === 'nosql_db') {
       const dbModel = this.dbModels.get(node.id);
       hopLatency = dbModel
@@ -841,6 +881,10 @@ export class SysSimEngine {
         requestId,
         requestKey,
         this.elapsedSimulationMs,
+        {
+          payloadSizeKb: this.currentRequestPayloadKb,
+          operationType: this.currentRequestOperation,
+        },
       );
       if (enqueue) {
         stats.queueDepth = enqueue.depth;
@@ -960,6 +1004,8 @@ export class SysSimEngine {
       retryLimit: 'retryLimit' in config ? config.retryLimit : 3,
       retryDelayMs: 'retryDelayMs' in config ? config.retryDelayMs : 100,
       deadLetterQueue: 'deadLetterQueue' in config ? config.deadLetterQueue : true,
+      retentionMs: ('retentionHours' in config ? config.retentionHours : 24) * 60 * 60 * 1000,
+      overflowPolicy: 'overflowPolicy' in config ? config.overflowPolicy : 'reject_newest',
     };
 
     if (config.type === 'message_queue') {
@@ -1047,6 +1093,9 @@ export class SysSimEngine {
         this.elapsedSimulationMs,
         { replicas: 1, concurrencyLimit: totalConcurrency, processingRatePerSec: totalRate },
         (attempt) => {
+          this.currentRequestArrivalMs = this.elapsedSimulationMs;
+          this.currentRequestPayloadKb = Math.max(0, attempt.payloadSizeKb || 0);
+          this.currentRequestOperation = attempt.operationType || 'read';
           const edge = edges[attempt.recipientIndex % edges.length];
           const result = this.traverseNode(
             edge.target,
@@ -1128,9 +1177,12 @@ export class SysSimEngine {
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
   }
 
-  private generateRequestKey(): string {
-    const size = Math.max(1, Math.floor(this.config.requestKeySpaceSize || 100));
-    if (this.config.requestKeyDistribution === 'custom') {
+  private generateRequestKey(
+    distribution = this.config.requestKeyDistribution,
+    requestedSize = this.config.requestKeySpaceSize,
+  ): string {
+    const size = Math.max(1, Math.floor(requestedSize || 100));
+    if (distribution === 'custom') {
       const keys = (this.config.customRequestKeys || []).filter(
         (entry) => entry.key && Number.isFinite(entry.weight) && entry.weight > 0,
       );
@@ -1145,7 +1197,7 @@ export class SysSimEngine {
       }
     }
 
-    if (this.config.requestKeyDistribution === 'zipfian') {
+    if (distribution === 'zipfian') {
       let cumulative = this.zipfCumulativeWeights.get(size);
       if (!cumulative) {
         let sum = 0;
@@ -1169,6 +1221,37 @@ export class SysSimEngine {
     return `resource:${Math.floor(this.random() * size)}`;
   }
 
+  private selectTrafficSources(sourceNodes: SimNode[], count: number): SimNode[] {
+    if (sourceNodes.length <= 1) return Array.from({ length: count }, () => sourceNodes[0]);
+    const weights = sourceNodes.map((node) => node.config.type === 'client'
+      ? Math.max(0, node.config.requestRateQps)
+      : 1);
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    const effectiveWeights = totalWeight > 0 ? weights : weights.map(() => 1);
+    const effectiveTotal = effectiveWeights.reduce((sum, weight) => sum + weight, 0);
+    const selected: SimNode[] = [];
+
+    for (let requestIndex = 0; requestIndex < count; requestIndex++) {
+      let selectedIndex = 0;
+      let selectedCredit = Number.NEGATIVE_INFINITY;
+      sourceNodes.forEach((node, index) => {
+        const credit = (this.clientSelectionCredits.get(node.id) || 0) + effectiveWeights[index];
+        this.clientSelectionCredits.set(node.id, credit);
+        if (credit > selectedCredit) {
+          selectedCredit = credit;
+          selectedIndex = index;
+        }
+      });
+      const selectedNode = sourceNodes[selectedIndex];
+      this.clientSelectionCredits.set(
+        selectedNode.id,
+        (this.clientSelectionCredits.get(selectedNode.id) || 0) - effectiveTotal,
+      );
+      selected.push(selectedNode);
+    }
+    return selected;
+  }
+
   public getMetricsSnapshot(): OverallMetrics {
     const latencies = this.completedRequests
       .filter((r) => r.status === 'success')
@@ -1187,6 +1270,14 @@ export class SysSimEngine {
     let totalMisses = 0;
     let totalBypasses = 0;
     let totalCoalescedRequests = 0;
+    let totalProducerAccepted = 0;
+    let totalProducerRejected = 0;
+    let totalConsumerSucceeded = 0;
+    let totalConsumerFailed = 0;
+    let totalMessageRetries = 0;
+    let totalMessagesDropped = 0;
+    let totalMessagesExpired = 0;
+    let totalDeadLettered = 0;
     const componentMetrics: Record<string, ComponentMetricSnapshot> = {};
 
     let busiestNodeId: string | undefined;
@@ -1234,6 +1325,17 @@ export class SysSimEngine {
 
       const nodeQps = stats.totalRequests > 0 ? Math.round(stats.totalRequests / Math.max(1, this.elapsedSimulationMs / 1000)) : 0;
       const ratedMaxQps = Math.max(10, n.config.maxThroughputQps || 5000);
+      const messagingMetrics = this.queueModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
+      if (messagingMetrics) {
+        totalProducerAccepted += messagingMetrics.producerAccepted;
+        totalProducerRejected += messagingMetrics.producerRejected;
+        totalConsumerSucceeded += messagingMetrics.consumerSucceeded;
+        totalConsumerFailed += messagingMetrics.consumerFailed;
+        totalMessageRetries += messagingMetrics.retries;
+        totalMessagesDropped += messagingMetrics.dropped;
+        totalMessagesExpired += messagingMetrics.expired;
+        totalDeadLettered += messagingMetrics.deadLettered;
+      }
 
       componentMetrics[n.id] = {
         nodeId: n.id,
@@ -1254,6 +1356,15 @@ export class SysSimEngine {
         cacheMisses: stats.misses,
         cacheBypasses: stats.bypasses,
         cacheCoalescedRequests: stats.coalescedRequests,
+        producerAccepted: messagingMetrics?.producerAccepted,
+        producerRejected: messagingMetrics?.producerRejected,
+        consumerSucceeded: messagingMetrics?.consumerSucceeded,
+        consumerFailed: messagingMetrics?.consumerFailed,
+        messageRetries: messagingMetrics?.retries,
+        messageQueueAgeMs: messagingMetrics?.queueAgeMs,
+        messagesDropped: messagingMetrics?.dropped,
+        messagesExpired: messagingMetrics?.expired,
+        deadLettered: messagingMetrics?.deadLettered,
       };
 
       if (stats.totalRequests > maxNodeReqs) {
@@ -1287,6 +1398,14 @@ export class SysSimEngine {
       totalCacheMisses: totalMisses,
       totalCacheBypasses: totalBypasses,
       totalCacheCoalescedRequests: totalCoalescedRequests,
+      totalProducerAccepted,
+      totalProducerRejected,
+      totalConsumerSucceeded,
+      totalConsumerFailed,
+      totalMessageRetries,
+      totalMessagesDropped,
+      totalMessagesExpired,
+      totalDeadLettered,
       busiestNodeId,
       slowestNodeId,
       timeSeries: this.timeSeries,
