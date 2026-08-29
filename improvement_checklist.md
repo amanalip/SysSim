@@ -195,22 +195,22 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 93. Model round-robin, least-connections, consistent hashing, weighted routing, and IP hashing accurately.
 - [x] 94. Maintain meaningful active-connection counts over request duration.
 - [x] 95. Exclude unhealthy downstream targets.
-- [ ] 96. Implement health-check intervals and recovery delay.
-- [ ] 97. Model sticky sessions.
-- [ ] 98. Accept configurable weights for weighted routing.
-- [ ] 99. Report uneven distribution and unavailable-target failures.
+- [x] 96. Implement health-check intervals and recovery delay.
+- [x] 97. Model sticky sessions.
+- [x] 98. Accept configurable weights for weighted routing.
+- [x] 99. Report uneven distribution and unavailable-target failures.
 
 ### API gateway
 
-- [ ] 100. Enforce configured QPS rate limits.
-- [ ] 101. Apply authentication mode overhead.
-- [ ] 102. Enforce timeouts.
-- [ ] 103. Implement documented circuit-breaker behavior.
-- [ ] 104. Report throttling, timeout, and open-circuit metrics separately.
+- [x] 100. Enforce configured QPS rate limits.
+- [x] 101. Apply authentication mode overhead.
+- [x] 102. Enforce timeouts.
+- [x] 103. Implement documented circuit-breaker behavior.
+- [x] 104. Report throttling, timeout, and open-circuit metrics separately.
 
 ### CDN
 
-- [ ] 105. Apply hit ratio, TTL, origin shielding, and edge-location configuration.
+- [x] 105. Apply hit ratio, TTL, origin shielding, and edge-location configuration.
 - [ ] 106. Model cache-hit versus origin-fetch latency.
 - [ ] 107. Define geographic latency assumptions.
 - [ ] 108. Report origin offload and egress separately.

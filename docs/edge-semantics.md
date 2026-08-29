@@ -1,6 +1,6 @@
 # Edge Semantics
 
-**Model version:** 1.1
+**Model version:** 1.2
 **Last reviewed:** August 28, 2026
 
 This document defines how the simulation engine interprets directed edges. It is normative for the engine, editor, and version-2 saved canvas format.
@@ -40,7 +40,7 @@ Cut edges do not participate in any purpose.
 
 For a generic component with multiple `request` edges, dependencies run in stored edge order. The caller waits for each response, so their edge and service latencies accumulate. This is deliberately not load balancing.
 
-A load balancer is the only current component that selects one of multiple `request` edges. Its configured algorithm owns that selection, uses request keys or originating-client identity where appropriate, and considers only targets not marked down. Detailed algorithm and connection-lifetime rules are documented in [Compute Component Semantics](component-semantics.md#load-balancer-routing).
+A load balancer is the only current component that selects one of multiple `request` edges. Its configured algorithm owns that selection, uses request keys or originating-client identity where appropriate, and filters targets through interval-based health checks and delayed recovery. Detailed algorithm, stickiness, weight, and connection-lifetime rules are documented in [Compute and Networking Component Semantics](component-semantics.md#load-balancer-routing).
 
 ### Fanout
 
@@ -48,7 +48,7 @@ Every fanout branch receives an independent visited-node set derived from the ca
 
 ### Fallback
 
-Fallback is conditional. A healthy primary result does not touch fallback targets. A primary failure or cache miss activates fallback edges. When a fallback succeeds, the parent request succeeds but retains the attempted-primary hops and latency for diagnosis.
+Fallback is conditional. A healthy primary result does not touch fallback targets. A primary failure or cache miss activates fallback edges. When a fallback succeeds, the parent request succeeds but retains the attempted-primary hops and latency for diagnosis. A CDN cache miss may use a request edge as its origin route only when no explicit fallback edge exists, preserving compatibility with existing CDN diagrams.
 
 ### Asynchronous acknowledgement
 

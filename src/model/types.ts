@@ -135,7 +135,9 @@ export interface LoadBalancerConfig extends BaseComponentConfig {
   type: 'load_balancer';
   algorithm: LoadBalancerAlgorithm;
   healthCheckIntervalSec: number;
+  healthRecoveryDelaySec: number;
   stickySession: boolean;
+  targetWeights: Record<string, number>;
 }
 
 export interface ApiGatewayConfig extends BaseComponentConfig {
@@ -479,6 +481,13 @@ export interface ComponentMetricSnapshot {
   serverlessThrottles?: number;
   serverlessInvocationFailures?: number;
   serverlessDownstreamFailures?: number;
+  loadBalancerUnavailableFailures?: number;
+  loadBalancerDistributionSkewPercent?: number;
+  loadBalancerUnhealthyTargets?: number;
+  apiGatewayThrottles?: number;
+  apiGatewayTimeouts?: number;
+  apiGatewayOpenCircuitRejections?: number;
+  apiGatewayCircuitState?: 'closed' | 'open' | 'half_open';
 }
 
 export interface TimeSeriesDataPoint {
@@ -575,7 +584,7 @@ export interface ScenarioConstraints {
 }
 
 export interface SerializedCanvasState {
-  version?: 2 | 3 | 4 | 5;
+  version?: 2 | 3 | 4 | 5 | 6;
   nodes: Array<{
     id: string;
     type: string;

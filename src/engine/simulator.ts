@@ -25,6 +25,8 @@ import { DatabaseModel } from './components/db-model';
 import { AppServerModel } from './components/app-server-model';
 import { WorkerModel } from './components/worker-model';
 import { ServerlessModel } from './components/serverless-model';
+import { LoadBalancerHealthModel } from './components/load-balancer-health-model';
+import { ApiGatewayModel } from './components/api-gateway-model';
 
 export interface SimNode {
   id: string;
@@ -114,8 +116,11 @@ export class SysSimEngine {
   private appServerModels: Map<string, AppServerModel> = new Map();
   private workerModels: Map<string, WorkerModel> = new Map();
   private serverlessModels: Map<string, ServerlessModel> = new Map();
+  private loadBalancerHealthModels: Map<string, LoadBalancerHealthModel> = new Map();
+  private apiGatewayModels: Map<string, ApiGatewayModel> = new Map();
   private activeConnections: Record<string, number> = {};
   private loadBalancerConnectionEnds = new Map<string, number[]>();
+  private loadBalancerUnhealthyTargets = new Map<string, number>();
   private pendingCacheFills = new Map<string, PendingCacheFill>();
 
   constructor(graph?: SimGraph, config?: TrafficConfig) {
@@ -125,7 +130,6 @@ export class SysSimEngine {
 
   public setGraph(graph: SimGraph): void {
     this.graph = graph;
-    this.lbRouters.clear();
     this.cacheModels.clear();
     this.rateLimiters.clear();
     this.queueModels.clear();
@@ -134,10 +138,16 @@ export class SysSimEngine {
     this.workerModels.clear();
     this.serverlessModels.clear();
     this.loadBalancerConnectionEnds.clear();
+    this.loadBalancerUnhealthyTargets.clear();
     this.clientSelectionCredits.clear();
     this.pendingCacheFills.clear();
 
     const validNodeIds = new Set(graph.nodes.map((n) => n.id));
+    const validLoadBalancerIds = new Set(graph.nodes.filter((n) => n.config.type === 'load_balancer').map((n) => n.id));
+    const validGatewayIds = new Set(graph.nodes.filter((n) => n.config.type === 'api_gateway').map((n) => n.id));
+    for (const id of this.lbRouters.keys()) if (!validLoadBalancerIds.has(id)) this.lbRouters.delete(id);
+    for (const id of this.loadBalancerHealthModels.keys()) if (!validLoadBalancerIds.has(id)) this.loadBalancerHealthModels.delete(id);
+    for (const id of this.apiGatewayModels.keys()) if (!validGatewayIds.has(id)) this.apiGatewayModels.delete(id);
     for (const id of Object.keys(this.nodeStats)) {
       if (!validNodeIds.has(id)) {
         delete this.nodeStats[id];
@@ -171,10 +181,23 @@ export class SysSimEngine {
               getEdgePurpose(e.data) === 'request',
           )
           .map((e) => e.target);
-        this.lbRouters.set(
-          n.id,
-          new LoadBalancerRouter(n.config.algorithm || 'round_robin', outgoing)
-        );
+        const existingRouter = this.lbRouters.get(n.id);
+        if (existingRouter) {
+          existingRouter.updateAlgorithm(n.config.algorithm || 'round_robin');
+          existingRouter.updateTargets(outgoing, n.config.targetWeights);
+        } else {
+          this.lbRouters.set(
+            n.id,
+            new LoadBalancerRouter(n.config.algorithm || 'round_robin', outgoing, n.config.targetWeights),
+          );
+        }
+        if (!this.loadBalancerHealthModels.has(n.id)) {
+          this.loadBalancerHealthModels.set(n.id, new LoadBalancerHealthModel());
+        }
+      } else if (n.config.type === 'api_gateway') {
+        const existingGateway = this.apiGatewayModels.get(n.id);
+        if (existingGateway) existingGateway.updateConfig(n.config);
+        else this.apiGatewayModels.set(n.id, new ApiGatewayModel(n.config));
       } else if (n.config.type === 'app_server') {
         this.appServerModels.set(n.id, new AppServerModel(
           n.config.replicas,
@@ -195,6 +218,7 @@ export class SysSimEngine {
           n.config.warmInstances, n.config.idleTimeoutSec, () => this.random(),
         ));
       } else if (
+        n.config.type === 'cdn' ||
         n.config.type === 'redis_cache' ||
         n.config.type === 'local_cache' ||
         n.config.type === 'cdn_cache' ||
@@ -202,21 +226,27 @@ export class SysSimEngine {
       ) {
         const config = n.config;
         const isServerCache = config.type === 'redis_cache' || config.type === 'local_cache';
-        const sizeMb = isServerCache ? config.sizeMb : config.type === 'browser_cache' ? 1 : 100;
+        const sizeMb = isServerCache
+          ? config.sizeMb
+          : config.type === 'browser_cache'
+            ? 1
+            : config.type === 'cdn'
+              ? Math.max(1, config.edgeLocationsCount) * 100
+              : 100;
         const entrySizeKb = isServerCache ? config.entrySizeKb || 1 : 1;
         const sizeLimit = Math.max(1, Math.floor((sizeMb * 1024) / entrySizeKb));
         const defaultTtlSec = config.type === 'redis_cache'
           ? 300
           : config.type === 'local_cache'
             ? 60
-            : config.type === 'cdn_cache'
+            : config.type === 'cdn' || config.type === 'cdn_cache'
               ? 3600
               : 86400;
         const defaultReadLatencyMs = config.type === 'redis_cache'
           ? 2
           : config.type === 'local_cache'
             ? 0.5
-            : config.type === 'cdn_cache'
+            : config.type === 'cdn' || config.type === 'cdn_cache'
               ? 8
               : 0.2;
         this.cacheModels.set(n.id, new CacheModel({
@@ -224,8 +254,11 @@ export class SysSimEngine {
           evictionPolicy: 'evictionPolicy' in config && config.evictionPolicy
             ? config.evictionPolicy
             : isServerCache ? 'LRU' : 'TTL',
-          ttlMs: Math.max(1, Number(config.ttlSec) || defaultTtlSec) * 1000,
-          readLatencyMs: Number.isFinite(config.readLatencyMs)
+          ttlMs: Math.max(
+            1,
+            config.type === 'cdn' ? config.cacheTtlSec : Number(config.ttlSec) || defaultTtlSec,
+          ) * 1000,
+          readLatencyMs: 'readLatencyMs' in config && Number.isFinite(config.readLatencyMs)
             ? config.readLatencyMs
             : defaultReadLatencyMs,
         }));
@@ -304,6 +337,9 @@ export class SysSimEngine {
     this.appServerModels.forEach((server) => server.reset());
     this.workerModels.forEach((worker) => worker.reset());
     this.serverlessModels.forEach((serverless) => serverless.reset());
+    this.loadBalancerHealthModels.forEach((health) => health.reset());
+    this.lbRouters.forEach((router) => router.reset());
+    this.apiGatewayModels.forEach((gateway) => gateway.reset());
     this.cacheModels.forEach((c) => c.reset());
     this.pendingCacheFills.clear();
     this.graph.nodes.forEach((n) => {
@@ -682,6 +718,29 @@ export class SysSimEngine {
           latencyMs += edgeLatency + child.latencyMs;
           hops.push(...child.hops);
           usedAsync ||= child.usedAsync;
+          if (node.config.type === 'api_gateway') {
+            const completion = this.apiGatewayModels.get(node.id)?.finish(
+              this.currentRequestArrivalMs + latencyMs,
+              edgeLatency + child.latencyMs,
+              child.success,
+            );
+            if (completion?.timedOut) {
+              const stats = this.nodeStats[node.id];
+              if (stats) {
+                stats.successfulRequests = Math.max(0, stats.successfulRequests - 1);
+                stats.failedRequests++;
+              }
+              if (hops[0]) {
+                hops[0] = {
+                  ...hops[0],
+                  status: 'error',
+                  info: `${hops[0].info || 'Gateway policy'}; upstream timed out after ${node.config.timeoutMs}ms`,
+                };
+              }
+              primaryFailure = { ...child, success: false, status: 'timeout' };
+              break;
+            }
+          }
           if (!child.success) {
             if (node.config.type === 'serverless') {
               this.serverlessModels.get(node.id)?.recordDownstreamFailure();
@@ -719,13 +778,16 @@ export class SysSimEngine {
     }
 
     const needsFallback = nodeResult.cacheMiss || primaryFailure !== null;
-    if (needsFallback && fallbackEdges.length > 0) {
+    const effectiveFallbackEdges = nodeResult.cacheMiss && fallbackEdges.length === 0
+      ? requestEdges
+      : fallbackEdges;
+    if (needsFallback && effectiveFallbackEdges.length > 0) {
       if (cacheNode && !nodeResult.success) {
         const stats = this.nodeStats[node.id];
         if (stats) stats.bypasses++;
         if (hops[0]) hops[0].info = 'Cache unavailable — bypassing to origin fallback';
       }
-      for (const edge of fallbackEdges) {
+      for (const edge of effectiveFallbackEdges) {
         const edgeLatency = this.getEdgeLatency(edge);
         const fallback = this.traverseNode(
           edge.target,
@@ -892,6 +954,7 @@ export class SysSimEngine {
         ? dbModel.executeQuery(this.random() < 0.1).latencyMs
         : config.baseLatencyMs || 20;
     } else if (
+      config.type === 'cdn' ||
       config.type === 'redis_cache' ||
       config.type === 'local_cache' ||
       config.type === 'cdn_cache' ||
@@ -920,6 +983,19 @@ export class SysSimEngine {
     } else if (config.type === 'rate_limiter') {
       const allowed = this.rateLimiters.get(node.id)?.allowRequest(this.elapsedSimulationMs) ?? true;
       if (!allowed) return failure('rate_limited', 1, 'Request rejected by rate limiter');
+    } else if (config.type === 'api_gateway') {
+      const admission = this.apiGatewayModels.get(node.id)?.begin(this.currentRequestArrivalMs);
+      if (admission && !admission.allowed) {
+        return failure(
+          'rate_limited',
+          admission.latencyMs,
+          admission.reason === 'open_circuit'
+            ? 'Request rejected: gateway circuit is open'
+            : `Request throttled at configured ${config.rateLimitQps} QPS limit`,
+        );
+      }
+      hopLatency = admission?.latencyMs ?? 0;
+      hopInfo = `${config.authMode === 'None' ? 'No authentication' : `${config.authMode} authentication`} overhead`;
     } else if (this.isMessagingNode(node)) {
       const enqueue = this.queueModels.get(node.id)?.enqueue(
         requestId,
@@ -989,20 +1065,39 @@ export class SysSimEngine {
     sourceNodeId: string,
     requestEdges: SimEdge[],
   ): SimEdge[] {
+    const loadBalancer = this.graph.nodes.find((candidate) => candidate.id === nodeId);
+    if (loadBalancer?.config.type !== 'load_balancer') return [];
+    const loadBalancerConfig = loadBalancer.config;
+    const healthModel = this.loadBalancerHealthModels.get(nodeId);
     const eligibleEdges = requestEdges.filter((edge) => {
       const target = this.graph.nodes.find((candidate) => candidate.id === edge.target);
-      return target?.config.health !== 'down';
+      return Boolean(target && healthModel?.isEligible(
+        edge.target,
+        target.config.health,
+        this.currentRequestArrivalMs,
+        loadBalancerConfig.healthCheckIntervalSec,
+        loadBalancerConfig.healthRecoveryDelaySec,
+      ));
     });
+    this.loadBalancerUnhealthyTargets.set(nodeId, requestEdges.length - eligibleEdges.length);
     const router = this.lbRouters.get(nodeId);
-    router?.updateTargets(eligibleEdges.map((edge) => edge.target));
+    router?.updateTargets(eligibleEdges.map((edge) => edge.target), loadBalancerConfig.targetWeights);
     const activeConnections = this.getLoadBalancerActiveConnections(
       nodeId,
       eligibleEdges.map((edge) => edge.target),
       this.currentRequestArrivalMs,
     );
     this.activeConnections[nodeId] = Object.values(activeConnections).reduce((sum, value) => sum + value, 0);
-    const target = router?.selectTarget({ requestKey, clientKey: sourceNodeId, activeConnections });
-    if (!target) return [];
+    const target = router?.selectTarget({
+      requestKey,
+      clientKey: sourceNodeId,
+      activeConnections,
+      stickySession: loadBalancerConfig.stickySession,
+    });
+    if (!target) {
+      router?.recordUnavailableTargetFailure();
+      return [];
+    }
     const selected = eligibleEdges.find((edge) => edge.target === target);
     return selected ? [selected] : [];
   }
@@ -1077,7 +1172,7 @@ export class SysSimEngine {
   }
 
   private isCacheNode(node: SimNode): boolean {
-    return ['redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(node.config.type);
+    return ['cdn', 'redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(node.config.type);
   }
 
   private isMessagingNode(node: SimNode): boolean {
@@ -1233,19 +1328,34 @@ export class SysSimEngine {
   }
 
   private getCacheKey(node: SimNode, requestKey: string, sourceNodeId: string): string {
-    return node.config.type === 'browser_cache'
-      ? `${sourceNodeId}:${requestKey}`
-      : requestKey;
+    if (node.config.type === 'browser_cache') return `${sourceNodeId}:${requestKey}`;
+    if (node.config.type === 'cdn') {
+      const edgeCount = Math.max(1, Math.floor(node.config.edgeLocationsCount));
+      return `edge-${this.stableHash(sourceNodeId) % edgeCount}:${requestKey}`;
+    }
+    return requestKey;
   }
 
   private isRequestCoalescingEnabled(node: SimNode): boolean {
     return this.isCacheNode(node) && 'requestCoalescingEnabled' in node.config
       ? node.config.requestCoalescingEnabled
-      : node.config.type === 'cdn_cache' || node.config.type === 'browser_cache';
+      : node.config.type === 'cdn'
+        ? node.config.originShielding
+        : node.config.type === 'cdn_cache' || node.config.type === 'browser_cache';
   }
 
   private getPendingCacheFillKey(node: SimNode, requestKey: string, sourceNodeId: string): string {
+    if (node.config.type === 'cdn' && node.config.originShielding) return `${node.id}:shield:${requestKey}`;
     return `${node.id}:${this.getCacheKey(node, requestKey, sourceNodeId)}`;
+  }
+
+  private stableHash(value: string): number {
+    let hash = 2166136261;
+    for (let index = 0; index < value.length; index++) {
+      hash ^= value.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
   }
 
   private scheduleCacheFill(
@@ -1446,6 +1556,8 @@ export class SysSimEngine {
       const appMetrics = this.appServerModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
       const workerMetrics = this.workerModels.get(n.id)?.getMetrics();
       const serverlessMetrics = this.serverlessModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
+      const loadBalancerMetrics = this.lbRouters.get(n.id)?.getMetrics();
+      const apiGatewayMetrics = this.apiGatewayModels.get(n.id)?.getMetrics();
       const loadBalancerActiveConnections = n.config.type === 'load_balancer'
         ? Object.values(this.getLoadBalancerActiveConnections(
             n.id,
@@ -1506,6 +1618,13 @@ export class SysSimEngine {
         serverlessThrottles: serverlessMetrics?.throttles,
         serverlessInvocationFailures: serverlessMetrics?.invocationFailures,
         serverlessDownstreamFailures: serverlessMetrics?.downstreamFailures,
+        loadBalancerUnavailableFailures: loadBalancerMetrics?.unavailableTargetFailures,
+        loadBalancerDistributionSkewPercent: loadBalancerMetrics?.distributionSkewPercent,
+        loadBalancerUnhealthyTargets: this.loadBalancerUnhealthyTargets.get(n.id),
+        apiGatewayThrottles: apiGatewayMetrics?.throttles,
+        apiGatewayTimeouts: apiGatewayMetrics?.timeouts,
+        apiGatewayOpenCircuitRejections: apiGatewayMetrics?.openCircuitRejections,
+        apiGatewayCircuitState: apiGatewayMetrics?.circuitState,
       };
 
       if (stats.totalRequests > maxNodeReqs) {

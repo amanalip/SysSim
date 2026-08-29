@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { SysSimEngine, SimGraph } from '../engine/simulator';
 import { createSimRequest } from '../engine/request';
 import { createDefaultConfig } from '../model/component-defaults';
-import { migrateCanvasState } from '../model/canvas-migrations';
+import { CURRENT_CANVAS_VERSION, migrateCanvasState } from '../model/canvas-migrations';
 import { validateEdgePurpose } from '../model/edge-semantics';
 import { AppServerConfig, SimRequest } from '../model/types';
 import { decodeStateFromUrlHash, encodeStateToUrlHash, serializeCanvasState } from '../utils/sharing';
@@ -48,7 +48,7 @@ describe('edge-purpose completion', () => {
       nodes,
       edges: [{ id: 'edge', source: 'cache', target: 'db', data: { protocol: 'TCP' } }],
     });
-    expect(legacy.version).toBe(5);
+    expect(legacy.version).toBe(CURRENT_CANVAS_VERSION);
     expect(legacy.edges[0].data.purpose).toBe('fallback');
 
     useStore.setState({ nodes: nodes as any, edges: [{ ...legacy.edges[0], type: 'protocolEdge' }] as any, zones: [] });
@@ -70,7 +70,7 @@ describe('edge-purpose completion', () => {
       edges: [],
     });
     const config = migrated.nodes[0].data.config as any;
-    expect(migrated.version).toBe(5);
+    expect(migrated.version).toBe(CURRENT_CANVAS_VERSION);
     expect(config.producerAckLatencyMs).toBe(4);
     expect(config.consumerProcessingLatencyMs).toBe(10);
     expect(config.deliveryGuarantee).toBe('at_least_once');
@@ -91,7 +91,7 @@ describe('edge-purpose completion', () => {
       nodes: [{ id: 'client', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: legacyClient } }],
       edges: [],
     });
-    expect(migrated.version).toBe(5);
+    expect(migrated.version).toBe(CURRENT_CANVAS_VERSION);
     expect(migrated.nodes[0].data.config).toMatchObject({
       requestPayloadKb: 2,
       operationType: 'mixed',
@@ -116,7 +116,7 @@ describe('edge-purpose completion', () => {
       ],
       edges: [],
     });
-    expect(migrated.version).toBe(5);
+    expect(migrated.version).toBe(CURRENT_CANVAS_VERSION);
     expect(migrated.nodes[0].data.config).toMatchObject({ processingLatencyMs: 20 });
     expect(migrated.nodes[1].data.config).toMatchObject({
       baseExecutionLatencyMs: 25, warmInstances: 0, idleTimeoutSec: 300,

@@ -23,6 +23,7 @@ import styles from './PropertiesPanel.module.css';
 export const PropertiesPanel: React.FC = () => {
   const {
     nodes,
+    edges,
     selectedNodeId,
     selectNode,
     updateNodeConfig,
@@ -51,7 +52,7 @@ export const PropertiesPanel: React.FC = () => {
   }
 
   const config = selectedNode.data.config;
-  const isCacheConfig = ['redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(config.type);
+  const isCacheConfig = ['cdn', 'redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(config.type);
   const isMessagingConfig = ['message_queue', 'task_queue', 'pubsub', 'event_bus'].includes(config.type);
 
   const handleClose = () => {
@@ -208,24 +209,103 @@ export const PropertiesPanel: React.FC = () => {
 
           {/* Load Balancer Algorithm */}
           {'algorithm' in config && config.type === 'load_balancer' && (
-            <div className={styles.fieldGroup}>
-              <label className={styles.fieldLabel}>Balancing Algorithm</label>
-              <select
-                className={styles.select}
-                value={config.algorithm}
-                onChange={(e) =>
-                  updateNodeConfig(config.id, {
-                    algorithm: e.target.value as LoadBalancerAlgorithm,
-                  })
-                }
-              >
-                <option value="round_robin">Round Robin</option>
-                <option value="least_connections">Least Connections</option>
-                <option value="consistent_hashing">Consistent Hashing</option>
-                <option value="weighted">Weighted Round Robin</option>
-                <option value="ip_hash">IP Hash</option>
-              </select>
-            </div>
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Balancing Algorithm</label>
+                <select className={styles.select} value={config.algorithm}
+                  onChange={(e) => updateNodeConfig(config.id, { algorithm: e.target.value as LoadBalancerAlgorithm })}>
+                  <option value="round_robin">Round Robin</option>
+                  <option value="least_connections">Least Connections</option>
+                  <option value="consistent_hashing">Consistent Hashing</option>
+                  <option value="weighted">Weighted Round Robin</option>
+                  <option value="ip_hash">IP Hash</option>
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Health Check Interval (sec)</label>
+                <input type="number" min="1" className={styles.input} value={config.healthCheckIntervalSec}
+                  onChange={(e) => updateNodeConfig(config.id, { healthCheckIntervalSec: Math.max(1, Number(e.target.value) || 1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Recovery Delay (sec)</label>
+                <input type="number" min="0" className={styles.input} value={config.healthRecoveryDelaySec}
+                  onChange={(e) => updateNodeConfig(config.id, { healthRecoveryDelaySec: Math.max(0, Number(e.target.value) || 0) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Session Affinity</label>
+                <button type="button" className={`${styles.actionBtn} ${config.stickySession ? styles.coalescingActive : ''}`}
+                  aria-pressed={config.stickySession}
+                  onClick={() => updateNodeConfig(config.id, { stickySession: !config.stickySession })}>
+                  Sticky sessions {config.stickySession ? 'ON' : 'OFF'}
+                </button>
+              </div>
+              {config.algorithm === 'weighted' && edges
+                .filter((edge) => edge.source === config.id && (edge.data.purpose || 'request') === 'request')
+                .map((edge) => {
+                  const target = nodes.find((node) => node.id === edge.target);
+                  return (
+                    <div className={styles.fieldGroup} key={edge.id}>
+                      <label className={styles.fieldLabel}>Weight: {target?.data.config.name || edge.target}</label>
+                      <input type="number" min="1" className={styles.input} value={config.targetWeights?.[edge.target] || 1}
+                        onChange={(event) => updateNodeConfig(config.id, {
+                          targetWeights: { ...config.targetWeights, [edge.target]: Math.max(1, Number(event.target.value) || 1) },
+                        })} />
+                    </div>
+                  );
+                })}
+            </>
+          )}
+
+          {config.type === 'api_gateway' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Gateway Rate Limit (QPS)</label>
+                <input type="number" min="0" className={styles.input} value={config.rateLimitQps}
+                  onChange={(e) => updateNodeConfig(config.id, { rateLimitQps: Math.max(0, Number(e.target.value) || 0) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Authentication Mode</label>
+                <select className={styles.select} value={config.authMode}
+                  onChange={(e) => updateNodeConfig(config.id, { authMode: e.target.value as typeof config.authMode })}>
+                  <option value="None">None</option><option value="API_Key">API Key</option>
+                  <option value="JWT">JWT</option><option value="OAuth2">OAuth2</option>
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Upstream Timeout (ms)</label>
+                <input type="number" min="1" className={styles.input} value={config.timeoutMs}
+                  onChange={(e) => updateNodeConfig(config.id, { timeoutMs: Math.max(1, Number(e.target.value) || 1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <button type="button" className={`${styles.actionBtn} ${config.circuitBreakerEnabled ? styles.coalescingActive : ''}`}
+                  aria-pressed={config.circuitBreakerEnabled}
+                  onClick={() => updateNodeConfig(config.id, { circuitBreakerEnabled: !config.circuitBreakerEnabled })}>
+                  Circuit breaker {config.circuitBreakerEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+            </>
+          )}
+
+          {config.type === 'cdn' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Cache TTL (sec)</label>
+                <input type="number" min="1" className={styles.input} value={config.cacheTtlSec}
+                  onChange={(e) => updateNodeConfig(config.id, { cacheTtlSec: Math.max(1, Number(e.target.value) || 1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Edge Locations</label>
+                <input type="number" min="1" className={styles.input} value={config.edgeLocationsCount}
+                  onChange={(e) => updateNodeConfig(config.id, { edgeLocationsCount: Math.max(1, Math.floor(Number(e.target.value) || 1)) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <button type="button" className={`${styles.actionBtn} ${config.originShielding ? styles.coalescingActive : ''}`}
+                  aria-pressed={config.originShielding}
+                  onClick={() => updateNodeConfig(config.id, { originShielding: !config.originShielding })}>
+                  Origin shield {config.originShielding ? 'ON' : 'OFF'}
+                </button>
+              </div>
+            </>
           )}
 
           {/* Rate Limiter Algorithm & Limit */}

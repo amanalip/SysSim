@@ -468,6 +468,10 @@ export const MetricsDashboard: React.FC = () => {
                                 ? `busy ${c.busyWorkers || 0} · queue ${c.queuedWork || 0} · ${Math.round(c.workerProcessingLatencyMs || 0)}ms · retry ${c.workerRetries || 0}`
                                 : c.nodeType === 'serverless'
                                   ? `cold/warm ${c.coldStarts || 0}/${c.warmStarts || 0} · throttle ${c.serverlessThrottles || 0} · timeout ${c.serverlessTimeouts || 0} · invoke/downstream fail ${c.serverlessInvocationFailures || 0}/${c.serverlessDownstreamFailures || 0} · P(cold) ${c.coldStartProbabilityPercent || 0}%`
+                                  : c.nodeType === 'load_balancer'
+                                    ? `unhealthy ${c.loadBalancerUnhealthyTargets || 0} · unavailable ${c.loadBalancerUnavailableFailures || 0} · skew ${c.loadBalancerDistributionSkewPercent || 0}%`
+                                    : c.nodeType === 'api_gateway'
+                                      ? `throttle ${c.apiGatewayThrottles || 0} · timeout ${c.apiGatewayTimeouts || 0} · circuit ${c.apiGatewayCircuitState || 'closed'} (${c.apiGatewayOpenCircuitRejections || 0} rejected)`
                                   : '—'}
                           </td>
                         </tr>

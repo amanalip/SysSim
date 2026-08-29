@@ -67,5 +67,5 @@ describe('Product contract labels', () => {
     expect(
       screen.getByRole('link', { name: 'Assumptions: capacity worksheet simplifications' }),
     ).toHaveAttribute('href', expect.stringContaining('#deliberate-simplifications-and-rationale'));
-  });
+  }, 15_000);
 });

@@ -1,6 +1,6 @@
-# Compute Component Semantics
+# Compute and Networking Component Semantics
 
-**Model version:** 3.0
+**Model version:** 4.0
 **Last reviewed:** August 28, 2026
 
 ## Client traffic
@@ -45,12 +45,28 @@ Telemetry separates throttles from invocation failures. Invocation failures incl
 
 ## Load-balancer routing
 
-A load balancer selects exactly one eligible `request` edge. Targets marked `down` are excluded immediately; degraded and overloaded targets remain eligible until health-check timing and recovery semantics are implemented in task 96.
+A load balancer selects exactly one eligible `request` edge. On first observation, a down target is excluded immediately. Later health changes are observed only at the configured health-check interval. A recovered target remains excluded until it has been continuously observed healthy for the configured recovery delay. Degraded and overloaded targets remain eligible.
 
 - Round robin rotates over the current eligible target list.
 - Least connections chooses the smallest current in-flight count and round-robins ties.
 - Consistent hashing maps the request key through a virtual-node ring.
-- Weighted routing uses smooth weighted round robin. Until task 98 exposes weights in the editor, unspecified targets have equal weight.
+- Weighted routing uses smooth weighted round robin with a positive per-target weight configured in the load-balancer properties. Unspecified targets have weight 1.
 - IP hash applies a stable hash to the originating client node identity, not the request ID or resource key.
 
 Each routed dependency records a connection end time from its modeled edge and downstream duration. Expired connections are pruned at the next arrival, allowing least-connections decisions and load-balancer telemetry to reflect overlapping work rather than lifetime request totals.
+
+When sticky sessions are enabled, the originating client node identity is associated with its selected healthy target. The association is removed when the target leaves the eligible set, allowing the client to be reassigned. Telemetry reports unavailable-target selection failures, currently unhealthy targets, and distribution skew as `(maximum target routes - minimum target routes) / average target routes × 100`. Skew is descriptive: sticky or weighted routing can make a non-zero value intentional.
+
+## API gateway policy
+
+The API gateway uses a token bucket with a one-second burst capacity equal to `rateLimitQps`; requests beyond available tokens fail immediately as `rate_limited`. Authentication adds illustrative local policy overhead before routing: None 0.2 ms, API key 0.5 ms, JWT 2 ms, and OAuth2 4 ms. These values do not model network calls to an identity provider.
+
+`timeoutMs` is an upstream-attempt deadline. When edge plus downstream latency exceeds it, the request returns `timeout`. The compact circuit breaker counts downstream failures and gateway timeouts. It opens after three consecutive failures, fast-fails for 10 simulated seconds, then admits one half-open probe. A successful probe closes and resets the circuit; a failed probe reopens it. Disabling the breaker leaves the state closed without disabling rate limiting or timeouts.
+
+Gateway telemetry keeps throttles, timeouts, and open-circuit rejections separate and exposes the current closed/open/half-open state.
+
+## CDN edge caching
+
+The CDN is a cache-aside edge tier. Request keys are namespaced to a deterministic edge location selected from the originating client identity and `edgeLocationsCount`. `cacheTtlSec` controls expiry; `hitRatioPercent` remains the seeded cache-hit target applied to otherwise warm entries. Each configured edge contributes a simplified 100 MB logical cache budget, with 1 KB illustrative entries and 8 ms edge-read latency.
+
+On a miss, the CDN forwards to an origin fallback; for compatibility, a request edge is treated as the origin route when no explicit fallback edge exists. A successful origin response populates the selected edge after the origin completes. With origin shielding enabled, simultaneous misses for the same resource across different edge locations coalesce behind one shared in-flight shield fetch. Without shielding, each edge can fetch independently.
