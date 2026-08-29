@@ -2,12 +2,13 @@ import { inferEdgePurpose, validateEdgePurpose } from './edge-semantics';
 import { EdgeProtocol, SerializedCanvasState } from './types';
 import { createDefaultConfig } from './component-defaults';
 
-export const CURRENT_CANVAS_VERSION = 7 as const;
+export const CURRENT_CANVAS_VERSION = 8 as const;
 
 const MESSAGING_TYPES = new Set(['message_queue', 'task_queue', 'pubsub', 'event_bus']);
 const COMPUTE_TYPES = new Set(['app_server', 'worker', 'serverless']);
-const NETWORK_COMPLETION_TYPES = new Set([
+const COMPLETED_MODEL_TYPES = new Set([
   'load_balancer', 'api_gateway', 'cdn', 'dns', 'firewall', 'reverse_proxy', 'sql_db',
+  'nosql_db', 'object_storage', 'search_index', 'graph_db', 'timeseries_db',
 ]);
 
 /**
@@ -20,7 +21,7 @@ export function migrateCanvasState(input: SerializedCanvasState): SerializedCanv
     if (
       !MESSAGING_TYPES.has(config.type) &&
       !COMPUTE_TYPES.has(config.type) &&
-      !NETWORK_COMPLETION_TYPES.has(config.type) &&
+      !COMPLETED_MODEL_TYPES.has(config.type) &&
       config.type !== 'client'
     ) return node;
     return {

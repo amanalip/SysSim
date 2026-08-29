@@ -29,6 +29,13 @@ import { LoadBalancerHealthModel } from './components/load-balancer-health-model
 import { ApiGatewayModel } from './components/api-gateway-model';
 import { DnsModel } from './components/dns-model';
 import { ReverseProxyModel } from './components/reverse-proxy-model';
+import {
+  GraphDatabaseModel,
+  NoSqlDatabaseModel,
+  ObjectStorageModel,
+  SearchIndexModel,
+  TimeSeriesDatabaseModel,
+} from './components/storage-models';
 
 export interface SimNode {
   id: string;
@@ -115,6 +122,11 @@ export class SysSimEngine {
   private rateLimiters: Map<string, RateLimiterModel> = new Map();
   private queueModels: Map<string, MessagingModel> = new Map();
   private dbModels: Map<string, DatabaseModel> = new Map();
+  private noSqlModels: Map<string, NoSqlDatabaseModel> = new Map();
+  private objectStorageModels: Map<string, ObjectStorageModel> = new Map();
+  private searchIndexModels: Map<string, SearchIndexModel> = new Map();
+  private graphDbModels: Map<string, GraphDatabaseModel> = new Map();
+  private timeSeriesDbModels: Map<string, TimeSeriesDatabaseModel> = new Map();
   private appServerModels: Map<string, AppServerModel> = new Map();
   private workerModels: Map<string, WorkerModel> = new Map();
   private serverlessModels: Map<string, ServerlessModel> = new Map();
@@ -142,6 +154,11 @@ export class SysSimEngine {
     this.rateLimiters.clear();
     this.queueModels.clear();
     this.dbModels.clear();
+    this.noSqlModels.clear();
+    this.objectStorageModels.clear();
+    this.searchIndexModels.clear();
+    this.graphDbModels.clear();
+    this.timeSeriesDbModels.clear();
     this.appServerModels.clear();
     this.workerModels.clear();
     this.serverlessModels.clear();
@@ -298,17 +315,34 @@ export class SysSimEngine {
         );
       } else if (this.isMessagingNode(n)) {
         this.queueModels.set(n.id, this.createMessagingModel(n));
-      } else if (n.config.type === 'sql_db' || n.config.type === 'nosql_db') {
-        const replicas = (n.config as any).readReplicasCount || 0;
+      } else if (n.config.type === 'sql_db') {
         this.dbModels.set(
           n.id,
           new DatabaseModel(
-            n.config.baseLatencyMs || 20,
-            (n.config as any).maxConnections || 500,
-            replicas,
+            n.config.baseLatencyMs,
+            n.config.maxConnections,
+            n.config.readReplicasCount,
             () => this.random(),
+            {
+              isolationLevel: n.config.isolationLevel,
+              connectionQueueLimit: n.config.connectionQueueLimit,
+              replicationLagMs: n.config.replicationLagMs,
+              automaticFailover: n.config.automaticFailover,
+              failoverLatencyMs: n.config.failoverLatencyMs,
+              shardCount: n.config.shardCount,
+            },
           )
         );
+      } else if (n.config.type === 'nosql_db') {
+        this.noSqlModels.set(n.id, new NoSqlDatabaseModel(n.config));
+      } else if (n.config.type === 'object_storage') {
+        this.objectStorageModels.set(n.id, new ObjectStorageModel(n.config));
+      } else if (n.config.type === 'search_index') {
+        this.searchIndexModels.set(n.id, new SearchIndexModel(n.config));
+      } else if (n.config.type === 'graph_db') {
+        this.graphDbModels.set(n.id, new GraphDatabaseModel(n.config));
+      } else if (n.config.type === 'timeseries_db') {
+        this.timeSeriesDbModels.set(n.id, new TimeSeriesDatabaseModel(n.config));
       }
     });
   }
@@ -359,6 +393,11 @@ export class SysSimEngine {
     this.rateLimiters.forEach((rl) => rl.reset());
     this.queueModels.forEach((q) => q.reset());
     this.dbModels.forEach((db) => db.reset());
+    this.noSqlModels.forEach((db) => db.reset());
+    this.objectStorageModels.forEach((storage) => storage.reset());
+    this.searchIndexModels.forEach((search) => search.reset());
+    this.graphDbModels.forEach((db) => db.reset());
+    this.timeSeriesDbModels.forEach((db) => db.reset());
     this.appServerModels.forEach((server) => server.reset());
     this.workerModels.forEach((worker) => worker.reset());
     this.serverlessModels.forEach((serverless) => serverless.reset());
@@ -996,14 +1035,58 @@ export class SysSimEngine {
     } else if (config.type === 'worker') {
       hopLatency = this.workerModels.get(node.id)?.getProcessingLatencyMs() ?? config.processingLatencyMs;
       hopInfo = `${config.replicas} replica${config.replicas === 1 ? '' : 's'} × ${config.concurrencyLimit} concurrent; retry limit ${config.retryLimit}`;
-    } else if (config.type === 'sql_db' || config.type === 'nosql_db') {
+    } else if (config.type === 'sql_db') {
       const dbModel = this.dbModels.get(node.id);
       const isWrite = this.currentRequestOperation === 'write';
-      const query = dbModel?.executeQuery(isWrite);
-      hopLatency = query?.latencyMs ?? config.baseLatencyMs ?? 20;
+      const query = dbModel?.executeQuery(isWrite, config.shardingKey ? requestKey : 'unsharded', config.health);
+      if (query?.rejected) return failure('dropped', query.latencyMs, 'SQL connection queue full; query rejected');
+      hopLatency = query?.latencyMs ?? config.baseLatencyMs;
       hopInfo = query
-        ? `${isWrite ? 'Write' : 'Read'} routed to ${query.role === 'primary' ? 'primary' : `read replica ${(query.replicaIndex || 0) + 1}`}`
+        ? `${isWrite ? 'Write' : 'Read'} routed to ${query.role === 'primary' ? 'primary' : `read replica ${(query.replicaIndex || 0) + 1}`}` +
+          `${query.connectionWaitMs ? ` after ${query.connectionWaitMs}ms connection wait` : ''}` +
+          `${query.replicationLagMs ? `; up to ${query.replicationLagMs}ms replica lag` : ''}` +
+          `${query.failedOver ? `; automatic failover added ${config.failoverLatencyMs}ms` : ''}` +
+          `${config.shardCount > 1 ? `; shard ${query.shardIndex + 1}/${config.shardCount} by ${config.shardingKey || 'unconfigured key'}` : '; unsharded'}` +
+          `; ${config.isolationLevel}`
         : `${isWrite ? 'Write' : 'Read'} on primary`;
+      stats.queueDepth = dbModel?.getMetrics().queuedConnections || 0;
+    } else if (config.type === 'nosql_db') {
+      const isWrite = this.currentRequestOperation === 'write';
+      const result = this.noSqlModels.get(node.id)?.execute(isWrite, config.partitionKey ? requestKey : 'unpartitioned');
+      hopLatency = result?.latencyMs ?? config.baseLatencyMs;
+      hopInfo = result
+        ? `${isWrite ? 'Write' : 'Read'} partition ${result.partitionIndex + 1}/${config.partitionCount}; R=${result.readQuorum}, W=${result.writeQuorum}, N=${config.replicas}` +
+          `${result.visibleLagMs ? `; visible lag up to ${result.visibleLagMs}ms` : '; synchronous visibility'}` +
+          `; ${config.consistencyLevel}`
+        : `${isWrite ? 'Write' : 'Read'} NoSQL operation`;
+    } else if (config.type === 'object_storage') {
+      const result = this.objectStorageModels.get(node.id)?.execute(this.currentRequestPayloadKb);
+      hopLatency = result?.latencyMs ?? config.latencyMs;
+      hopInfo = result
+        ? `${config.storageClass}: ${Math.round(result.requestLatencyMs * 10) / 10}ms request + ${Math.round(result.transferLatencyMs * 10) / 10}ms transfer for ${this.currentRequestPayloadKb} KB at ${config.throughputMbPerSec} MB/s`
+        : `${config.storageClass} object request`;
+    } else if (config.type === 'search_index') {
+      const isWrite = this.currentRequestOperation === 'write';
+      const result = this.searchIndexModels.get(node.id)?.execute(isWrite, requestKey);
+      hopLatency = result?.latencyMs ?? (isWrite ? config.indexingLatencyMs : config.queryLatencyMs);
+      hopInfo = result
+        ? `${result.operation === 'index' ? 'Index write' : 'Search query'} on shard ${result.shardIndex + 1}/${config.shards}; ${config.replicas} replica${config.replicas === 1 ? '' : 's'}`
+        : isWrite ? 'Index write' : 'Search query';
+    } else if (config.type === 'graph_db') {
+      const result = this.graphDbModels.get(node.id)?.execute(this.currentRequestArrivalMs);
+      if (result && !result.accepted) return failure('dropped', result.latencyMs, `Graph query capacity exceeded (${result.effectiveCapacityQps}/s at depth ${result.actualDepth})`);
+      hopLatency = result?.latencyMs ?? config.queryLatencyMs;
+      hopInfo = result
+        ? `Traversal depth ${result.actualDepth}/${config.traversalDepthLimit}${result.limited ? ` (requested ${result.requestedDepth}; clamped)` : ''}; latency grows depth^1.35`
+        : 'Graph traversal';
+    } else if (config.type === 'timeseries_db') {
+      const isWrite = this.currentRequestOperation === 'write';
+      const result = this.timeSeriesDbModels.get(node.id)?.execute(isWrite, this.currentRequestArrivalMs);
+      if (result && !result.accepted) return failure('dropped', result.latencyMs, `Time-series write throughput exceeded (${config.writeThroughputPerSec}/s)`);
+      hopLatency = result?.latencyMs ?? config.queryLatencyMs;
+      hopInfo = isWrite
+        ? `Write admitted within ${config.writeThroughputPerSec}/s limit; ${config.retentionDays}-day retention`
+        : `Query over ${config.retentionDays}-day retention; scan factor ${Math.round((result?.retentionScanFactor || 1) * 100) / 100}×`;
     } else if (
       config.type === 'cdn' ||
       config.type === 'redis_cache' ||
@@ -1669,6 +1752,11 @@ export class SysSimEngine {
       const dnsMetrics = this.dnsModels.get(n.id)?.getMetrics();
       const proxyMetrics = this.reverseProxyModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
       const dbMetrics = this.dbModels.get(n.id)?.getMetrics();
+      const noSqlMetrics = this.noSqlModels.get(n.id)?.getMetrics();
+      const objectStorageMetrics = this.objectStorageModels.get(n.id)?.getMetrics();
+      const searchMetrics = this.searchIndexModels.get(n.id)?.getMetrics();
+      const graphDbMetrics = this.graphDbModels.get(n.id)?.getMetrics();
+      const timeSeriesDbMetrics = this.timeSeriesDbModels.get(n.id)?.getMetrics();
       const cdnMetrics = this.cdnOriginMetrics.get(n.id);
       const wafMetrics = this.wafMetrics.get(n.id);
       const loadBalancerActiveConnections = n.config.type === 'load_balancer'
@@ -1699,8 +1787,8 @@ export class SysSimEngine {
         avgLatencyMs: Math.round(nodeAvgLat * 10) / 10,
         p95LatencyMs: Math.round(nodeP95 * 10) / 10,
         errorRatePercent: Math.round(nodeErrorRate * 10) / 10,
-        activeConnections: appMetrics?.activeConnections ?? workerMetrics?.busyWorkers ?? serverlessMetrics?.activeInvocations ?? proxyMetrics?.activeConnections ?? loadBalancerActiveConnections ?? (this.activeConnections[n.id] || 0),
-        queueDepth: appMetrics?.queuedRequests ?? workerMetrics?.queuedWork ?? serverlessMetrics?.queuedInvocations ?? stats.queueDepth,
+        activeConnections: appMetrics?.activeConnections ?? workerMetrics?.busyWorkers ?? serverlessMetrics?.activeInvocations ?? proxyMetrics?.activeConnections ?? loadBalancerActiveConnections ?? (n.config.type === 'sql_db' ? this.dbModels.get(n.id)?.getActiveConnections() : undefined) ?? (this.activeConnections[n.id] || 0),
+        queueDepth: appMetrics?.queuedRequests ?? workerMetrics?.queuedWork ?? serverlessMetrics?.queuedInvocations ?? dbMetrics?.queuedConnections ?? stats.queueDepth,
         cacheHitRatioPercent: Math.round(nodeCacheRatio * 10) / 10,
         utilizationPercent: appMetrics?.cpuUtilizationPercent ?? workerMetrics?.utilizationPercent ?? serverlessMetrics?.utilizationPercent ?? Math.min(100, Math.round((nodeQps / ratedMaxQps) * 100)),
         totalRequests: stats.totalRequests,
@@ -1754,6 +1842,32 @@ export class SysSimEngine {
         sqlWrites: n.config.type === 'sql_db' ? dbMetrics?.writes : undefined,
         sqlPrimaryQueries: n.config.type === 'sql_db' ? dbMetrics?.primaryQueries : undefined,
         sqlReplicaQueries: n.config.type === 'sql_db' ? dbMetrics?.replicaQueries : undefined,
+        sqlConnectionWaits: n.config.type === 'sql_db' ? dbMetrics?.connectionWaits : undefined,
+        sqlConnectionRejections: n.config.type === 'sql_db' ? dbMetrics?.connectionRejections : undefined,
+        sqlConnectionWaitMs: n.config.type === 'sql_db' ? Math.round((dbMetrics?.connectionWaitMs || 0) * 10) / 10 : undefined,
+        sqlReplicationLagMs: n.config.type === 'sql_db' ? dbMetrics?.replicationLagMs : undefined,
+        sqlFailovers: n.config.type === 'sql_db' ? dbMetrics?.failovers : undefined,
+        sqlHotPartitionPercent: n.config.type === 'sql_db' ? Math.round((dbMetrics?.hotPartitionPercent || 0) * 10) / 10 : undefined,
+        nosqlReads: noSqlMetrics?.reads,
+        nosqlWrites: noSqlMetrics?.writes,
+        nosqlReadQuorum: noSqlMetrics?.readQuorum,
+        nosqlWriteQuorum: noSqlMetrics?.writeQuorum,
+        nosqlReplicationLagMs: noSqlMetrics?.replicationLagMs,
+        nosqlHotPartitionPercent: noSqlMetrics ? Math.round(noSqlMetrics.hotPartitionPercent * 10) / 10 : undefined,
+        objectStorageRequestLatencyMs: objectStorageMetrics ? Math.round(objectStorageMetrics.requestLatencyMs * 10) / 10 : undefined,
+        objectStorageTransferLatencyMs: objectStorageMetrics ? Math.round(objectStorageMetrics.transferLatencyMs * 10) / 10 : undefined,
+        objectStorageTransferredKb: objectStorageMetrics?.transferredKb,
+        searchQueries: searchMetrics?.queries,
+        searchIndexWrites: searchMetrics?.indexWrites,
+        searchShardImbalancePercent: searchMetrics ? Math.round(searchMetrics.shardImbalancePercent * 10) / 10 : undefined,
+        graphTraversalDepth: graphDbMetrics ? Math.round(graphDbMetrics.averageDepth * 10) / 10 : undefined,
+        graphDepthLimitedQueries: graphDbMetrics?.depthLimitedQueries,
+        graphEffectiveCapacityQps: graphDbMetrics?.effectiveCapacityQps,
+        graphCapacityRejectedQueries: graphDbMetrics?.capacityRejectedQueries,
+        timeSeriesAcceptedWrites: timeSeriesDbMetrics?.acceptedWrites,
+        timeSeriesRejectedWrites: timeSeriesDbMetrics?.rejectedWrites,
+        timeSeriesQueries: timeSeriesDbMetrics?.queries,
+        timeSeriesRetentionDays: timeSeriesDbMetrics?.retentionDays,
       };
 
       if (stats.totalRequests > maxNodeReqs) {

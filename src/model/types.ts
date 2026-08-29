@@ -187,8 +187,13 @@ export interface SqlDbConfig extends BaseComponentConfig {
   readReplicasCount: number;
   baseLatencyMs: number;
   maxConnections: number;
+  connectionQueueLimit: number;
   shardingKey?: string;
+  shardCount: number;
   isolationLevel: 'Read Committed' | 'Repeatable Read' | 'Serializable';
+  replicationLagMs: number;
+  automaticFailover: boolean;
+  failoverLatencyMs: number;
 }
 
 export interface NoSqlDbConfig extends BaseComponentConfig {
@@ -196,6 +201,7 @@ export interface NoSqlDbConfig extends BaseComponentConfig {
   partitionKey: string;
   consistencyLevel: 'eventual' | 'strong' | 'session' | 'bounded_staleness';
   replicas: number;
+  partitionCount: number;
   baseLatencyMs: number;
   replicationLagMs: number;
 }
@@ -219,6 +225,7 @@ export interface GraphDbConfig extends BaseComponentConfig {
   type: 'graph_db';
   queryLatencyMs: number;
   traversalDepthLimit: number;
+  traversalDepth: number;
 }
 
 export interface TimeSeriesDbConfig extends BaseComponentConfig {
@@ -509,6 +516,32 @@ export interface ComponentMetricSnapshot {
   sqlWrites?: number;
   sqlPrimaryQueries?: number;
   sqlReplicaQueries?: number;
+  sqlConnectionWaits?: number;
+  sqlConnectionRejections?: number;
+  sqlConnectionWaitMs?: number;
+  sqlReplicationLagMs?: number;
+  sqlFailovers?: number;
+  sqlHotPartitionPercent?: number;
+  nosqlReads?: number;
+  nosqlWrites?: number;
+  nosqlReadQuorum?: number;
+  nosqlWriteQuorum?: number;
+  nosqlReplicationLagMs?: number;
+  nosqlHotPartitionPercent?: number;
+  objectStorageRequestLatencyMs?: number;
+  objectStorageTransferLatencyMs?: number;
+  objectStorageTransferredKb?: number;
+  searchQueries?: number;
+  searchIndexWrites?: number;
+  searchShardImbalancePercent?: number;
+  graphTraversalDepth?: number;
+  graphDepthLimitedQueries?: number;
+  graphEffectiveCapacityQps?: number;
+  graphCapacityRejectedQueries?: number;
+  timeSeriesAcceptedWrites?: number;
+  timeSeriesRejectedWrites?: number;
+  timeSeriesQueries?: number;
+  timeSeriesRetentionDays?: number;
 }
 
 export interface TimeSeriesDataPoint {
@@ -605,7 +638,7 @@ export interface ScenarioConstraints {
 }
 
 export interface SerializedCanvasState {
-  version?: 2 | 3 | 4 | 5 | 6 | 7;
+  version?: 2 | 3 | 4 | 5 | 6 | 7 | 8;
   nodes: Array<{
     id: string;
     type: string;

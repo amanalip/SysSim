@@ -29,7 +29,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
       id: 'db_crash',
       name: 'Primary Database Outage',
       category: 'Storage Resilience',
-      description: 'Marks one database node down. Automatic read-replica failover is not currently modeled.',
+      description: 'Marks one database node down. Failover between separately drawn database nodes is not modeled; SQL internal failover applies only to degraded nodes.',
       icon: <Database size={16} color="var(--error)" />,
       execute: () => {
         const db = nodes.find((n) => n.data.config.type === 'sql_db' || n.data.config.type === 'nosql_db');

@@ -1,6 +1,6 @@
 # Edge Semantics
 
-**Model version:** 1.3
+**Model version:** 1.4
 **Last reviewed:** August 29, 2026
 
 This document defines how the simulation engine interprets directed edges. It is normative for the engine, editor, and version-2 saved canvas format.
@@ -58,7 +58,7 @@ The parent trace includes the first async target hop because it represents enque
 
 ### Replication
 
-Replication traffic is detached from the user request. Replica processing and failures affect replica component metrics, but replication nodes are omitted from the end-user request path and latency. Replication lag, quorum, durability, and failover are not modeled yet.
+Replication-edge traffic is detached from the user request. Replica processing and failures affect replica component metrics, but replication nodes are omitted from the end-user request path and latency. Component-internal SQL and NoSQL models expose their documented virtual-replica lag, quorum, and simplified SQL failover assumptions; those values do not schedule traffic over replication edges. Replication-edge durability, backlog, and repair are not modeled yet.
 
 ### Cycles and hop TTL
 

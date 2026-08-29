@@ -617,6 +617,144 @@ export const PropertiesPanel: React.FC = () => {
             </div>
           )}
 
+          {config.type === 'sql_db' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Isolation Level</label>
+                <select className={styles.select} value={config.isolationLevel}
+                  onChange={(event) => updateNodeConfig(config.id, { isolationLevel: event.target.value as typeof config.isolationLevel })}>
+                  <option value="Read Committed">Read Committed</option>
+                  <option value="Repeatable Read">Repeatable Read</option>
+                  <option value="Serializable">Serializable</option>
+                </select>
+                <p className={styles.fieldHint}>Stronger isolation increases latency and reduces effective concurrent capacity.</p>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Connection Queue Limit</label>
+                <input type="number" min="0" className={styles.input} value={config.connectionQueueLimit}
+                  onChange={(event) => updateNodeConfig(config.id, { connectionQueueLimit: Math.max(0, parseInt(event.target.value, 10) || 0) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Shard Count</label>
+                <input type="number" min="1" className={styles.input} value={config.shardCount}
+                  onChange={(event) => updateNodeConfig(config.id, { shardCount: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Sharding Key</label>
+                <input type="text" className={styles.input} value={config.shardingKey || ''} placeholder="Disabled when blank"
+                  onChange={(event) => updateNodeConfig(config.id, { shardingKey: event.target.value })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Replication Lag (ms)</label>
+                <input type="number" min="0" className={styles.input} value={config.replicationLagMs}
+                  onChange={(event) => updateNodeConfig(config.id, { replicationLagMs: Math.max(0, Number(event.target.value) || 0) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <button type="button" className={`${styles.actionBtn} ${config.automaticFailover ? styles.coalescingActive : ''}`}
+                  aria-pressed={config.automaticFailover}
+                  onClick={() => updateNodeConfig(config.id, { automaticFailover: !config.automaticFailover })}>
+                  Automatic failover {config.automaticFailover ? 'ON' : 'OFF'}
+                </button>
+              </div>
+              {config.automaticFailover ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Failover Latency (ms)</label>
+                  <input type="number" min="0" className={styles.input} value={config.failoverLatencyMs}
+                    onChange={(event) => updateNodeConfig(config.id, { failoverLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
+                </div>
+              ) : null}
+            </>
+          )}
+
+          {config.type === 'nosql_db' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Partition Key</label>
+                <input type="text" className={styles.input} value={config.partitionKey}
+                  onChange={(event) => updateNodeConfig(config.id, { partitionKey: event.target.value })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Partition Count</label>
+                <input type="number" min="1" className={styles.input} value={config.partitionCount}
+                  onChange={(event) => updateNodeConfig(config.id, { partitionCount: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Replication Lag (ms)</label>
+                <input type="number" min="0" className={styles.input} value={config.replicationLagMs}
+                  onChange={(event) => updateNodeConfig(config.id, { replicationLagMs: Math.max(0, Number(event.target.value) || 0) })} />
+                <p className={styles.fieldHint}>Quorums are derived from consistency: strong/bounded use majority reads; non-eventual writes use majority.</p>
+              </div>
+            </>
+          )}
+
+          {config.type === 'object_storage' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Storage Class</label>
+                <select className={styles.select} value={config.storageClass}
+                  onChange={(event) => updateNodeConfig(config.id, { storageClass: event.target.value as typeof config.storageClass })}>
+                  <option value="Standard">Standard</option>
+                  <option value="Infrequent">Infrequent Access</option>
+                  <option value="Glacier">Glacier</option>
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Bulk Throughput (MB/s)</label>
+                <input type="number" min="0.1" step="0.1" className={styles.input} value={config.throughputMbPerSec}
+                  onChange={(event) => updateNodeConfig(config.id, { throughputMbPerSec: Math.max(0.1, Number(event.target.value) || 0.1) })} />
+                <p className={styles.fieldHint}>Total time separates request overhead from payload transfer time.</p>
+              </div>
+            </>
+          )}
+
+          {config.type === 'search_index' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Primary Shards</label>
+                <input type="number" min="1" className={styles.input} value={config.shards}
+                  onChange={(event) => updateNodeConfig(config.id, { shards: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Indexing Latency (ms)</label>
+                <input type="number" min="0" className={styles.input} value={config.indexingLatencyMs}
+                  onChange={(event) => updateNodeConfig(config.id, { indexingLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
+                <p className={styles.fieldHint}>Writes use indexing latency; reads use query latency and fan out across shards.</p>
+              </div>
+            </>
+          )}
+
+          {config.type === 'graph_db' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Traversal Depth</label>
+                <input type="number" min="1" className={styles.input} value={config.traversalDepth}
+                  onChange={(event) => updateNodeConfig(config.id, { traversalDepth: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Traversal Depth Limit</label>
+                <input type="number" min="1" className={styles.input} value={config.traversalDepthLimit}
+                  onChange={(event) => updateNodeConfig(config.id, { traversalDepthLimit: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+                <p className={styles.fieldHint}>Traversal latency grows with depth^1.35; requests above the limit are clamped.</p>
+              </div>
+            </>
+          )}
+
+          {config.type === 'timeseries_db' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Write Throughput (/s)</label>
+                <input type="number" min="0" className={styles.input} value={config.writeThroughputPerSec}
+                  onChange={(event) => updateNodeConfig(config.id, { writeThroughputPerSec: Math.max(0, parseInt(event.target.value, 10) || 0) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Retention (days)</label>
+                <input type="number" min="1" className={styles.input} value={config.retentionDays}
+                  onChange={(event) => updateNodeConfig(config.id, { retentionDays: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+                <p className={styles.fieldHint}>Longer retained windows increase query scan latency; downsampling is not modeled yet.</p>
+              </div>
+            </>
+          )}
+
           {/* Auth Service Token Type & TTL */}
           {config.type === 'auth_service' && (
             <>

@@ -14,7 +14,7 @@ describe('User-facing product claims', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Marks one database node down. Automatic read-replica failover is not currently modeled.',
+        'Marks one database node down. Failover between separately drawn database nodes is not modeled; SQL internal failover applies only to degraded nodes.',
       ),
     ).toBeInTheDocument();
     expect(
@@ -51,7 +51,7 @@ describe('User-facing product claims', () => {
 
     expect(blueprintCopy).toContain('Load Balancer + 2 App Server nodes + Redis Cache');
     expect(blueprintCopy).toContain(
-      'replication traffic is independent, lag/failover are not modeled',
+      "replication-edge traffic is independent of each SQL node's virtual lag/failover model",
     );
     expect(blueprintCopy).toContain('consumers drain independently');
     expect(blueprintCopy).not.toContain('3 App Server Replicas');

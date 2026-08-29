@@ -1,6 +1,6 @@
-# Compute and Networking Component Semantics
+# Compute, Networking, and Storage Component Semantics
 
-**Model version:** 5.0
+**Model version:** 6.0
 **Last reviewed:** August 29, 2026
 
 ## Client traffic
@@ -96,6 +96,39 @@ The proxy keeps connection reservations through downstream completion and reject
 
 When buffering is enabled, `bufferSizeKb` absorbs that much compressed payload; excess bytes incur backpressure at `upstreamBandwidthMbps`. Without buffering, the complete forwarded payload is subject to that bandwidth delay. The formula is `overflow KB / (Mbps × 125 KB/s)`. Configured `cacheRules` are retained and labeled as diagram-only because SysSim has no safe, documented rule grammar to execute.
 
-## SQL read routing
+## SQL database
 
 Client `operationType` and, for mixed workloads, seeded `readPercentage` determine whether a SQL request is a read or write. Reads round-robin across the configured virtual `readReplicasCount` when at least one exists. Writes always use the primary in the current single-primary model. Metrics separately report reads, writes, primary queries, and read-replica queries. Read replicas reduce the illustrative read-contention factor; they are virtual capacity inside the database node and do not create independent graph targets.
+
+The connection pool admits up to `maxConnections`, adjusted to 80% for Repeatable Read and 60% for Serializable to represent stronger coordination. Additional queries wait in a bounded `connectionQueueLimit`; once both pool and queue are full, arrivals are rejected as `dropped`. Wait count, cumulative wait time, queue depth, and rejection count are distinct metrics. Isolation also multiplies service latency by 1.0, 1.15, or 1.4 for Read Committed, Repeatable Read, or Serializable respectively. These are teaching constants, not engine-specific benchmarks.
+
+Eligible replica reads expose up to configured `replicationLagMs`; primary reads and all writes expose zero replica lag. When the node is degraded and automatic failover is enabled, the first subsequent query promotes one standby, adds `failoverLatencyMs`, and records one failover. The promoted standby becomes the single current primary; this is not multi-primary execution. A down database still fails through common health handling.
+
+Sharding is enabled only when `shardCount` exceeds one and `shardingKey` is non-empty. The stable request key is hashed to one virtual shard. A blank sharding key intentionally sends work to one unsharded partition. Hot-partition telemetry reports how far the busiest shard's traffic share exceeds a perfectly uniform share.
+
+## NoSQL database
+
+The configured `partitionKey` maps the stable request key to one of `partitionCount` virtual partitions; a blank key intentionally creates one hot unpartitioned route. `replicas` is the replication factor N. Quorum assumptions are explicit:
+
+- eventual consistency uses R=1 and W=1 and exposes the full configured replication lag;
+- session consistency uses R=1 and majority W and exposes one quarter of configured lag;
+- bounded staleness uses majority R/W and exposes half the configured lag;
+- strong consistency uses majority R/W and synchronous visibility (zero visible lag).
+
+Latency rises with the selected consistency level and the number of replica acknowledgements. Metrics separate reads/writes, R/W quorum, configured visible-lag ceiling, and hot-partition imbalance. The model does not simulate hinted handoff, repair, vector clocks, or provider-specific consistency protocols.
+
+## Object storage
+
+An object request is split into request overhead and bulk-transfer time. Request overhead is `latencyMs` multiplied by storage-class factor: Standard 1.0, Infrequent Access 1.5, and Glacier 20. Transfer time is `payload KB / 1024 / throughputMbPerSec × 1000 ms`. Request and response use the request's configured payload as one teaching-size input; direction-specific payloads are not modeled yet. Telemetry reports average request overhead, average transfer time, and total transferred KB separately.
+
+## Search index
+
+Stable request keys hash to one of `shards` primary shards. Reads are search queries and use `queryLatencyMs`, with an illustrative log2 shard-fanout cost reduced by the square root of available copies. Writes are indexing operations and use `indexingLatencyMs` plus 12% coordination cost per replica. Query and indexing counts remain separate. Shard imbalance uses the same excess-over-uniform metric as database hot partitions.
+
+## Graph database
+
+`traversalDepth` is the requested depth and `traversalDepthLimit` is a hard cap. Actual depth is their minimum. Query latency is `queryLatencyMs × actualDepth^1.35`, representing super-linear traversal expansion without pretending to model a real graph's degree distribution. Effective capacity is `maxThroughputQps / actualDepth^1.35`; excess queries in a simulated-second bucket are rejected. Telemetry reports average actual depth, effective capacity, capacity rejections, and the number of queries clamped by the limit.
+
+## Time-series database
+
+Writes use a per-simulated-second admission bucket capped by `writeThroughputPerSec`; excess writes are rejected as `dropped`. An admitted write costs 25% of configured query latency as an illustrative append cost. Reads use `queryLatencyMs × max(1, sqrt(retentionDays / 30))`, making the retained scan window explicit. Metrics separate accepted writes, rejected writes, queries, and configured retention. Downsampling and cold-tier behavior remain intentionally unsupported until task 141.

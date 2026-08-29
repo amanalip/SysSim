@@ -85,7 +85,7 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
     id: 'ha_database_cluster',
     name: 'Database Replica Topology',
     category: 'Storage',
-    description: 'Primary + 2 replica nodes; replication traffic is independent, lag/failover are not modeled',
+    description: 'Primary + 2 replica nodes; replication-edge traffic is independent of each SQL node\'s virtual lag/failover model',
     icon: 'Database',
     create: (baseX, baseY) => {
       const ts = Date.now();

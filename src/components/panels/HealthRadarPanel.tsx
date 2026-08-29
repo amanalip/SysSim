@@ -197,7 +197,7 @@ export const HealthRadarPanel: React.FC = () => {
         summary: `Redundancy signals inferred from graph structure.`,
         suggestions: !hasMultipleDbs
           ? ['Add separately routable database nodes and define a failover strategy.']
-          : ['Multiple database nodes are present; automatic failover is not modeled.'],
+          : ['Multiple database nodes are present; failover between separately drawn nodes is not modeled.'],
       },
     ];
   }, [nodes, edges, metrics, bottlenecks]);

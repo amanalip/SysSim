@@ -481,7 +481,17 @@ export const MetricsDashboard: React.FC = () => {
                                             : c.nodeType === 'reverse_proxy'
                                               ? `reject ${c.reverseProxyRejectedConnections || 0} · saved ${c.reverseProxyCompressedKbSaved || 0}KB · backpressure ${c.reverseProxyBackpressureMs || 0}ms`
                                               : c.nodeType === 'sql_db'
-                                                ? `read/write ${c.sqlReads || 0}/${c.sqlWrites || 0} · primary/replica ${c.sqlPrimaryQueries || 0}/${c.sqlReplicaQueries || 0}`
+                                                ? `read/write ${c.sqlReads || 0}/${c.sqlWrites || 0} · primary/replica ${c.sqlPrimaryQueries || 0}/${c.sqlReplicaQueries || 0} · wait/reject ${c.sqlConnectionWaits || 0}/${c.sqlConnectionRejections || 0} · lag ${c.sqlReplicationLagMs || 0}ms · failover ${c.sqlFailovers || 0} · hot +${c.sqlHotPartitionPercent || 0}%`
+                                                : c.nodeType === 'nosql_db'
+                                                  ? `read/write ${c.nosqlReads || 0}/${c.nosqlWrites || 0} · quorum R${c.nosqlReadQuorum || 0}/W${c.nosqlWriteQuorum || 0} · lag ${c.nosqlReplicationLagMs || 0}ms · hot +${c.nosqlHotPartitionPercent || 0}%`
+                                                  : c.nodeType === 'object_storage'
+                                                    ? `request/transfer ${c.objectStorageRequestLatencyMs || 0}/${c.objectStorageTransferLatencyMs || 0}ms · ${Math.round(c.objectStorageTransferredKb || 0)}KB`
+                                                    : c.nodeType === 'search_index'
+                                                      ? `query/index ${c.searchQueries || 0}/${c.searchIndexWrites || 0} · imbalance +${c.searchShardImbalancePercent || 0}%`
+                                                      : c.nodeType === 'graph_db'
+                                                        ? `depth ${c.graphTraversalDepth || 0} · capacity ${c.graphEffectiveCapacityQps || 0}/s · limited/rejected ${c.graphDepthLimitedQueries || 0}/${c.graphCapacityRejectedQueries || 0}`
+                                                        : c.nodeType === 'timeseries_db'
+                                                          ? `writes accepted/rejected ${c.timeSeriesAcceptedWrites || 0}/${c.timeSeriesRejectedWrites || 0} · queries ${c.timeSeriesQueries || 0} · retention ${c.timeSeriesRetentionDays || 0}d`
                                   : '—'}
                           </td>
                         </tr>

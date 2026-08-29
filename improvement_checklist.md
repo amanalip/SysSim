@@ -238,41 +238,41 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 - [x] 119. Separate reads and writes using the configured workload ratio.
 - [x] 120. Route eligible reads to read replicas.
-- [ ] 121. Keep writes on the primary unless a documented multi-primary model is selected.
-- [ ] 122. Enforce maximum connections with measurable wait and rejection behavior.
-- [ ] 123. Model isolation-level latency/throughput tradeoffs.
-- [ ] 124. Model replication lag and failover assumptions.
-- [ ] 125. Define sharding-key behavior and hot partitions if sharding is enabled.
+- [x] 121. Keep writes on the primary unless a documented multi-primary model is selected.
+- [x] 122. Enforce maximum connections with measurable wait and rejection behavior.
+- [x] 123. Model isolation-level latency/throughput tradeoffs.
+- [x] 124. Model replication lag and failover assumptions.
+- [x] 125. Define sharding-key behavior and hot partitions if sharding is enabled.
 
 ### NoSQL database
 
-- [ ] 126. Apply partition key and consistency-level behavior.
-- [ ] 127. Model replica count and replication lag.
-- [ ] 128. Define read/write quorum assumptions.
-- [ ] 129. Detect hot partitions using the request-key distribution.
+- [x] 126. Apply partition key and consistency-level behavior.
+- [x] 127. Model replica count and replication lag.
+- [x] 128. Define read/write quorum assumptions.
+- [x] 129. Detect hot partitions using the request-key distribution.
 
 ### Object storage
 
-- [ ] 130. Apply latency, throughput, and storage-class configuration.
-- [ ] 131. Separate request latency from bulk-transfer time.
-- [ ] 132. Model request/response payload size.
+- [x] 130. Apply latency, throughput, and storage-class configuration.
+- [x] 131. Separate request latency from bulk-transfer time.
+- [x] 132. Model request/response payload size.
 
 ### Search index
 
-- [ ] 133. Apply shard and replica counts.
-- [ ] 134. Separate indexing from query workload.
-- [ ] 135. Use indexing and query latency configurations.
-- [ ] 136. Detect shard imbalance where applicable.
+- [x] 133. Apply shard and replica counts.
+- [x] 134. Separate indexing from query workload.
+- [x] 135. Use indexing and query latency configurations.
+- [x] 136. Detect shard imbalance where applicable.
 
 ### Graph database
 
-- [ ] 137. Apply query latency and traversal-depth limits.
-- [ ] 138. Define how traversal depth affects latency and capacity.
+- [x] 137. Apply query latency and traversal-depth limits.
+- [x] 138. Define how traversal depth affects latency and capacity.
 
 ### Time-series database
 
-- [ ] 139. Enforce write throughput.
-- [ ] 140. Apply query latency and retention assumptions.
+- [x] 139. Enforce write throughput.
+- [x] 140. Apply query latency and retention assumptions.
 - [ ] 141. Model downsampling or cold-tier behavior only if explicitly supported.
 
 ### Rate limiter
