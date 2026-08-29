@@ -36,6 +36,7 @@ import {
   SearchIndexModel,
   TimeSeriesDatabaseModel,
 } from './components/storage-models';
+import { AuthServiceModel, EncryptionServiceModel } from './components/security-service-models';
 
 export interface SimNode {
   id: string;
@@ -120,6 +121,8 @@ export class SysSimEngine {
   private lbRouters: Map<string, LoadBalancerRouter> = new Map();
   private cacheModels: Map<string, CacheModel> = new Map();
   private rateLimiters: Map<string, RateLimiterModel> = new Map();
+  private authServiceModels: Map<string, AuthServiceModel> = new Map();
+  private encryptionServiceModels: Map<string, EncryptionServiceModel> = new Map();
   private queueModels: Map<string, MessagingModel> = new Map();
   private dbModels: Map<string, DatabaseModel> = new Map();
   private noSqlModels: Map<string, NoSqlDatabaseModel> = new Map();
@@ -152,6 +155,8 @@ export class SysSimEngine {
     this.graph = graph;
     this.cacheModels.clear();
     this.rateLimiters.clear();
+    this.authServiceModels.clear();
+    this.encryptionServiceModels.clear();
     this.queueModels.clear();
     this.dbModels.clear();
     this.noSqlModels.clear();
@@ -310,9 +315,15 @@ export class SysSimEngine {
           new RateLimiterModel(
             n.config.algorithm || 'token_bucket',
             n.config.limitQps || 1000,
-            n.config.windowSizeSec || 1
+            n.config.windowSizeSec || 1,
+            n.config.burstCapacity,
+            n.config.decisionLatencyMs,
           )
         );
+      } else if (n.config.type === 'auth_service') {
+        this.authServiceModels.set(n.id, new AuthServiceModel(n.config, () => this.random()));
+      } else if (n.config.type === 'encryption_service') {
+        this.encryptionServiceModels.set(n.id, new EncryptionServiceModel(n.config));
       } else if (this.isMessagingNode(n)) {
         this.queueModels.set(n.id, this.createMessagingModel(n));
       } else if (n.config.type === 'sql_db') {
@@ -391,6 +402,8 @@ export class SysSimEngine {
     this.activeConnections = {};
     this.loadBalancerConnectionEnds.clear();
     this.rateLimiters.forEach((rl) => rl.reset());
+    this.authServiceModels.forEach((auth) => auth.reset());
+    this.encryptionServiceModels.forEach((encryption) => encryption.reset());
     this.queueModels.forEach((q) => q.reset());
     this.dbModels.forEach((db) => db.reset());
     this.noSqlModels.forEach((db) => db.reset());
@@ -1086,7 +1099,8 @@ export class SysSimEngine {
       hopLatency = result?.latencyMs ?? config.queryLatencyMs;
       hopInfo = isWrite
         ? `Write admitted within ${config.writeThroughputPerSec}/s limit; ${config.retentionDays}-day retention`
-        : `Query over ${config.retentionDays}-day retention; scan factor ${Math.round((result?.retentionScanFactor || 1) * 100) / 100}×`;
+        : `Query over ${config.retentionDays}-day retention; scan factor ${Math.round((result?.retentionScanFactor || 1) * 100) / 100}×` +
+          `${result?.coldTier ? `; cold tier after ${config.coldTierAfterDays}d adds ${Math.round(result.coldTierFactor * 100) / 100}×` : '; hot tier only'}`;
     } else if (
       config.type === 'cdn' ||
       config.type === 'redis_cache' ||
@@ -1120,8 +1134,12 @@ export class SysSimEngine {
         stats.misses++;
       }
     } else if (config.type === 'rate_limiter') {
-      const allowed = this.rateLimiters.get(node.id)?.allowRequest(this.elapsedSimulationMs) ?? true;
-      if (!allowed) return failure('rate_limited', 1, 'Request rejected by rate limiter');
+      const decision = this.rateLimiters.get(node.id)?.evaluateRequest(this.currentRequestArrivalMs);
+      if (decision && !decision.allowed) {
+        return failure('rate_limited', decision.latencyMs, `Request rejected by ${config.algorithm.replaceAll('_', ' ')} after ${config.decisionLatencyMs}ms decision processing`);
+      }
+      hopLatency = decision?.latencyMs ?? config.decisionLatencyMs;
+      hopInfo = `${config.algorithm.replaceAll('_', ' ')} admitted request${decision?.queued ? ` after ${Math.round((decision.latencyMs - config.decisionLatencyMs) * 10) / 10}ms smoothing queue` : ''}; burst/window capacity ${config.burstCapacity}`;
     } else if (config.type === 'api_gateway') {
       const admission = this.apiGatewayModels.get(node.id)?.begin(this.currentRequestArrivalMs);
       if (admission && !admission.allowed) {
@@ -1189,9 +1207,13 @@ export class SysSimEngine {
         ? `Producer acknowledged; partition ${enqueue.partition}; ${enqueue.deliveryCopies} delivery copy${enqueue.deliveryCopies === 1 ? '' : 'ies'} queued`
         : 'Producer acknowledged';
     } else if (config.type === 'auth_service') {
-      hopLatency = Math.max(1, config.validationLatencyMs || 4);
+      const validation = this.authServiceModels.get(node.id)?.validate();
+      hopLatency = validation?.latencyMs ?? config.validationLatencyMs;
+      hopInfo = `${config.tokenType} validation${config.tokenType === 'Session' && config.sessionCacheEnabled ? validation?.cached ? '; session cache hit' : '; session cache miss' : ''}; ${config.ttlMinutes}m TTL is diagram-only (token age is not modeled)`;
     } else if (config.type === 'encryption_service') {
-      hopLatency = Math.max(1, config.overheadLatencyMs || 3);
+      const encryption = this.encryptionServiceModels.get(node.id)?.process(this.currentRequestPayloadKb);
+      hopLatency = encryption?.latencyMs ?? config.overheadLatencyMs;
+      hopInfo = `${config.algorithm} illustrative processing for ${this.currentRequestPayloadKb} KB; ${config.keyRotationDays}d key rotation is diagram-only`;
     } else if (config.type === 'serverless') {
       const invocation = this.serverlessModels.get(node.id)?.invoke(this.currentRequestArrivalMs);
       if (invocation) {
@@ -1757,6 +1779,9 @@ export class SysSimEngine {
       const searchMetrics = this.searchIndexModels.get(n.id)?.getMetrics();
       const graphDbMetrics = this.graphDbModels.get(n.id)?.getMetrics();
       const timeSeriesDbMetrics = this.timeSeriesDbModels.get(n.id)?.getMetrics();
+      const rateLimiterMetrics = this.rateLimiters.get(n.id)?.getMetrics();
+      const authMetrics = this.authServiceModels.get(n.id)?.getMetrics();
+      const encryptionMetrics = this.encryptionServiceModels.get(n.id)?.getMetrics();
       const cdnMetrics = this.cdnOriginMetrics.get(n.id);
       const wafMetrics = this.wafMetrics.get(n.id);
       const loadBalancerActiveConnections = n.config.type === 'load_balancer'
@@ -1868,6 +1893,18 @@ export class SysSimEngine {
         timeSeriesRejectedWrites: timeSeriesDbMetrics?.rejectedWrites,
         timeSeriesQueries: timeSeriesDbMetrics?.queries,
         timeSeriesRetentionDays: timeSeriesDbMetrics?.retentionDays,
+        timeSeriesColdTierQueries: timeSeriesDbMetrics?.coldTierQueries,
+        timeSeriesColdTierLatencyFactor: timeSeriesDbMetrics ? Math.round(timeSeriesDbMetrics.coldTierLatencyFactor * 100) / 100 : undefined,
+        rateLimiterAccepted: rateLimiterMetrics?.accepted,
+        rateLimiterRejected: rateLimiterMetrics?.rejected,
+        rateLimiterQueued: rateLimiterMetrics?.queued,
+        rateLimiterDecisionLatencyMs: rateLimiterMetrics ? Math.round(rateLimiterMetrics.averageDecisionLatencyMs * 10) / 10 : undefined,
+        authCacheHits: authMetrics?.cacheHits,
+        authCacheMisses: authMetrics?.cacheMisses,
+        authValidationLatencyMs: authMetrics ? Math.round(authMetrics.averageValidationLatencyMs * 10) / 10 : undefined,
+        encryptionOperations: encryptionMetrics?.operations,
+        encryptionLatencyMs: encryptionMetrics ? Math.round(encryptionMetrics.averageLatencyMs * 10) / 10 : undefined,
+        encryptedPayloadKb: encryptionMetrics?.payloadKb,
       };
 
       if (stats.totalRequests > maxNodeReqs) {

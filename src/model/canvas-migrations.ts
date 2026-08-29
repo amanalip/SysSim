@@ -2,13 +2,14 @@ import { inferEdgePurpose, validateEdgePurpose } from './edge-semantics';
 import { EdgeProtocol, SerializedCanvasState } from './types';
 import { createDefaultConfig } from './component-defaults';
 
-export const CURRENT_CANVAS_VERSION = 8 as const;
+export const CURRENT_CANVAS_VERSION = 9 as const;
 
 const MESSAGING_TYPES = new Set(['message_queue', 'task_queue', 'pubsub', 'event_bus']);
 const COMPUTE_TYPES = new Set(['app_server', 'worker', 'serverless']);
 const COMPLETED_MODEL_TYPES = new Set([
   'load_balancer', 'api_gateway', 'cdn', 'dns', 'firewall', 'reverse_proxy', 'sql_db',
   'nosql_db', 'object_storage', 'search_index', 'graph_db', 'timeseries_db',
+  'rate_limiter', 'auth_service', 'encryption_service',
 ]);
 
 /**

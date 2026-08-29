@@ -491,7 +491,13 @@ export const MetricsDashboard: React.FC = () => {
                                                       : c.nodeType === 'graph_db'
                                                         ? `depth ${c.graphTraversalDepth || 0} · capacity ${c.graphEffectiveCapacityQps || 0}/s · limited/rejected ${c.graphDepthLimitedQueries || 0}/${c.graphCapacityRejectedQueries || 0}`
                                                         : c.nodeType === 'timeseries_db'
-                                                          ? `writes accepted/rejected ${c.timeSeriesAcceptedWrites || 0}/${c.timeSeriesRejectedWrites || 0} · queries ${c.timeSeriesQueries || 0} · retention ${c.timeSeriesRetentionDays || 0}d`
+                                                          ? `writes accepted/rejected ${c.timeSeriesAcceptedWrites || 0}/${c.timeSeriesRejectedWrites || 0} · queries ${c.timeSeriesQueries || 0} · retention ${c.timeSeriesRetentionDays || 0}d · cold ${c.timeSeriesColdTierQueries || 0} (${c.timeSeriesColdTierLatencyFactor || 1}×)`
+                                                          : c.nodeType === 'rate_limiter'
+                                                            ? `accepted/rejected ${c.rateLimiterAccepted || 0}/${c.rateLimiterRejected || 0} · queued ${c.rateLimiterQueued || 0} · decision ${c.rateLimiterDecisionLatencyMs || 0}ms`
+                                                            : c.nodeType === 'auth_service'
+                                                              ? `session cache hit/miss ${c.authCacheHits || 0}/${c.authCacheMisses || 0} · validation ${c.authValidationLatencyMs || 0}ms`
+                                                              : c.nodeType === 'encryption_service'
+                                                                ? `operations ${c.encryptionOperations || 0} · latency ${c.encryptionLatencyMs || 0}ms · payload ${Math.round(c.encryptedPayloadKb || 0)}KB`
                                   : '—'}
                           </td>
                         </tr>

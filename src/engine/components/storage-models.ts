@@ -188,6 +188,8 @@ export class TimeSeriesDatabaseModel {
   private acceptedWrites = 0;
   private rejectedWrites = 0;
   private queries = 0;
+  private coldTierQueries = 0;
+  private coldTierLatencyFactorTotal = 0;
 
   constructor(private config: TimeSeriesDbConfig) {}
 
@@ -195,21 +197,43 @@ export class TimeSeriesDatabaseModel {
     if (!isWrite) {
       this.queries++;
       const retentionScanFactor = Math.max(1, Math.sqrt(Math.max(1, this.config.retentionDays) / 30));
-      return { accepted: true, latencyMs: this.config.queryLatencyMs * retentionScanFactor, retentionScanFactor };
+      const coldDays = this.config.coldTierEnabled
+        ? Math.max(0, this.config.retentionDays - Math.max(1, this.config.coldTierAfterDays))
+        : 0;
+      const coldFraction = coldDays / Math.max(1, this.config.retentionDays);
+      const coldTierFactor = 1 + coldFraction * (Math.max(1, this.config.coldTierLatencyMultiplier) - 1);
+      if (coldDays > 0) {
+        this.coldTierQueries++;
+        this.coldTierLatencyFactorTotal += coldTierFactor;
+      }
+      return {
+        accepted: true,
+        latencyMs: this.config.queryLatencyMs * retentionScanFactor * coldTierFactor,
+        retentionScanFactor,
+        coldTierFactor,
+        coldTier: coldDays > 0,
+      };
     }
     const nextBucket = Math.floor(elapsedMs / 1000);
     if (nextBucket !== this.bucket) { this.bucket = nextBucket; this.bucketWrites = 0; }
     if (this.bucketWrites >= Math.max(0, this.config.writeThroughputPerSec)) {
       this.rejectedWrites++;
-      return { accepted: false, latencyMs: 1, retentionScanFactor: 1 };
+      return { accepted: false, latencyMs: 1, retentionScanFactor: 1, coldTierFactor: 1, coldTier: false };
     }
     this.bucketWrites++;
     this.acceptedWrites++;
-    return { accepted: true, latencyMs: Math.max(1, this.config.queryLatencyMs * 0.25), retentionScanFactor: 1 };
+    return { accepted: true, latencyMs: Math.max(1, this.config.queryLatencyMs * 0.25), retentionScanFactor: 1, coldTierFactor: 1, coldTier: false };
   }
 
   public getMetrics() {
-    return { acceptedWrites: this.acceptedWrites, rejectedWrites: this.rejectedWrites, queries: this.queries, retentionDays: this.config.retentionDays };
+    return {
+      acceptedWrites: this.acceptedWrites,
+      rejectedWrites: this.rejectedWrites,
+      queries: this.queries,
+      retentionDays: this.config.retentionDays,
+      coldTierQueries: this.coldTierQueries,
+      coldTierLatencyFactor: this.coldTierQueries ? this.coldTierLatencyFactorTotal / this.coldTierQueries : 1,
+    };
   }
-  public reset() { this.bucket = -1; this.bucketWrites = 0; this.acceptedWrites = 0; this.rejectedWrites = 0; this.queries = 0; }
+  public reset() { this.bucket = -1; this.bucketWrites = 0; this.acceptedWrites = 0; this.rejectedWrites = 0; this.queries = 0; this.coldTierQueries = 0; this.coldTierLatencyFactorTotal = 0; }
 }

@@ -273,25 +273,25 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 - [x] 139. Enforce write throughput.
 - [x] 140. Apply query latency and retention assumptions.
-- [ ] 141. Model downsampling or cold-tier behavior only if explicitly supported.
+- [x] 141. Model downsampling or cold-tier behavior only if explicitly supported.
 
 ### Rate limiter
 
-- [ ] 142. Distinguish token bucket from leaky bucket instead of sharing one implementation.
-- [ ] 143. Distinguish fixed window from sliding window.
-- [ ] 144. Test window boundaries and burst capacity deterministically.
-- [ ] 145. Decide whether rejected requests contribute processing latency.
+- [x] 142. Distinguish token bucket from leaky bucket instead of sharing one implementation.
+- [x] 143. Distinguish fixed window from sliding window.
+- [x] 144. Test window boundaries and burst capacity deterministically.
+- [x] 145. Decide whether rejected requests contribute processing latency.
 
 ### Authentication service
 
-- [ ] 146. Apply validation latency and token type assumptions.
-- [ ] 147. Model token/session cache behavior if exposed.
-- [ ] 148. Define expiry/TTL effects or mark them diagram-only.
+- [x] 146. Apply validation latency and token type assumptions.
+- [x] 147. Model token/session cache behavior if exposed.
+- [x] 148. Define expiry/TTL effects or mark them diagram-only.
 
 ### Encryption/KMS service
 
-- [ ] 149. Apply algorithm-specific overhead only where justified.
-- [ ] 150. Define key-rotation effects or mark the setting diagram-only.
+- [x] 149. Apply algorithm-specific overhead only where justified.
+- [x] 150. Define key-rotation effects or mark the setting diagram-only.
 - [ ] 151. Avoid implying cryptographic security validation from latency simulation.
 
 ## Fix health-state semantics — P0

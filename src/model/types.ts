@@ -233,6 +233,9 @@ export interface TimeSeriesDbConfig extends BaseComponentConfig {
   writeThroughputPerSec: number;
   retentionDays: number;
   queryLatencyMs: number;
+  coldTierEnabled: boolean;
+  coldTierAfterDays: number;
+  coldTierLatencyMultiplier: number;
 }
 
 export interface RedisCacheConfig extends BaseComponentConfig {
@@ -345,6 +348,8 @@ export interface RateLimiterConfig extends BaseComponentConfig {
   algorithm: RateLimiterAlgorithm;
   limitQps: number;
   windowSizeSec: number;
+  burstCapacity: number;
+  decisionLatencyMs: number;
 }
 
 export interface AuthServiceConfig extends BaseComponentConfig {
@@ -352,6 +357,9 @@ export interface AuthServiceConfig extends BaseComponentConfig {
   tokenType: 'JWT' | 'Session' | 'Paseto';
   ttlMinutes: number;
   validationLatencyMs: number;
+  sessionCacheEnabled: boolean;
+  sessionCacheHitRatePercent: number;
+  sessionCacheLatencyMs: number;
 }
 
 export interface EncryptionServiceConfig extends BaseComponentConfig {
@@ -542,6 +550,18 @@ export interface ComponentMetricSnapshot {
   timeSeriesRejectedWrites?: number;
   timeSeriesQueries?: number;
   timeSeriesRetentionDays?: number;
+  timeSeriesColdTierQueries?: number;
+  timeSeriesColdTierLatencyFactor?: number;
+  rateLimiterAccepted?: number;
+  rateLimiterRejected?: number;
+  rateLimiterQueued?: number;
+  rateLimiterDecisionLatencyMs?: number;
+  authCacheHits?: number;
+  authCacheMisses?: number;
+  authValidationLatencyMs?: number;
+  encryptionOperations?: number;
+  encryptionLatencyMs?: number;
+  encryptedPayloadKb?: number;
 }
 
 export interface TimeSeriesDataPoint {
@@ -638,7 +658,7 @@ export interface ScenarioConstraints {
 }
 
 export interface SerializedCanvasState {
-  version?: 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  version?: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
   nodes: Array<{
     id: string;
     type: string;

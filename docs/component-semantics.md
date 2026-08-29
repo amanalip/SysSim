@@ -1,6 +1,6 @@
-# Compute, Networking, and Storage Component Semantics
+# Component Semantics
 
-**Model version:** 6.0
+**Model version:** 7.0
 **Last reviewed:** August 29, 2026
 
 ## Client traffic
@@ -131,4 +131,29 @@ Stable request keys hash to one of `shards` primary shards. Reads are search que
 
 ## Time-series database
 
-Writes use a per-simulated-second admission bucket capped by `writeThroughputPerSec`; excess writes are rejected as `dropped`. An admitted write costs 25% of configured query latency as an illustrative append cost. Reads use `queryLatencyMs × max(1, sqrt(retentionDays / 30))`, making the retained scan window explicit. Metrics separate accepted writes, rejected writes, queries, and configured retention. Downsampling and cold-tier behavior remain intentionally unsupported until task 141.
+Writes use a per-simulated-second admission bucket capped by `writeThroughputPerSec`; excess writes are rejected as `dropped`. An admitted write costs 25% of configured query latency as an illustrative append cost. Reads use `queryLatencyMs × max(1, sqrt(retentionDays / 30))`, making the retained scan window explicit.
+
+Cold-tier behavior applies only when `coldTierEnabled` is on and retention exceeds `coldTierAfterDays`. A full-retention query is assumed to scan both tiers. The cold fraction is `(retentionDays - coldTierAfterDays) / retentionDays`, and its weighted latency factor is `1 + coldFraction × (coldTierLatencyMultiplier - 1)`. Metrics separate accepted writes, rejected writes, queries, retention, cold-tier queries, and their average factor. Downsampling remains unsupported and is not inferred from retention.
+
+## Rate limiter
+
+All decisions include configured `decisionLatencyMs`, including rejections. Algorithms are intentionally distinct:
+
+- token bucket starts with `burstCapacity` tokens, refills continuously at `limitQps`, and rejects when fewer than one token remains;
+- leaky bucket accepts into a queue of `burstCapacity`, drains continuously at `limitQps`, adds queue delay to admitted requests, and rejects when the queue is full;
+- fixed window permits `floor(limitQps × windowSizeSec)` requests in each wall-aligned simulated window and resets exactly at the boundary;
+- sliding window retains exact request timestamps for the trailing `windowSizeSec` and admits below the same calculated capacity.
+
+This makes the fixed-window boundary burst and sliding-window trailing interval observable and deterministic. Telemetry reports accepted, rejected, smoothing-queued, and average decision latency separately.
+
+## Authentication service
+
+`validationLatencyMs` is the JWT baseline. Paseto uses 1.15× that baseline and an uncached opaque Session uses 1.5×, as explicit teaching constants rather than library benchmarks. If the Session cache is enabled, seeded `sessionCacheHitRatePercent` selects hits at `sessionCacheLatencyMs`; misses use the uncached Session cost. Cache hits, misses, and average validation latency are reported.
+
+`ttlMinutes` is diagram-only. Requests do not carry token issue time or age, so the simulator does not pretend to expire tokens. Trace text and the Properties panel label that limitation.
+
+## Encryption and KMS
+
+`overheadLatencyMs` is an illustrative AES-256-GCM baseline. ChaCha20-Poly1305 uses 0.8× baseline plus 0.0015 ms/KB, AES uses 1.0× plus 0.002 ms/KB, and RSA-4096 uses 6× plus 0.02 ms/KB. The broad distinction is justified only as symmetric processing versus substantially heavier asymmetric-envelope work; constants are teaching assumptions, not cryptographic benchmarks or security evaluation.
+
+`keyRotationDays` is diagram-only because there is no scheduled rotation-event workload. The model reports operation count, average modeled latency, and processed payload KB; rotation does not silently add traffic or latency.

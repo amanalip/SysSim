@@ -430,6 +430,24 @@ export const PropertiesPanel: React.FC = () => {
                   }
                 />
               </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Window Size (seconds)</label>
+                <input type="number" min="0.001" step="0.1" className={styles.input} value={config.windowSizeSec}
+                  onChange={(event) => updateNodeConfig(config.id, { windowSizeSec: Math.max(0.001, Number(event.target.value) || 0.001) })} />
+              </div>
+              {config.algorithm === 'token_bucket' || config.algorithm === 'leaky_bucket' ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>{config.algorithm === 'leaky_bucket' ? 'Queue Capacity' : 'Burst Capacity'}</label>
+                  <input type="number" min="0" className={styles.input} value={config.burstCapacity}
+                    onChange={(event) => updateNodeConfig(config.id, { burstCapacity: Math.max(0, parseInt(event.target.value, 10) || 0) })} />
+                </div>
+              ) : null}
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Decision Latency (ms)</label>
+                <input type="number" min="0" step="0.1" className={styles.input} value={config.decisionLatencyMs}
+                  onChange={(event) => updateNodeConfig(config.id, { decisionLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
+                <p className={styles.fieldHint}>Accepted and rejected requests both include policy-decision processing latency.</p>
+              </div>
             </>
           )}
 
@@ -752,6 +770,27 @@ export const PropertiesPanel: React.FC = () => {
                   onChange={(event) => updateNodeConfig(config.id, { retentionDays: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
                 <p className={styles.fieldHint}>Longer retained windows increase query scan latency; downsampling is not modeled yet.</p>
               </div>
+              <div className={styles.fieldGroup}>
+                <button type="button" className={`${styles.actionBtn} ${config.coldTierEnabled ? styles.coalescingActive : ''}`}
+                  aria-pressed={config.coldTierEnabled}
+                  onClick={() => updateNodeConfig(config.id, { coldTierEnabled: !config.coldTierEnabled })}>
+                  Cold tier {config.coldTierEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+              {config.coldTierEnabled ? (
+                <>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Cold Tier After (days)</label>
+                    <input type="number" min="1" className={styles.input} value={config.coldTierAfterDays}
+                      onChange={(event) => updateNodeConfig(config.id, { coldTierAfterDays: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+                  </div>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Cold Tier Latency Multiplier</label>
+                    <input type="number" min="1" step="0.1" className={styles.input} value={config.coldTierLatencyMultiplier}
+                      onChange={(event) => updateNodeConfig(config.id, { coldTierLatencyMultiplier: Math.max(1, Number(event.target.value) || 1) })} />
+                  </div>
+                </>
+              ) : null}
             </>
           )}
 
@@ -776,6 +815,12 @@ export const PropertiesPanel: React.FC = () => {
               </div>
 
               <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Validation Latency (ms)</label>
+                <input type="number" min="0" step="0.1" className={styles.input} value={config.validationLatencyMs}
+                  onChange={(event) => updateNodeConfig(config.id, { validationLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
+              </div>
+
+              <div className={styles.fieldGroup}>
                 <div className={styles.fieldLabel}>
                   <span>Token TTL (Minutes)</span>
                   <span className={styles.fieldValueBadge}>{config.ttlMinutes}m</span>
@@ -790,7 +835,33 @@ export const PropertiesPanel: React.FC = () => {
                     })
                   }
                 />
+                <p className={styles.fieldHint}>TTL is retained as diagram metadata; request token age and expiry are not modeled.</p>
               </div>
+              {config.tokenType === 'Session' ? (
+                <>
+                  <div className={styles.fieldGroup}>
+                    <button type="button" className={`${styles.actionBtn} ${config.sessionCacheEnabled ? styles.coalescingActive : ''}`}
+                      aria-pressed={config.sessionCacheEnabled}
+                      onClick={() => updateNodeConfig(config.id, { sessionCacheEnabled: !config.sessionCacheEnabled })}>
+                      Session cache {config.sessionCacheEnabled ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                  {config.sessionCacheEnabled ? (
+                    <>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Session Cache Hit Rate (%)</label>
+                        <input type="number" min="0" max="100" className={styles.input} value={config.sessionCacheHitRatePercent}
+                          onChange={(event) => updateNodeConfig(config.id, { sessionCacheHitRatePercent: Math.min(100, Math.max(0, Number(event.target.value) || 0)) })} />
+                      </div>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Session Cache Latency (ms)</label>
+                        <input type="number" min="0" step="0.1" className={styles.input} value={config.sessionCacheLatencyMs}
+                          onChange={(event) => updateNodeConfig(config.id, { sessionCacheLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
+                      </div>
+                    </>
+                  ) : null}
+                </>
+              ) : null}
             </>
           )}
 
@@ -815,6 +886,12 @@ export const PropertiesPanel: React.FC = () => {
               </div>
 
               <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>AES Baseline Overhead (ms)</label>
+                <input type="number" min="0" step="0.1" className={styles.input} value={config.overheadLatencyMs}
+                  onChange={(event) => updateNodeConfig(config.id, { overheadLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
+              </div>
+
+              <div className={styles.fieldGroup}>
                 <div className={styles.fieldLabel}>
                   <span>Key Rotation (Days)</span>
                   <span className={styles.fieldValueBadge}>{config.keyRotationDays}d</span>
@@ -829,6 +906,7 @@ export const PropertiesPanel: React.FC = () => {
                     })
                   }
                 />
+                <p className={styles.fieldHint}>Rotation is diagram metadata; no scheduled rotation event or security guarantee is simulated.</p>
               </div>
             </>
           )}
