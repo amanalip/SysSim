@@ -1,7 +1,7 @@
 # Compute and Networking Component Semantics
 
-**Model version:** 4.0
-**Last reviewed:** August 28, 2026
+**Model version:** 5.0
+**Last reviewed:** August 29, 2026
 
 ## Client traffic
 
@@ -67,6 +67,35 @@ Gateway telemetry keeps throttles, timeouts, and open-circuit rejections separat
 
 ## CDN edge caching
 
-The CDN is a cache-aside edge tier. Request keys are namespaced to a deterministic edge location selected from the originating client identity and `edgeLocationsCount`. `cacheTtlSec` controls expiry; `hitRatioPercent` remains the seeded cache-hit target applied to otherwise warm entries. Each configured edge contributes a simplified 100 MB logical cache budget, with 1 KB illustrative entries and 8 ms edge-read latency.
+The CDN is a cache-aside edge tier. Request keys are namespaced to a deterministic edge location selected from the originating client identity and `edgeLocationsCount`. `cacheTtlSec` controls expiry; `hitRatioPercent` remains the seeded cache-hit target applied to otherwise warm entries. Each configured edge contributes a simplified 100 MB logical cache budget with 1 KB illustrative entries; read latency follows the geographic teaching curve below.
 
 On a miss, the CDN forwards to an origin fallback; for compatibility, a request edge is treated as the origin route when no explicit fallback edge exists. A successful origin response populates the selected edge after the origin completes. With origin shielding enabled, simultaneous misses for the same resource across different edge locations coalesce behind one shared in-flight shield fetch. Without shielding, each edge can fetch independently.
+
+Edge geography is an explicit teaching curve rather than a world map: nearest-edge latency is `max(5, 80 / sqrt(edgeLocationsCount))` milliseconds. Origin shielding adds 10 ms to a miss before origin routing. A hit ends at the edge; a miss includes edge, optional shield, origin-edge, and origin-service latency. Telemetry reports edge hits as origin-offloaded requests, successful origin fetches, their average edge-plus-origin latency, and origin egress payload in KB as separate values.
+
+## DNS resolution
+
+DNS performs resolution rather than generic multi-target application fanout. It selects exactly one healthy request target and application traversal continues to that address. Results are cached by originating client and request key for `ttlSec`; a cache hit costs 0.2 ms, while a miss costs `lookupLatencyMs`.
+
+- Simple routing selects the first eligible stored address.
+- Weighted routing uses smooth weighted round robin and editable positive target weights.
+- Geolocation uses a stable hash of the originating client as a deterministic region proxy.
+- Latency-based routing selects the eligible address whose configured edge latency is smallest.
+
+The model reports resolution cache hits, misses, and failures. It does not model recursive resolvers, authoritative delegation, negative caching, DNSSEC, or real geographic coordinates.
+
+## Firewall and WAF
+
+A healthy WAF adds configured `inspectionLatencyMs` plus 0.005 ms per rule, capped at 5 ms of rule-scan cost. `blockRatePercent` is a seeded malicious-request classification control. A classified request ends with the distinct `blocked` request status and a rejected hop; it is not counted as an infrastructure fault. Down-node and generic simulated component faults increment the separate WAF infrastructure-failure counter.
+
+The rule cost is illustrative linear scan work, not a vendor benchmark. Rules do not have individual match complexity, ordering, actions, or false-positive semantics.
+
+## Reverse proxy
+
+The proxy keeps connection reservations through downstream completion and rejects arrivals above `maxConnections`. Compression adds 0.02 ms per input KB and reduces the forwarded payload to 60% of its input size. Telemetry accumulates KB saved.
+
+When buffering is enabled, `bufferSizeKb` absorbs that much compressed payload; excess bytes incur backpressure at `upstreamBandwidthMbps`. Without buffering, the complete forwarded payload is subject to that bandwidth delay. The formula is `overflow KB / (Mbps × 125 KB/s)`. Configured `cacheRules` are retained and labeled as diagram-only because SysSim has no safe, documented rule grammar to execute.
+
+## SQL read routing
+
+Client `operationType` and, for mixed workloads, seeded `readPercentage` determine whether a SQL request is a read or write. Reads round-robin across the configured virtual `readReplicasCount` when at least one exists. Writes always use the primary in the current single-primary model. Metrics separately report reads, writes, primary queries, and read-replica queries. Read replicas reduce the illustrative read-contention factor; they are virtual capacity inside the database node and do not create independent graph targets.

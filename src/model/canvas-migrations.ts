@@ -2,11 +2,13 @@ import { inferEdgePurpose, validateEdgePurpose } from './edge-semantics';
 import { EdgeProtocol, SerializedCanvasState } from './types';
 import { createDefaultConfig } from './component-defaults';
 
-export const CURRENT_CANVAS_VERSION = 6 as const;
+export const CURRENT_CANVAS_VERSION = 7 as const;
 
 const MESSAGING_TYPES = new Set(['message_queue', 'task_queue', 'pubsub', 'event_bus']);
 const COMPUTE_TYPES = new Set(['app_server', 'worker', 'serverless']);
-const NETWORK_COMPLETION_TYPES = new Set(['load_balancer', 'api_gateway', 'cdn']);
+const NETWORK_COMPLETION_TYPES = new Set([
+  'load_balancer', 'api_gateway', 'cdn', 'dns', 'firewall', 'reverse_proxy', 'sql_db',
+]);
 
 /**
  * Upgrades saved architectures without mutating caller-owned input. Version 1

@@ -211,33 +211,33 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 ### CDN
 
 - [x] 105. Apply hit ratio, TTL, origin shielding, and edge-location configuration.
-- [ ] 106. Model cache-hit versus origin-fetch latency.
-- [ ] 107. Define geographic latency assumptions.
-- [ ] 108. Report origin offload and egress separately.
+- [x] 106. Model cache-hit versus origin-fetch latency.
+- [x] 107. Define geographic latency assumptions.
+- [x] 108. Report origin offload and egress separately.
 
 ### DNS
 
-- [ ] 109. Model DNS lookup latency and TTL caching.
-- [ ] 110. Define simple, weighted, geolocation, and latency-based routing behavior.
-- [ ] 111. Ensure DNS is not treated as a normal application hop after resolution unless intentionally configured.
+- [x] 109. Model DNS lookup latency and TTL caching.
+- [x] 110. Define simple, weighted, geolocation, and latency-based routing behavior.
+- [x] 111. Ensure DNS is not treated as a normal application hop after resolution unless intentionally configured.
 
 ### Firewall/WAF
 
-- [ ] 112. Apply inspection latency and configured block rate.
-- [ ] 113. Distinguish malicious-request rejection from infrastructure failure.
-- [ ] 114. Model rule-count cost only if supported by documented assumptions.
+- [x] 112. Apply inspection latency and configured block rate.
+- [x] 113. Distinguish malicious-request rejection from infrastructure failure.
+- [x] 114. Model rule-count cost only if supported by documented assumptions.
 
 ### Reverse proxy
 
-- [ ] 115. Enforce maximum connections.
-- [ ] 116. Model compression latency and bandwidth reduction.
-- [ ] 117. Implement documented cache rules or mark them diagram-only.
-- [ ] 118. Model buffering/backpressure where supported.
+- [x] 115. Enforce maximum connections.
+- [x] 116. Model compression latency and bandwidth reduction.
+- [x] 117. Implement documented cache rules or mark them diagram-only.
+- [x] 118. Model buffering/backpressure where supported.
 
 ### SQL database
 
-- [ ] 119. Separate reads and writes using the configured workload ratio.
-- [ ] 120. Route eligible reads to read replicas.
+- [x] 119. Separate reads and writes using the configured workload ratio.
+- [x] 120. Route eligible reads to read replicas.
 - [ ] 121. Keep writes on the primary unless a documented multi-primary model is selected.
 - [ ] 122. Enforce maximum connections with measurable wait and rejection behavior.
 - [ ] 123. Model isolation-level latency/throughput tradeoffs.

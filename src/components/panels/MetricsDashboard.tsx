@@ -472,6 +472,16 @@ export const MetricsDashboard: React.FC = () => {
                                     ? `unhealthy ${c.loadBalancerUnhealthyTargets || 0} · unavailable ${c.loadBalancerUnavailableFailures || 0} · skew ${c.loadBalancerDistributionSkewPercent || 0}%`
                                     : c.nodeType === 'api_gateway'
                                       ? `throttle ${c.apiGatewayThrottles || 0} · timeout ${c.apiGatewayTimeouts || 0} · circuit ${c.apiGatewayCircuitState || 'closed'} (${c.apiGatewayOpenCircuitRejections || 0} rejected)`
+                                      : c.nodeType === 'cdn'
+                                        ? `offload/fetch ${c.cdnOriginOffloadedRequests || 0}/${c.cdnOriginFetches || 0} · origin ${c.cdnOriginFetchLatencyMs || 0}ms · egress ${Math.round(c.cdnOriginEgressKb || 0)}KB`
+                                        : c.nodeType === 'dns'
+                                          ? `DNS hit/miss ${c.dnsCacheHits || 0}/${c.dnsCacheMisses || 0} · fail ${c.dnsResolutionFailures || 0}`
+                                          : c.nodeType === 'firewall'
+                                            ? `blocked ${c.wafBlockedRequests || 0} · infra fail ${c.wafInfrastructureFailures || 0}`
+                                            : c.nodeType === 'reverse_proxy'
+                                              ? `reject ${c.reverseProxyRejectedConnections || 0} · saved ${c.reverseProxyCompressedKbSaved || 0}KB · backpressure ${c.reverseProxyBackpressureMs || 0}ms`
+                                              : c.nodeType === 'sql_db'
+                                                ? `read/write ${c.sqlReads || 0}/${c.sqlWrites || 0} · primary/replica ${c.sqlPrimaryQueries || 0}/${c.sqlReplicaQueries || 0}`
                                   : '—'}
                           </td>
                         </tr>

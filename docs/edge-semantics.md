@@ -1,7 +1,7 @@
 # Edge Semantics
 
-**Model version:** 1.2
-**Last reviewed:** August 28, 2026
+**Model version:** 1.3
+**Last reviewed:** August 29, 2026
 
 This document defines how the simulation engine interprets directed edges. It is normative for the engine, editor, and version-2 saved canvas format.
 
@@ -41,6 +41,8 @@ Cut edges do not participate in any purpose.
 For a generic component with multiple `request` edges, dependencies run in stored edge order. The caller waits for each response, so their edge and service latencies accumulate. This is deliberately not load balancing.
 
 A load balancer is the only current component that selects one of multiple `request` edges. Its configured algorithm owns that selection, uses request keys or originating-client identity where appropriate, and filters targets through interval-based health checks and delayed recovery. Detailed algorithm, stickiness, weight, and connection-lifetime rules are documented in [Compute and Networking Component Semantics](component-semantics.md#load-balancer-routing).
+
+DNS also selects exactly one request edge, but as an address-resolution policy rather than a load-balancing application hop. Cached resolution reuses that address until TTL expiry. Simple, weighted, deterministic geolocation, and configured-edge-latency policies are documented in [Compute and Networking Component Semantics](component-semantics.md#dns-resolution).
 
 ### Fanout
 

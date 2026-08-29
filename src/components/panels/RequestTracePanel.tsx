@@ -6,7 +6,7 @@ import { ComponentIcon } from '../icons/ComponentIcon';
 import { ModelNotice } from '../ui/ModelNotice';
 import styles from './RequestTracePanel.module.css';
 
-const CACHE_TYPES = new Set(['redis_cache', 'local_cache', 'cdn_cache', 'browser_cache']);
+const CACHE_TYPES = new Set(['cdn', 'redis_cache', 'local_cache', 'cdn_cache', 'browser_cache']);
 
 function getCacheStateLabel(hop: RequestHop): string | null {
   if (!CACHE_TYPES.has(hop.nodeType)) return null;
@@ -71,6 +71,7 @@ export const RequestTracePanel: React.FC = () => {
               const isSelected = trace.id === (selectedTrace?.id || traces[0]?.id);
               const isSuccess = trace.status === 'success';
               const isRateLimited = trace.status === 'rate_limited';
+              const isBlocked = trace.status === 'blocked';
 
               return (
                 <div
@@ -84,17 +85,17 @@ export const RequestTracePanel: React.FC = () => {
                       style={{
                         backgroundColor: isSuccess
                           ? 'rgba(63, 185, 80, 0.15)'
-                          : isRateLimited
+                          : isRateLimited || isBlocked
                           ? 'rgba(210, 153, 34, 0.15)'
                           : 'rgba(248, 81, 73, 0.15)',
                         color: isSuccess
                           ? 'var(--success)'
-                          : isRateLimited
+                          : isRateLimited || isBlocked
                           ? 'var(--warning)'
                           : 'var(--error)',
                       }}
                     >
-                      {isSuccess ? '200 OK' : isRateLimited ? '429 Limit' : '500 Error'}
+                      {isSuccess ? '200 OK' : isRateLimited ? '429 Limit' : isBlocked ? '403 Blocked' : '500 Error'}
                     </span>
                     <span className={styles.traceLatency}>
                       {trace.totalLatencyMs.toFixed(1)}ms

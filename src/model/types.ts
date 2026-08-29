@@ -159,7 +159,9 @@ export interface CDNConfig extends BaseComponentConfig {
 export interface DNSConfig extends BaseComponentConfig {
   type: 'dns';
   ttlSec: number;
+  lookupLatencyMs: number;
   routingPolicy: 'simple' | 'weighted' | 'geolocation' | 'latency_based';
+  targetWeights: Record<string, number>;
 }
 
 export interface FirewallConfig extends BaseComponentConfig {
@@ -174,6 +176,9 @@ export interface ReverseProxyConfig extends BaseComponentConfig {
   enableCompression: boolean;
   cacheRules: string;
   maxConnections: number;
+  bufferingEnabled: boolean;
+  bufferSizeKb: number;
+  upstreamBandwidthMbps: number;
 }
 
 export interface SqlDbConfig extends BaseComponentConfig {
@@ -437,7 +442,7 @@ export interface SimRequest {
   currentEdgeProgress?: number; // 0 to 1
   path: RequestHop[];
   totalLatencyMs: number;
-  status: 'in_flight' | 'success' | 'rate_limited' | 'timeout' | 'error' | 'dropped';
+  status: 'in_flight' | 'success' | 'rate_limited' | 'timeout' | 'error' | 'dropped' | 'blocked';
   color: string;
 }
 
@@ -488,6 +493,22 @@ export interface ComponentMetricSnapshot {
   apiGatewayTimeouts?: number;
   apiGatewayOpenCircuitRejections?: number;
   apiGatewayCircuitState?: 'closed' | 'open' | 'half_open';
+  cdnOriginOffloadedRequests?: number;
+  cdnOriginFetches?: number;
+  cdnOriginFetchLatencyMs?: number;
+  cdnOriginEgressKb?: number;
+  dnsCacheHits?: number;
+  dnsCacheMisses?: number;
+  dnsResolutionFailures?: number;
+  wafBlockedRequests?: number;
+  wafInfrastructureFailures?: number;
+  reverseProxyRejectedConnections?: number;
+  reverseProxyCompressedKbSaved?: number;
+  reverseProxyBackpressureMs?: number;
+  sqlReads?: number;
+  sqlWrites?: number;
+  sqlPrimaryQueries?: number;
+  sqlReplicaQueries?: number;
 }
 
 export interface TimeSeriesDataPoint {
@@ -584,7 +605,7 @@ export interface ScenarioConstraints {
 }
 
 export interface SerializedCanvasState {
-  version?: 2 | 3 | 4 | 5 | 6;
+  version?: 2 | 3 | 4 | 5 | 6 | 7;
   nodes: Array<{
     id: string;
     type: string;

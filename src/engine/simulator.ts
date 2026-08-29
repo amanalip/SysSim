@@ -27,6 +27,8 @@ import { WorkerModel } from './components/worker-model';
 import { ServerlessModel } from './components/serverless-model';
 import { LoadBalancerHealthModel } from './components/load-balancer-health-model';
 import { ApiGatewayModel } from './components/api-gateway-model';
+import { DnsModel } from './components/dns-model';
+import { ReverseProxyModel } from './components/reverse-proxy-model';
 
 export interface SimNode {
   id: string;
@@ -118,10 +120,16 @@ export class SysSimEngine {
   private serverlessModels: Map<string, ServerlessModel> = new Map();
   private loadBalancerHealthModels: Map<string, LoadBalancerHealthModel> = new Map();
   private apiGatewayModels: Map<string, ApiGatewayModel> = new Map();
+  private dnsModels: Map<string, DnsModel> = new Map();
+  private reverseProxyModels: Map<string, ReverseProxyModel> = new Map();
   private activeConnections: Record<string, number> = {};
   private loadBalancerConnectionEnds = new Map<string, number[]>();
   private loadBalancerUnhealthyTargets = new Map<string, number>();
   private pendingCacheFills = new Map<string, PendingCacheFill>();
+  private dnsSelections = new Map<string, string>();
+  private reverseProxyReservations = new Map<string, number>();
+  private cdnOriginMetrics = new Map<string, { fetches: number; latencyMs: number; egressKb: number }>();
+  private wafMetrics = new Map<string, { blocked: number; infrastructureFailures: number }>();
 
   constructor(graph?: SimGraph, config?: TrafficConfig) {
     if (graph) this.setGraph(graph);
@@ -141,13 +149,19 @@ export class SysSimEngine {
     this.loadBalancerUnhealthyTargets.clear();
     this.clientSelectionCredits.clear();
     this.pendingCacheFills.clear();
+    this.dnsSelections.clear();
+    this.reverseProxyReservations.clear();
 
     const validNodeIds = new Set(graph.nodes.map((n) => n.id));
     const validLoadBalancerIds = new Set(graph.nodes.filter((n) => n.config.type === 'load_balancer').map((n) => n.id));
     const validGatewayIds = new Set(graph.nodes.filter((n) => n.config.type === 'api_gateway').map((n) => n.id));
+    const validDnsIds = new Set(graph.nodes.filter((n) => n.config.type === 'dns').map((n) => n.id));
+    const validProxyIds = new Set(graph.nodes.filter((n) => n.config.type === 'reverse_proxy').map((n) => n.id));
     for (const id of this.lbRouters.keys()) if (!validLoadBalancerIds.has(id)) this.lbRouters.delete(id);
     for (const id of this.loadBalancerHealthModels.keys()) if (!validLoadBalancerIds.has(id)) this.loadBalancerHealthModels.delete(id);
     for (const id of this.apiGatewayModels.keys()) if (!validGatewayIds.has(id)) this.apiGatewayModels.delete(id);
+    for (const id of this.dnsModels.keys()) if (!validDnsIds.has(id)) this.dnsModels.delete(id);
+    for (const id of this.reverseProxyModels.keys()) if (!validProxyIds.has(id)) this.reverseProxyModels.delete(id);
     for (const id of Object.keys(this.nodeStats)) {
       if (!validNodeIds.has(id)) {
         delete this.nodeStats[id];
@@ -198,6 +212,15 @@ export class SysSimEngine {
         const existingGateway = this.apiGatewayModels.get(n.id);
         if (existingGateway) existingGateway.updateConfig(n.config);
         else this.apiGatewayModels.set(n.id, new ApiGatewayModel(n.config));
+      } else if (n.config.type === 'dns') {
+        const targets = this.graph.edges.filter((edge) => edge.source === n.id && getEdgePurpose(edge.data) === 'request' && !edge.data?.isCut).map((edge) => edge.target);
+        const existingDns = this.dnsModels.get(n.id);
+        if (existingDns) existingDns.update(n.config, targets);
+        else this.dnsModels.set(n.id, new DnsModel(n.config, targets));
+      } else if (n.config.type === 'reverse_proxy') {
+        const existingProxy = this.reverseProxyModels.get(n.id);
+        if (existingProxy) existingProxy.updateConfig(n.config);
+        else this.reverseProxyModels.set(n.id, new ReverseProxyModel(n.config));
       } else if (n.config.type === 'app_server') {
         this.appServerModels.set(n.id, new AppServerModel(
           n.config.replicas,
@@ -246,8 +269,10 @@ export class SysSimEngine {
           ? 2
           : config.type === 'local_cache'
             ? 0.5
-            : config.type === 'cdn' || config.type === 'cdn_cache'
-              ? 8
+            : config.type === 'cdn'
+              ? Math.max(5, 80 / Math.sqrt(Math.max(1, config.edgeLocationsCount)))
+              : config.type === 'cdn_cache'
+                ? 8
               : 0.2;
         this.cacheModels.set(n.id, new CacheModel({
           sizeLimit,
@@ -340,8 +365,14 @@ export class SysSimEngine {
     this.loadBalancerHealthModels.forEach((health) => health.reset());
     this.lbRouters.forEach((router) => router.reset());
     this.apiGatewayModels.forEach((gateway) => gateway.reset());
+    this.dnsModels.forEach((dns) => dns.reset());
+    this.reverseProxyModels.forEach((proxy) => proxy.reset());
     this.cacheModels.forEach((c) => c.reset());
     this.pendingCacheFills.clear();
+    this.dnsSelections.clear();
+    this.reverseProxyReservations.clear();
+    this.cdnOriginMetrics.clear();
+    this.wafMetrics.clear();
     this.graph.nodes.forEach((n) => {
       this.nodeStats[n.id] = {
         totalRequests: 0,
@@ -686,7 +717,9 @@ export class SysSimEngine {
       const selectedRequestEdges =
         node.config.type === 'load_balancer'
           ? this.selectLoadBalancerEdge(node.id, requestKey, sourceNodeId, requestEdges)
-          : requestEdges;
+          : node.config.type === 'dns'
+            ? requestEdges.filter((edge) => edge.target === this.dnsSelections.get(`${requestId}:${node.id}`))
+            : requestEdges;
 
       if (selectedRequestEdges.length === 0) {
         primaryFailure = this.createRoutingFailure(
@@ -713,6 +746,13 @@ export class SysSimEngine {
               edge.target,
               this.currentRequestArrivalMs,
               this.currentRequestArrivalMs + edgeLatency + child.latencyMs,
+            );
+          }
+          if (node.config.type === 'reverse_proxy') {
+            this.reverseProxyModels.get(node.id)?.finish(
+              this.reverseProxyReservations.get(`${requestId}:${node.id}`),
+              this.currentRequestArrivalMs,
+              edgeLatency + child.latencyMs,
             );
           }
           latencyMs += edgeLatency + child.latencyMs;
@@ -804,6 +844,12 @@ export class SysSimEngine {
         usedAsync ||= fallback.usedAsync;
         if (fallback.success) {
           if (cacheNode && nodeResult.cacheMiss) {
+            if (node.config.type === 'cdn') {
+              const cdnMetrics = this.getCdnOriginMetrics(node.id);
+              cdnMetrics.fetches++;
+              cdnMetrics.latencyMs += edgeLatency + fallback.latencyMs;
+              cdnMetrics.egressKb += this.currentRequestPayloadKb;
+            }
             this.scheduleCacheFill(
               node,
               requestKey,
@@ -899,7 +945,7 @@ export class SysSimEngine {
             enterTimeMs: startTimeMs,
             exitTimeMs: startTimeMs + latencyMs,
             latencyMs,
-            status: status === 'rate_limited' ? 'rejected' : 'error',
+            status: status === 'rate_limited' || status === 'blocked' ? 'rejected' : 'error',
             info,
             viaEdgePurpose,
           },
@@ -911,6 +957,7 @@ export class SysSimEngine {
 
     if (config.health === 'down') {
       if (config.type === 'serverless') this.serverlessModels.get(node.id)?.recordInvocationFailure();
+      if (config.type === 'firewall') this.getWafMetrics(node.id).infrastructureFailures++;
       return failure(
         'error',
         1,
@@ -920,6 +967,7 @@ export class SysSimEngine {
 
     if (config.failureRatePercent && this.random() * 100 < config.failureRatePercent) {
       if (config.type === 'serverless') this.serverlessModels.get(node.id)?.recordInvocationFailure();
+      if (config.type === 'firewall') this.getWafMetrics(node.id).infrastructureFailures++;
       return failure('error', 5, 'Simulated component fault');
     }
 
@@ -950,9 +998,12 @@ export class SysSimEngine {
       hopInfo = `${config.replicas} replica${config.replicas === 1 ? '' : 's'} × ${config.concurrencyLimit} concurrent; retry limit ${config.retryLimit}`;
     } else if (config.type === 'sql_db' || config.type === 'nosql_db') {
       const dbModel = this.dbModels.get(node.id);
-      hopLatency = dbModel
-        ? dbModel.executeQuery(this.random() < 0.1).latencyMs
-        : config.baseLatencyMs || 20;
+      const isWrite = this.currentRequestOperation === 'write';
+      const query = dbModel?.executeQuery(isWrite);
+      hopLatency = query?.latencyMs ?? config.baseLatencyMs ?? 20;
+      hopInfo = query
+        ? `${isWrite ? 'Write' : 'Read'} routed to ${query.role === 'primary' ? 'primary' : `read replica ${(query.replicaIndex || 0) + 1}`}`
+        : `${isWrite ? 'Write' : 'Read'} on primary`;
     } else if (
       config.type === 'cdn' ||
       config.type === 'redis_cache' ||
@@ -972,12 +1023,17 @@ export class SysSimEngine {
       if (cacheAccess.hit) {
         hopLatency = cacheAccess.latencyMs;
         hopStatus = 'hit';
-        hopInfo = 'Cache hit — served without origin';
+        hopInfo = config.type === 'cdn'
+          ? `CDN edge hit — ${Math.round(cacheAccess.latencyMs * 10) / 10}ms nearest-edge assumption; origin offloaded`
+          : 'Cache hit — served without origin';
         stats.hits++;
       } else {
-        hopLatency = cacheAccess.latencyMs;
+        const shieldLatencyMs = config.type === 'cdn' && config.originShielding ? 10 : 0;
+        hopLatency = cacheAccess.latencyMs + shieldLatencyMs;
         hopStatus = 'miss';
-        hopInfo = 'Cache miss — forwarding to origin fallback';
+        hopInfo = config.type === 'cdn'
+          ? `CDN edge miss — ${Math.round(cacheAccess.latencyMs * 10) / 10}ms edge${shieldLatencyMs ? ` + ${shieldLatencyMs}ms origin shield` : ''}; fetching origin`
+          : 'Cache miss — forwarding to origin fallback';
         stats.misses++;
       }
     } else if (config.type === 'rate_limiter') {
@@ -996,6 +1052,40 @@ export class SysSimEngine {
       }
       hopLatency = admission?.latencyMs ?? 0;
       hopInfo = `${config.authMode === 'None' ? 'No authentication' : `${config.authMode} authentication`} overhead`;
+    } else if (config.type === 'dns') {
+      const requestEdges = this.graph.edges.filter((edge) => edge.source === node.id && !edge.data?.isCut && getEdgePurpose(edge.data) === 'request');
+      const eligibleEdges = requestEdges.filter((edge) => this.graph.nodes.find((candidate) => candidate.id === edge.target)?.config.health !== 'down');
+      const edgeLatencies = Object.fromEntries(eligibleEdges.map((edge) => [edge.target, this.getEdgeLatency(edge)]));
+      const resolution = this.dnsModels.get(node.id)?.resolve(
+        `${sourceNodeId}:${requestKey}`,
+        sourceNodeId,
+        this.currentRequestArrivalMs,
+        eligibleEdges.map((edge) => edge.target),
+        edgeLatencies,
+      );
+      if (!resolution?.targetId) return failure('error', resolution?.latencyMs ?? config.lookupLatencyMs, 'DNS resolution failed: no eligible address records');
+      this.dnsSelections.set(`${requestId}:${node.id}`, resolution.targetId);
+      hopLatency = resolution.latencyMs;
+      hopInfo = resolution.cached
+        ? `DNS cache hit; resolved to ${resolution.targetId}; application traffic continues directly to the address`
+        : `${config.routingPolicy} DNS lookup; resolved to ${resolution.targetId}; TTL ${config.ttlSec}s`;
+    } else if (config.type === 'firewall') {
+      const ruleLatencyMs = Math.min(5, Math.max(0, config.ruleCount) * 0.005);
+      hopLatency = Math.max(0, config.inspectionLatencyMs) + ruleLatencyMs;
+      if (this.random() * 100 < Math.min(100, Math.max(0, config.blockRatePercent))) {
+        this.getWafMetrics(node.id).blocked++;
+        return failure('blocked', hopLatency, `Malicious request rejected by WAF after ${config.ruleCount} rule checks`);
+      }
+      hopInfo = `WAF allowed request; ${config.inspectionLatencyMs}ms inspection + ${Math.round(ruleLatencyMs * 1000) / 1000}ms documented rule-scan cost`;
+    } else if (config.type === 'reverse_proxy') {
+      const proxy = this.reverseProxyModels.get(node.id)?.begin(this.currentRequestArrivalMs, this.currentRequestPayloadKb);
+      if (proxy && !proxy.accepted) return failure('dropped', proxy.latencyMs, `Reverse proxy connection limit ${config.maxConnections} exhausted`);
+      hopLatency = proxy?.latencyMs ?? 1;
+      if (proxy) {
+        this.reverseProxyReservations.set(`${requestId}:${node.id}`, proxy.reservationId || 0);
+        this.currentRequestPayloadKb = proxy.outputPayloadKb;
+      }
+      hopInfo = `${config.enableCompression ? `Compressed payload to ${Math.round((proxy?.outputPayloadKb || 0) * 10) / 10} KB` : 'Compression disabled'}; ${config.bufferingEnabled ? `${config.bufferSizeKb} KB buffer` : 'streaming without buffer'}${proxy?.backpressureMs ? `; ${Math.round(proxy.backpressureMs * 10) / 10}ms backpressure` : ''}; cache rules are diagram-only`;
     } else if (this.isMessagingNode(node)) {
       const enqueue = this.queueModels.get(node.id)?.enqueue(
         requestId,
@@ -1358,6 +1448,24 @@ export class SysSimEngine {
     return hash >>> 0;
   }
 
+  private getCdnOriginMetrics(nodeId: string) {
+    let metrics = this.cdnOriginMetrics.get(nodeId);
+    if (!metrics) {
+      metrics = { fetches: 0, latencyMs: 0, egressKb: 0 };
+      this.cdnOriginMetrics.set(nodeId, metrics);
+    }
+    return metrics;
+  }
+
+  private getWafMetrics(nodeId: string) {
+    let metrics = this.wafMetrics.get(nodeId);
+    if (!metrics) {
+      metrics = { blocked: 0, infrastructureFailures: 0 };
+      this.wafMetrics.set(nodeId, metrics);
+    }
+    return metrics;
+  }
+
   private scheduleCacheFill(
     node: SimNode,
     requestKey: string,
@@ -1558,6 +1666,11 @@ export class SysSimEngine {
       const serverlessMetrics = this.serverlessModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
       const loadBalancerMetrics = this.lbRouters.get(n.id)?.getMetrics();
       const apiGatewayMetrics = this.apiGatewayModels.get(n.id)?.getMetrics();
+      const dnsMetrics = this.dnsModels.get(n.id)?.getMetrics();
+      const proxyMetrics = this.reverseProxyModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
+      const dbMetrics = this.dbModels.get(n.id)?.getMetrics();
+      const cdnMetrics = this.cdnOriginMetrics.get(n.id);
+      const wafMetrics = this.wafMetrics.get(n.id);
       const loadBalancerActiveConnections = n.config.type === 'load_balancer'
         ? Object.values(this.getLoadBalancerActiveConnections(
             n.id,
@@ -1586,7 +1699,7 @@ export class SysSimEngine {
         avgLatencyMs: Math.round(nodeAvgLat * 10) / 10,
         p95LatencyMs: Math.round(nodeP95 * 10) / 10,
         errorRatePercent: Math.round(nodeErrorRate * 10) / 10,
-        activeConnections: appMetrics?.activeConnections ?? workerMetrics?.busyWorkers ?? serverlessMetrics?.activeInvocations ?? loadBalancerActiveConnections ?? (this.activeConnections[n.id] || 0),
+        activeConnections: appMetrics?.activeConnections ?? workerMetrics?.busyWorkers ?? serverlessMetrics?.activeInvocations ?? proxyMetrics?.activeConnections ?? loadBalancerActiveConnections ?? (this.activeConnections[n.id] || 0),
         queueDepth: appMetrics?.queuedRequests ?? workerMetrics?.queuedWork ?? serverlessMetrics?.queuedInvocations ?? stats.queueDepth,
         cacheHitRatioPercent: Math.round(nodeCacheRatio * 10) / 10,
         utilizationPercent: appMetrics?.cpuUtilizationPercent ?? workerMetrics?.utilizationPercent ?? serverlessMetrics?.utilizationPercent ?? Math.min(100, Math.round((nodeQps / ratedMaxQps) * 100)),
@@ -1625,6 +1738,22 @@ export class SysSimEngine {
         apiGatewayTimeouts: apiGatewayMetrics?.timeouts,
         apiGatewayOpenCircuitRejections: apiGatewayMetrics?.openCircuitRejections,
         apiGatewayCircuitState: apiGatewayMetrics?.circuitState,
+        cdnOriginOffloadedRequests: n.config.type === 'cdn' ? stats.hits : undefined,
+        cdnOriginFetches: cdnMetrics?.fetches,
+        cdnOriginFetchLatencyMs: cdnMetrics && cdnMetrics.fetches > 0 ? Math.round((cdnMetrics.latencyMs / cdnMetrics.fetches) * 10) / 10 : undefined,
+        cdnOriginEgressKb: cdnMetrics?.egressKb,
+        dnsCacheHits: dnsMetrics?.hits,
+        dnsCacheMisses: dnsMetrics?.misses,
+        dnsResolutionFailures: dnsMetrics?.failures,
+        wafBlockedRequests: wafMetrics?.blocked,
+        wafInfrastructureFailures: wafMetrics?.infrastructureFailures,
+        reverseProxyRejectedConnections: proxyMetrics?.rejected,
+        reverseProxyCompressedKbSaved: proxyMetrics ? Math.round(proxyMetrics.compressedKbSaved * 10) / 10 : undefined,
+        reverseProxyBackpressureMs: proxyMetrics ? Math.round(proxyMetrics.backpressureMs * 10) / 10 : undefined,
+        sqlReads: n.config.type === 'sql_db' ? dbMetrics?.reads : undefined,
+        sqlWrites: n.config.type === 'sql_db' ? dbMetrics?.writes : undefined,
+        sqlPrimaryQueries: n.config.type === 'sql_db' ? dbMetrics?.primaryQueries : undefined,
+        sqlReplicaQueries: n.config.type === 'sql_db' ? dbMetrics?.replicaQueries : undefined,
       };
 
       if (stats.totalRequests > maxNodeReqs) {

@@ -308,6 +308,93 @@ export const PropertiesPanel: React.FC = () => {
             </>
           )}
 
+          {config.type === 'dns' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>DNS Lookup Latency (ms)</label>
+                <input type="number" min="0" className={styles.input} value={config.lookupLatencyMs}
+                  onChange={(e) => updateNodeConfig(config.id, { lookupLatencyMs: Math.max(0, Number(e.target.value) || 0) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>DNS Cache TTL (sec)</label>
+                <input type="number" min="1" className={styles.input} value={config.ttlSec}
+                  onChange={(e) => updateNodeConfig(config.id, { ttlSec: Math.max(1, Number(e.target.value) || 1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Routing Policy</label>
+                <select className={styles.select} value={config.routingPolicy}
+                  onChange={(e) => updateNodeConfig(config.id, { routingPolicy: e.target.value as typeof config.routingPolicy })}>
+                  <option value="simple">Simple</option><option value="weighted">Weighted</option>
+                  <option value="geolocation">Geolocation</option><option value="latency_based">Latency based</option>
+                </select>
+              </div>
+              {config.routingPolicy === 'weighted' && edges
+                .filter((edge) => edge.source === config.id && (edge.data.purpose || 'request') === 'request')
+                .map((edge) => (
+                  <div className={styles.fieldGroup} key={edge.id}>
+                    <label className={styles.fieldLabel}>DNS Weight: {nodes.find((node) => node.id === edge.target)?.data.config.name || edge.target}</label>
+                    <input type="number" min="1" className={styles.input} value={config.targetWeights?.[edge.target] || 1}
+                      onChange={(event) => updateNodeConfig(config.id, { targetWeights: { ...config.targetWeights, [edge.target]: Math.max(1, Number(event.target.value) || 1) } })} />
+                  </div>
+                ))}
+              <p className={styles.fieldHint}>DNS resolves one address; subsequent application traffic continues to that target.</p>
+            </>
+          )}
+
+          {config.type === 'firewall' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Inspection Latency (ms)</label>
+                <input type="number" min="0" step="0.1" className={styles.input} value={config.inspectionLatencyMs}
+                  onChange={(e) => updateNodeConfig(config.id, { inspectionLatencyMs: Math.max(0, Number(e.target.value) || 0) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>WAF Rules</label>
+                <input type="number" min="0" className={styles.input} value={config.ruleCount}
+                  onChange={(e) => updateNodeConfig(config.id, { ruleCount: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} />
+                <p className={styles.fieldHint}>Each rule adds 0.005 ms, capped at 5 ms.</p>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Malicious Block Rate (%)</label>
+                <input type="number" min="0" max="100" step="0.1" className={styles.input} value={config.blockRatePercent}
+                  onChange={(e) => updateNodeConfig(config.id, { blockRatePercent: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })} />
+              </div>
+            </>
+          )}
+
+          {config.type === 'reverse_proxy' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <button type="button" className={`${styles.actionBtn} ${config.enableCompression ? styles.coalescingActive : ''}`}
+                  aria-pressed={config.enableCompression} onClick={() => updateNodeConfig(config.id, { enableCompression: !config.enableCompression })}>
+                  Compression {config.enableCompression ? 'ON' : 'OFF'}
+                </button>
+              </div>
+              <div className={styles.fieldGroup}>
+                <button type="button" className={`${styles.actionBtn} ${config.bufferingEnabled ? styles.coalescingActive : ''}`}
+                  aria-pressed={config.bufferingEnabled} onClick={() => updateNodeConfig(config.id, { bufferingEnabled: !config.bufferingEnabled })}>
+                  Request buffering {config.bufferingEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Request Buffer (KB)</label>
+                <input type="number" min="0" className={styles.input} value={config.bufferSizeKb}
+                  onChange={(e) => updateNodeConfig(config.id, { bufferSizeKb: Math.max(0, Number(e.target.value) || 0) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Upstream Bandwidth (Mbps)</label>
+                <input type="number" min="0.1" step="0.1" className={styles.input} value={config.upstreamBandwidthMbps}
+                  onChange={(e) => updateNodeConfig(config.id, { upstreamBandwidthMbps: Math.max(0.1, Number(e.target.value) || 0.1) })} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Cache Rules (diagram only)</label>
+                <input type="text" className={styles.input} value={config.cacheRules}
+                  onChange={(e) => updateNodeConfig(config.id, { cacheRules: e.target.value })} />
+                <p className={styles.fieldHint}>Stored for architecture annotation; no cache-rule grammar is executed.</p>
+              </div>
+            </>
+          )}
+
           {/* Rate Limiter Algorithm & Limit */}
           {'algorithm' in config && config.type === 'rate_limiter' && (
             <>
