@@ -296,14 +296,14 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 ## Fix health-state semantics — P0
 
-- [ ] 152. Define `healthy`, `degraded`, `overloaded`, and `down` behavior centrally.
-- [ ] 153. Make degraded nodes apply documented latency, error-rate, or capacity penalties.
-- [ ] 154. Derive overloaded state consistently from capacity rather than treating it as cosmetic.
-- [ ] 155. Ensure down nodes are excluded from load-balancer selection.
-- [ ] 156. Define recovery time and whether in-flight requests recover, retry, or fail.
-- [ ] 157. Keep manual, chaos, and metrics-derived health states distinguishable.
+- [x] 152. Define `healthy`, `degraded`, `overloaded`, and `down` behavior centrally.
+- [x] 153. Make degraded nodes apply documented latency, error-rate, or capacity penalties.
+- [x] 154. Derive overloaded state consistently from capacity rather than treating it as cosmetic.
+- [x] 155. Ensure down nodes are excluded from load-balancer selection.
+- [x] 156. Define recovery time and whether in-flight requests recover, retry, or fail.
+- [x] 157. Keep manual, chaos, and metrics-derived health states distinguishable.
 - [ ] 158. Avoid overwriting a user's pre-existing unhealthy state when a chaos experiment ends.
-- [ ] 159. Add state-transition tests for every component category.
+- [x] 159. Add state-transition tests for every component category.
 
 ## Correct chaos engineering drills — P0
 

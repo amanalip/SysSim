@@ -465,6 +465,7 @@ export interface ComponentMetricSnapshot {
   nodeId: string;
   nodeName: string;
   nodeType: ComponentType;
+  effectiveHealth?: NodeHealthStatus;
   qps: number;
   avgLatencyMs: number;
   p95LatencyMs: number;

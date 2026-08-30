@@ -37,6 +37,7 @@ import {
   TimeSeriesDatabaseModel,
 } from './components/storage-models';
 import { AuthServiceModel, EncryptionServiceModel } from './components/security-service-models';
+import { deriveHealthFromCapacity, getHealthBehavior } from './health-state';
 
 export interface SimNode {
   id: string;
@@ -95,6 +96,8 @@ export class SysSimEngine {
   private elapsedSimulationMs = 0;
   private completedRequests: SimRequest[] = [];
   private activeRequests: SimRequest[] = [];
+  private nodeArrivalBuckets = new Map<string, { second: number; count: number }>();
+  private effectiveHealth = new Map<string, AnyComponentConfig['health']>();
 
   // Metrics accumulators
   private totalSent = 0;
@@ -173,6 +176,8 @@ export class SysSimEngine {
     this.pendingCacheFills.clear();
     this.dnsSelections.clear();
     this.reverseProxyReservations.clear();
+    this.nodeArrivalBuckets.clear();
+    this.effectiveHealth.clear();
 
     const validNodeIds = new Set(graph.nodes.map((n) => n.id));
     const validLoadBalancerIds = new Set(graph.nodes.filter((n) => n.config.type === 'load_balancer').map((n) => n.id));
@@ -421,6 +426,8 @@ export class SysSimEngine {
     this.reverseProxyModels.forEach((proxy) => proxy.reset());
     this.cacheModels.forEach((c) => c.reset());
     this.pendingCacheFills.clear();
+    this.nodeArrivalBuckets.clear();
+    this.effectiveHealth.clear();
     this.dnsSelections.clear();
     this.reverseProxyReservations.clear();
     this.cdnOriginMetrics.clear();
@@ -983,6 +990,14 @@ export class SysSimEngine {
     this.nodeStats[node.id] = stats;
     stats.totalRequests++;
 
+    const second = Math.floor(this.currentRequestArrivalMs / 1000);
+    const previousBucket = this.nodeArrivalBuckets.get(node.id);
+    const arrivalsThisSecond = previousBucket?.second === second ? previousBucket.count + 1 : 1;
+    this.nodeArrivalBuckets.set(node.id, { second, count: arrivalsThisSecond });
+    const effectiveHealth = deriveHealthFromCapacity(config.health, arrivalsThisSecond, config.maxThroughputQps);
+    this.effectiveHealth.set(node.id, effectiveHealth);
+    const healthBehavior = getHealthBehavior(effectiveHealth);
+
     const failure = (status: SimRequest['status'], latencyMs: number, info: string) => {
       stats.failedRequests++;
       return {
@@ -1007,7 +1022,7 @@ export class SysSimEngine {
       } satisfies TraversalResult;
     };
 
-    if (config.health === 'down') {
+    if (!healthBehavior.acceptsNewWork) {
       if (config.type === 'serverless') this.serverlessModels.get(node.id)?.recordInvocationFailure();
       if (config.type === 'firewall') this.getWafMetrics(node.id).infrastructureFailures++;
       return failure(
@@ -1017,10 +1032,11 @@ export class SysSimEngine {
       );
     }
 
-    if (config.failureRatePercent && this.random() * 100 < config.failureRatePercent) {
+    const effectiveFailureRate = Math.min(100, Math.max(0, config.failureRatePercent || 0) + healthBehavior.addedFailureRatePercent);
+    if (effectiveFailureRate > 0 && this.random() * 100 < effectiveFailureRate) {
       if (config.type === 'serverless') this.serverlessModels.get(node.id)?.recordInvocationFailure();
       if (config.type === 'firewall') this.getWafMetrics(node.id).infrastructureFailures++;
-      return failure('error', 5, 'Simulated component fault');
+      return failure('error', 5, effectiveHealth === 'healthy' ? 'Simulated component fault' : `${effectiveHealth} health-state fault`);
     }
 
     let hopLatency = 5;
@@ -1228,6 +1244,10 @@ export class SysSimEngine {
       }
     }
 
+    if (effectiveHealth !== 'healthy') {
+      hopLatency *= healthBehavior.latencyMultiplier;
+      hopInfo = `${hopInfo || 'Processed request'}; ${effectiveHealth} health penalty (${healthBehavior.capacityMultiplier * 100}% capacity, ${healthBehavior.latencyMultiplier}× latency)`;
+    }
     stats.latencies.push(hopLatency);
     if (stats.latencies.length > 500) stats.latencies.shift();
     stats.successfulRequests++;
@@ -1808,6 +1828,7 @@ export class SysSimEngine {
         nodeId: n.id,
         nodeName: n.config.name,
         nodeType: n.config.type,
+        effectiveHealth: this.effectiveHealth.get(n.id) || n.config.health,
         qps: nodeQps,
         avgLatencyMs: Math.round(nodeAvgLat * 10) / 10,
         p95LatencyMs: Math.round(nodeP95 * 10) / 10,

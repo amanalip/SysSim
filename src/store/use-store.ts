@@ -22,6 +22,7 @@ import { migrateCanvasState } from '../model/canvas-migrations';
 import { computeAutoLayout } from '../layout/auto-layout';
 import { simBridge } from '../engine/sim-bridge';
 import { ThemeMode } from '../theme';
+import { HealthStateSource } from '../engine/health-state';
 export type { ZoneData };
 
 export interface CanvasNode {
@@ -126,6 +127,7 @@ export interface SysSimState {
   isChaosMode: boolean;
   chaosIntervalSec: number;
   nodeHealthOverrides: Record<string, NodeHealthStatus>;
+  nodeHealthSources: Record<string, HealthStateSource>;
 
   // Simulation Actions
   setSimState: (state: SimulationState) => void;
@@ -135,7 +137,7 @@ export interface SysSimState {
   updateMetrics: (metrics: Partial<OverallMetrics>) => void;
   setBottlenecks: (bottlenecks: BottleneckIssue[]) => void;
   setChaosMode: (enabled: boolean, intervalSec?: number) => void;
-  setNodeHealthOverride: (nodeId: string, health: NodeHealthStatus) => void;
+  setNodeHealthOverride: (nodeId: string, health: NodeHealthStatus, source?: HealthStateSource) => void;
   resetSimulation: () => void;
 
   // Scenario State
@@ -663,6 +665,7 @@ export const useStore = create<SysSimState>((set, get) => ({
   isChaosMode: false,
   chaosIntervalSec: 15,
   nodeHealthOverrides: {},
+  nodeHealthSources: {},
 
   setSimState: (simState) => set({ simState }),
   setSpeedMultiplier: (speedMultiplier) => set({ speedMultiplier }),
@@ -674,9 +677,10 @@ export const useStore = create<SysSimState>((set, get) => ({
   setBottlenecks: (bottlenecks) => set({ bottlenecks }),
   setChaosMode: (isChaosMode, chaosIntervalSec = 15) =>
     set({ isChaosMode, chaosIntervalSec }),
-  setNodeHealthOverride: (nodeId, health) => {
+  setNodeHealthOverride: (nodeId, health, source = 'manual') => {
     set((state) => ({
       nodeHealthOverrides: { ...state.nodeHealthOverrides, [nodeId]: health },
+      nodeHealthSources: { ...state.nodeHealthSources, [nodeId]: source },
       nodes: state.nodes.map((n) =>
         n.id === nodeId
           ? { ...n, data: { ...n.data, config: { ...n.data.config, health } } }
@@ -692,6 +696,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       metrics: initialMetrics,
       bottlenecks: [],
       nodeHealthOverrides: {},
+      nodeHealthSources: {},
     }),
 
   // Scenario State
