@@ -32,13 +32,11 @@ describe('User-facing product claims', () => {
     fireEvent.click(screen.getByText('5. Simulate Target Load & Review'));
 
     expect(
-      screen.getByText(
-        'Compare the simulated error rate with the target; this does not prove SLA compliance',
-      ),
+      screen.getByText(/illustrative output does not prove SLA compliance/i),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', {
-        name: `Run Scenario Simulation (${ALL_SCENARIOS[0].constraints.targetQps} QPS)`,
+        name: new RegExp(`Run Scenario Simulation \\(${ALL_SCENARIOS[0].trafficPreset.baseQps.toLocaleString()} QPS`),
       }),
     ).toBeInTheDocument();
     expect(screen.queryByText('5. Load Test & Verify SLA')).not.toBeInTheDocument();

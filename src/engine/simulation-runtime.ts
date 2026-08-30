@@ -1,6 +1,6 @@
 import { useStore } from '../store/use-store';
 import { SimulationBridge } from './sim-bridge';
-import { configureGraphMutationListener, configureSimulationResetListener } from './simulation-command-bus';
+import { configureGraphMutationListener, configureSimulationResetListener, configureTrafficConfigListener } from './simulation-command-bus';
 
 let bridge: SimulationBridge | null = null;
 
@@ -43,11 +43,13 @@ export function initializeSimulationRuntime(): void {
   runtime.initialize();
   configureGraphMutationListener(() => runtime.syncGraph());
   configureSimulationResetListener(() => runtime.reset());
+  configureTrafficConfigListener((config) => runtime.syncConfig(config));
 }
 
 export function disposeSimulationRuntime(): void {
   configureGraphMutationListener(null);
   configureSimulationResetListener(null);
+  configureTrafficConfigListener(null);
   bridge?.dispose();
   bridge = null;
 }

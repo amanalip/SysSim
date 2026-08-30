@@ -20,10 +20,11 @@ import { validateConnection } from '../model/validation';
 import { inferEdgePurpose, validateEdgePurpose } from '../model/edge-semantics';
 import { migrateCanvasState } from '../model/canvas-migrations';
 import { computeAutoLayout } from '../layout/auto-layout';
-import { notifyGraphMutation, notifySimulationReset } from '../engine/simulation-command-bus';
+import { notifyGraphMutation, notifySimulationReset, notifyTrafficConfigChange } from '../engine/simulation-command-bus';
 import { ThemeMode } from '../theme';
 import { HealthStateSource } from '../engine/health-state';
 import { validateArchitectureState } from '../model/architecture-schema';
+import { createScenarioProgress, readScenarioProgress, ScenarioProgress, writeScenarioProgress } from '../scenarios/progress';
 export type { ZoneData };
 
 export interface CanvasNode {
@@ -155,6 +156,7 @@ export interface SysSimState {
   activeScenario: Scenario | null;
   activeScenarioId: number | null;
   completedScenarioIds: number[];
+  scenarioProgress: Record<number, ScenarioProgress>;
   revealedHintsCount: number;
   showReferenceOverlay: boolean;
   setShowReferenceOverlay: (show: boolean) => void;
@@ -172,6 +174,8 @@ export interface SysSimState {
   toggleReferenceOverlay: () => void;
   setSideBySideMode: (enabled: boolean) => void;
   markScenarioCompleted: (scenarioId: number) => void;
+  updateScenarioProgress: (scenarioId: number, progress: Partial<Omit<ScenarioProgress, 'scenarioId'>>) => void;
+  recordScenarioAttempt: (scenarioId: number) => void;
   setScenarioSearchQuery: (query: string) => void;
   setScenarioDifficultyFilter: (diff: 'All' | 'Easy' | 'Medium' | 'Hard') => void;
   setScenarioCategoryFilter: (category: string) => void;
@@ -774,8 +778,10 @@ export const useStore = create<SysSimState>((set, get) => ({
 
   setSimState: (simState) => set({ simState }),
   setSpeedMultiplier: (speedMultiplier) => set({ speedMultiplier }),
-  setTrafficConfig: (config) =>
-    set((state) => ({ trafficConfig: { ...state.trafficConfig, ...config } })),
+  setTrafficConfig: (config) => {
+    set((state) => ({ trafficConfig: { ...state.trafficConfig, ...config } }));
+    notifyTrafficConfigChange(config);
+  },
   setActiveRequests: (activeRequests) => set({ activeRequests }),
   setRecentRequests: (recentRequests) => set({ recentRequests }),
   updateMetrics: (partial) =>
@@ -825,6 +831,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     }
     return [];
   })(),
+  scenarioProgress: readScenarioProgress(),
   revealedHintsCount: 0,
   showReferenceOverlay: false,
   setShowReferenceOverlay: (showReferenceOverlay) => set({ showReferenceOverlay }),
@@ -833,7 +840,10 @@ export const useStore = create<SysSimState>((set, get) => ({
   scenarioDifficultyFilter: 'All',
   scenarioCategoryFilter: 'All',
 
-  setCurrentScenario: (currentScenario) => set({ currentScenario, activeScenario: currentScenario }),
+  setCurrentScenario: (currentScenario) => {
+    set({ currentScenario, activeScenario: currentScenario, activeScenarioId: currentScenario?.id ?? null });
+    if (currentScenario) get().updateScenarioProgress(currentScenario.id, { completionIntent: 'in-progress' });
+  },
 
   loadScenario: (scenario) => {
     set({
@@ -844,7 +854,9 @@ export const useStore = create<SysSimState>((set, get) => ({
       showReferenceOverlay: false,
       trafficConfig: scenario.trafficPreset,
     });
-    get().clearCanvas();
+    notifyTrafficConfigChange(scenario.trafficPreset);
+    get().recordScenarioAttempt(scenario.id);
+    get().updateScenarioProgress(scenario.id, { mode: 'challenge', completionIntent: 'in-progress' });
   },
 
   loadReferenceDesign: (refDesign) => {
@@ -877,7 +889,9 @@ export const useStore = create<SysSimState>((set, get) => ({
     const { activeScenario, revealedHintsCount } = get();
     if (!activeScenario) return;
     if (revealedHintsCount < activeScenario.hints.length) {
-      set({ revealedHintsCount: revealedHintsCount + 1 });
+      const next = revealedHintsCount + 1;
+      set({ revealedHintsCount: next });
+      get().updateScenarioProgress(activeScenario.id, { revealedHintCount: next });
     }
   },
 
@@ -903,6 +917,22 @@ export const useStore = create<SysSimState>((set, get) => ({
       // safe fallback
     }
     set({ completedScenarioIds: updated });
+    get().updateScenarioProgress(scenarioId, {
+      completionIntent: updated.includes(scenarioId) ? 'complete' : 'self-reviewed',
+    });
+  },
+
+  updateScenarioProgress: (scenarioId, partial) => {
+    const existing = get().scenarioProgress[scenarioId] || createScenarioProgress(scenarioId);
+    const next = { ...existing, ...partial, scenarioId, updatedAt: Date.now() };
+    const scenarioProgress = { ...get().scenarioProgress, [scenarioId]: next };
+    try { writeScenarioProgress(scenarioProgress); } catch { /* storage is optional */ }
+    set({ scenarioProgress });
+  },
+
+  recordScenarioAttempt: (scenarioId) => {
+    const existing = get().scenarioProgress[scenarioId] || createScenarioProgress(scenarioId);
+    get().updateScenarioProgress(scenarioId, { attempts: existing.attempts + 1, completionIntent: 'in-progress' });
   },
 
   setScenarioSearchQuery: (scenarioSearchQuery) => set({ scenarioSearchQuery }),

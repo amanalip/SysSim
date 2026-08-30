@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   ArrowLeft,
   HelpCircle,
@@ -13,6 +13,8 @@ import { useStore } from '../../store/use-store';
 import { simulationRuntime as simBridge } from '../../engine/simulation-runtime';
 import { ScenarioInterviewStepper } from './ScenarioInterviewStepper';
 import styles from './ScenarioDetail.module.css';
+import { compareArchitectures } from '../../scenarios/compare';
+import { createScenarioProgress } from '../../scenarios/progress';
 
 interface ScenarioDetailProps {
   scenario: Scenario;
@@ -29,20 +31,27 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
     setShowReferenceOverlay,
     markScenarioCompleted,
     completedScenarioIds,
+    nodes,
+    edges,
+    sideBySideMode,
+    setSideBySideMode,
+    scenarioProgress,
+    updateScenarioProgress,
+    recordScenarioAttempt,
   } = useStore();
 
-  const [unlockedHintCount, setUnlockedHintCount] = useState(1);
   const [openAnswers, setOpenAnswers] = useState<Record<number, boolean>>({});
+  const progress = scenarioProgress[scenario.id] || createScenarioProgress(scenario.id);
+  const comparison = useMemo(() => compareArchitectures({ nodes, edges }, scenario.referenceDesign), [nodes, edges, scenario.referenceDesign]);
 
   useEffect(() => {
-    setUnlockedHintCount(1);
     setOpenAnswers({});
   }, [scenario.id]);
 
   const isCompleted = completedScenarioIds.includes(scenario.id);
 
   const handleUnlockNextHint = () => {
-    setUnlockedHintCount((prev) => Math.min(scenario.hints.length, prev + 1));
+    updateScenarioProgress(scenario.id, { revealedHintCount: Math.min(scenario.hints.length, progress.revealedHintCount + 1) });
   };
 
   const toggleAnswer = (idx: number) => {
@@ -50,8 +59,11 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
   };
 
   const handleLoadReference = () => {
+    if ((nodes.length || edges.length) && !window.confirm('Replace the current canvas with this reference architecture? Your saved snapshots are unaffected.')) return;
     simBridge.reset();
     loadReferenceDesign(scenario.referenceDesign);
+    recordScenarioAttempt(scenario.id);
+    updateScenarioProgress(scenario.id, { mode: 'reference', completionIntent: 'in-progress' });
     useStore.getState().addToast(`Loaded Reference Architecture for ${scenario.title}`, 'info');
   };
 
@@ -73,8 +85,27 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
         </div>
       </div>
 
+      <div className={styles.modeSwitcher} role="group" aria-label="Scenario learning mode">
+        <button className={progress.mode === 'challenge' ? styles.modeActive : ''} onClick={() => updateScenarioProgress(scenario.id, { mode: 'challenge' })}>
+          Challenge mode
+        </button>
+        <button className={progress.mode === 'reference' ? styles.modeActive : ''} onClick={() => updateScenarioProgress(scenario.id, { mode: 'reference' })}>
+          Reference-design mode
+        </button>
+      </div>
+      <div className={styles.modeHelp}>
+        {progress.mode === 'challenge'
+          ? 'Your current canvas stays intact while you inspect requirements, hints, and experiments.'
+          : 'Study one valid reference and compare its responsibilities and behavior with your design.'}
+      </div>
+
       {/* Problem Statement */}
       <div className={styles.problemBox}>{scenario.problemStatement}</div>
+
+      <div className={styles.approximationBox}>
+        <strong>Reference, not answer key.</strong>
+        {scenario.approximationNotes?.map((note) => <span key={note}>{note}</span>)}
+      </div>
 
       {/* Constraints */}
       <div className={styles.constraintsGrid}>
@@ -127,7 +158,7 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
       <div className={styles.actionsGroup}>
         <button className={styles.primaryBtn} onClick={handleLoadReference}>
           <Layers size={14} />
-          <span>Load Reference Architecture to Canvas</span>
+          <span>Replace Canvas with Reference Architecture</span>
         </button>
 
         <button
@@ -137,6 +168,10 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
           <span>
             {showReferenceOverlay ? 'Hide Reference Overlay' : 'Show Reference Overlay'}
           </span>
+        </button>
+
+        <button className={styles.secondaryBtn} onClick={() => setSideBySideMode(!sideBySideMode)}>
+          <span>{sideBySideMode ? 'Hide Behavioral Comparison' : 'Compare User and Reference Designs'}</span>
         </button>
 
         <button
@@ -152,16 +187,27 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
           }}
         >
           <CheckCircle2 size={13} />
-          <span>{isCompleted ? 'Solved (Click to Undo)' : 'Mark as Solved'}</span>
+          <span>{isCompleted ? 'Self-assessed Complete (Undo)' : 'Mark Self-assessed Complete'}</span>
         </button>
       </div>
+
+      {sideBySideMode && (
+        <div className={styles.comparisonBox} aria-label="Behavioral architecture comparison">
+          <strong>Neutral comparison</strong>
+          <span>Your graph: {comparison.userNodeCount} nodes / {comparison.userEdgeCount} edges. Reference: {comparison.referenceNodeCount} nodes / {comparison.referenceEdgeCount} edges.</span>
+          <span>Shared responsibilities: {comparison.sharedComponentTypes.join(', ') || 'none yet'}.</span>
+          <span>Only in your graph: {comparison.userOnlyComponentTypes.join(', ') || 'none'}.</span>
+          <span>Only in the reference: {comparison.referenceOnlyComponentTypes.join(', ') || 'none'}.</span>
+          <span>{comparison.guidance}</span>
+        </div>
+      )}
 
       {/* Progressive Hints */}
       <div className={styles.section}>
         <div className={styles.sectionTitle}>
-          Progressive Hints ({unlockedHintCount}/{scenario.hints.length})
+          Progressive Hints ({progress.revealedHintCount}/{scenario.hints.length})
         </div>
-        {scenario.hints.slice(0, unlockedHintCount).map((h) => (
+        {scenario.hints.slice(0, progress.revealedHintCount).map((h) => (
           <div key={h.step} className={styles.hintCard}>
             <span style={{ fontWeight: 700, color: 'var(--accent-primary)', marginRight: 6 }}>
               Hint {h.step}:
@@ -169,16 +215,29 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
             {h.hint}
           </div>
         ))}
-        {unlockedHintCount < scenario.hints.length && (
+        {progress.revealedHintCount < scenario.hints.length && (
           <button
             className={styles.secondaryBtn}
             onClick={handleUnlockNextHint}
             style={{ fontSize: 11, padding: '6px 10px' }}
           >
             <HelpCircle size={12} />
-            <span>Unlock Next Hint ({unlockedHintCount + 1}/{scenario.hints.length})</span>
+            <span>Unlock Next Hint ({progress.revealedHintCount + 1}/{scenario.hints.length})</span>
           </button>
         )}
+      </div>
+
+      <div className={styles.section}>
+        <label className={styles.sectionTitle} htmlFor={`scenario-notes-${scenario.id}`}>Private learning notes</label>
+        <textarea
+          id={`scenario-notes-${scenario.id}`}
+          className={styles.notesInput}
+          value={progress.notes}
+          maxLength={10_000}
+          placeholder="Record assumptions, experiment results, and follow-up questions…"
+          onChange={(event) => updateScenarioProgress(scenario.id, { notes: event.target.value, completionIntent: 'in-progress' })}
+        />
+        <span className={styles.progressMeta}>Attempts: {progress.attempts} · Status: {progress.completionIntent.replace('-', ' ')} · Saved locally</span>
       </div>
 
       {/* Interview Discussion Points */}
@@ -210,19 +269,15 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({
       <div className={styles.section}>
         <div className={styles.sectionTitle}>Verified Citations & References</div>
         {scenario.sources.map((src, idx) => (
-          <a
-            key={idx}
-            href={src.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.sourceLink}
-          >
-            <span>
-              {src.title} ({src.authorOrOrg})
-            </span>
-            <ExternalLink size={10} />
-          </a>
+          <div className={styles.sourceItem} key={`${src.title}-${idx}`}>
+            <a href={src.url} target="_blank" rel="noopener noreferrer" className={styles.sourceLink} aria-label={`${src.title} — ${src.authorOrOrg}`}>
+              <span>{src.title} ({src.authorOrOrg})</span><ExternalLink size={10} />
+            </a>
+            <span>{src.sourceType} · verified {src.lastVerifiedOn}</span>
+            <span>{src.supports}</span>
+          </div>
         ))}
+        <span className={styles.progressMeta}>Review owner: {scenario.reviewOwner} · Content reviewed {scenario.contentReviewedOn}</span>
       </div>
     </div>
   );

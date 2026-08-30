@@ -18,8 +18,8 @@ interface StepItem {
 }
 
 export const ScenarioInterviewStepper: React.FC<ScenarioInterviewStepperProps> = ({ scenario }) => {
-  const { setTrafficConfig } = useStore();
-  const [completedSteps, setCompletedSteps] = useState<number[]>([1]);
+  const { setTrafficConfig, scenarioProgress, updateScenarioProgress, recordScenarioAttempt } = useStore();
+  const completedSteps = scenarioProgress[scenario.id]?.completedSteps ?? [];
   const [activeStep, setActiveStep] = useState(1);
 
   const steps: StepItem[] = [
@@ -74,17 +74,18 @@ export const ScenarioInterviewStepper: React.FC<ScenarioInterviewStepperProps> =
       icon: <Play size={14} />,
       tasks: [
         'Click Play in the floating dock to start simulation',
-        'Compare the simulated error rate with the target; this does not prove SLA compliance',
-        'Review the heuristic Health Radar as a discussion prompt',
+        'Record p99 latency and error rate before and after adding a cache or replica',
+        'Cut one edge, observe the failure path, then restore it and compare recovery',
+        'Treat the Health Radar as a discussion prompt; illustrative output does not prove SLA compliance',
       ],
     },
   ];
 
   const toggleStepCompleted = (stepId: number) => {
     if (completedSteps.includes(stepId)) {
-      setCompletedSteps((prev) => prev.filter((id) => id !== stepId));
+      updateScenarioProgress(scenario.id, { completedSteps: completedSteps.filter((id) => id !== stepId) });
     } else {
-      setCompletedSteps((prev) => [...prev, stepId]);
+      updateScenarioProgress(scenario.id, { completedSteps: [...completedSteps, stepId].sort() });
       useStore.getState().addToast(`Completed Step ${stepId}!`, 'success');
     }
   };
@@ -111,12 +112,11 @@ export const ScenarioInterviewStepper: React.FC<ScenarioInterviewStepperProps> =
           const isActive = activeStep === step.id;
 
           return (
-            <div
+            <section
               key={step.id}
               className={`${styles.stepCard} ${isActive ? styles.stepCardActive : ''} ${
                 isDone ? styles.stepCardDone : ''
               }`}
-              onClick={() => setActiveStep(step.id)}
             >
               <div className={styles.stepHeaderRow}>
                 <button
@@ -134,23 +134,31 @@ export const ScenarioInterviewStepper: React.FC<ScenarioInterviewStepperProps> =
                   )}
                 </button>
 
-                <div className={styles.stepTitleBox}>
-                  <span className={styles.stepTitle}>{step.title}</span>
-                  <span className={styles.stepSubtitle}>{step.subtitle}</span>
-                </div>
-
-                <ChevronRight
-                  size={14}
-                  color="var(--text-muted)"
-                  style={{
-                    transform: isActive ? 'rotate(90deg)' : 'none',
-                    transition: 'transform 0.15s ease',
-                  }}
-                />
+                <button
+                  className={styles.stepTitleBox}
+                  type="button"
+                  aria-expanded={isActive}
+                  aria-controls={`scenario-step-${scenario.id}-${step.id}`}
+                  onClick={() => setActiveStep(step.id)}
+                >
+                  <span>
+                    <span className={styles.stepTitle}>{step.title}</span>
+                    <span className={styles.stepSubtitle}>{step.subtitle}</span>
+                  </span>
+                  <ChevronRight
+                    aria-hidden="true"
+                    size={14}
+                    color="var(--text-muted)"
+                    style={{
+                      transform: isActive ? 'rotate(90deg)' : 'none',
+                      transition: 'transform 0.15s ease',
+                    }}
+                  />
+                </button>
               </div>
 
               {isActive && (
-                <div className={styles.taskList}>
+                <div id={`scenario-step-${scenario.id}-${step.id}`} className={styles.taskList}>
                   {step.tasks.map((task, idx) => (
                     <div key={idx} className={styles.taskItem}>
                       <span className={styles.taskBullet}>•</span>
@@ -161,24 +169,28 @@ export const ScenarioInterviewStepper: React.FC<ScenarioInterviewStepperProps> =
                     <button
                       className={styles.runTestBtn}
                       onClick={() => {
-                        setTrafficConfig({ baseQps: scenario.constraints.targetQps });
-                        simBridge.syncConfig({ baseQps: scenario.constraints.targetQps });
+                        const simulationQps = scenario.trafficPreset.baseQps;
+                        setTrafficConfig({ baseQps: simulationQps });
                         simBridge.start();
+                        recordScenarioAttempt(scenario.id);
                         useStore
                           .getState()
                           .addToast(
-                            `Started illustrative scenario simulation at ${scenario.constraints.targetQps} QPS`,
+                            `Started illustrative scenario simulation at ${simulationQps} QPS`,
                             'info',
                           );
                       }}
                     >
                       <Play size={12} />
-                      <span>Run Scenario Simulation ({scenario.constraints.targetQps} QPS)</span>
+                      <span>
+                        Run Scenario Simulation ({scenario.trafficPreset.baseQps.toLocaleString()} QPS
+                        {scenario.trafficPreset.baseQps !== scenario.constraints.targetQps ? ' scaled model' : ''})
+                      </span>
                     </button>
                   )}
                 </div>
               )}
-            </div>
+            </section>
           );
         })}
       </div>

@@ -14,6 +14,7 @@ import { chaosRunner } from './engine/metrics/chaos-runner';
 import { initializeSimulationRuntime, disposeSimulationRuntime, simulationRuntime as simBridge } from './engine/simulation-runtime';
 import { decodeStateFromUrlHash } from './utils/sharing';
 import { CORE_SCENARIOS } from './scenarios/core';
+import { normalizeScenario } from './scenarios/normalize';
 import styles from './App.module.css';
 
 const MetricsDashboard = lazy(() => import('./components/panels/MetricsDashboard').then(
@@ -68,7 +69,6 @@ export function App() {
         );
         if (decoded.trafficConfig) {
           setTrafficConfig(decoded.trafficConfig);
-          simBridge.syncConfig(decoded.trafficConfig);
         }
         addToast('Loaded shared architecture from URL', 'success');
         return;
@@ -77,7 +77,7 @@ export function App() {
 
     // Load initial starter architecture if canvas is empty
     if (nodes.length === 0) {
-      const starter = CORE_SCENARIOS[0]; // URL Shortener
+      const starter = normalizeScenario(CORE_SCENARIOS[0]); // URL Shortener
       loadScenario(starter);
       loadReferenceDesign(starter.referenceDesign);
     }

@@ -55,6 +55,67 @@
   line-height: 1.5;
 }
 
+.modeSwitcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+}
+
+.modeSwitcher button {
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.modeSwitcher .modeActive {
+  background: var(--accent-subtle);
+  color: var(--accent-primary);
+}
+
+.modeHelp,
+.progressMeta {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.approximationBox,
+.comparisonBox {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 10px;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--warning);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.comparisonBox { border-left-color: var(--accent-primary); }
+
+.notesInput {
+  min-height: 88px;
+  resize: vertical;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 8px;
+  font: 11px/1.4 var(--font-sans);
+}
+
 .constraintsGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -206,4 +267,15 @@
 
 .sourceLink:hover {
   text-decoration: underline;
+}
+
+.sourceItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 9px;
+  line-height: 1.35;
 }
