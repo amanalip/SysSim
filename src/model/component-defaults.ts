@@ -584,7 +584,7 @@ export const COMPONENT_METADATA_LIST: ComponentMetadata[] = [
     type: 'encryption_service',
     name: 'Secrets & KMS',
     category: 'security',
-    description: 'Hardware key management, encryption, and decryption engine',
+    description: 'Illustrative KMS latency model; it does not validate cryptographic security',
     iconName: 'Lock',
     defaultConfig: (id, name) => ({
       id,

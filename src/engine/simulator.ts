@@ -1213,7 +1213,7 @@ export class SysSimEngine {
     } else if (config.type === 'encryption_service') {
       const encryption = this.encryptionServiceModels.get(node.id)?.process(this.currentRequestPayloadKb);
       hopLatency = encryption?.latencyMs ?? config.overheadLatencyMs;
-      hopInfo = `${config.algorithm} illustrative processing for ${this.currentRequestPayloadKb} KB; ${config.keyRotationDays}d key rotation is diagram-only`;
+      hopInfo = `${config.algorithm} illustrative latency only for ${this.currentRequestPayloadKb} KB; no encryption or cryptographic security validation is performed; ${config.keyRotationDays}d key rotation is diagram-only`;
     } else if (config.type === 'serverless') {
       const invocation = this.serverlessModels.get(node.id)?.invoke(this.currentRequestArrivalMs);
       if (invocation) {

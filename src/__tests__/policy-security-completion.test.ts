@@ -82,7 +82,7 @@ describe('authentication tasks 146-148', () => {
   });
 });
 
-describe('encryption tasks 149-150', () => {
+describe('encryption tasks 149-151', () => {
   it('applies explicit algorithm/payload cost and keeps key rotation diagram-only', () => {
     const aes = engineFor({ ...(createDefaultConfig('encryption_service', 'component') as EncryptionServiceConfig), algorithm: 'AES-256-GCM' as const, overheadLatencyMs: 2, keyRotationDays: 30 });
     const chacha = engineFor({ ...(createDefaultConfig('encryption_service', 'component') as EncryptionServiceConfig), algorithm: 'ChaCha20-Poly1305' as const, overheadLatencyMs: 2 });
@@ -91,6 +91,7 @@ describe('encryption tasks 149-150', () => {
     expect(execute(chacha, 1, 0, 100).totalLatencyMs).toBeLessThan(aesRequest.totalLatencyMs);
     expect(execute(rsa, 1, 0, 100).totalLatencyMs).toBeGreaterThan(aesRequest.totalLatencyMs);
     expect(aesRequest.path[0].info).toContain('30d key rotation is diagram-only');
+    expect(aesRequest.path[0].info).toContain('no encryption or cryptographic security validation is performed');
     expect(aes.getMetricsSnapshot().componentMetrics.component).toMatchObject({ encryptionOperations: 1, encryptedPayloadKb: 100 });
   });
 });

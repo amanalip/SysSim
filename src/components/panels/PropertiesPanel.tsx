@@ -868,6 +868,7 @@ export const PropertiesPanel: React.FC = () => {
           {/* Encryption Service Algorithm & Key Rotation */}
           {config.type === 'encryption_service' && (
             <>
+              <p className={styles.fieldHint}>This component estimates processing latency only. It does not perform encryption, inspect key material, or validate cryptographic security.</p>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Cipher Algorithm</label>
                 <select

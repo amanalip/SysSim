@@ -292,7 +292,7 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 - [x] 149. Apply algorithm-specific overhead only where justified.
 - [x] 150. Define key-rotation effects or mark the setting diagram-only.
-- [ ] 151. Avoid implying cryptographic security validation from latency simulation.
+- [x] 151. Avoid implying cryptographic security validation from latency simulation.
 
 ## Fix health-state semantics — P0
 
