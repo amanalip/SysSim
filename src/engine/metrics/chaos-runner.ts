@@ -3,7 +3,7 @@ import { simBridge } from '../sim-bridge';
 
 class ChaosRunner {
   private timer: ReturnType<typeof setInterval> | null = null;
-  private faultedNodeIds: Set<string> = new Set();
+  private originalHealth = new Map<string, import('../../model/types').NodeHealthStatus>();
 
   public start(intervalSec: number = 10): void {
     this.stop(false);
@@ -22,12 +22,16 @@ class ChaosRunner {
       const nextHealth = currentHealth === 'down' ? 'healthy' : 'down';
 
       if (nextHealth === 'down') {
-        this.faultedNodeIds.add(randomNode.id);
+        if (!this.originalHealth.has(randomNode.id)) this.originalHealth.set(randomNode.id, currentHealth);
       } else {
-        this.faultedNodeIds.delete(randomNode.id);
+        const original = this.originalHealth.get(randomNode.id) || 'healthy';
+        this.originalHealth.delete(randomNode.id);
+        useStore.getState().setNodeHealthOverride(randomNode.id, original, 'chaos');
+        simBridge.syncGraph();
+        return;
       }
 
-      useStore.getState().setNodeHealthOverride(randomNode.id, nextHealth);
+      useStore.getState().setNodeHealthOverride(randomNode.id, nextHealth, 'chaos');
       useStore.getState().addToast(
         `Chaos Monkey: Marked ${randomNode.data.config.name} as ${nextHealth.toUpperCase()}`,
         nextHealth === 'down' ? 'error' : 'success'
@@ -42,23 +46,20 @@ class ChaosRunner {
       this.timer = null;
     }
 
-    if (restoreNodes && this.faultedNodeIds.size > 0) {
-      this.faultedNodeIds.forEach((id) => {
-        useStore.getState().setNodeHealthOverride(id, 'healthy');
+    if (restoreNodes && this.originalHealth.size > 0) {
+      this.originalHealth.forEach((health, id) => {
+        useStore.getState().setNodeHealthOverride(id, health, 'manual');
       });
-      this.faultedNodeIds.clear();
+      this.originalHealth.clear();
       simBridge.syncGraph();
     }
   }
 
   public restoreAll(): void {
-    const { nodes } = useStore.getState();
-    nodes.forEach((n) => {
-      if (n.data.config.health === 'down' || n.data.config.health === 'degraded') {
-        useStore.getState().setNodeHealthOverride(n.id, 'healthy');
-      }
+    this.originalHealth.forEach((health, id) => {
+      useStore.getState().setNodeHealthOverride(id, health, 'manual');
     });
-    this.faultedNodeIds.clear();
+    this.originalHealth.clear();
     simBridge.syncGraph();
   }
 }

@@ -302,24 +302,24 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 155. Ensure down nodes are excluded from load-balancer selection.
 - [x] 156. Define recovery time and whether in-flight requests recover, retry, or fail.
 - [x] 157. Keep manual, chaos, and metrics-derived health states distinguishable.
-- [ ] 158. Avoid overwriting a user's pre-existing unhealthy state when a chaos experiment ends.
+- [x] 158. Avoid overwriting a user's pre-existing unhealthy state when a chaos experiment ends.
 - [x] 159. Add state-transition tests for every component category.
 
 ## Correct chaos engineering drills — P0
 
-- [ ] 160. Make “Primary Database Outage” exercise an actual failover path when replicas exist.
-- [ ] 161. Report explicit failure when no valid failover target exists.
-- [ ] 162. Make “Cache Stampede” bypass caches and increase origin traffic.
-- [ ] 163. Add optional stampede-protection behavior for comparison.
-- [ ] 164. Make “5x Flash Crowd” multiply traffic exactly once.
-- [ ] 165. Store and restore the original QPS and traffic pattern after a flash-crowd drill.
-- [ ] 166. Make “Ingress Network Partition” select a semantically valid ingress edge rather than blindly using the first edge.
-- [ ] 167. Make “High Network Latency (400ms)” add the promised latency to the appropriate nodes or edges.
-- [ ] 168. Record drill start time, affected targets, injected parameters, and observed result.
-- [ ] 169. Support cancel/restore per drill rather than only global restoration.
-- [ ] 170. Prevent overlapping drills from corrupting restoration state.
-- [ ] 171. Add deterministic tests for injection, effects, and complete restoration.
-- [ ] 172. Add an E2E test for every drill.
+- [x] 160. Make “Primary Database Outage” exercise an actual failover path when replicas exist.
+- [x] 161. Report explicit failure when no valid failover target exists.
+- [x] 162. Make “Cache Stampede” bypass caches and increase origin traffic.
+- [x] 163. Add optional stampede-protection behavior for comparison.
+- [x] 164. Make “5x Flash Crowd” multiply traffic exactly once.
+- [x] 165. Store and restore the original QPS and traffic pattern after a flash-crowd drill.
+- [x] 166. Make “Ingress Network Partition” select a semantically valid ingress edge rather than blindly using the first edge.
+- [x] 167. Make “High Network Latency (400ms)” add the promised latency to the appropriate nodes or edges.
+- [x] 168. Record drill start time, affected targets, injected parameters, and observed result.
+- [x] 169. Support cancel/restore per drill rather than only global restoration.
+- [x] 170. Prevent overlapping drills from corrupting restoration state.
+- [x] 171. Add deterministic tests for injection, effects, and complete restoration.
+- [x] 172. Add an E2E test for every drill.
 
 ## Make randomness deterministic and reproducible — P0
 

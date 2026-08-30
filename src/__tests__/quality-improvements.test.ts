@@ -164,7 +164,7 @@ describe('Quality Improvements & Bug Fixes Test Suite (10+ Verifications)', () =
     expect(decoded?.edges[0].data?.protocol).toBe('gRPC');
   });
 
-  it('8. restores faulted nodes to healthy status when ChaosRunner stops', () => {
+  it('8. does not overwrite a manually faulted node when ChaosRunner restores its own faults', () => {
     const srvNodeId = useStore.getState().addNode('app_server', { x: 100, y: 100 }, 'Test Server');
     useStore.getState().setNodeHealthOverride(srvNodeId, 'down');
 
@@ -172,7 +172,7 @@ describe('Quality Improvements & Bug Fixes Test Suite (10+ Verifications)', () =
 
     // Trigger restoreAll
     chaosRunner.restoreAll();
-    expect(useStore.getState().nodes.find((n) => n.id === srvNodeId)?.data.config.health).toBe('healthy');
+    expect(useStore.getState().nodes.find((n) => n.id === srvNodeId)?.data.config.health).toBe('down');
   });
 
   it('9. handles high simulation speeds (10x) without dropping frame calculation accuracy', () => {

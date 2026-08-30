@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Flame, X, Database, Zap, Activity, Scissors, Clock, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useStore } from '../../store/use-store';
-import { simBridge } from '../../engine/sim-bridge';
+import { chaosDrills, ChaosDrillId, ChaosDrillRecord } from '../../engine/chaos-drills';
 import styles from './ChaosDrillModal.module.css';
 
 interface ChaosDrillModalProps {
@@ -10,7 +10,7 @@ interface ChaosDrillModalProps {
 }
 
 interface Drill {
-  id: string;
+  id: ChaosDrillId;
   name: string;
   category: string;
   description: string;
@@ -19,125 +19,65 @@ interface Drill {
 }
 
 export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClose }) => {
-  const [activeDrill, setActiveDrill] = useState<string | null>(null);
-  const { nodes, edges, setNodeHealthOverride, toggleCutEdge, setTrafficConfig, trafficConfig, addToast } = useStore();
+  const [activeDrill, setActiveDrill] = useState<ChaosDrillRecord | null>(() => chaosDrills.getActiveRecords()[0] || null);
+  const [stampedeProtection, setStampedeProtection] = useState(false);
+  const { addToast } = useStore();
+
+  const launch = (id: ChaosDrillId) => {
+    const result = chaosDrills.launch(id, { stampedeProtection });
+    setActiveDrill(result.succeeded ? result : chaosDrills.getActiveRecords()[0] || null);
+    addToast(result.observedResult, result.succeeded ? 'warning' : 'error');
+  };
 
   if (!isOpen) return null;
 
   const drills: Drill[] = [
     {
-      id: 'db_crash',
+      id: 'db_outage',
       name: 'Primary Database Outage',
       category: 'Storage Resilience',
-      description: 'Marks one database node down. Failover between separately drawn database nodes is not modeled; SQL internal failover applies only to degraded nodes.',
+      description: 'Exercises internal SQL replica failover or a separately connected database target; fails explicitly when neither exists.',
       icon: <Database size={16} color="var(--error)" />,
-      execute: () => {
-        const db = nodes.find((n) => n.data.config.type === 'sql_db' || n.data.config.type === 'nosql_db');
-        if (db) {
-          setNodeHealthOverride(db.id, 'down');
-          simBridge.syncGraph();
-          setActiveDrill('db_crash');
-          addToast(`Chaos Drill: Injected outage on ${db.data.config.name}`, 'error');
-        } else {
-          addToast('No database node found on canvas to inject fault', 'warning');
-        }
-      },
+      execute: () => launch('db_outage'),
     },
     {
       id: 'cache_stampede',
       name: 'Cache Stampede / Flush',
       category: 'Caching Resilience',
-      description: 'Marks all cache nodes down so you can inspect the model’s simplified downstream behavior.',
+      description: `Forces 0% cache hits and origin traffic${stampedeProtection ? ' with miss coalescing protection' : ' without stampede protection'}.`,
       icon: <Zap size={16} color="var(--warning)" />,
-      execute: () => {
-        const caches = nodes.filter((n) =>
-          ['redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(n.data.config.type)
-        );
-        if (caches.length > 0) {
-          caches.forEach((c) => setNodeHealthOverride(c.id, 'down'));
-          simBridge.syncGraph();
-          setActiveDrill('cache_stampede');
-          addToast(`Chaos Drill: Brought down ${caches.length} cache instances`, 'warning');
-        } else {
-          addToast('No cache nodes found on canvas', 'warning');
-        }
-      },
+      execute: () => launch('cache_stampede'),
     },
     {
       id: 'flash_crowd',
       name: '5x Flash Crowd Surge',
       category: 'Traffic Spike',
-      description: 'Multiplies configured traffic by 5. Automatic scaling is not currently modeled.',
+      description: 'Multiplies base QPS exactly once while preserving the selected traffic pattern for exact restoration.',
       icon: <Activity size={16} color="var(--accent-primary)" />,
-      execute: () => {
-        const currentQps = trafficConfig.baseQps || 500;
-        const newQps = currentQps * 5;
-        setTrafficConfig({ baseQps: newQps, pattern: 'spike' });
-        simBridge.syncConfig({ baseQps: newQps, pattern: 'spike' });
-        simBridge.syncGraph();
-        setActiveDrill('flash_crowd');
-        addToast(`Chaos Drill: Surged traffic to ${newQps} QPS!`, 'info');
-      },
+      execute: () => launch('flash_crowd'),
     },
     {
-      id: 'network_partition',
+      id: 'ingress_partition',
       name: 'Ingress Network Partition',
       category: 'Network Partition',
-      description: 'Cuts primary edge from client / gateway to simulate network disruption.',
+      description: 'Cuts a live request edge at the client or ingress tier, selected using component and edge semantics.',
       icon: <Scissors size={16} color="var(--error)" />,
-      execute: () => {
-        if (edges.length > 0) {
-          if (!edges[0].data?.isCut) {
-            toggleCutEdge(edges[0].id);
-          }
-          simBridge.syncGraph();
-          setActiveDrill('network_partition');
-          addToast(`Chaos Drill: Severed connection ${edges[0].id}`, 'error');
-        } else {
-          addToast('No active connections to sever', 'warning');
-        }
-      },
+      execute: () => launch('ingress_partition'),
     },
     {
-      id: 'latency_jitter',
-      name: 'Application Server Degradation',
-      category: 'Degradation',
-      description: 'Marks application servers degraded using the current simplified health-state model.',
+      id: 'network_latency',
+      name: 'High Network Latency (400ms)',
+      category: 'Network Degradation',
+      description: 'Adds 400ms to active ingress request edges and restores their exact prior latency values.',
       icon: <Clock size={16} color="var(--warning)" />,
-      execute: () => {
-        const appServers = nodes.filter((n) => n.data.config.type === 'app_server');
-        if (appServers.length > 0) {
-          appServers.forEach((srv) => setNodeHealthOverride(srv.id, 'degraded'));
-          simBridge.syncGraph();
-          setActiveDrill('latency_jitter');
-          addToast(`Chaos Drill: Marked ${appServers.length} application servers degraded`, 'warning');
-        } else {
-          addToast('No application servers found on canvas to inject latency', 'warning');
-        }
-      },
+      execute: () => launch('network_latency'),
     },
   ];
 
   const handleRestore = () => {
-    // Restore healthy node states
-    nodes.forEach((n) => {
-      if (n.data.config.health === 'down' || n.data.config.health === 'degraded') {
-        setNodeHealthOverride(n.id, 'healthy');
-      }
-    });
-
-    // Restore cut edges
-    edges.forEach((e) => {
-      if (e.data?.isCut) {
-        toggleCutEdge(e.id);
-      }
-    });
-
-    setTrafficConfig({ pattern: 'steady' });
-    simBridge.syncConfig({ pattern: 'steady' });
-    simBridge.syncGraph();
+    if (activeDrill?.succeeded) chaosDrills.restore(activeDrill.id);
     setActiveDrill(null);
-    addToast('Restored all system components and network links to healthy', 'success');
+    addToast('Restored the active drill to its exact pre-injection state', 'success');
   };
 
   return (
@@ -163,7 +103,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
         {activeDrill && (
           <div className={styles.activeBanner}>
             <AlertTriangle size={14} color="var(--error)" />
-            <span>Synthetic chaos state active for inspection.</span>
+            <span>{activeDrill.observedResult}</span>
             <button className={styles.restoreBtn} onClick={handleRestore}>
               <RotateCcw size={12} />
               <span>Restore System</span>
@@ -172,6 +112,10 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
         )}
 
         <div className={styles.drillList}>
+          <label className={styles.protectionOption}>
+            <input type="checkbox" checked={stampedeProtection} onChange={(event) => setStampedeProtection(event.target.checked)} disabled={Boolean(activeDrill)} />
+            Compare cache stampede with request coalescing protection
+          </label>
           {drills.map((drill) => (
             <div key={drill.id} className={styles.drillCard}>
               <div className={styles.cardLeft}>
@@ -187,6 +131,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
               <button
                 className={styles.triggerBtn}
                 onClick={drill.execute}
+                disabled={Boolean(activeDrill)}
                 title={`Launch ${drill.name}`}
               >
                 Launch Drill
@@ -198,7 +143,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
         <div className={styles.modalFooter}>
           <button className={styles.restoreFooterBtn} onClick={handleRestore}>
             <RotateCcw size={13} />
-            <span>Reset All Failure Injections</span>
+            <span>Restore Active Drill</span>
           </button>
         </div>
       </div>
