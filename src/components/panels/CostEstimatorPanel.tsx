@@ -85,46 +85,46 @@ export const CostEstimatorPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Category Breakdown Cards */}
+      {/* Independent cost drivers */}
       <div className={styles.cardsGrid}>
         <div className={styles.categoryCard}>
           <div className={styles.cardHeader}>
             <Server size={14} color="#3b82f6" />
-            <span>Compute</span>
+            <span>Managed services</span>
           </div>
-          <span className={styles.categoryVal}>${costBreakdown.computeCost}/mo</span>
+          <span className={styles.categoryVal}>${costBreakdown.managedServiceCost}/mo</span>
         </div>
 
         <div className={styles.categoryCard}>
           <div className={styles.cardHeader}>
             <Database size={14} color="#10b981" />
-            <span>Databases</span>
+            <span>Storage capacity</span>
           </div>
-          <span className={styles.categoryVal}>${costBreakdown.storageCost}/mo</span>
+          <span className={styles.categoryVal}>${costBreakdown.capacityStorageCost}/mo</span>
         </div>
 
         <div className={styles.categoryCard}>
           <div className={styles.cardHeader}>
             <Zap size={14} color="#f59e0b" />
-            <span>Caching</span>
+            <span>Requests</span>
           </div>
-          <span className={styles.categoryVal}>${costBreakdown.cachingCost}/mo</span>
+          <span className={styles.categoryVal}>${costBreakdown.requestCost}/mo</span>
         </div>
 
         <div className={styles.categoryCard}>
           <div className={styles.cardHeader}>
             <Globe size={14} color="#8b5cf6" />
-            <span>Networking</span>
+            <span>Bandwidth</span>
           </div>
-          <span className={styles.categoryVal}>${costBreakdown.networkingCost}/mo</span>
+          <span className={styles.categoryVal}>${costBreakdown.bandwidthCost}/mo</span>
         </div>
 
         <div className={styles.categoryCard}>
           <div className={styles.cardHeader}>
             <Radio size={14} color="#ec4899" />
-            <span>Messaging</span>
+            <span>Redundancy</span>
           </div>
-          <span className={styles.categoryVal}>${costBreakdown.messagingCost}/mo</span>
+          <span className={styles.categoryVal}>${costBreakdown.redundancyCost}/mo</span>
         </div>
       </div>
 
@@ -136,6 +136,7 @@ export const CostEstimatorPanel: React.FC = () => {
               <th>Component</th>
               <th>Category</th>
               <th>Instance Profile</th>
+              <th>Mapping basis</th>
               <th>Replicas</th>
               <th>Unit Cost</th>
               <th>Total / Mo</th>
@@ -149,6 +150,7 @@ export const CostEstimatorPanel: React.FC = () => {
                   <span className={styles.categoryTag}>{item.category}</span>
                 </td>
                 <td className={styles.monoCell}>{item.instanceType}</td>
+                <td className={styles.mappingCell}>{item.mappingRationale}</td>
                 <td className={styles.monoCell}>x{item.replicas}</td>
                 <td className={styles.monoCell}>${item.unitMonthlyCost}</td>
                 <td className={styles.totalCell}>${item.totalMonthlyCost}</td>
