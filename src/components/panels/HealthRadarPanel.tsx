@@ -1,273 +1,69 @@
 import React, { useMemo } from 'react';
 import { ShieldCheck, Zap, Activity, DollarSign, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
+import { averageHealthScore, HealthPillarScore, scoreArchitectureHealth } from '../../analysis/health-scoring';
 import { useStore } from '../../store/use-store';
 import { ModelNotice } from '../ui/ModelNotice';
 import styles from './HealthRadarPanel.module.css';
 
-interface PillarScore {
-  name: string;
-  score: number;
-  grade: string;
-  color: string;
-  icon: React.ReactNode;
-  summary: string;
-  suggestions: string[];
-}
+const icons: Record<HealthPillarScore['name'], React.ReactNode> = {
+  Availability: <ShieldCheck size={16} />, Scalability: <Zap size={16} />,
+  'Modeled Latency': <Activity size={16} />, 'Cost Efficiency': <DollarSign size={16} />, Resilience: <RefreshCw size={16} />,
+};
+const grade = (score: number | null): string => score === null ? 'N/A' : score >= 90 ? 'A+' : score >= 80 ? 'A' : score >= 70 ? 'B' : score >= 55 ? 'C' : 'D';
+const color = (score: number | null): string => score === null ? 'var(--text-muted)' : score >= 85 ? 'var(--success)' : score >= 65 ? 'var(--warning)' : 'var(--error)';
 
 export const HealthRadarPanel: React.FC = () => {
-  const { nodes, edges, metrics, bottlenecks, trafficConfig, simState } = useStore();
-
-  const pillarScores = useMemo<PillarScore[]>(() => {
-    if (nodes.length === 0) {
-      return [
-        {
-          name: 'Availability',
-          score: 0,
-          grade: 'N/A',
-          color: 'var(--text-muted)',
-          icon: <ShieldCheck size={16} />,
-          summary: 'Add components to measure system availability.',
-          suggestions: ['Add clients and application tiers.'],
-        },
-        {
-          name: 'Scalability',
-          score: 0,
-          grade: 'N/A',
-          color: 'var(--text-muted)',
-          icon: <Zap size={16} />,
-          summary: 'Canvas is empty.',
-          suggestions: ['Add load balancers and horizontal replicas.'],
-        },
-        {
-          name: 'Modeled Latency',
-          score: 0,
-          grade: 'N/A',
-          color: 'var(--text-muted)',
-          icon: <Activity size={16} />,
-          summary: 'No active request telemetry.',
-          suggestions: ['Run simulation to record latency.'],
-        },
-        {
-          name: 'Cost Efficiency',
-          score: 0,
-          grade: 'N/A',
-          color: 'var(--text-muted)',
-          icon: <DollarSign size={16} />,
-          summary: 'No provisioned resources.',
-          suggestions: ['Optimize replica sizes against traffic.'],
-        },
-        {
-          name: 'Resilience',
-          score: 0,
-          grade: 'N/A',
-          color: 'var(--text-muted)',
-          icon: <RefreshCw size={16} />,
-          summary: 'No redundancy detected.',
-          suggestions: ['Add redundant paths and retry caches.'],
-        },
-      ];
-    }
-
-    // 1. Availability Score
-    let availScore = 100;
-    const errorRate = metrics.overallErrorRatePercent || 0;
-    availScore -= Math.min(60, errorRate * 2);
-    if (bottlenecks.some((b) => b.severity === 'critical')) availScore -= 20;
-    availScore = Math.max(10, Math.min(100, Math.round(availScore)));
-
-    // 2. Scalability Score
-    let scaleScore = 70;
-    const hasLB = nodes.some((n) => n.data.config.type === 'load_balancer');
-    const hasCache = nodes.some((n) =>
-      ['redis_cache', 'local_cache', 'cdn_cache'].includes(n.data.config.type)
-    );
-    const hasQueue = nodes.some((n) =>
-      ['message_queue', 'pubsub', 'event_bus', 'task_queue'].includes(n.data.config.type)
-    );
-    if (hasLB) scaleScore += 10;
-    if (hasCache) scaleScore += 10;
-    if (hasQueue) scaleScore += 10;
-    if (bottlenecks.some((b) => b.type === 'capacity_overload')) scaleScore -= 25;
-    scaleScore = Math.max(10, Math.min(100, Math.round(scaleScore)));
-
-    // 3. Latency SLA Score
-    let latScore = 100;
-    const p95 = metrics.p95LatencyMs || 10;
-    if (p95 > 500) latScore = 20;
-    else if (p95 > 200) latScore = 50;
-    else if (p95 > 100) latScore = 75;
-    else if (p95 > 50) latScore = 90;
-    latScore = Math.max(10, Math.min(100, Math.round(latScore)));
-
-    // 4. Cost Efficiency Score
-    let costScore = 80;
-    const totalReplicas = nodes.reduce((sum, n) => {
-      const c = n.data.config as any;
-      return sum + (c.replicas || 1);
-    }, 0);
-    const effectiveQps = simState === 'running' ? metrics.currentQps : (trafficConfig?.baseQps || 0);
-    if (totalReplicas > 12 && effectiveQps < 500) costScore -= 30; // Over-provisioned
-    costScore = Math.max(10, Math.min(100, Math.round(costScore)));
-
-    // 5. Resilience Score
-    let resScore = 60;
-    const totalAppReplicas = nodes
-      .filter((n) => n.data.config.type === 'app_server')
-      .reduce((sum, n) => sum + ((n.data.config as any).replicas || 1), 0);
-    const hasMultipleServers = totalAppReplicas > 1;
-    const hasMultipleDbs = nodes.some(
-      (n) =>
-        n.data.config.type === 'sql_db' &&
-        (nodes.filter((x) => x.data.config.type === 'sql_db').length > 1 ||
-          Boolean((n.data.config as any).readReplicasCount && (n.data.config as any).readReplicasCount > 0))
-    );
-    if (hasMultipleServers) resScore += 20;
-    if (hasMultipleDbs) resScore += 20;
-    if (bottlenecks.some((b) => b.type === 'spof')) resScore -= 25;
-    resScore = Math.max(10, Math.min(100, Math.round(resScore)));
-
-    const getGrade = (s: number) => {
-      if (s >= 90) return 'A+';
-      if (s >= 80) return 'A';
-      if (s >= 70) return 'B';
-      if (s >= 55) return 'C';
-      return 'D';
-    };
-
-    const getColor = (s: number) => {
-      if (s >= 85) return 'var(--success)';
-      if (s >= 65) return 'var(--warning)';
-      return 'var(--error)';
-    };
-
-    return [
-      {
-        name: 'Availability',
-        score: availScore,
-        grade: getGrade(availScore),
-        color: getColor(availScore),
-        icon: <ShieldCheck size={16} />,
-        summary: `${(100 - errorRate).toFixed(1)}% modeled request success in the current run.`,
-        suggestions:
-          availScore < 80
-            ? ['Mitigate single point of failure bottlenecks.', 'Add health check fallbacks.']
-            : ['No availability warning rule matched; validate resilience independently.'],
-      },
-      {
-        name: 'Scalability',
-        score: scaleScore,
-        grade: getGrade(scaleScore),
-        color: getColor(scaleScore),
-        icon: <Zap size={16} />,
-        summary: `Heuristic based on load-balancer, cache, queue, and replica signals.`,
-        suggestions: !hasCache
-          ? ['Add Redis or CDN cache layer to offload databases.']
-          : ['The graph includes load-balancing and cache signals; behavior remains simplified.'],
-      },
-      {
-        name: 'Modeled Latency',
-        score: latScore,
-        grade: getGrade(latScore),
-        color: getColor(latScore),
-        icon: <Activity size={16} />,
-        summary: `p95 Latency: ${metrics.p95LatencyMs.toFixed(1)}ms.`,
-        suggestions:
-          latScore < 80
-            ? ['Introduce caching in front of heavy database queries.', 'Use gRPC for internal service links.']
-            : ['Modeled p95 is below the heuristic threshold; validate with real measurements.'],
-      },
-      {
-        name: 'Cost Efficiency',
-        score: costScore,
-        grade: getGrade(costScore),
-        color: getColor(costScore),
-        icon: <DollarSign size={16} />,
-        summary: `${nodes.length} components provisioned.`,
-        suggestions:
-          costScore < 80
-            ? ['Downscale idle replicas during steady periods.']
-            : ['The replica-count heuristic found no over-provisioning warning.'],
-      },
-      {
-        name: 'Resilience',
-        score: resScore,
-        grade: getGrade(resScore),
-        color: getColor(resScore),
-        icon: <RefreshCw size={16} />,
-        summary: `Redundancy signals inferred from graph structure.`,
-        suggestions: !hasMultipleDbs
-          ? ['Add separately routable database nodes and define a failover strategy.']
-          : ['Multiple database nodes are present; failover between separately drawn nodes is not modeled.'],
-      },
-    ];
-  }, [nodes, edges, metrics, bottlenecks]);
-
-  const overallAverage = useMemo(() => {
-    if (nodes.length === 0) return 0;
-    const sum = pillarScores.reduce((acc, p) => acc + p.score, 0);
-    return Math.round(sum / pillarScores.length);
-  }, [nodes.length, pillarScores]);
+  const { nodes, edges, metrics, bottlenecks, trafficConfig } = useStore();
+  const pillars = useMemo(() => scoreArchitectureHealth({ nodes, edges, metrics, bottlenecks, trafficConfig }), [nodes, edges, metrics, bottlenecks, trafficConfig]);
+  const overallAverage = useMemo(() => averageHealthScore(pillars), [pillars]);
 
   return (
     <div className={styles.container}>
-      <ModelNotice
-        kind="heuristic"
-        detail="Scores summarize simplified rules and simulated telemetry; they are not an architecture certification."
-        assumptionLabel="health-score simplifications"
-        assumptionSection="deliberate-simplifications-and-rationale"
-      />
+      <ModelNotice kind="heuristic"
+        detail="Design-time rules and runtime telemetry are scored separately. The radar is a discussion aid and has not been externally validated."
+        assumptionLabel="documented health-score formulas" assumptionSection="health-scoring-formulas" />
       <div className={styles.header}>
         <div className={styles.titleGroup}>
-          <span className={styles.title}>5-Pillar Architecture Health Radar</span>
-          <span className={styles.subtitle}>
-            Continuous rules-based design discussion prompts
-          </span>
+          <span className={styles.title}>5-Pillar Heuristic Architecture Health Radar</span>
+          <span className={styles.subtitle}>Evidence-aware design prompts; not an architecture certification</span>
         </div>
         <div className={styles.overallBadge}>
-          <span className={styles.scoreNumber}>{overallAverage}</span>
-          <span className={styles.scoreLabel}>/ 100 Heuristic</span>
+          <span className={styles.scoreNumber}>{overallAverage ?? 'N/A'}</span>
+          <span className={styles.scoreLabel}>{overallAverage === null ? 'Awaiting evidence' : '/ 100 scored pillars'}</span>
         </div>
       </div>
 
       <div className={styles.pillarsGrid}>
-        {pillarScores.map((pillar) => (
-          <div key={pillar.name} className={styles.pillarCard}>
-            <div className={styles.cardHeader}>
-              <div className={styles.pillarIcon} style={{ color: pillar.color }}>
-                {pillar.icon}
+        {pillars.map((pillar) => {
+          const pillarColor = color(pillar.score);
+          return (
+            <div key={pillar.name} className={styles.pillarCard}>
+              <div className={styles.cardHeader}>
+                <div className={styles.pillarIcon} style={{ color: pillarColor }}>{icons[pillar.name]}</div>
+                <span className={styles.pillarName}>{pillar.name}</span>
+                <span className={styles.gradeBadge} style={{ backgroundColor: `${pillarColor}20`, color: pillarColor }}>
+                  {grade(pillar.score)} ({pillar.score ?? 'N/A'})
+                </span>
               </div>
-              <span className={styles.pillarName}>{pillar.name}</span>
-              <span
-                className={styles.gradeBadge}
-                style={{ backgroundColor: `${pillar.color}20`, color: pillar.color }}
-              >
-                {pillar.grade} ({pillar.score})
-              </span>
+              <div className={styles.evidenceRow}>
+                <span>{pillar.evidenceKind}</span><span>Confidence: {pillar.confidence}</span>
+                {pillar.sampleSize > 0 ? <span>n={pillar.sampleSize.toLocaleString()}</span> : null}
+              </div>
+              <div className={styles.progressTrack} aria-label={`${pillar.name} score ${pillar.score ?? 'not available'}`}>
+                <div className={styles.progressBar} style={{ width: `${pillar.score ?? 0}%`, backgroundColor: pillarColor }} />
+              </div>
+              <p className={styles.summaryText}>{pillar.summary}</p>
+              <div className={styles.suggestionsList}>
+                {pillar.suggestions.map((suggestion) => (
+                  <div key={suggestion} className={styles.suggestionItem}>
+                    {(pillar.score ?? 0) >= 80 ? <CheckCircle size={11} color="var(--success)" /> : <AlertTriangle size={11} color="var(--warning)" />}
+                    <span>{suggestion}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-
-            <div className={styles.progressTrack}>
-              <div
-                className={styles.progressBar}
-                style={{ width: `${pillar.score}%`, backgroundColor: pillar.color }}
-              />
-            </div>
-
-            <p className={styles.summaryText}>{pillar.summary}</p>
-
-            <div className={styles.suggestionsList}>
-              {pillar.suggestions.map((s, idx) => (
-                <div key={idx} className={styles.suggestionItem}>
-                  {pillar.score >= 80 ? (
-                    <CheckCircle size={11} color="var(--success)" />
-                  ) : (
-                    <AlertTriangle size={11} color="var(--warning)" />
-                  )}
-                  <span>{s}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

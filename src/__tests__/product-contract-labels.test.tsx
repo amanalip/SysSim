@@ -31,12 +31,12 @@ describe('Product contract labels', () => {
     fireEvent.click(screen.getByRole('button', { name: '5-Pillar Health Radar' }));
     expect(
       screen.getByLabelText(
-        'Heuristic guidance: Scores summarize simplified rules and simulated telemetry; they are not an architecture certification.',
+        'Heuristic guidance: Design-time rules and runtime telemetry are scored separately. The radar is a discussion aid and has not been externally validated.',
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: 'Assumptions: health-score simplifications' }),
-    ).toHaveAttribute('href', expect.stringContaining('#deliberate-simplifications-and-rationale'));
+      screen.getByRole('link', { name: 'Assumptions: documented health-score formulas' }),
+    ).toHaveAttribute('href', expect.stringContaining('#health-scoring-formulas'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Distributed Traces' }));
     expect(
@@ -51,7 +51,7 @@ describe('Product contract labels', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cloud Cost Estimator' }));
     expect(
       screen.getByLabelText(
-        'Planning estimate: Static example rates are illustrative and are not a cloud-provider quote.',
+        'Planning estimate: Illustrative USD baseline dated 2026-08-01 for US reference region; not live provider pricing or a billing quote.',
       ),
     ).toBeInTheDocument();
     expect(
@@ -61,7 +61,7 @@ describe('Product contract labels', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Calculator' }));
     expect(
       screen.getByLabelText(
-        'Planning estimate: Results use simplified workload assumptions and are not production capacity guarantees.',
+        'Planning estimate: Total QPS includes read and write operations. readWriteRatio is reads per write. Decimal SI: 1 KB = 1,000 bytes; 1 GB = 1,000,000,000 bytes; 1 TB = 1,000 GB. Results are ranges, not production guarantees.',
       ),
     ).toBeInTheDocument();
     expect(

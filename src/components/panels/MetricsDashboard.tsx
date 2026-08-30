@@ -46,7 +46,7 @@ export const MetricsDashboard: React.FC = () => {
     const successPercent =
       metrics.totalRequestsSent > 0
         ? ((metrics.totalRequestsSuccess / metrics.totalRequestsSent) * 100).toFixed(2)
-        : '100.00';
+        : null;
 
     return (
       <div
@@ -70,14 +70,14 @@ export const MetricsDashboard: React.FC = () => {
             <CheckCircle2 size={11} color="var(--success)" />
             <span className={styles.miniStatLabel}>Success:</span>
             <span className={styles.miniStatVal} style={{ color: 'var(--success)' }}>
-              {successPercent}%
+              {successPercent === null ? '--' : `${successPercent}%`}
             </span>
           </div>
 
           <div className={styles.miniStatItem}>
             <Clock size={11} color="var(--warning)" />
             <span className={styles.miniStatLabel}>p99:</span>
-            <span className={styles.miniStatVal}>{metrics.p99LatencyMs}ms</span>
+            <span className={styles.miniStatVal}>{successPercent === null ? '--' : `${metrics.p99LatencyMs}ms`}</span>
           </div>
 
           {bottlenecks.length > 0 && (
@@ -228,15 +228,15 @@ export const MetricsDashboard: React.FC = () => {
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Recent Successful p50</span>
-                <span className={styles.summaryValue}>{metrics.p50LatencyMs}ms</span>
+                <span className={styles.summaryValue}>{metrics.totalRequestsSuccess > 0 ? `${metrics.p50LatencyMs}ms` : '--'}</span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Recent Successful p95</span>
-                <span className={styles.summaryValue}>{metrics.p95LatencyMs}ms</span>
+                <span className={styles.summaryValue}>{metrics.totalRequestsSuccess > 0 ? `${metrics.p95LatencyMs}ms` : '--'}</span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Recent Successful p99</span>
-                <span className={styles.summaryValue}>{metrics.p99LatencyMs}ms</span>
+                <span className={styles.summaryValue}>{metrics.totalRequestsSuccess > 0 ? `${metrics.p99LatencyMs}ms` : '--'}</span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Error Rate</span>

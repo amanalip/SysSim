@@ -141,6 +141,20 @@ Detailed execution, latency, status, fallback, branch aggregation, persistence, 
 - Validate real systems with production telemetry, provider pricing, load tests, failure exercises, and domain expertise.
 - Record the SysSim version and configuration when sharing results because model behavior can change between releases.
 
+## Health scoring formulas
+
+The five-pillar radar is explicitly heuristic and has not been externally validated. It separates runtime telemetry from design-time signals and excludes unavailable runtime pillars from the overall average.
+
+| Pillar | Evidence | Formula |
+| --- | --- | --- |
+| Availability | Runtime telemetry | `clamp(100 - 2 × modeled error-rate percent)`. No score is produced before a request completes. |
+| Scalability | Design heuristic | Starts at 40; +15 for a reachable load balancer, +10 for a reachable cache, +10 for a reachable asynchronous boundary, +15 for a reachable replicated service, and −25 for a capacity-overload finding. |
+| Modeled latency | Runtime telemetry | p95 ≤50 ms → 95; ≤100 → 85; ≤200 → 70; ≤500 → 50; above 500 → 20. No score is produced without completed latency evidence. |
+| Cost efficiency | Design heuristic | Uses the extracted illustrative monthly cost estimate divided by configured or completed monthly request volume. USD per million requests ≤5 → 95; ≤10 → 85; ≤25 → 70; ≤100 → 50; above 100 → 25. |
+| Resilience | Design heuristic | Starts at 30; +30 for two reachable routes to a terminal dependency, +20 for reachable configured SQL failover with a read replica, and +20 when no reachable SPOF finding exists. |
+
+Runtime confidence is low below 100 completed requests, medium from 100–999, and high at 1,000 or more. Design-only confidence means the score has structural evidence but no statistical sample. Recommendations are generated from the same reachable graph signals and telemetry that trigger each formula.
+
 ## Deliberate simplifications and rationale
 
 SysSim deliberately favors an understandable, responsive teaching model over production fidelity. The following simplifications are part of the current contract, not hidden implementation details.
@@ -157,9 +171,9 @@ SysSim deliberately favors an understandable, responsive teaching model over pro
 | Health states | Manual and chaos states use simplified health labels; not every state consistently changes capacity, latency, or errors. | A unified health-state model has not yet been implemented. | A healthy label is not proof of availability. Health semantics are tracked in tasks 152–159. |
 | Chaos drills | Drills mutate selected graph/configuration state but do not reproduce complete infrastructure failure and recovery mechanisms. | Production chaos behavior depends on orchestration, routing, persistence, and recovery models outside the current engine. | Treat drills as visual experiments. Drill correctness is tracked in tasks 160–172. |
 | Latency and percentiles | Hop latency is simplified and aggregated from synthetic samples. | Network distributions, queue wait, service time, geography, and coordinated omission need separate models. | Percentiles describe only the current synthetic run. Latency/metrics work is tracked in tasks 180–199. |
-| Health and bottleneck analysis | Scores and findings are fixed rules over graph structure and simulated telemetry. | They are teaching prompts, not an externally validated architecture assessment. | Validate conclusions independently. Evidence-based analysis is tracked in tasks 271–284. |
-| Capacity worksheet | Formulas are deterministic but assume simplified traffic, payload, replication, and per-server capacity. | A general worksheet cannot know a workload's headroom, indexes, compression, growth, failover reserve, or utilization target. | Replace assumptions with measured inputs. Calculator work is tracked in tasks 285–297. |
-| Cloud cost | Prices are static illustrative example rates and omit many provider, region, usage, discount, and managed-service dimensions. | Live pricing and provider-specific billing are outside the current implementation. | Never treat the total as a quote or forecast. Cost transparency is tracked in tasks 298–307. |
+| Health and bottleneck analysis | Evidence-aware formulas combine reachable graph structure with separately labeled synthetic telemetry. | They are teaching prompts, not an externally validated architecture assessment. | Use the formulas and confidence thresholds above, then validate conclusions independently. |
+| Capacity worksheet | Deterministic decimal-SI formulas expose payload direction, service time, utilization, headroom, failover, working-set, compression, indexing, metadata, replication, and growth assumptions. | Uncertainty ranges are fixed sensitivity bands rather than statistical confidence intervals. | Download the assumptions and replace them with measured workload evidence. |
+| Cloud cost | Prices are a dated SysSim illustrative US-reference baseline and omit many provider billing dimensions. | Live pricing and provider-specific billing are outside the current implementation. | Never treat the total as a quote or forecast; verify current provider pricing. |
 | Scale limits | The documented operating envelope is not yet enforced consistently at every input boundary. | Validation, persistence quotas, and stress budgets are scheduled separately. | Behavior beyond the envelope is unsupported. Enforcement is tracked across validation and performance tasks 214–249 and 473–497. |
 
 ## Contract maintenance
