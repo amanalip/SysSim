@@ -6,7 +6,7 @@ import { ARCHITECTURE_BLUEPRINTS } from '../model/blueprints';
 import { ALL_SCENARIOS } from '../scenarios';
 
 describe('User-facing product claims', () => {
-  it('describes chaos drills as simplified state changes', () => {
+  it('describes chaos drills as bounded, reversible simulations', () => {
     render(<ChaosDrillModal isOpen onClose={vi.fn()} />);
 
     expect(
@@ -14,16 +14,16 @@ describe('User-facing product claims', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Marks one database node down. Failover between separately drawn database nodes is not modeled; SQL internal failover applies only to degraded nodes.',
+        'Exercises internal SQL replica failover or a separately connected database target; fails explicitly when neither exists.',
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Multiplies configured traffic by 5. Automatic scaling is not currently modeled.',
+        'Multiplies base QPS exactly once while preserving the selected traffic pattern for exact restoration.',
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText('Application Server Degradation')).toBeInTheDocument();
-    expect(screen.queryByText(/test automated read replica failover/i)).not.toBeInTheDocument();
+    expect(screen.getByText('High Network Latency (400ms)')).toBeInTheDocument();
+    expect(screen.getByText(/request coalescing protection/i)).toBeInTheDocument();
   });
 
   it('frames the scenario runner as illustrative review rather than SLA verification', () => {
