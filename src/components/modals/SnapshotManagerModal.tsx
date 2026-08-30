@@ -109,7 +109,6 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
       setTrafficConfig(slot.trafficConfig);
       simBridge.syncConfig(slot.trafficConfig);
     }
-    simBridge.syncGraph();
     addToast(`Loaded ${slot.name} to canvas`, 'success');
     onClose();
   };

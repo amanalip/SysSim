@@ -60,12 +60,14 @@ export class ChaosDrillManager {
     } else if (id === 'cache_stampede') {
       const caches = state.nodes.filter((node) => cacheTypes.has(node.data.config.type));
       if (!caches.length) return this.failure(id, 'No cache exists to flush or bypass.');
+      const updates: Record<string, Partial<AnyComponentConfig>> = {};
       for (const cache of caches) {
         configs[cache.id] = structuredClone(cache.data.config);
         const partial: Record<string, unknown> = { hitRatioPercent: 0 };
         if ('requestCoalescingEnabled' in cache.data.config) partial.requestCoalescingEnabled = Boolean(options.stampedeProtection);
-        state.updateNodeConfig(cache.id, partial as Partial<AnyComponentConfig>);
+        updates[cache.id] = partial as Partial<AnyComponentConfig>;
       }
+      state.updateNodeConfigs(updates);
       affectedTargets = caches.map((cache) => cache.id);
       injectedParameters = { cacheHitRatioPercent: 0, stampedeProtection: Boolean(options.stampedeProtection) };
       observedResult = options.stampedeProtection ? 'Caches bypassed; concurrent misses are coalesced before origin fill.' : 'Caches bypassed; every miss is forwarded to origin traffic.';
@@ -101,7 +103,6 @@ export class ChaosDrillManager {
       observedResult = `Added 400ms to ${ids.size} active ingress request edge${ids.size === 1 ? '' : 's'}.`;
     }
 
-    simBridge.syncGraph();
     const record = { id, startedAt, affectedTargets, injectedParameters, observedResult, succeeded: true } satisfies ChaosDrillRecord;
     this.active.set(id, { record, health, configs, edges: edgeState, traffic });
     this.history.push(record);
@@ -113,14 +114,13 @@ export class ChaosDrillManager {
     if (!point) return false;
     const state = useStore.getState();
     for (const [nodeId, health] of Object.entries(point.health)) state.setNodeHealthOverride(nodeId, health, 'manual');
-    for (const [nodeId, config] of Object.entries(point.configs)) state.updateNodeConfig(nodeId, config);
+    state.updateNodeConfigs(point.configs);
     if (Object.keys(point.edges).length) state.setEdges((edges) => edges.map((edge) => point.edges[edge.id] ? { ...edge, data: structuredClone(point.edges[edge.id]) } : edge));
     if (point.traffic) {
       state.setTrafficConfig(point.traffic);
       simBridge.syncConfig(point.traffic);
     }
     this.active.delete(id);
-    simBridge.syncGraph();
     return true;
   }
 

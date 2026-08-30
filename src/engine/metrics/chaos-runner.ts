@@ -1,5 +1,4 @@
 import { useStore } from '../../store/use-store';
-import { simBridge } from '../sim-bridge';
 import { SeededRandom } from '../seeded-random';
 
 class ChaosRunner {
@@ -30,7 +29,6 @@ class ChaosRunner {
         const original = this.originalHealth.get(randomNode.id) || 'healthy';
         this.originalHealth.delete(randomNode.id);
         useStore.getState().setNodeHealthOverride(randomNode.id, original, 'chaos');
-        simBridge.syncGraph();
         return;
       }
 
@@ -39,7 +37,6 @@ class ChaosRunner {
         `Chaos Monkey: Marked ${randomNode.data.config.name} as ${nextHealth.toUpperCase()}`,
         nextHealth === 'down' ? 'error' : 'success'
       );
-      simBridge.syncGraph();
     }, intervalSec * 1000);
   }
 
@@ -54,7 +51,6 @@ class ChaosRunner {
         useStore.getState().setNodeHealthOverride(id, health, 'manual');
       });
       this.originalHealth.clear();
-      simBridge.syncGraph();
     }
   }
 
@@ -63,7 +59,6 @@ class ChaosRunner {
       useStore.getState().setNodeHealthOverride(id, health, 'manual');
     });
     this.originalHealth.clear();
-    simBridge.syncGraph();
   }
 }
 

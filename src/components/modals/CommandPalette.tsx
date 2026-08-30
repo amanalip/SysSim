@@ -148,7 +148,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       action: () => {
         loadScenario(sc);
         simBridge.reset();
-        simBridge.syncGraph();
         simBridge.syncConfig(sc.trafficPreset);
         useStore.getState().setActiveSidebarTab('scenarios');
         addToast(`Loaded scenario challenge #${sc.id}: ${sc.title}`, 'info');

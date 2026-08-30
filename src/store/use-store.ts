@@ -90,15 +90,18 @@ export interface SysSimState {
   selectedEdgeId: string | null;
   historyPast: CanvasHistoryEntry[];
   historyFuture: CanvasHistoryEntry[];
+  graphRevision: number;
 
   // Canvas Actions
   setNodes: (nodes: CanvasNode[] | ((prev: CanvasNode[]) => CanvasNode[])) => void;
   setEdges: (edges: CanvasEdge[] | ((prev: CanvasEdge[]) => CanvasEdge[])) => void;
+  removeGraphItems: (nodeIds: string[], edgeIds: string[]) => void;
   setZones: (zones: ZoneData[] | ((prev: ZoneData[]) => ZoneData[])) => void;
   addNode: (type: AnyComponentConfig['type'], position: { x: number; y: number }, customName?: string) => string;
   duplicateNode: (nodeId: string) => string | null;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   updateNodeConfig: (id: string, partialConfig: Partial<AnyComponentConfig>) => void;
+  updateNodeConfigs: (updates: Record<string, Partial<AnyComponentConfig>>) => void;
   removeNode: (id: string) => void;
   addEdge: (source: string, target: string, protocol?: EdgeProtocol, purpose?: EdgePurpose) => boolean;
   updateEdgeProtocol: (edgeId: string, protocol: EdgeProtocol) => void;
@@ -269,6 +272,7 @@ export const useStore = create<SysSimState>((set, get) => ({
   selectedEdgeId: null,
   historyPast: [],
   historyFuture: [],
+  graphRevision: 0,
 
   setNodes: (nodesOrUpdater) => {
     set((state) => ({
@@ -278,7 +282,29 @@ export const useStore = create<SysSimState>((set, get) => ({
   setEdges: (edgesOrUpdater) => {
     set((state) => ({
       edges: typeof edgesOrUpdater === 'function' ? edgesOrUpdater(state.edges) : edgesOrUpdater,
+      graphRevision: state.graphRevision + 1,
     }));
+    simBridge.syncGraph();
+  },
+  removeGraphItems: (nodeIds, edgeIds) => {
+    const nodesToRemove = new Set(nodeIds);
+    const edgesToRemove = new Set(edgeIds);
+    if (nodesToRemove.size === 0 && edgesToRemove.size === 0) return;
+    const current = get();
+    const hasTarget = current.nodes.some((node) => nodesToRemove.has(node.id)) ||
+      current.edges.some((edge) => edgesToRemove.has(edge.id));
+    if (!hasTarget) return;
+    get().pushHistory();
+    set((state) => ({
+      nodes: state.nodes.filter((node) => !nodesToRemove.has(node.id)),
+      edges: state.edges.filter((edge) =>
+        !edgesToRemove.has(edge.id) && !nodesToRemove.has(edge.source) && !nodesToRemove.has(edge.target)),
+      selectedNodeId: state.selectedNodeId && nodesToRemove.has(state.selectedNodeId) ? null : state.selectedNodeId,
+      selectedEdgeId: state.selectedEdgeId && edgesToRemove.has(state.selectedEdgeId) ? null : state.selectedEdgeId,
+      isPropertiesPanelOpen: state.selectedNodeId && nodesToRemove.has(state.selectedNodeId) ? false : state.isPropertiesPanelOpen,
+      graphRevision: state.graphRevision + 1,
+    }));
+    simBridge.syncGraph();
   },
   setZones: (zonesOrUpdater) => {
     set((state) => ({
@@ -302,7 +328,9 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedNodeId: id,
       selectedEdgeId: null,
       isPropertiesPanelOpen: true,
+      graphRevision: state.graphRevision + 1,
     }));
+    simBridge.syncGraph();
     return id;
   },
 
@@ -328,6 +356,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedNodeId: id,
       selectedEdgeId: null,
       isPropertiesPanelOpen: true,
+      graphRevision: state.graphRevision + 1,
     }));
     simBridge.syncGraph();
     return id;
@@ -351,8 +380,20 @@ export const useStore = create<SysSimState>((set, get) => ({
             },
           };
         }
-        return node;
+          return node;
       }),
+      graphRevision: state.graphRevision + 1,
+    }));
+    simBridge.syncGraph();
+  },
+
+  updateNodeConfigs: (updates) => {
+    if (Object.keys(updates).length === 0) return;
+    set((state) => ({
+      nodes: state.nodes.map((node) => updates[node.id]
+        ? { ...node, data: { ...node.data, config: { ...node.data.config, ...updates[node.id] } as AnyComponentConfig } }
+        : node),
+      graphRevision: state.graphRevision + 1,
     }));
     simBridge.syncGraph();
   },
@@ -364,6 +405,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       edges: state.edges.filter((edge) => edge.source !== id && edge.target !== id),
       selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
       isPropertiesPanelOpen: state.selectedNodeId === id ? false : state.isPropertiesPanelOpen,
+      graphRevision: state.graphRevision + 1,
     }));
     simBridge.syncGraph();
   },
@@ -426,7 +468,9 @@ export const useStore = create<SysSimState>((set, get) => ({
       edges: [...state.edges, newEdge],
       selectedEdgeId: id,
       selectedNodeId: null,
+      graphRevision: state.graphRevision + 1,
     }));
+    simBridge.syncGraph();
     return true;
   },
 
@@ -451,6 +495,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       edges: state.edges.map((e) =>
         e.id === edgeId ? { ...e, data: { ...e.data, protocol } } : e
       ),
+      graphRevision: state.graphRevision + 1,
     }));
     simBridge.syncGraph();
   },
@@ -476,6 +521,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       edges: state.edges.map((e) =>
         e.id === edgeId ? { ...e, data: { ...e.data, purpose } } : e
       ),
+      graphRevision: state.graphRevision + 1,
     }));
     simBridge.syncGraph();
   },
@@ -495,6 +541,7 @@ export const useStore = create<SysSimState>((set, get) => ({
             }
           : e
       ),
+      graphRevision: state.graphRevision + 1,
     }));
     simBridge.syncGraph();
   },
@@ -504,6 +551,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     set((state) => ({
       edges: state.edges.filter((e) => e.id !== edgeId),
       selectedEdgeId: state.selectedEdgeId === edgeId ? null : state.selectedEdgeId,
+      graphRevision: state.graphRevision + 1,
     }));
     simBridge.syncGraph();
   },
@@ -572,6 +620,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedNodeId: null,
       selectedEdgeId: null,
       isPropertiesPanelOpen: false,
+      graphRevision: get().graphRevision + 1,
     });
     simBridge.reset();
     simBridge.syncGraph();
@@ -596,6 +645,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedNodeId: null,
       selectedEdgeId: null,
       isPropertiesPanelOpen: false,
+      graphRevision: get().graphRevision + 1,
     });
     simBridge.syncGraph();
   },
@@ -631,6 +681,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       historyFuture: [current, ...historyFuture],
       selectedNodeId: null,
       selectedEdgeId: null,
+      graphRevision: get().graphRevision + 1,
     });
     simBridge.syncGraph();
   },
@@ -653,6 +704,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       historyFuture: historyFuture.slice(1),
       selectedNodeId: null,
       selectedEdgeId: null,
+      graphRevision: get().graphRevision + 1,
     });
     simBridge.syncGraph();
   },
@@ -690,6 +742,7 @@ export const useStore = create<SysSimState>((set, get) => ({
           ? { ...n, data: { ...n.data, config: { ...n.data.config, health } } }
           : n
       ),
+      graphRevision: state.graphRevision + 1,
     }));
     simBridge.syncGraph();
   },
@@ -751,7 +804,9 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedNodeId: null,
       selectedEdgeId: null,
       isPropertiesPanelOpen: false,
+      graphRevision: get().graphRevision + 1,
     });
+    simBridge.syncGraph();
   },
 
   closeScenario: () => {

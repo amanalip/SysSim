@@ -66,7 +66,6 @@ export function App() {
           simBridge.syncConfig(decoded.trafficConfig);
         }
         addToast('Loaded shared architecture from URL', 'success');
-        simBridge.syncGraph();
         return;
       }
     }
@@ -76,7 +75,6 @@ export function App() {
       const starter = CORE_SCENARIOS[0]; // URL Shortener
       loadScenario(starter);
       loadReferenceDesign(starter.referenceDesign);
-      simBridge.syncGraph();
     }
   }, []);
 

@@ -39,6 +39,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
     zones,
     setNodes,
     setEdges,
+    removeGraphItems,
     addNode,
     duplicateNode,
     addEdge,
@@ -98,16 +99,26 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      setNodes((nds) => applyNodeChanges(changes, nds as unknown as Node[]) as any);
+      const removedNodeIds = changes.filter((change) => change.type === 'remove').map((change) => change.id);
+      if (removedNodeIds.length > 0) removeGraphItems(removedNodeIds, []);
+      const visualChanges = changes.filter((change) => change.type !== 'remove');
+      if (visualChanges.length > 0) {
+        setNodes((nds) => applyNodeChanges(visualChanges, nds as unknown as Node[]) as any);
+      }
     },
-    [setNodes]
+    [removeGraphItems, setNodes]
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
-      setEdges((eds) => applyEdgeChanges(changes, eds as unknown as Edge[]) as any);
+      const removedEdgeIds = changes.filter((change) => change.type === 'remove').map((change) => change.id);
+      if (removedEdgeIds.length > 0) removeGraphItems([], removedEdgeIds);
+      const remainingChanges = changes.filter((change) => change.type !== 'remove');
+      if (remainingChanges.length > 0) {
+        setEdges((eds) => applyEdgeChanges(remainingChanges, eds as unknown as Edge[]) as any);
+      }
     },
-    [setEdges]
+    [removeGraphItems, setEdges]
   );
 
   const onConnect = useCallback(

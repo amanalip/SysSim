@@ -9,7 +9,6 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
-import { simBridge } from '../../engine/sim-bridge';
 import { ComponentType, ZoneData } from '../../model/types';
 import styles from './ContextMenu.module.css';
 
@@ -96,7 +95,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       const nextHealth =
         targetNode.data.config.health === 'down' ? 'healthy' : 'down';
       setNodeHealthOverride(targetNode.id, nextHealth);
-      simBridge.syncGraph();
     }
     onClose();
   };
