@@ -380,83 +380,83 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 ## Remove store/engine circular coupling — P1
 
 - [x] 215. Identify the current coupling between the Zustand store and singleton simulation bridge.
-- [ ] 216. Define a one-way command/event boundary between UI state and simulation state.
-- [ ] 217. Move bridge lifecycle initialization to application composition rather than module import side effects.
-- [ ] 218. Make the engine independently usable without DOM, localStorage, React, or Zustand.
-- [ ] 219. Inject callbacks or an event bus into the bridge instead of importing the store from engine code.
-- [ ] 220. Make worker fallback behavior independently testable.
-- [ ] 221. Ensure tests do not create hidden singleton worker state across files.
+- [x] 216. Define a one-way command/event boundary between UI state and simulation state.
+- [x] 217. Move bridge lifecycle initialization to application composition rather than module import side effects.
+- [x] 218. Make the engine independently usable without DOM, localStorage, React, or Zustand.
+- [x] 219. Inject callbacks or an event bus into the bridge instead of importing the store from engine code.
+- [x] 220. Make worker fallback behavior independently testable.
+- [x] 221. Ensure tests do not create hidden singleton worker state across files.
 
 ## Add versioned architecture schemas — P0
 
-- [ ] 222. Add a top-level schema version to exports, URL state, and snapshots.
-- [ ] 223. Define runtime schemas for nodes, edges, zones, traffic configuration, and simulation metadata.
-- [ ] 224. Validate component type, category, health state, protocols, IDs, coordinates, sizes, and all component-specific configuration.
-- [ ] 225. Reject duplicate node, edge, and zone IDs.
-- [ ] 226. Reject or repair dangling edges.
-- [ ] 227. Reject non-finite numbers, negative sizes, and unsafe extreme values.
-- [ ] 228. Bound maximum node, edge, zone, name, and text lengths.
-- [ ] 229. Bound decompressed URL and imported-file size to prevent resource exhaustion.
-- [ ] 230. Validate snapshot data read from localStorage before rendering.
-- [ ] 231. Validate completed scenario IDs read from localStorage.
-- [ ] 232. Validate the stored theme before applying it.
-- [ ] 233. Add migrations for every historical schema version that remains supported.
-- [ ] 234. Provide actionable import error messages identifying invalid fields.
-- [ ] 235. Add malicious, malformed, partial, and old-version fixture tests.
-- [ ] 236. Add round-trip tests for every supported component and edge type.
+- [x] 222. Add a top-level schema version to exports, URL state, and snapshots.
+- [x] 223. Define runtime schemas for nodes, edges, zones, traffic configuration, and simulation metadata.
+- [x] 224. Validate component type, category, health state, protocols, IDs, coordinates, sizes, and all component-specific configuration.
+- [x] 225. Reject duplicate node, edge, and zone IDs.
+- [x] 226. Reject or repair dangling edges.
+- [x] 227. Reject non-finite numbers, negative sizes, and unsafe extreme values.
+- [x] 228. Bound maximum node, edge, zone, name, and text lengths.
+- [x] 229. Bound decompressed URL and imported-file size to prevent resource exhaustion.
+- [x] 230. Validate snapshot data read from localStorage before rendering.
+- [x] 231. Validate completed scenario IDs read from localStorage.
+- [x] 232. Validate the stored theme before applying it.
+- [x] 233. Add migrations for every historical schema version that remains supported.
+- [x] 234. Provide actionable import error messages identifying invalid fields.
+- [x] 235. Add malicious, malformed, partial, and old-version fixture tests.
+- [x] 236. Add round-trip tests for every supported component and edge type.
 
 ## Improve undo/redo correctness — P1
 
-- [ ] 237. Define which actions create history entries.
-- [ ] 238. Add history entries for node movement at drag completion rather than every movement frame.
-- [ ] 239. Add history support for zone moves and resizes.
-- [ ] 240. Ensure selection-only changes do not pollute history.
-- [ ] 241. Ensure config edits are grouped sensibly rather than producing unexpected undo behavior.
-- [ ] 242. Preserve and restore all semantically relevant graph fields.
-- [ ] 243. Synchronize the worker after undo and redo exactly once.
-- [ ] 244. Expose whether undo and redo are available and disable controls accordingly.
-- [ ] 245. Add integration tests for mixed node, edge, zone, config, and layout history.
+- [x] 237. Define which actions create history entries.
+- [x] 238. Add history entries for node movement at drag completion rather than every movement frame.
+- [x] 239. Add history support for zone moves and resizes.
+- [x] 240. Ensure selection-only changes do not pollute history.
+- [x] 241. Ensure config edits are grouped sensibly rather than producing unexpected undo behavior.
+- [x] 242. Preserve and restore all semantically relevant graph fields.
+- [x] 243. Synchronize the worker after undo and redo exactly once.
+- [x] 244. Expose whether undo and redo are available and disable controls accordingly.
+- [x] 245. Add integration tests for mixed node, edge, zone, config, and layout history.
 
 ## Improve snapshot persistence — P1
 
-- [ ] 246. Validate snapshots read from localStorage.
-- [ ] 247. Handle quota-exceeded errors visibly rather than silently swallowing them.
-- [ ] 248. Display corrupted-slot status and offer safe removal.
-- [ ] 249. Include schema version and application version in each snapshot.
-- [ ] 250. Prevent custom-name whitespace from producing blank names.
-- [ ] 251. Add import/export of all snapshot slots if useful.
-- [ ] 252. Confirm snapshot loading restores simulation state intentionally rather than accidentally.
-- [ ] 253. Add tests for corruption, quota failures, migrations, and restoration.
+- [x] 246. Validate snapshots read from localStorage.
+- [x] 247. Handle quota-exceeded errors visibly rather than silently swallowing them.
+- [x] 248. Display corrupted-slot status and offer safe removal.
+- [x] 249. Include schema version and application version in each snapshot.
+- [x] 250. Prevent custom-name whitespace from producing blank names.
+- [x] 251. Add import/export of all snapshot slots if useful.
+- [x] 252. Confirm snapshot loading restores simulation state intentionally rather than accidentally.
+- [x] 253. Add tests for corruption, quota failures, migrations, and restoration.
 
 ## Improve Web Worker lifecycle and recovery — P1
 
-- [ ] 254. Define typed message unions for all worker commands and responses.
-- [ ] 255. Validate worker messages before using payloads.
-- [ ] 256. Add worker-ready and graph-acknowledgement messages.
-- [ ] 257. Prevent `start` before graph/config initialization acknowledgement.
-- [ ] 258. Preserve current metrics and elapsed time during worker-to-main-thread fallback when feasible.
-- [ ] 259. Prevent duplicate timers during repeated error, start, pause, and resume sequences.
-- [ ] 260. Terminate the worker during application teardown or hot replacement.
-- [ ] 261. Surface fallback mode to diagnostics without alarming ordinary users.
-- [ ] 262. Add tests for worker initialization failure, runtime failure, stale messages, and recovery.
+- [x] 254. Define typed message unions for all worker commands and responses.
+- [x] 255. Validate worker messages before using payloads.
+- [x] 256. Add worker-ready and graph-acknowledgement messages.
+- [x] 257. Prevent `start` before graph/config initialization acknowledgement.
+- [x] 258. Preserve current metrics and elapsed time during worker-to-main-thread fallback when feasible.
+- [x] 259. Prevent duplicate timers during repeated error, start, pause, and resume sequences.
+- [x] 260. Terminate the worker during application teardown or hot replacement.
+- [x] 261. Surface fallback mode to diagnostics without alarming ordinary users.
+- [x] 262. Add tests for worker initialization failure, runtime failure, stale messages, and recovery.
 
 # Phase 3 — Analysis, Calculators, and Scenario Quality
 
 ## Make bottleneck detection graph-aware — P1
 
-- [ ] 263. Detect whether nodes are actually reachable from traffic sources.
-- [ ] 264. Detect SPOFs using path dominance/articulation logic rather than component type alone.
-- [ ] 265. Avoid flagging unused or isolated components as production bottlenecks.
-- [ ] 266. Detect missing caches only on eligible read-heavy database paths.
-- [ ] 267. Detect synchronous chains by traversing actual paths rather than global node and edge counts.
-- [ ] 268. Use edge semantics to exclude replication and observability links.
-- [ ] 269. Implement hot-partition detection promised by the `BottleneckType` union.
-- [ ] 270. Implement unbalanced-load detection.
-- [ ] 271. Implement queue-overflow detection.
-- [ ] 272. Deduplicate overlapping findings.
-- [ ] 273. Rank findings by impact, confidence, and affected traffic share.
-- [ ] 274. Explain every finding with the exact path and metrics that triggered it.
-- [ ] 275. Add graph fixtures for false-positive and false-negative cases.
+- [x] 263. Detect whether nodes are actually reachable from traffic sources.
+- [x] 264. Detect SPOFs using path dominance/articulation logic rather than component type alone.
+- [x] 265. Avoid flagging unused or isolated components as production bottlenecks.
+- [x] 266. Detect missing caches only on eligible read-heavy database paths.
+- [x] 267. Detect synchronous chains by traversing actual paths rather than global node and edge counts.
+- [x] 268. Use edge semantics to exclude replication and observability links.
+- [x] 269. Implement hot-partition detection promised by the `BottleneckType` union.
+- [x] 270. Implement unbalanced-load detection.
+- [x] 271. Implement queue-overflow detection.
+- [x] 272. Deduplicate overlapping findings.
+- [x] 273. Rank findings by impact, confidence, and affected traffic share.
+- [x] 274. Explain every finding with the exact path and metrics that triggered it.
+- [x] 275. Add graph fixtures for false-positive and false-negative cases.
 
 ## Make health scoring evidence-based — P1
 
