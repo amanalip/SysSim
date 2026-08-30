@@ -2,11 +2,13 @@ import LZString from 'lz-string';
 import { CanvasEdge, CanvasNode, useStore } from '../store/use-store';
 import { SerializedCanvasState, ZoneData } from '../model/types';
 import { CURRENT_CANVAS_VERSION, migrateCanvasState } from '../model/canvas-migrations';
+import { APPLICATION_VERSION, ARCHITECTURE_LIMITS, formatArchitectureError, validateArchitectureState } from '../model/architecture-schema';
 
 export function serializeCanvasState(): SerializedCanvasState {
   const { nodes, edges, zones, trafficConfig } = useStore.getState();
   return {
     version: CURRENT_CANVAS_VERSION,
+    appVersion: APPLICATION_VERSION,
     nodes: nodes.map((n) => ({
       id: n.id,
       type: n.type,
@@ -36,6 +38,7 @@ export function serializeCanvasState(): SerializedCanvasState {
       height: z.height,
     })),
     trafficConfig: structuredClone(trafficConfig),
+    simulationMetadata: { savedAt: Date.now(), appVersion: APPLICATION_VERSION, state: useStore.getState().simState },
   };
 }
 
@@ -50,13 +53,15 @@ export function decodeStateFromUrlHash(hash: string): SerializedCanvasState | nu
   try {
     if (!hash.startsWith('#data=')) return null;
     const compressed = hash.replace('#data=', '');
+    if (compressed.length > ARCHITECTURE_LIMITS.maxImportBytes) return null;
     const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
     if (!decompressed) return null;
+    if (new Blob([decompressed]).size > ARCHITECTURE_LIMITS.maxDecompressedUrlBytes) return null;
     const parsed = JSON.parse(decompressed);
     if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
       return null;
     }
-    return migrateCanvasState(parsed as SerializedCanvasState);
+    return validateArchitectureState(migrateCanvasState(parsed as SerializedCanvasState), { repairDanglingEdges: true });
   } catch {
     return null;
   }
@@ -78,16 +83,17 @@ export function exportArchitectureJson(): void {
 }
 
 export function importArchitectureJson(file: File, onSuccess: () => void, onError: (msg: string) => void): void {
+  if (file.size > ARCHITECTURE_LIMITS.maxImportBytes) {
+    onError(`Architecture file exceeds the ${ARCHITECTURE_LIMITS.maxImportBytes.toLocaleString()} byte limit`);
+    return;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const content = e.target?.result as string;
+      if (new Blob([content]).size > ARCHITECTURE_LIMITS.maxImportBytes) throw new Error('Architecture content exceeds the import size limit');
       const parsed = JSON.parse(content) as SerializedCanvasState;
-      if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
-        onError('Invalid SysSim architecture JSON schema');
-        return;
-      }
-      const migrated = migrateCanvasState(parsed);
+      const migrated = validateArchitectureState(migrateCanvasState(parsed));
       useStore.getState().loadCanvasState(
         migrated.nodes as unknown as CanvasNode[],
         migrated.edges as unknown as CanvasEdge[],
@@ -97,8 +103,8 @@ export function importArchitectureJson(file: File, onSuccess: () => void, onErro
         useStore.getState().setTrafficConfig(migrated.trafficConfig);
       }
       onSuccess();
-    } catch {
-      onError('Failed to parse architecture JSON file');
+    } catch (error) {
+      onError(formatArchitectureError(error));
     }
   };
   reader.readAsText(file);

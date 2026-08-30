@@ -2,7 +2,7 @@ import { inferEdgePurpose, validateEdgePurpose } from './edge-semantics';
 import { EdgeProtocol, SerializedCanvasState } from './types';
 import { createDefaultConfig } from './component-defaults';
 
-export const CURRENT_CANVAS_VERSION = 9 as const;
+export const CURRENT_CANVAS_VERSION = 10 as const;
 
 const MESSAGING_TYPES = new Set(['message_queue', 'task_queue', 'pubsub', 'event_bus']);
 const COMPUTE_TYPES = new Set(['app_server', 'worker', 'serverless']);
@@ -17,6 +17,13 @@ const COMPLETED_MODEL_TYPES = new Set([
  * graphs had no edge purpose, so their purpose is inferred once at load time.
  */
 export function migrateCanvasState(input: SerializedCanvasState): SerializedCanvasState {
+  if (!input || typeof input !== 'object' || !Array.isArray(input.nodes) || !Array.isArray(input.edges)) {
+    throw new Error('Architecture must contain node and edge arrays');
+  }
+  const sourceVersion = input.version || 1;
+  if (sourceVersion < 1 || sourceVersion > CURRENT_CANVAS_VERSION) {
+    throw new Error(`Unsupported architecture schema version ${sourceVersion}`);
+  }
   const nodes = structuredClone(input.nodes || []).map((node) => {
     const config = node.data.config;
     if (
@@ -61,9 +68,11 @@ export function migrateCanvasState(input: SerializedCanvasState): SerializedCanv
 
   return {
     version: CURRENT_CANVAS_VERSION,
+    appVersion: input.appVersion || '1.0.0',
     nodes,
     edges,
     zones: structuredClone(input.zones || []),
     trafficConfig: input.trafficConfig ? structuredClone(input.trafficConfig) : undefined,
+    simulationMetadata: input.simulationMetadata ? structuredClone(input.simulationMetadata) : undefined,
   };
 }

@@ -643,6 +643,7 @@ export type BottleneckSeverity = 'warning' | 'critical';
 export type BottleneckType =
   | 'spof'
   | 'capacity_overload'
+  | 'high_error_rate'
   | 'hot_partition'
   | 'missing_cache'
   | 'synchronous_chain'
@@ -659,6 +660,10 @@ export interface BottleneckIssue {
   description: string;
   suggestedFix: string;
   metricValue?: string;
+  impactScore?: number;
+  confidence?: 'low' | 'medium' | 'high';
+  affectedTrafficPercent?: number;
+  triggerPath?: string[];
 }
 
 export interface ScenarioHint {
@@ -688,7 +693,8 @@ export interface ScenarioConstraints {
 }
 
 export interface SerializedCanvasState {
-  version?: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  version?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+  appVersion?: string;
   nodes: Array<{
     id: string;
     type: string;
@@ -707,6 +713,11 @@ export interface SerializedCanvasState {
   }>;
   zones?: ZoneData[];
   trafficConfig?: TrafficConfig;
+  simulationMetadata?: {
+    savedAt: number;
+    appVersion: string;
+    state?: SimulationState;
+  };
 }
 
 export type ScenarioCategory =
