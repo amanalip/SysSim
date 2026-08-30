@@ -460,37 +460,37 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 ## Make health scoring evidence-based — P1
 
-- [ ] 276. Define every pillar formula in documentation.
-- [ ] 277. Do not report perfect availability or latency before a simulation has produced evidence.
-- [ ] 278. Distinguish design-time heuristic scores from runtime telemetry scores.
-- [ ] 279. Include confidence/sample-size indicators.
-- [ ] 280. Make cost-efficiency scoring use actual estimated cost and workload rather than only replica count.
-- [ ] 281. Make resilience scoring account for reachable redundant paths and failover capability.
-- [ ] 282. Align recommendations with actual graph structure and simulation behavior.
-- [ ] 283. Add hand-reviewed fixtures with expected score ranges.
-- [ ] 284. Label the health radar as heuristic until externally validated.
+- [x] 276. Define every pillar formula in documentation.
+- [x] 277. Do not report perfect availability or latency before a simulation has produced evidence.
+- [x] 278. Distinguish design-time heuristic scores from runtime telemetry scores.
+- [x] 279. Include confidence/sample-size indicators.
+- [x] 280. Make cost-efficiency scoring use actual estimated cost and workload rather than only replica count.
+- [x] 281. Make resilience scoring account for reachable redundant paths and failover capability.
+- [x] 282. Align recommendations with actual graph structure and simulation behavior.
+- [x] 283. Add hand-reviewed fixtures with expected score ranges.
+- [x] 284. Label the health radar as heuristic until externally validated.
 
 ## Extract and validate capacity-calculator logic — P1
 
-- [ ] 285. Move formulas out of React components into pure typed functions.
-- [ ] 286. Test production calculation functions rather than duplicating formulas in tests.
-- [ ] 287. Define decimal versus binary unit conventions and use them consistently.
-- [ ] 288. Clarify whether QPS includes both reads and writes.
-- [ ] 289. Clarify request and response payload assumptions.
-- [ ] 290. Make inbound/outbound bandwidth formulas match displayed explanations.
-- [ ] 291. Replace the arbitrary DB connection formula with configurable service-time/concurrency assumptions.
-- [ ] 292. Replace the “20% of daily writes” cache recommendation with a documented working-set model.
-- [ ] 293. Incorporate headroom, failover capacity, and utilization targets into server count.
-- [ ] 294. Add replication, indexing, metadata, compression, and growth overhead options.
-- [ ] 295. Add range/uncertainty outputs rather than false precision where assumptions dominate.
-- [ ] 296. Add boundary, unit, and golden-reference tests.
-- [ ] 297. Provide downloadable calculation assumptions with exports.
+- [x] 285. Move formulas out of React components into pure typed functions.
+- [x] 286. Test production calculation functions rather than duplicating formulas in tests.
+- [x] 287. Define decimal versus binary unit conventions and use them consistently.
+- [x] 288. Clarify whether QPS includes both reads and writes.
+- [x] 289. Clarify request and response payload assumptions.
+- [x] 290. Make inbound/outbound bandwidth formulas match displayed explanations.
+- [x] 291. Replace the arbitrary DB connection formula with configurable service-time/concurrency assumptions.
+- [x] 292. Replace the “20% of daily writes” cache recommendation with a documented working-set model.
+- [x] 293. Incorporate headroom, failover capacity, and utilization targets into server count.
+- [x] 294. Add replication, indexing, metadata, compression, and growth overhead options.
+- [x] 295. Add range/uncertainty outputs rather than false precision where assumptions dominate.
+- [x] 296. Add boundary, unit, and golden-reference tests.
+- [x] 297. Provide downloadable calculation assumptions with exports.
 
 ## Make cost estimation transparent — P1
 
-- [ ] 298. Clearly label all prices as illustrative unless connected to dated provider pricing data.
-- [ ] 299. Display the pricing date and region.
-- [ ] 300. Move pricing tables and formulas out of the component.
+- [x] 298. Clearly label all prices as illustrative unless connected to dated provider pricing data.
+- [x] 299. Display the pricing date and region.
+- [x] 300. Move pricing tables and formulas out of the component.
 - [ ] 301. Explain mapping from SysSim components to provider instance profiles.
 - [ ] 302. Model storage, request, bandwidth, managed-service, and redundancy costs separately.
 - [ ] 303. Do not apply spot discounts to services that are not eligible.
