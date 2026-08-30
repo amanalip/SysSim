@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { detectBottlenecks } from '../engine/metrics/bottleneck-detector';
-import { CanvasNode } from '../store/use-store';
+import { CanvasEdge, CanvasNode } from '../store/use-store';
 import { createDefaultConfig } from '../model/component-defaults';
 
 describe('Deep Fixes Batch 4: Protocol Edge Handler Integrity & High-Throughput DB SPOF Severity', () => {
@@ -16,9 +16,11 @@ describe('Deep Fixes Batch 4: Protocol Edge Handler Integrity & High-Throughput 
         } as any,
       },
     };
+    const clientNode: CanvasNode = { id: 'client', type: 'customComponent', position: { x: 0, y: 200 }, data: { config: createDefaultConfig('client', 'client', 'Client') } };
+    const route: CanvasEdge = { id: 'client-db', source: 'client', target: 'sql_1', data: { protocol: 'HTTP', purpose: 'request' } };
 
     // Low load: warning severity
-    const lowLoadIssues = detectBottlenecks([dbNode], [], {
+    const lowLoadIssues = detectBottlenecks([clientNode, dbNode], [route], {
       totalRequestsSent: 500,
       totalRequestsSuccess: 500,
       totalRequestsFailed: 0,
@@ -46,7 +48,7 @@ describe('Deep Fixes Batch 4: Protocol Edge Handler Integrity & High-Throughput 
     expect(lowDbSpof?.severity).toBe('warning');
 
     // High load (> 2000 QPS): critical severity
-    const highLoadIssues = detectBottlenecks([dbNode], [], {
+    const highLoadIssues = detectBottlenecks([clientNode, dbNode], [route], {
       totalRequestsSent: 3500,
       totalRequestsSuccess: 3500,
       totalRequestsFailed: 0,

@@ -72,6 +72,9 @@ export const BottleneckPanel: React.FC = () => {
             </div>
 
             <div className={styles.issueDesc}>{issue.description}</div>
+            <div className={styles.issueDesc}>
+              Impact {issue.impactScore || 0}/100 · {issue.confidence || 'low'} confidence · {issue.affectedTrafficPercent || 0}% estimated traffic
+            </div>
 
             <div className={styles.fixArea}>
               <span className={styles.fixLabel}>Suggested Remedy</span>
