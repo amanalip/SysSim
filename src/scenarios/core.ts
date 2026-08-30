@@ -55,7 +55,7 @@ export const CORE_SCENARIOS: Scenario[] = [
       {
         title: 'How Bitly Scales Real-time URL Lookups',
         authorOrOrg: 'Bitly Engineering Blog',
-        url: 'https://bitly.com/pages/about',
+        url: 'https://bitly.com',
       },
     ],
     trafficPreset: {
@@ -438,7 +438,7 @@ export const CORE_SCENARIOS: Scenario[] = [
       {
         title: 'Announcing Snowflake',
         authorOrOrg: 'Twitter Engineering Blog (2010)',
-        url: 'https://blog.twitter.com/engineering/en_us/a/2010/announcing-snowflake',
+        url: 'https://blog.x.com/engineering/en_us/a/2010/announcing-snowflake',
       },
       {
         title: 'System Design Interview: Unique ID Generator',

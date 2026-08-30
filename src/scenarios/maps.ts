@@ -50,7 +50,7 @@ export const MAPS_SCENARIOS: Scenario[] = [
       {
         title: 'Contraction Hierarchies: Faster and Simpler Hierarchical Routing in Road Networks',
         authorOrOrg: 'Geisberger et al. (Karlsruhe Institute of Technology / WEA 2008)',
-        url: 'https://algo2.iti.kit.edu/documents/route_planning/geisberger_wea08.pdf',
+        url: 'https://publikationen.bibliothek.kit.edu/1000015090',
       },
       {
         title: 'OSRM: Open Source Routing Machine Architecture',
@@ -112,7 +112,7 @@ export const MAPS_SCENARIOS: Scenario[] = [
       {
         title: 'Scaling Real-Time Location Sharing',
         authorOrOrg: 'Life360 Engineering Blog',
-        url: 'https://www.life360.com/blog/',
+        url: 'https://www.life360.com',
       },
       {
         title: 'Apple CoreLocation: Significant-Change Location Service Documentation',
@@ -174,7 +174,7 @@ export const MAPS_SCENARIOS: Scenario[] = [
       {
         title: 'R-Trees: A Dynamic Index Structure for Spatial Searching',
         authorOrOrg: 'Antonin Guttman (ACM SIGMOD 1984)',
-        url: 'https://dl.acm.org/doi/10.1145/602259.602266',
+        url: 'https://doi.org/10.1145/602259.602266',
       },
       {
         title: 'Spatial Indexing with R-Trees and QuadTrees',

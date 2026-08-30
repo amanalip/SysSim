@@ -309,7 +309,7 @@ export const INFRASTRUCTURE_SCENARIOS: Scenario[] = [
       {
         title: 'Introduction to Modern Network Load Balancing and Proxying',
         authorOrOrg: 'Matt Klein',
-        url: 'https://blog.envoyproxy.io/introduction-to-modern-network-load-balancing-and-proxying-a51341ed40e3',
+        url: 'https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/intro/terminology',
       },
     ],
     trafficPreset: {

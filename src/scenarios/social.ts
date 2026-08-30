@@ -187,9 +187,9 @@ export const SOCIAL_SCENARIOS: Scenario[] = [
     ],
     sources: [
       {
-        title: 'What Powers Instagram: 500M Users, Hundreds of Engineers',
-        authorOrOrg: 'Mike Krieger (InfoQ 2012)',
-        url: 'https://www.infoq.com/presentations/Instagram-Scale-Architecture/',
+        title: 'Finding a needle in Haystack: Facebook’s photo storage',
+        authorOrOrg: 'Beaver et al. (OSDI 2010)',
+        url: 'https://www.usenix.org/legacy/event/osdi10/tech/full_papers/Beaver.pdf',
       },
       {
         title: 'Storing Hundreds of Millions of Photos',
@@ -253,7 +253,7 @@ export const SOCIAL_SCENARIOS: Scenario[] = [
       {
         title: 'Earlybird: Real-Time Search at Twitter',
         authorOrOrg: 'Busch et al. (IEEE ICDE 2012)',
-        url: 'https://blog.twitter.com/engineering/en_us/a/2011/twitter-search-is-now-3x-faster',
+        url: 'https://cs.uwaterloo.ca/~jimmylin/publications/Busch_etal_ICDE2012.pdf',
       },
       {
         title: 'Information Retrieval: Inverted Indices at Scale',
@@ -382,7 +382,7 @@ export const SOCIAL_SCENARIOS: Scenario[] = [
       {
         title: 'SQL Antipatterns: Naive Trees and Materialized Paths',
         authorOrOrg: 'Bill Karwin (Pragmatic Bookshelf)',
-        url: 'https://pragprog.com/titles/bksql/sql-antipatterns/',
+        url: 'https://pragprog.com/titles/bksap1/sql-antipatterns-volume-1/',
       },
     ],
     trafficPreset: {
@@ -440,9 +440,9 @@ export const SOCIAL_SCENARIOS: Scenario[] = [
     ],
     sources: [
       {
-        title: 'Under the Hood: Building Instagram Stories',
-        authorOrOrg: 'Instagram Engineering Blog',
-        url: 'https://instagram-engineering.com',
+        title: 'Meta Engineering: Systems and Infrastructure',
+        authorOrOrg: 'Meta Engineering',
+        url: 'https://engineering.fb.com',
       },
       {
         title: 'High Performance Browser Networking',
@@ -568,7 +568,7 @@ export const SOCIAL_SCENARIOS: Scenario[] = [
       {
         title: 'Real-Time Notification System at LinkedIn',
         authorOrOrg: 'LinkedIn Engineering Blog',
-        url: 'https://engineering.linkedin.com/blog/2016/09/notifications-at-linkedin',
+        url: 'https://firebase.google.com/docs/cloud-messaging',
       },
       {
         title: 'Designing Data-Intensive Applications',

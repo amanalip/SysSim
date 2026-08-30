@@ -43,7 +43,7 @@ export type ComponentType =
 
 export type NodeHealthStatus = 'healthy' | 'degraded' | 'down' | 'overloaded';
 
-export type EdgeProtocol = 'HTTP' | 'gRPC' | 'WebSocket' | 'TCP' | 'pub/sub' | 'MQTT';
+export type EdgeProtocol = 'HTTP' | 'gRPC' | 'WebSocket' | 'TCP' | 'UDP' | 'pub/sub' | 'MQTT';
 
 export type EdgePurpose =
   | 'request'
@@ -676,6 +676,9 @@ export interface ScenarioReferenceSource {
   authorOrOrg: string;
   url?: string;
   note?: string;
+  supports?: string;
+  sourceType?: 'primary' | 'standard' | 'paper' | 'official' | 'secondary';
+  lastVerifiedOn?: string;
 }
 
 export interface ScenarioDiscussionPoint {
@@ -752,6 +755,9 @@ export interface Scenario {
   discussionPoints: ScenarioDiscussionPoint[];
   sources: ScenarioReferenceSource[];
   trafficPreset: TrafficConfig;
+  reviewOwner?: string;
+  contentReviewedOn?: string;
+  approximationNotes?: string[];
 }
 
 export interface CalculatorInputs {

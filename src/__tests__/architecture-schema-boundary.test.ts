@@ -5,7 +5,7 @@ import { COMPONENT_METADATA_LIST, createDefaultConfig } from '../model/component
 import { EDGE_PURPOSES } from '../model/edge-semantics';
 import { EdgeProtocol, SerializedCanvasState } from '../model/types';
 
-const protocols: EdgeProtocol[] = ['HTTP', 'gRPC', 'WebSocket', 'TCP', 'pub/sub', 'MQTT'];
+const protocols: EdgeProtocol[] = ['HTTP', 'gRPC', 'WebSocket', 'TCP', 'UDP', 'pub/sub', 'MQTT'];
 const node = (id: string, type = 'app_server') => ({
   id,
   type: 'customComponent',

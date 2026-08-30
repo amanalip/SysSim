@@ -218,10 +218,10 @@ export const COMMUNICATION_SCENARIOS: Scenario[] = [
         { id: 'locStore', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'locStore', 'SIP User Location DB') } },
       ],
       edges: [
-        { id: 'e1', source: 'caller', target: 'sipProxy', data: { protocol: 'UDP' as any } },
+        { id: 'e1', source: 'caller', target: 'sipProxy', data: { protocol: 'UDP' } },
         { id: 'e2', source: 'sipProxy', target: 'locStore', data: { protocol: 'TCP' } },
-        { id: 'e3', source: 'caller', target: 'mediaRelay', data: { protocol: 'UDP' as any } },
-        { id: 'e4', source: 'callee', target: 'mediaRelay', data: { protocol: 'UDP' as any } },
+        { id: 'e3', source: 'caller', target: 'mediaRelay', data: { protocol: 'UDP' } },
+        { id: 'e4', source: 'callee', target: 'mediaRelay', data: { protocol: 'UDP' } },
       ],
     },
     discussionPoints: [

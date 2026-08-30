@@ -50,7 +50,7 @@ export const SEARCH_SCENARIOS: Scenario[] = [
       {
         title: 'The Anatomy of a Large-Scale Hypertextual Web Search Engine',
         authorOrOrg: 'Brin & Page (Computer Networks and ISDN Systems 1998)',
-        url: 'http://infolab.stanford.edu/~backrub/google.html',
+        url: 'https://research.google/pubs/the-anatomy-of-a-large-scale-hypertextual-web-search-engine/',
       },
       {
         title: 'The Tail at Scale',
@@ -243,7 +243,7 @@ export const SEARCH_SCENARIOS: Scenario[] = [
       {
         title: 'Geohash: A Spatial Indexing Algorithm',
         authorOrOrg: 'Gustavo Niemeyer',
-        url: 'https://geohash.org',
+        url: 'https://en.wikipedia.org/wiki/Geohash',
       },
     ],
     trafficPreset: {

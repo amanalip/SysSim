@@ -475,32 +475,39 @@ export class SysSimEngine {
 
   public getCurrentQps(elapsedSec: number): number {
     const base = this.config.baseQps;
+    let qps: number;
     switch (this.config.pattern) {
       case 'bursty': {
         const cycle = Math.floor(elapsedSec / 5) % 2;
-        return cycle === 1 ? base * this.config.burstMultiplier : base;
+        qps = cycle === 1 ? base * this.config.burstMultiplier : base;
+        break;
       }
       case 'ramp': {
         const progress = Math.min(1, elapsedSec / (this.config.rampDurationSec || 30));
-        return Math.floor(base * (0.2 + 0.8 * progress));
+        qps = Math.floor(base * (0.2 + 0.8 * progress));
+        break;
       }
       case 'spike': {
         const spikeEvery = this.config.spikeFrequencySec || 10;
         const isSpike = Math.floor(elapsedSec) % spikeEvery === 0;
-        return isSpike ? base * 5 : base;
+        qps = isSpike ? base * 5 : base;
+        break;
       }
       case 'custom': {
         if (this.config.customSchedule && this.config.customSchedule.length > 0) {
           const entry = [...this.config.customSchedule]
             .reverse()
             .find((s) => elapsedSec >= s.timeSec);
-          return entry ? entry.qps : base;
+          qps = entry ? entry.qps : base;
+          break;
         }
-        return base;
+        qps = base;
+        break;
       }
       default:
-        return base;
+        qps = base;
     }
+    return Number.isFinite(qps) ? Math.min(SIMULATION_LIMITS.maxConfiguredQps, Math.max(0, qps)) : 0;
   }
 
   public step(deltaMs: number): {
@@ -527,7 +534,11 @@ export class SysSimEngine {
     this.dbModels.forEach((db) => db.drainConnections(scaledDelta));
 
     // Determine current rate and accumulate fractional requests per tick
-    const currentQps = this.getCurrentQps(elapsedSec);
+    const requestedQps = this.getCurrentQps(elapsedSec);
+    // Keep the event loop bounded even if a test double or future integration bypasses config validation.
+    const currentQps = Number.isFinite(requestedQps)
+      ? Math.min(SIMULATION_LIMITS.maxConfiguredQps, Math.max(0, requestedQps))
+      : 0;
     this.fractionalRequestAccumulator += (currentQps * scaledDelta) / 1000;
     const offeredArrivals = Math.floor(this.fractionalRequestAccumulator);
     this.fractionalRequestAccumulator -= offeredArrivals;
@@ -1530,6 +1541,7 @@ export class SysSimEngine {
     if (edge.data?.latencyMs !== undefined) return edge.data.latencyMs;
     const protocol = edge.data?.protocol || 'HTTP';
     if (protocol === 'gRPC') return 1;
+    if (protocol === 'UDP') return 1;
     if (protocol === 'WebSocket' || protocol === 'TCP') return 2;
     if (protocol === 'pub/sub' || protocol === 'MQTT') return 3;
     return 4;

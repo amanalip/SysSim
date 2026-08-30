@@ -30,7 +30,7 @@ export const IOT_SCENARIOS: Scenario[] = [
         { id: 'tsdb', type: 'customComponent', position: { x: 800, y: 220 }, data: { config: createDefaultConfig('timeseries_db', 'tsdb', 'TimescaleDB Cluster') } },
       ],
       edges: [
-        { id: 'e1', source: 'sensors', target: 'mqttBroker', data: { protocol: 'MQTT' as any } },
+        { id: 'e1', source: 'sensors', target: 'mqttBroker', data: { protocol: 'MQTT' } },
         { id: 'e2', source: 'mqttBroker', target: 'deviceShadow', data: { protocol: 'TCP' } },
         { id: 'e3', source: 'mqttBroker', target: 'kafka', data: { protocol: 'pub/sub' } },
         { id: 'e4', source: 'kafka', target: 'tsdb', data: { protocol: 'TCP' } },

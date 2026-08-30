@@ -18,6 +18,7 @@ const PROTOCOL_OPTIONS: EdgeProtocol[] = [
   'gRPC',
   'WebSocket',
   'TCP',
+  'UDP',
   'pub/sub',
   'MQTT',
 ];

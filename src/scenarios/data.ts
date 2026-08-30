@@ -237,7 +237,7 @@ export const DATA_SCENARIOS: Scenario[] = [
       {
         title: 'Redis HyperLogLog Explained',
         authorOrOrg: 'Redis Official Documentation',
-        url: 'https://redis.io/docs/data-types/hyperloglogs/',
+        url: 'https://redis.io/docs/latest/develop/data-types/probabilistic/hyperloglogs/',
       },
     ],
     trafficPreset: {
@@ -294,7 +294,7 @@ export const DATA_SCENARIOS: Scenario[] = [
       {
         title: 'Kafka: A Distributed Messaging System for Log Processing',
         authorOrOrg: 'Kreps, Narkhede, Rao (NetDB 2011)',
-        url: 'https://research.linkedin.com/publications/kafka-distributed-messaging-system-log-processing',
+        url: 'https://kafka.apache.org/community/books_and_papers/',
       },
       {
         title: 'Designing Data-Intensive Applications',
@@ -356,7 +356,7 @@ export const DATA_SCENARIOS: Scenario[] = [
       {
         title: 'The Snowflake Elastic Data Warehouse',
         authorOrOrg: 'Dageville et al. (ACM SIGMOD 2016)',
-        url: 'https://dl.acm.org/doi/10.1145/2882903.2903741',
+        url: 'https://doi.org/10.1145/2882903.2903741',
       },
       {
         title: 'BigQuery Architecture and Dremel Engine',
@@ -604,7 +604,7 @@ export const DATA_SCENARIOS: Scenario[] = [
       {
         title: 'Grafana Architecture Documentation',
         authorOrOrg: 'Grafana Labs',
-        url: 'https://grafana.com/docs/grafana/latest/developers/architecture/',
+        url: 'https://grafana.com/docs/grafana/latest/fundamentals/',
       },
       {
         title: 'Prometheus High-Availability and Long-Term Storage (Mimir)',

@@ -244,7 +244,7 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
       {
         title: 'H3: Uber’s Hexagonal Hierarchical Spatial Index',
         authorOrOrg: 'Isaac Brodsky (Uber Engineering)',
-        url: 'https://eng.uber.com/h3/',
+        url: 'https://www.uber.com/ae/en/blog/h3/',
       },
       {
         title: 'How Uber Scales Its Real-Time Marketplace',

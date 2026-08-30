@@ -242,7 +242,7 @@ export const ML_SCENARIOS: Scenario[] = [
       {
         title: 'Milvus: A Purpose-Built Vector Data Management System',
         authorOrOrg: 'Wang et al. (ACM SIGMOD 2021)',
-        url: 'https://dl.acm.org/doi/10.1145/3448016.3457550',
+        url: 'https://doi.org/10.1145/3448016.3457550',
       },
     ],
     trafficPreset: {

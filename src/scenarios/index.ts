@@ -14,8 +14,10 @@ import { COLLAB_SCENARIOS } from './collab';
 import { MAPS_SCENARIOS } from './maps';
 import { COMMUNICATION_SCENARIOS } from './communication';
 import { CONTENT_SCENARIOS } from './content';
+import { normalizeScenario } from './normalize';
+export { SCENARIO_REVIEW_OWNERS } from './normalize';
 
-export const ALL_SCENARIOS: Scenario[] = [
+const RAW_SCENARIOS: Scenario[] = [
   ...CORE_SCENARIOS,
   ...SOCIAL_SCENARIOS,
   ...STREAMING_SCENARIOS,
@@ -32,6 +34,8 @@ export const ALL_SCENARIOS: Scenario[] = [
   ...COMMUNICATION_SCENARIOS,
   ...CONTENT_SCENARIOS,
 ];
+
+export const ALL_SCENARIOS: Scenario[] = RAW_SCENARIOS.map(normalizeScenario);
 
 export const SCENARIO_CATEGORIES: ScenarioCategory[] = [
   'Core / Classic',

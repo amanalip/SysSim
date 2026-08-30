@@ -20,7 +20,8 @@ const COMPONENT_TYPES = new Set(COMPONENT_METADATA_LIST.map((item) => item.type)
 const COMPONENT_CATEGORIES = new Map(COMPONENT_METADATA_LIST.map((item) => [item.type, item.category]));
 const CATEGORIES = new Set(['compute', 'networking', 'storage', 'caching', 'messaging', 'security']);
 const HEALTH = new Set(['healthy', 'degraded', 'down', 'overloaded']);
-const PROTOCOLS = new Set<EdgeProtocol>(['HTTP', 'gRPC', 'WebSocket', 'TCP', 'pub/sub', 'MQTT']);
+export const SUPPORTED_EDGE_PROTOCOLS: readonly EdgeProtocol[] = ['HTTP', 'gRPC', 'WebSocket', 'TCP', 'UDP', 'pub/sub', 'MQTT'];
+const PROTOCOLS = new Set<EdgeProtocol>(SUPPORTED_EDGE_PROTOCOLS);
 const ZONE_CATEGORIES = new Set<ZoneData['category']>(['public', 'private', 'data', 'edge']);
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$/;
 const ENUM_VALUES: Record<string, ReadonlySet<string>> = {

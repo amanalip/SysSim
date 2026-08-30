@@ -29,8 +29,8 @@ export const GAMING_SCENARIOS: Scenario[] = [
         { id: 'matchState', type: 'customComponent', position: { x: 580, y: 150 }, data: { config: createDefaultConfig('redis_cache', 'matchState', 'Match Redis State') } },
       ],
       edges: [
-        { id: 'e1', source: 'player1', target: 'agonesDGS', data: { protocol: 'UDP' as any } },
-        { id: 'e2', source: 'player2', target: 'agonesDGS', data: { protocol: 'UDP' as any } },
+        { id: 'e1', source: 'player1', target: 'agonesDGS', data: { protocol: 'UDP' } },
+        { id: 'e2', source: 'player2', target: 'agonesDGS', data: { protocol: 'UDP' } },
         { id: 'e3', source: 'agonesDGS', target: 'matchState', data: { protocol: 'TCP' } },
       ],
     },

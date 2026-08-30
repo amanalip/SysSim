@@ -50,7 +50,7 @@ export const CONTENT_SCENARIOS: Scenario[] = [
       {
         title: 'Building Medium’s Architecture',
         authorOrOrg: 'Medium Engineering',
-        url: 'https://medium.engineering',
+        url: 'https://medium.com/medium-eng',
       },
       {
         title: 'Incremental Static Regeneration (ISR) Architecture',

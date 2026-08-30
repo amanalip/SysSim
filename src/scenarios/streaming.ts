@@ -183,7 +183,7 @@ export const STREAMING_SCENARIOS: Scenario[] = [
       {
         title: 'P2P and Server Assisted Streaming in Spotify',
         authorOrOrg: 'Kreitz & Niemela (Peer-to-Peer Systems)',
-        url: 'https://research.spotify.com',
+        url: 'https://engineering.atspotify.com',
       },
     ],
     trafficPreset: {
@@ -222,7 +222,7 @@ export const STREAMING_SCENARIOS: Scenario[] = [
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'sigGw', data: { protocol: 'WebSocket' } },
-        { id: 'e2', source: 'c1', target: 'sfu1', data: { protocol: 'UDP' as any } },
+        { id: 'e2', source: 'c1', target: 'sfu1', data: { protocol: 'UDP' } },
         { id: 'e3', source: 'sigGw', target: 'roomStore', data: { protocol: 'TCP' } },
       ],
     },
@@ -240,7 +240,7 @@ export const STREAMING_SCENARIOS: Scenario[] = [
       {
         title: 'Scalable WebRTC Video Conferencing Architecture',
         authorOrOrg: 'Jitsi Engineering',
-        url: 'https://jitsi.org/user-faq/what-is-an-sfu/',
+        url: 'https://jitsi.github.io/handbook/docs/architecture/',
       },
       {
         title: 'WebRTC Integrator\'s Guide',

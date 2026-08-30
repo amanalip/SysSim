@@ -234,7 +234,7 @@ export const AUTH_SCENARIOS: Scenario[] = [
       {
         title: 'How Cloudflare Mitigates Terabit DDoS Attacks with XDP',
         authorOrOrg: 'Cloudflare Engineering Blog',
-        url: 'https://blog.cloudflare.com/l4drop-xdp-ebpf-based-ddos-mitigation/',
+        url: 'https://blog.cloudflare.com/l4drop-xdp-ebpf-based-ddos-mitigations/',
       },
       {
         title: 'The TCP SYN Flooding Attack and Common Mitigations',
