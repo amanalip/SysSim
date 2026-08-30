@@ -96,6 +96,7 @@ export const ComponentPalette: React.FC = () => {
           type="text"
           className={styles.searchInput}
           placeholder="Search components or blueprints..."
+          aria-label="Search components and blueprints"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => {
@@ -123,9 +124,11 @@ export const ComponentPalette: React.FC = () => {
       {/* Blueprints Section */}
       {filteredBlueprints.length > 0 && (
         <div className={styles.categoryGroup}>
-          <div
+          <button
+            type="button"
             className={styles.categoryHeader}
             onClick={() => toggleCategory('blueprints')}
+            aria-expanded={!collapsedCategories['blueprints']}
           >
             <div className={styles.categoryTitle}>
               <Sparkles size={13} color="var(--warning)" />
@@ -139,7 +142,7 @@ export const ComponentPalette: React.FC = () => {
             ) : (
               <ChevronDown size={14} color="var(--text-muted)" />
             )}
-          </div>
+          </button>
 
           {!collapsedCategories['blueprints'] && (
             <div className={styles.componentGrid}>
@@ -172,6 +175,7 @@ export const ComponentPalette: React.FC = () => {
                       handleAddBlueprint(bp);
                     }}
                     title="Insert blueprint onto canvas"
+                    aria-label={`Insert ${bp.name} blueprint onto canvas`}
                   >
                     <Plus size={14} />
                   </button>
@@ -191,9 +195,11 @@ export const ComponentPalette: React.FC = () => {
 
         return (
           <div key={key} className={styles.categoryGroup}>
-            <div
+            <button
+              type="button"
               className={styles.categoryHeader}
               onClick={() => toggleCategory(key)}
+              aria-expanded={!isCollapsed}
             >
               <div className={styles.categoryTitle}>
                 <span
@@ -210,7 +216,7 @@ export const ComponentPalette: React.FC = () => {
               ) : (
                 <ChevronDown size={14} color="var(--text-muted)" />
               )}
-            </div>
+            </button>
 
             {!isCollapsed && (
               <div className={styles.componentGrid}>
@@ -245,6 +251,7 @@ export const ComponentPalette: React.FC = () => {
                         handleQuickAdd(component.type, component.name);
                       }}
                       title="Add to canvas"
+                      aria-label={`Add ${component.name} to canvas`}
                     >
                       <Plus size={14} />
                     </button>

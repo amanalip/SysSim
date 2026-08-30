@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Keyboard, X } from 'lucide-react';
 import styles from './ShortcutsModal.module.css';
+import { useModalAccessibility } from './useModalAccessibility';
 
 interface ShortcutsModalProps {
   isOpen: boolean;
@@ -8,16 +9,8 @@ interface ShortcutsModalProps {
 }
 
 export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose }) => {
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalAccessibility(isOpen, onClose, dialogRef);
 
   if (!isOpen) return null;
 
@@ -39,13 +32,13 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} className={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" tabIndex={-1} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <div className={styles.modalTitle}>
+          <div id="shortcuts-title" className={styles.modalTitle}>
             <Keyboard size={16} color="var(--accent-primary)" />
             <span>Keyboard Shortcuts</span>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} title="Close shortcuts (Escape)">
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close keyboard shortcuts" title="Close shortcuts (Escape)">
             <X size={15} />
           </button>
         </div>

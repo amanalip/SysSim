@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Flame, X, Database, Zap, Activity, Scissors, Clock, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { chaosDrills, ChaosDrillId, ChaosDrillRecord } from '../../engine/chaos-drills';
 import styles from './ChaosDrillModal.module.css';
+import { useModalAccessibility } from './useModalAccessibility';
 
 interface ChaosDrillModalProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ interface Drill {
 }
 
 export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClose }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalAccessibility(isOpen, onClose, dialogRef);
   const [activeDrill, setActiveDrill] = useState<ChaosDrillRecord | null>(() => chaosDrills.getActiveRecords()[0] || null);
   const [stampedeProtection, setStampedeProtection] = useState(false);
   const { addToast } = useStore();
@@ -82,20 +85,20 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="chaos-drills-title" tabIndex={-1} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <div className={styles.titleGroup}>
             <div className={styles.iconBadge}>
               <Flame size={16} color="var(--error)" />
             </div>
             <div>
-              <div className={styles.modalTitle}>Chaos Engineering Drills</div>
+              <div id="chaos-drills-title" className={styles.modalTitle}>Chaos Engineering Drills</div>
               <div className={styles.modalSubtitle}>
                 Explore simplified failure states; results do not certify fault tolerance
               </div>
             </div>
           </div>
-          <button className={styles.closeBtn} onClick={onClose}>
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close chaos engineering drills">
             <X size={15} />
           </button>
         </div>

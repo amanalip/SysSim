@@ -72,6 +72,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
           type="text"
           className={styles.searchInput}
           placeholder="Search 101 scenarios..."
+          aria-label="Search scenarios"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={(e) => {
@@ -105,6 +106,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
       {/* Category & Difficulty Selectors */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         <select
+          aria-label="Filter scenarios by category"
           className={styles.categorySelect}
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
@@ -131,6 +133,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
         </select>
 
         <select
+          aria-label="Filter scenarios by difficulty"
           className={styles.categorySelect}
           value={selectedDifficulty}
           onChange={(e) => setSelectedDifficulty(e.target.value)}

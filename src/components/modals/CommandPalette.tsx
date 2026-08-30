@@ -18,6 +18,7 @@ import { ALL_SCENARIOS } from '../../scenarios';
 import { COMPONENT_METADATA_LIST } from '../../model/component-defaults';
 import { ComponentType } from '../../model/types';
 import styles from './CommandPalette.module.css';
+import { useModalAccessibility } from './useModalAccessibility';
 
 interface CommandItem {
   id: string;
@@ -39,6 +40,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalAccessibility(isOpen, onClose, dialogRef, inputRef);
 
   const {
     simState,
@@ -148,7 +151,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       action: () => {
         loadScenario(sc);
         simBridge.reset();
-        simBridge.syncConfig(sc.trafficPreset);
         useStore.getState().setActiveSidebarTab('scenarios');
         addToast(`Loaded scenario challenge #${sc.id}: ${sc.title}`, 'info');
       },
@@ -194,7 +196,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} className={styles.modal} role="dialog" aria-modal="true" aria-label="Command palette" tabIndex={-1} onClick={(e) => e.stopPropagation()}>
         <div className={styles.searchBar}>
           <Search size={16} color="var(--text-muted)" />
           <input
@@ -202,6 +204,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
             type="text"
             className={styles.searchInput}
             placeholder="Type a command, add component, or search scenario..."
+            aria-label="Search commands, components, and scenarios"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -214,7 +217,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
             <div className={styles.emptyState}>No matching commands or components found</div>
           ) : (
             filteredCommands.map((cmd, idx) => (
-              <div
+              <button
+                type="button"
                 key={cmd.id}
                 className={`${styles.commandItem} ${idx === selectedIndex ? styles.commandItemActive : ''}`}
                 onClick={() => {
@@ -231,7 +235,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
                   </div>
                 </div>
                 {cmd.shortcut && <span className={styles.shortcutBadge}>{cmd.shortcut}</span>}
-              </div>
+              </button>
             ))
           )}
         </div>

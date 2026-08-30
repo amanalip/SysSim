@@ -5,6 +5,7 @@ import { simulationRuntime as simBridge } from '../../engine/simulation-runtime'
 import { APPLICATION_VERSION, ARCHITECTURE_SCHEMA_VERSION } from '../../model/architecture-schema';
 import { emptySnapshotSlot, exportSnapshotSlots, importSnapshotSlots, parseSnapshotSlots, persistSnapshotSlots, SNAPSHOT_STORAGE_KEY, SnapshotSlot } from '../../model/snapshot-storage';
 import styles from './SnapshotManagerModal.module.css';
+import { useModalAccessibility } from './useModalAccessibility';
 
 interface SnapshotManagerModalProps {
   isOpen: boolean;
@@ -16,17 +17,8 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
   const [slots, setSlots] = useState<SnapshotSlot[]>([]);
   const [customNames, setCustomNames] = useState<Record<number, string>>({});
   const importInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalAccessibility(isOpen, onClose, dialogRef);
 
   useEffect(() => {
     try {
@@ -89,7 +81,6 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
     loadCanvasState(slot.nodes as CanvasNode[], (slot.edges || []) as CanvasEdge[], slot.zones || []);
     if (slot.trafficConfig) {
       setTrafficConfig(slot.trafficConfig);
-      simBridge.syncConfig(slot.trafficConfig);
     }
     addToast(`Loaded ${slot.name} to canvas`, 'success');
     onClose();
@@ -129,14 +120,14 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="snapshot-manager-title" tabIndex={-1} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <div className={styles.titleGroup}>
             <div className={styles.iconBadge}>
               <Bookmark size={16} color="var(--accent-primary)" />
             </div>
             <div>
-              <div className={styles.modalTitle}>Architecture Snapshots Manager</div>
+              <div id="snapshot-manager-title" className={styles.modalTitle}>Architecture Snapshots Manager</div>
               <div className={styles.modalSubtitle}>
                 Save and recall multi-slot architecture checkpoints locally
               </div>
@@ -233,6 +224,7 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
                       <button
                         className={styles.clearBtn}
                         onClick={() => handleClearSlot(slot.id)}
+                        aria-label={`Clear snapshot slot ${slot.id}`}
                         title="Clear this snapshot slot"
                       >
                         <Trash2 size={12} />

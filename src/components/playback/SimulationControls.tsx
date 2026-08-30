@@ -51,7 +51,6 @@ export const SimulationControls: React.FC = () => {
     const seed = (Math.floor(value) >>> 0) || 1;
     setSeedText(String(seed));
     setTrafficConfig({ seed });
-    simBridge.syncConfig({ seed });
   };
 
   const copySeed = async () => {
@@ -87,12 +86,10 @@ export const SimulationControls: React.FC = () => {
 
   const handlePatternChange = (pattern: TrafficPattern) => {
     setTrafficConfig({ pattern });
-    simBridge.syncConfig({ pattern });
   };
 
   const handleKeyDistributionChange = (requestKeyDistribution: RequestKeyDistribution) => {
     setTrafficConfig({ requestKeyDistribution });
-    simBridge.syncConfig({ requestKeyDistribution });
   };
 
   const handleCustomKeysBlur = () => {
@@ -107,7 +104,6 @@ export const SimulationControls: React.FC = () => {
       })
       .filter((entry) => entry.key && Number.isFinite(entry.weight) && entry.weight > 0);
     setTrafficConfig({ customRequestKeys });
-    simBridge.syncConfig({ customRequestKeys });
   };
 
   const handleQpsChange = (raw: string) => {
@@ -116,7 +112,6 @@ export const SimulationControls: React.FC = () => {
     if (!isNaN(val) && val > 0) {
       const safeVal = Math.max(1, Math.min(100000, val));
       setTrafficConfig({ baseQps: safeVal });
-      simBridge.syncConfig({ baseQps: safeVal });
     }
   };
 
@@ -225,8 +220,9 @@ export const SimulationControls: React.FC = () => {
       </div>
 
       <div className={styles.configGroup}>
-        <span className={styles.label}>QPS</span>
+        <label className={styles.label} htmlFor="simulation-qps">QPS</label>
         <input
+          id="simulation-qps"
           type="number"
           className={styles.qpsInput}
           value={qpsText}
