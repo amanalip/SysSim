@@ -3,6 +3,14 @@ import { SimGraph, SysSimEngine } from './simulator';
 import { TrafficConfig } from '../model/types';
 import { SIMULATION_LIMITS } from './simulation-limits';
 
+export function isCurrentGraphRevision(resultRevision: number, currentRevision: number): boolean {
+  return Number.isInteger(resultRevision) && resultRevision === currentRevision;
+}
+
+export function createGraphUpdateMessage(graph: SimGraph, graphRevision: number) {
+  return { type: 'INIT_OR_UPDATE_GRAPH', payload: { graph, graphRevision } } as const;
+}
+
 class SimulationBridge {
   private worker: Worker | null = null;
   private fallbackEngine: SysSimEngine | null = null;
@@ -25,7 +33,8 @@ class SimulationBridge {
         this.worker.onmessage = (event) => {
           const { type, payload } = event.data;
           if (type === 'TICK_UPDATE' && payload) {
-            const { metrics, activeRequests, recentRequests } = payload;
+            const { metrics, activeRequests, recentRequests, graphRevision } = payload;
+            if (!isCurrentGraphRevision(graphRevision, useStore.getState().graphRevision)) return;
             useStore.getState().updateMetrics(metrics);
             useStore.getState().setActiveRequests(activeRequests || []);
             useStore.getState().setRecentRequests(recentRequests || []);
@@ -57,7 +66,7 @@ class SimulationBridge {
   }
 
   public syncGraph(): void {
-    const { nodes, edges } = useStore.getState();
+    const { nodes, edges, graphRevision } = useStore.getState();
     const simGraph: SimGraph = {
       nodes: nodes.map((n) => ({ id: n.id, config: n.data.config })),
       edges: edges.map((e) => ({
@@ -69,10 +78,7 @@ class SimulationBridge {
     };
 
     if (this.worker) {
-      this.worker.postMessage({
-        type: 'INIT_OR_UPDATE_GRAPH',
-        payload: simGraph,
-      });
+      this.worker.postMessage(createGraphUpdateMessage(simGraph, graphRevision));
     } else if (this.fallbackEngine) {
       this.fallbackEngine.setGraph(simGraph);
     }

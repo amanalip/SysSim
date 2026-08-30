@@ -5,13 +5,19 @@ import { SIMULATION_LIMITS } from './simulation-limits';
 const engine = new SysSimEngine();
 let timer: ReturnType<typeof setInterval> | null = null;
 let lastTickTime = Date.now();
+let graphRevision = 0;
+
+const postTick = (payload: ReturnType<SysSimEngine['step']>) => {
+  self.postMessage({ type: 'TICK_UPDATE', payload: { ...payload, graphRevision } });
+};
 
 self.onmessage = (event: MessageEvent) => {
   const { type, payload } = event.data;
 
   switch (type) {
     case 'INIT_OR_UPDATE_GRAPH':
-      engine.setGraph(payload as SimGraph);
+      engine.setGraph(payload.graph as SimGraph);
+      graphRevision = payload.graphRevision;
       break;
 
     case 'UPDATE_CONFIG':
@@ -31,7 +37,7 @@ self.onmessage = (event: MessageEvent) => {
           const delta = now - lastTickTime;
           lastTickTime = now;
           const result = engine.step(delta);
-          self.postMessage({ type: 'TICK_UPDATE', payload: result });
+          postTick(result);
         }, SIMULATION_LIMITS.uiUpdateIntervalMs);
       }
       break;
@@ -53,7 +59,7 @@ self.onmessage = (event: MessageEvent) => {
           const delta = now - lastTickTime;
           lastTickTime = now;
           const result = engine.step(delta);
-          self.postMessage({ type: 'TICK_UPDATE', payload: result });
+          postTick(result);
         }, SIMULATION_LIMITS.uiUpdateIntervalMs);
       }
       break;
@@ -62,7 +68,7 @@ self.onmessage = (event: MessageEvent) => {
       engine.start();
       const stepResult = engine.step(100);
       engine.pause();
-      self.postMessage({ type: 'TICK_UPDATE', payload: stepResult });
+      postTick(stepResult);
       break;
 
     case 'STOP':
@@ -85,6 +91,7 @@ self.onmessage = (event: MessageEvent) => {
           metrics: engine.getMetricsSnapshot(),
           activeRequests: [],
           recentRequests: [],
+          graphRevision,
         },
       });
       break;

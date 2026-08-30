@@ -366,20 +366,20 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 ## Centralize graph mutation and worker synchronization — P0
 
-- [ ] 205. Ensure `addNode` synchronizes the worker when simulation is active.
-- [ ] 206. Ensure `addEdge` synchronizes the worker when simulation is active.
-- [ ] 207. Ensure React Flow deletion changes use store actions that preserve history and synchronize the worker.
-- [ ] 208. Decide whether node-position-only changes need worker synchronization and document the decision.
-- [ ] 209. Remove redundant duplicate `syncGraph()` calls from callers once store behavior is authoritative.
-- [ ] 210. Batch multi-node or multi-edge updates into one worker synchronization.
-- [ ] 211. Attach a graph revision number to worker messages.
-- [ ] 212. Ignore stale worker results from older graph revisions.
-- [ ] 213. Add tests that mutate a running graph and immediately verify new routing behavior.
-- [ ] 214. Add tests for rapid consecutive edits while the simulation runs.
+- [x] 205. Ensure `addNode` synchronizes the worker when simulation is active.
+- [x] 206. Ensure `addEdge` synchronizes the worker when simulation is active.
+- [x] 207. Ensure React Flow deletion changes use store actions that preserve history and synchronize the worker.
+- [x] 208. Decide whether node-position-only changes need worker synchronization and document the decision.
+- [x] 209. Remove redundant duplicate `syncGraph()` calls from callers once store behavior is authoritative.
+- [x] 210. Batch multi-node or multi-edge updates into one worker synchronization.
+- [x] 211. Attach a graph revision number to worker messages.
+- [x] 212. Ignore stale worker results from older graph revisions.
+- [x] 213. Add tests that mutate a running graph and immediately verify new routing behavior.
+- [x] 214. Add tests for rapid consecutive edits while the simulation runs.
 
 ## Remove store/engine circular coupling — P1
 
-- [ ] 215. Identify the current coupling between the Zustand store and singleton simulation bridge.
+- [x] 215. Identify the current coupling between the Zustand store and singleton simulation bridge.
 - [ ] 216. Define a one-way command/event boundary between UI state and simulation state.
 - [ ] 217. Move bridge lifecycle initialization to application composition rather than module import side effects.
 - [ ] 218. Make the engine independently usable without DOM, localStorage, React, or Zustand.
