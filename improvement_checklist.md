@@ -345,22 +345,22 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 ## Correct metrics and percentile calculations — P0/P1
 
-- [ ] 189. Define whether metrics are lifetime, rolling-window, or interval values.
-- [ ] 190. Label them accordingly in the UI.
-- [ ] 191. Use a documented quantile definition for p50, p95, and p99.
-- [ ] 192. Avoid biased percentile indexing at small sample sizes.
-- [ ] 193. Track failed-request latency separately from successful-request latency.
-- [ ] 194. Calculate actual completed throughput rather than displaying configured input QPS as throughput.
-- [ ] 195. Distinguish offered load, accepted load, completed throughput, and dropped load.
-- [ ] 196. Report queue wait, service time, network time, and total latency separately.
-- [ ] 197. Make utilization account for replica count consistently.
-- [ ] 198. Make capacity calculations consistent between engine metrics and bottleneck detection.
-- [ ] 199. Keep queue-depth metrics synchronized after draining, not only after enqueue.
-- [ ] 200. Populate active DB connection metrics from the database model.
-- [ ] 201. Report cache metrics from the cache model as the canonical source.
-- [ ] 202. Avoid calling a completed-request sample `activeRequests`.
-- [ ] 203. Add golden tests with hand-calculated small workloads.
-- [ ] 204. Add statistical tests with tolerances for probabilistic workloads.
+- [x] 189. Define whether metrics are lifetime, rolling-window, or interval values.
+- [x] 190. Label them accordingly in the UI.
+- [x] 191. Use a documented quantile definition for p50, p95, and p99.
+- [x] 192. Avoid biased percentile indexing at small sample sizes.
+- [x] 193. Track failed-request latency separately from successful-request latency.
+- [x] 194. Calculate actual completed throughput rather than displaying configured input QPS as throughput.
+- [x] 195. Distinguish offered load, accepted load, completed throughput, and dropped load.
+- [x] 196. Report queue wait, service time, network time, and total latency separately.
+- [x] 197. Make utilization account for replica count consistently.
+- [x] 198. Make capacity calculations consistent between engine metrics and bottleneck detection.
+- [x] 199. Keep queue-depth metrics synchronized after draining, not only after enqueue.
+- [x] 200. Populate active DB connection metrics from the database model.
+- [x] 201. Report cache metrics from the cache model as the canonical source.
+- [x] 202. Avoid calling a completed-request sample `activeRequests`.
+- [x] 203. Add golden tests with hand-calculated small workloads.
+- [x] 204. Add statistical tests with tolerances for probabilistic workloads.
 
 # Phase 2 — State Integrity, Persistence, and Synchronization
 

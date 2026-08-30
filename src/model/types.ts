@@ -443,6 +443,8 @@ export interface RequestHop {
   enterTimeMs: number;
   exitTimeMs: number;
   latencyMs: number;
+  queueWaitMs?: number;
+  serviceTimeMs?: number;
   status: 'hit' | 'miss' | 'processed' | 'rejected' | 'queued' | 'error';
   viaEdgePurpose?: EdgePurpose;
   info?: string;
@@ -460,6 +462,9 @@ export interface SimRequest {
   currentEdgeProgress?: number; // 0 to 1
   path: RequestHop[];
   totalLatencyMs: number;
+  queueWaitMs?: number;
+  serviceTimeMs?: number;
+  networkTimeMs?: number;
   status: 'in_flight' | 'success' | 'rate_limited' | 'timeout' | 'error' | 'dropped' | 'blocked';
   color: string;
 }
@@ -574,6 +579,12 @@ export interface TimeSeriesDataPoint {
   p95LatencyMs: number;
   p99LatencyMs: number;
   throughputQps: number;
+  offeredLoadQps?: number;
+  acceptedLoadQps?: number;
+  droppedLoadQps?: number;
+  queueWaitMs?: number;
+  serviceTimeMs?: number;
+  networkTimeMs?: number;
   errorRatePercent: number;
   cacheHitRatioPercent: number;
   activeRequests: number;
@@ -584,11 +595,26 @@ export interface TimeSeriesDataPoint {
 }
 
 export interface OverallMetrics {
+  metricScope?: 'lifetime-totals-with-bounded-latency-window';
+  latencyWindowSize?: number;
   totalRequestsSent: number;
+  totalRequestsOffered?: number;
+  totalRequestsAccepted?: number;
+  totalRequestsCompleted?: number;
+  totalRequestsDropped?: number;
   totalRequestsSuccess: number;
   totalRequestsFailed: number;
   currentQps: number;
+  offeredLoadQps?: number;
+  acceptedLoadQps?: number;
+  completedThroughputQps?: number;
+  droppedLoadQps?: number;
   avgEndToEndLatencyMs: number;
+  successfulAvgLatencyMs?: number;
+  failedAvgLatencyMs?: number;
+  avgQueueWaitMs?: number;
+  avgServiceTimeMs?: number;
+  avgNetworkTimeMs?: number;
   p50LatencyMs: number;
   p95LatencyMs: number;
   p99LatencyMs: number;

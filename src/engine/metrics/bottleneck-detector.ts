@@ -1,4 +1,5 @@
 import { BottleneckIssue, OverallMetrics } from '../../model/types';
+import { effectiveCapacityQps } from './capacity';
 import { CanvasEdge, CanvasNode } from '../../store/use-store';
 
 export function detectBottlenecks(
@@ -104,8 +105,7 @@ export function detectBottlenecks(
       const targetNode = nodes.find((n) => n.id === compMetric.nodeId);
       if (!targetNode) return;
 
-      const replicas = (targetNode.data.config as any).replicas || 1;
-      const maxCap = (targetNode.data.config.maxThroughputQps || 5000) * replicas;
+      const maxCap = effectiveCapacityQps(targetNode.data.config);
       if (compMetric.qps > maxCap * 0.9) {
         issues.push({
           id: `overload_${compMetric.nodeId}`,

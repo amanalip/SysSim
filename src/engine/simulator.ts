@@ -41,6 +41,8 @@ import { deriveHealthFromCapacity, getHealthBehavior } from './health-state';
 import { SeededRandom, normalizeSeed } from './seeded-random';
 import { EventPriorityQueue, SimulationEvent, SimulationEventKind } from './event-queue';
 import { SIMULATION_LIMITS } from './simulation-limits';
+import { nearestRankQuantile } from './metrics/quantile';
+import { capacityUtilizationPercent } from './metrics/capacity';
 
 export interface SimNode {
   id: string;
@@ -103,6 +105,9 @@ export class SysSimEngine {
   private pendingResults = new Map<string, TraversalResult>();
   private eventQueue = new EventPriorityQueue(SIMULATION_LIMITS.maxScheduledEvents);
   private capacityDroppedRequests = 0;
+  private completedDroppedRequests = 0;
+  private totalOffered = 0;
+  private loadBuckets = new Map<number, { offered: number; accepted: number; completed: number; dropped: number }>();
   private nodeArrivalBuckets = new Map<string, { second: number; count: number }>();
   private effectiveHealth = new Map<string, AnyComponentConfig['health']>();
 
@@ -420,6 +425,9 @@ export class SysSimEngine {
     this.totalSuccess = 0;
     this.totalFailed = 0;
     this.capacityDroppedRequests = 0;
+    this.completedDroppedRequests = 0;
+    this.totalOffered = 0;
+    this.loadBuckets.clear();
     this.timeSeries = [];
     this.activeConnections = {};
     this.loadBalancerConnectionEnds.clear();
@@ -524,7 +532,9 @@ export class SysSimEngine {
     const offeredArrivals = Math.floor(this.fractionalRequestAccumulator);
     this.fractionalRequestAccumulator -= offeredArrivals;
     const requestsToGenerate = Math.min(offeredArrivals, SIMULATION_LIMITS.maxGeneratedArrivalsPerTick);
-    this.capacityDroppedRequests += offeredArrivals - requestsToGenerate;
+    this.totalOffered += offeredArrivals;
+    this.recordLoad('offered', Math.max(stepStartMs, stepEndMs - 1), offeredArrivals);
+    this.recordCapacityDrop(Math.max(stepStartMs, stepEndMs - 1), offeredArrivals - requestsToGenerate);
 
     // Find origin client nodes (or any roots if no clients exist)
     const clientNodes = this.graph.nodes.filter((n) => n.config.type === 'client');
@@ -555,7 +565,7 @@ export class SysSimEngine {
             simulationSeed: normalizeSeed(this.config.seed ?? 1),
           },
         );
-        if (!this.eventQueue.schedule(arrivalTimeMs, 'arrival', req)) this.capacityDroppedRequests++;
+        if (!this.eventQueue.schedule(arrivalTimeMs, 'arrival', req)) this.recordCapacityDrop(arrivalTimeMs, 1);
       }
     }
 
@@ -581,7 +591,13 @@ export class SysSimEngine {
         p50LatencyMs: snap.p50LatencyMs,
         p95LatencyMs: snap.p95LatencyMs,
         p99LatencyMs: snap.p99LatencyMs,
-        throughputQps: currentQps,
+        throughputQps: snap.completedThroughputQps || 0,
+        offeredLoadQps: snap.offeredLoadQps || 0,
+        acceptedLoadQps: snap.acceptedLoadQps || 0,
+        droppedLoadQps: snap.droppedLoadQps || 0,
+        queueWaitMs: snap.avgQueueWaitMs || 0,
+        serviceTimeMs: snap.avgServiceTimeMs || 0,
+        networkTimeMs: snap.avgNetworkTimeMs || 0,
         errorRatePercent: snap.overallErrorRatePercent,
         cacheHitRatioPercent: snap.overallCacheHitRatioPercent,
         activeRequests: this.activeRequests.length,
@@ -607,6 +623,32 @@ export class SysSimEngine {
   public getPendingEventCount(): number { return this.eventQueue.size(); }
   public getPendingEventKinds(): SimulationEventKind[] { return this.eventQueue.kinds(); }
 
+  private recordLoad(
+    kind: 'offered' | 'accepted' | 'completed' | 'dropped',
+    timeMs: number,
+    count: number,
+  ): void {
+    if (count <= 0) return;
+    const second = Math.max(0, Math.floor(timeMs / 1000));
+    const bucket = this.loadBuckets.get(second) || { offered: 0, accepted: 0, completed: 0, dropped: 0 };
+    bucket[kind] += count;
+    this.loadBuckets.set(second, bucket);
+    for (const recordedSecond of this.loadBuckets.keys()) {
+      if (recordedSecond < second - 2) this.loadBuckets.delete(recordedSecond);
+    }
+  }
+
+  private recordCapacityDrop(timeMs: number, count: number): void {
+    if (count <= 0) return;
+    this.capacityDroppedRequests += count;
+    this.recordLoad('dropped', timeMs, count);
+  }
+
+  private getCurrentLoadRates(): { offered: number; accepted: number; completed: number; dropped: number } {
+    const latestSecond = Math.max(-1, ...this.loadBuckets.keys());
+    return this.loadBuckets.get(latestSecond) || { offered: 0, accepted: 0, completed: 0, dropped: 0 };
+  }
+
   private handleEvent(event: SimulationEvent): void {
     if (event.kind === 'arrival') {
       this.beginScheduledRequest(event.payload as SimRequest);
@@ -624,12 +666,7 @@ export class SysSimEngine {
 
   private beginScheduledRequest(req: SimRequest): void {
     if (this.inFlightRequests.size >= SIMULATION_LIMITS.maxInFlightRequests) {
-      this.capacityDroppedRequests++;
-      this.totalSent++;
-      this.totalFailed++;
-      req.status = 'dropped';
-      req.color = '#f85149';
-      this.completedRequests.push(req);
+      this.recordCapacityDrop(req.timestamp, 1);
       return;
     }
     const result = this.prepareRequest(req);
@@ -639,7 +676,6 @@ export class SysSimEngine {
     const completionKind = result.status === 'timeout' ? 'timeout' : 'request_completion';
     const completion = this.eventQueue.schedule(req.timestamp + Math.max(0, result.latencyMs), completionKind, req);
     if (!completion) {
-      this.capacityDroppedRequests++;
       this.finalizeRequest(req, { ...result, success: false, status: 'dropped' });
       this.pendingResults.delete(req.id);
       this.inFlightRequests.delete(req.id);
@@ -655,6 +691,8 @@ export class SysSimEngine {
   }
 
   public processRequest(req: SimRequest): void {
+    this.totalOffered++;
+    this.recordLoad('offered', req.timestamp, 1);
     const result = this.prepareRequest(req);
     this.finalizeRequest(req, result);
   }
@@ -662,6 +700,7 @@ export class SysSimEngine {
   private prepareRequest(req: SimRequest): TraversalResult {
     this.flushReadyCacheFills();
     this.totalSent++;
+    this.recordLoad('accepted', req.timestamp, 1);
     this.currentRequestArrivalMs = req.timestamp;
     this.currentRequestPayloadKb = Math.max(0, req.payloadSizeKb || 0);
     this.currentRequestOperation = req.operationType || 'read';
@@ -676,11 +715,23 @@ export class SysSimEngine {
 
     req.path = result.hops;
     req.totalLatencyMs = result.latencyMs;
+    const rawQueueWaitMs = result.hops.reduce((sum, hop) => sum + (hop.queueWaitMs || 0), 0);
+    const rawServiceTimeMs = result.hops.reduce((sum, hop) => sum + (hop.serviceTimeMs ?? hop.latencyMs), 0);
+    const nodeTimeMs = rawQueueWaitMs + rawServiceTimeMs;
+    const scale = nodeTimeMs > result.latencyMs && nodeTimeMs > 0 ? result.latencyMs / nodeTimeMs : 1;
+    req.queueWaitMs = rawQueueWaitMs * scale;
+    req.serviceTimeMs = rawServiceTimeMs * scale;
+    req.networkTimeMs = Math.max(0, result.latencyMs - req.queueWaitMs - req.serviceTimeMs);
     return result;
   }
 
   private finalizeRequest(req: SimRequest, result: TraversalResult): void {
     req.status = result.success ? 'success' : result.status;
+    this.recordLoad('completed', req.timestamp + result.latencyMs, 1);
+    if (req.status === 'dropped') {
+      this.completedDroppedRequests++;
+      this.recordLoad('dropped', req.timestamp + result.latencyMs, 1);
+    }
 
     if (result.success) {
       this.totalSuccess++;
@@ -1129,6 +1180,7 @@ export class SysSimEngine {
     }
 
     let hopLatency = 5;
+    let hopQueueWaitMs = 0;
     let hopStatus: RequestHop['status'] = 'processed';
     let hopInfo: string | undefined;
 
@@ -1144,6 +1196,7 @@ export class SysSimEngine {
       const service = this.appServerModels.get(node.id)?.process(this.currentRequestArrivalMs);
       hopLatency = service?.totalLatencyMs ?? Math.max(0, config.processingLatencyMs);
       if (service) {
+        hopQueueWaitMs = service.queueLatencyMs;
         this.activeConnections[node.id] = service.activeConnections;
         stats.queueDepth = service.queuedRequests;
       }
@@ -1159,6 +1212,7 @@ export class SysSimEngine {
       const query = dbModel?.executeQuery(isWrite, config.shardingKey ? requestKey : 'unsharded', config.health);
       if (query?.rejected) return failure('dropped', query.latencyMs, 'SQL connection queue full; query rejected');
       hopLatency = query?.latencyMs ?? config.baseLatencyMs;
+      hopQueueWaitMs = query?.connectionWaitMs || 0;
       hopInfo = query
         ? `${isWrite ? 'Write' : 'Read'} routed to ${query.role === 'primary' ? 'primary' : `read replica ${(query.replicaIndex || 0) + 1}`}` +
           `${query.connectionWaitMs ? ` after ${query.connectionWaitMs}ms connection wait` : ''}` +
@@ -1244,6 +1298,7 @@ export class SysSimEngine {
         return failure('rate_limited', decision.latencyMs, `Request rejected by ${config.algorithm.replaceAll('_', ' ')} after ${config.decisionLatencyMs}ms decision processing`);
       }
       hopLatency = decision?.latencyMs ?? config.decisionLatencyMs;
+      hopQueueWaitMs = decision?.queued ? Math.max(0, decision.latencyMs - config.decisionLatencyMs) : 0;
       hopInfo = `${config.algorithm.replaceAll('_', ' ')} admitted request${decision?.queued ? ` after ${Math.round((decision.latencyMs - config.decisionLatencyMs) * 10) / 10}ms smoothing queue` : ''}; burst/window capacity ${config.burstCapacity}`;
     } else if (config.type === 'api_gateway') {
       const admission = this.apiGatewayModels.get(node.id)?.begin(this.currentRequestArrivalMs);
@@ -1287,6 +1342,7 @@ export class SysSimEngine {
       const proxy = this.reverseProxyModels.get(node.id)?.begin(this.currentRequestArrivalMs, this.currentRequestPayloadKb);
       if (proxy && !proxy.accepted) return failure('dropped', proxy.latencyMs, `Reverse proxy connection limit ${config.maxConnections} exhausted`);
       hopLatency = proxy?.latencyMs ?? 1;
+      hopQueueWaitMs = proxy?.backpressureMs || 0;
       if (proxy) {
         this.reverseProxyReservations.set(`${requestId}:${node.id}`, proxy.reservationId || 0);
         this.currentRequestPayloadKb = proxy.outputPayloadKb;
@@ -1326,6 +1382,7 @@ export class SysSimEngine {
           return failure('rate_limited', invocation.totalLatencyMs, 'Invocation throttled: concurrency limit exhausted');
         }
         hopLatency = invocation.totalLatencyMs;
+        hopQueueWaitMs = invocation.queueLatencyMs;
         this.activeConnections[node.id] = invocation.activeInvocations;
         stats.queueDepth = invocation.queuedInvocations;
         hopInfo = `${invocation.coldStart ? 'Cold' : 'Warm'} start (${invocation.coldStartProbabilityPercent}% cold probability); ${Math.round(invocation.executionLatencyMs * 10) / 10}ms memory-scaled execution${invocation.queueLatencyMs ? ` + ${Math.round(invocation.queueLatencyMs * 10) / 10}ms concurrency queue` : ''}`;
@@ -1354,6 +1411,8 @@ export class SysSimEngine {
           enterTimeMs: startTimeMs,
           exitTimeMs: startTimeMs + hopLatency,
           latencyMs: hopLatency,
+          queueWaitMs: hopQueueWaitMs,
+          serviceTimeMs: Math.max(0, hopLatency - hopQueueWaitMs),
           status: hopStatus,
           info: hopInfo,
           viaEdgePurpose,
@@ -1807,18 +1866,20 @@ export class SysSimEngine {
   }
 
   public getMetricsSnapshot(): OverallMetrics {
-    const latencies = this.completedRequests
-      .filter((r) => r.status === 'success')
-      .map((r) => r.totalLatencyMs)
-      .sort((a, b) => a - b);
-
-    const p50 = latencies.length > 0 ? latencies[Math.floor(latencies.length * 0.5)] : 0;
-    const p95 = latencies.length > 0 ? latencies[Math.floor(latencies.length * 0.95)] : 0;
-    const p99 = latencies.length > 0 ? latencies[Math.floor(latencies.length * 0.99)] : 0;
-    const avg =
-      latencies.length > 0
-        ? latencies.reduce((acc, l) => acc + l, 0) / latencies.length
-        : 0;
+    const successfulRequests = this.completedRequests.filter((request) => request.status === 'success');
+    const failedRequests = this.completedRequests.filter((request) => request.status !== 'success');
+    const latencies = successfulRequests.map((request) => request.totalLatencyMs).sort((a, b) => a - b);
+    const failedLatencies = failedRequests.map((request) => request.totalLatencyMs);
+    const average = (values: readonly number[]) =>
+      values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+    const p50 = nearestRankQuantile(latencies, 0.5);
+    const p95 = nearestRankQuantile(latencies, 0.95);
+    const p99 = nearestRankQuantile(latencies, 0.99);
+    const avg = average(latencies);
+    const allRecentRequests = [...successfulRequests, ...failedRequests];
+    const avgQueueWait = average(allRecentRequests.map((request) => request.queueWaitMs || 0));
+    const avgServiceTime = average(allRecentRequests.map((request) => request.serviceTimeMs || 0));
+    const avgNetworkTime = average(allRecentRequests.map((request) => request.networkTimeMs || 0));
 
     let totalHits = 0;
     let totalMisses = 0;
@@ -1852,8 +1913,11 @@ export class SysSimEngine {
         queueDepth: 0,
       };
 
-      totalHits += stats.hits;
-      totalMisses += stats.misses;
+      const cacheCounts = this.cacheModels.get(n.id)?.getCounts();
+      const cacheHits = cacheCounts?.hits ?? stats.hits;
+      const cacheMisses = cacheCounts?.misses ?? stats.misses;
+      totalHits += cacheHits;
+      totalMisses += cacheMisses;
       totalBypasses += stats.bypasses;
       totalCoalescedRequests += stats.coalescedRequests;
 
@@ -1863,22 +1927,18 @@ export class SysSimEngine {
           : 0;
 
       const sortedNodeLat = [...stats.latencies].sort((a, b) => a - b);
-      const nodeP95 =
-        sortedNodeLat.length > 0
-          ? sortedNodeLat[Math.floor(sortedNodeLat.length * 0.95)]
-          : 0;
+      const nodeP95 = nearestRankQuantile(sortedNodeLat, 0.95);
 
       const nodeErrorRate =
         stats.totalRequests > 0
           ? (stats.failedRequests / stats.totalRequests) * 100
           : 0;
 
-      const totalCacheLookups = stats.hits + stats.misses;
+      const totalCacheLookups = cacheHits + cacheMisses;
       const nodeCacheRatio =
-        totalCacheLookups > 0 ? (stats.hits / totalCacheLookups) * 100 : 0;
+        totalCacheLookups > 0 ? (cacheHits / totalCacheLookups) * 100 : 0;
 
       const nodeQps = stats.totalRequests > 0 ? Math.round(stats.totalRequests / Math.max(1, this.elapsedSimulationMs / 1000)) : 0;
-      const ratedMaxQps = Math.max(10, n.config.maxThroughputQps || 5000);
       const messagingMetrics = this.queueModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
       const appMetrics = this.appServerModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
       const workerMetrics = this.workerModels.get(n.id)?.getMetrics();
@@ -1930,12 +1990,12 @@ export class SysSimEngine {
         activeConnections: appMetrics?.activeConnections ?? workerMetrics?.busyWorkers ?? serverlessMetrics?.activeInvocations ?? proxyMetrics?.activeConnections ?? loadBalancerActiveConnections ?? (n.config.type === 'sql_db' ? this.dbModels.get(n.id)?.getActiveConnections() : undefined) ?? (this.activeConnections[n.id] || 0),
         queueDepth: appMetrics?.queuedRequests ?? workerMetrics?.queuedWork ?? serverlessMetrics?.queuedInvocations ?? dbMetrics?.queuedConnections ?? stats.queueDepth,
         cacheHitRatioPercent: Math.round(nodeCacheRatio * 10) / 10,
-        utilizationPercent: appMetrics?.cpuUtilizationPercent ?? workerMetrics?.utilizationPercent ?? serverlessMetrics?.utilizationPercent ?? Math.min(100, Math.round((nodeQps / ratedMaxQps) * 100)),
+        utilizationPercent: appMetrics?.cpuUtilizationPercent ?? workerMetrics?.utilizationPercent ?? serverlessMetrics?.utilizationPercent ?? capacityUtilizationPercent(n.config, nodeQps),
         totalRequests: stats.totalRequests,
         successfulRequests: stats.successfulRequests,
         failedRequests: stats.failedRequests,
-        cacheHits: stats.hits,
-        cacheMisses: stats.misses,
+        cacheHits,
+        cacheMisses,
         cacheBypasses: stats.bypasses,
         cacheCoalescedRequests: stats.coalescedRequests,
         producerAccepted: messagingMetrics?.producerAccepted,
@@ -2038,12 +2098,29 @@ export class SysSimEngine {
     const overallCacheHit =
       totalLookups > 0 ? (totalHits / totalLookups) * 100 : 0;
 
+    const loadRates = this.getCurrentLoadRates();
+    const completedRequests = this.totalSuccess + this.totalFailed;
     return {
+      metricScope: 'lifetime-totals-with-bounded-latency-window',
+      latencyWindowSize: this.completedRequests.length,
       totalRequestsSent: this.totalSent,
+      totalRequestsOffered: this.totalOffered,
+      totalRequestsAccepted: this.totalSent,
+      totalRequestsCompleted: completedRequests,
+      totalRequestsDropped: this.capacityDroppedRequests + this.completedDroppedRequests,
       totalRequestsSuccess: this.totalSuccess,
       totalRequestsFailed: this.totalFailed,
-      currentQps: this.getCurrentQps(this.elapsedSimulationMs / 1000),
+      currentQps: loadRates.completed,
+      offeredLoadQps: loadRates.offered,
+      acceptedLoadQps: loadRates.accepted,
+      completedThroughputQps: loadRates.completed,
+      droppedLoadQps: loadRates.dropped,
       avgEndToEndLatencyMs: Math.round(avg * 10) / 10,
+      successfulAvgLatencyMs: Math.round(avg * 10) / 10,
+      failedAvgLatencyMs: Math.round(average(failedLatencies) * 10) / 10,
+      avgQueueWaitMs: Math.round(avgQueueWait * 10) / 10,
+      avgServiceTimeMs: Math.round(avgServiceTime * 10) / 10,
+      avgNetworkTimeMs: Math.round(avgNetworkTime * 10) / 10,
       p50LatencyMs: Math.round(p50 * 10) / 10,
       p95LatencyMs: Math.round(p95 * 10) / 10,
       p99LatencyMs: Math.round(p99 * 10) / 10,

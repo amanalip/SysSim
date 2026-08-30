@@ -273,14 +273,14 @@ export const SimulationControls: React.FC = () => {
       {/* Telemetry Stats */}
       <div className={styles.statsCluster}>
         <div className={styles.statItem}>
-          <span className={styles.statVal}>{metrics.totalRequestsSent.toLocaleString()}</span>
-          <span className={styles.statLbl}>Sent</span>
+          <span className={styles.statVal}>{(metrics.totalRequestsOffered ?? metrics.totalRequestsSent).toLocaleString()}</span>
+          <span className={styles.statLbl}>Offered</span>
         </div>
         <div className={styles.statItem}>
           <span className={`${styles.statVal} ${styles.successVal}`}>
             {metrics.totalRequestsSuccess.toLocaleString()}
           </span>
-          <span className={styles.statLbl}>Passed</span>
+          <span className={styles.statLbl}>Succeeded</span>
         </div>
         <div className={styles.statItem}>
           <span className={`${styles.statVal} ${styles.failVal}`}>
