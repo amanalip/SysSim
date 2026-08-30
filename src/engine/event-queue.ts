@@ -19,8 +19,12 @@ export interface SimulationEvent<T = unknown> {
 export class EventPriorityQueue {
   private heap: SimulationEvent[] = [];
   private nextId = 0;
+  private rejected = 0;
 
-  public schedule<T>(timeMs: number, kind: SimulationEventKind, payload: T): SimulationEvent<T> {
+  constructor(private readonly maxSize = Number.POSITIVE_INFINITY) {}
+
+  public schedule<T>(timeMs: number, kind: SimulationEventKind, payload: T): SimulationEvent<T> | undefined {
+    if (this.heap.length >= this.maxSize) { this.rejected++; return undefined; }
     const event = { id: this.nextId++, timeMs: Math.max(0, timeMs), kind, payload };
     this.heap.push(event);
     this.bubbleUp(this.heap.length - 1);
@@ -37,8 +41,9 @@ export class EventPriorityQueue {
   }
 
   public size(): number { return this.heap.length; }
+  public rejectedCount(): number { return this.rejected; }
   public kinds(): SimulationEventKind[] { return this.heap.map((event) => event.kind); }
-  public clear(): void { this.heap = []; this.nextId = 0; }
+  public clear(): void { this.heap = []; this.nextId = 0; this.rejected = 0; }
 
   private pop(): SimulationEvent | undefined {
     if (!this.heap.length) return undefined;

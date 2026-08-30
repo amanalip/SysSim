@@ -85,8 +85,8 @@ The current engine represents **synthetic logical requests** moving through a di
 
 In the current model:
 
-- requests are processed synchronously within each simulation step rather than by a complete real-world distributed scheduler;
-- recently completed requests are retained for visualization and trace inspection;
+- requests are admitted and completed through a deterministic event-priority queue advanced by fixed-cadence worker updates;
+- genuinely in-flight requests drive animation while a separate bounded completed-request history drives trace inspection;
 - queue and messaging components are simplified hops within the logical request path;
 - operation mixes, payload distributions, retry lifetimes, and independently scheduled background jobs are not yet fully represented;
 - the model is suitable for conceptual experiments, not production prediction.

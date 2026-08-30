@@ -1,5 +1,6 @@
 import { SysSimEngine, SimGraph } from './simulator';
 import { TrafficConfig } from '../model/types';
+import { SIMULATION_LIMITS } from './simulation-limits';
 
 const engine = new SysSimEngine();
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -31,7 +32,7 @@ self.onmessage = (event: MessageEvent) => {
           lastTickTime = now;
           const result = engine.step(delta);
           self.postMessage({ type: 'TICK_UPDATE', payload: result });
-        }, 100);
+        }, SIMULATION_LIMITS.uiUpdateIntervalMs);
       }
       break;
 
@@ -53,7 +54,7 @@ self.onmessage = (event: MessageEvent) => {
           lastTickTime = now;
           const result = engine.step(delta);
           self.postMessage({ type: 'TICK_UPDATE', payload: result });
-        }, 100);
+        }, SIMULATION_LIMITS.uiUpdateIntervalMs);
       }
       break;
 

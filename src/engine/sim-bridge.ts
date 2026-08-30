@@ -1,6 +1,7 @@
 import { useStore } from '../store/use-store';
 import { SimGraph, SysSimEngine } from './simulator';
 import { TrafficConfig } from '../model/types';
+import { SIMULATION_LIMITS } from './simulation-limits';
 
 class SimulationBridge {
   private worker: Worker | null = null;
@@ -118,7 +119,7 @@ class SimulationBridge {
           useStore.getState().setActiveRequests(result.activeRequests);
           useStore.getState().setRecentRequests(result.recentRequests);
         }
-      }, 100);
+      }, SIMULATION_LIMITS.uiUpdateIntervalMs);
     }
   }
 
@@ -157,7 +158,7 @@ class SimulationBridge {
           useStore.getState().setActiveRequests(result.activeRequests);
           useStore.getState().setRecentRequests(result.recentRequests);
         }
-      }, 100);
+      }, SIMULATION_LIMITS.uiUpdateIntervalMs);
     }
   }
 

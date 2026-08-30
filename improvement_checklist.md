@@ -339,9 +339,9 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 183. Support concurrent branches and join semantics.
 - [x] 184. Apply latency distributions rather than fixed or minimally randomized values.
 - [x] 185. Document simulation clock behavior at 0.5x through 10x.
-- [ ] 186. Ensure UI rendering cadence is independent of simulation event throughput.
-- [ ] 187. Bound memory use for events, traces, samples, and time series.
-- [ ] 188. Benchmark event processing at supported graph and QPS limits.
+- [x] 186. Ensure UI rendering cadence is independent of simulation event throughput.
+- [x] 187. Bound memory use for events, traces, samples, and time series.
+- [x] 188. Benchmark event processing at supported graph and QPS limits.
 
 ## Correct metrics and percentile calculations — P0/P1
 

@@ -40,6 +40,7 @@ import { AuthServiceModel, EncryptionServiceModel } from './components/security-
 import { deriveHealthFromCapacity, getHealthBehavior } from './health-state';
 import { SeededRandom, normalizeSeed } from './seeded-random';
 import { EventPriorityQueue, SimulationEvent, SimulationEventKind } from './event-queue';
+import { SIMULATION_LIMITS } from './simulation-limits';
 
 export interface SimNode {
   id: string;
@@ -100,7 +101,8 @@ export class SysSimEngine {
   private activeRequests: SimRequest[] = [];
   private inFlightRequests = new Map<string, SimRequest>();
   private pendingResults = new Map<string, TraversalResult>();
-  private eventQueue = new EventPriorityQueue();
+  private eventQueue = new EventPriorityQueue(SIMULATION_LIMITS.maxScheduledEvents);
+  private capacityDroppedRequests = 0;
   private nodeArrivalBuckets = new Map<string, { second: number; count: number }>();
   private effectiveHealth = new Map<string, AnyComponentConfig['health']>();
 
@@ -417,6 +419,7 @@ export class SysSimEngine {
     this.totalSent = 0;
     this.totalSuccess = 0;
     this.totalFailed = 0;
+    this.capacityDroppedRequests = 0;
     this.timeSeries = [];
     this.activeConnections = {};
     this.loadBalancerConnectionEnds.clear();
@@ -518,8 +521,10 @@ export class SysSimEngine {
     // Determine current rate and accumulate fractional requests per tick
     const currentQps = this.getCurrentQps(elapsedSec);
     this.fractionalRequestAccumulator += (currentQps * scaledDelta) / 1000;
-    const requestsToGenerate = Math.floor(this.fractionalRequestAccumulator);
-    this.fractionalRequestAccumulator -= requestsToGenerate;
+    const offeredArrivals = Math.floor(this.fractionalRequestAccumulator);
+    this.fractionalRequestAccumulator -= offeredArrivals;
+    const requestsToGenerate = Math.min(offeredArrivals, SIMULATION_LIMITS.maxGeneratedArrivalsPerTick);
+    this.capacityDroppedRequests += offeredArrivals - requestsToGenerate;
 
     // Find origin client nodes (or any roots if no clients exist)
     const clientNodes = this.graph.nodes.filter((n) => n.config.type === 'client');
@@ -550,7 +555,7 @@ export class SysSimEngine {
             simulationSeed: normalizeSeed(this.config.seed ?? 1),
           },
         );
-        this.eventQueue.schedule(arrivalTimeMs, 'arrival', req);
+        if (!this.eventQueue.schedule(arrivalTimeMs, 'arrival', req)) this.capacityDroppedRequests++;
       }
     }
 
@@ -560,7 +565,7 @@ export class SysSimEngine {
       this.handleEvent(event);
     });
     this.elapsedSimulationMs = stepEndMs;
-    this.activeRequests = [...this.inFlightRequests.values()].slice(-100);
+    this.activeRequests = [...this.inFlightRequests.values()].slice(-SIMULATION_LIMITS.maxRecentRequests);
 
     // Record time-series metrics point periodically (every ~1s in sim time)
     const currentSecBucket = Math.floor(elapsedSec);
@@ -586,7 +591,7 @@ export class SysSimEngine {
         cacheCoalescedRequests: snap.totalCacheCoalescedRequests || 0,
       });
 
-      if (this.timeSeries.length > 60) {
+      if (this.timeSeries.length > SIMULATION_LIMITS.maxTimeSeriesPoints) {
         this.timeSeries.shift();
       }
     }
@@ -594,11 +599,11 @@ export class SysSimEngine {
     return {
       metrics: this.getMetricsSnapshot(),
       activeRequests: this.activeRequests,
-      recentRequests: this.completedRequests.slice(-100),
+      recentRequests: this.completedRequests.slice(-SIMULATION_LIMITS.maxRecentRequests),
     };
   }
 
-  public getRecentRequests(): SimRequest[] { return this.completedRequests.slice(-100); }
+  public getRecentRequests(): SimRequest[] { return this.completedRequests.slice(-SIMULATION_LIMITS.maxRecentRequests); }
   public getPendingEventCount(): number { return this.eventQueue.size(); }
   public getPendingEventKinds(): SimulationEventKind[] { return this.eventQueue.kinds(); }
 
@@ -618,10 +623,28 @@ export class SysSimEngine {
   }
 
   private beginScheduledRequest(req: SimRequest): void {
+    if (this.inFlightRequests.size >= SIMULATION_LIMITS.maxInFlightRequests) {
+      this.capacityDroppedRequests++;
+      this.totalSent++;
+      this.totalFailed++;
+      req.status = 'dropped';
+      req.color = '#f85149';
+      this.completedRequests.push(req);
+      return;
+    }
     const result = this.prepareRequest(req);
     req.status = 'in_flight';
     this.inFlightRequests.set(req.id, req);
     this.pendingResults.set(req.id, result);
+    const completionKind = result.status === 'timeout' ? 'timeout' : 'request_completion';
+    const completion = this.eventQueue.schedule(req.timestamp + Math.max(0, result.latencyMs), completionKind, req);
+    if (!completion) {
+      this.capacityDroppedRequests++;
+      this.finalizeRequest(req, { ...result, success: false, status: 'dropped' });
+      this.pendingResults.delete(req.id);
+      this.inFlightRequests.delete(req.id);
+      return;
+    }
     for (let index = 0; index < req.path.length; index++) {
       const hop = req.path[index];
       this.eventQueue.schedule(hop.exitTimeMs, 'node_service_completion', { requestId: req.id, nodeId: hop.nodeId });
@@ -629,8 +652,6 @@ export class SysSimEngine {
       if (next && next.enterTimeMs >= hop.exitTimeMs) this.eventQueue.schedule(next.enterTimeMs, 'edge_transfer', { requestId: req.id, from: hop.nodeId, to: next.nodeId });
       if (hop.viaEdgePurpose === 'fallback') this.eventQueue.schedule(hop.enterTimeMs, 'retry', { requestId: req.id, nodeId: hop.nodeId });
     }
-    const completionKind = result.status === 'timeout' ? 'timeout' : 'request_completion';
-    this.eventQueue.schedule(req.timestamp + Math.max(0, result.latencyMs), completionKind, req);
   }
 
   public processRequest(req: SimRequest): void {
@@ -680,7 +701,7 @@ export class SysSimEngine {
     }
 
     this.completedRequests.push(req);
-    if (this.completedRequests.length > 1000) {
+    if (this.completedRequests.length > SIMULATION_LIMITS.maxCompletedRequests) {
       this.completedRequests.shift();
     }
   }
@@ -1318,7 +1339,7 @@ export class SysSimEngine {
       hopInfo = `${hopInfo || 'Processed request'}; ${effectiveHealth} health penalty (${healthBehavior.capacityMultiplier * 100}% capacity, ${healthBehavior.latencyMultiplier}× latency)`;
     }
     stats.latencies.push(hopLatency);
-    if (stats.latencies.length > 500) stats.latencies.shift();
+    if (stats.latencies.length > SIMULATION_LIMITS.maxLatencySamplesPerNode) stats.latencies.shift();
     stats.successfulRequests++;
 
     return {
