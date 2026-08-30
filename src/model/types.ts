@@ -755,16 +755,39 @@ export interface Scenario {
 }
 
 export interface CalculatorInputs {
-  qps: number;
-  payloadSizeKb: number;
+  qps: number; // total operations per second: reads + writes
+  payloadSizeKb: number; // write request body and stored-record size, decimal KB
   retentionDays: number;
   readWriteRatio: number; // e.g. 10 for 10:1 read to write
   replicationFactor: number;
   slaAvailabilityPercent: number;
   serverCapacityQps: number;
+  readRequestPayloadKb?: number;
+  readResponsePayloadKb?: number;
+  writeResponsePayloadKb?: number;
+  dbAverageServiceTimeMs?: number;
+  dbTargetUtilizationPercent?: number;
+  cacheWorkingSetDays?: number;
+  cacheHotSetPercent?: number;
+  cacheCompressionRatio?: number;
+  serverTargetUtilizationPercent?: number;
+  serverHeadroomPercent?: number;
+  failoverCapacityPercent?: number;
+  indexingOverheadPercent?: number;
+  metadataOverheadPercent?: number;
+  storageCompressionRatio?: number;
+  annualGrowthPercent?: number;
+}
+
+export interface EstimateRange {
+  low: number;
+  expected: number;
+  high: number;
 }
 
 export interface CalculatorOutputs {
+  readQps: number;
+  writeQps: number;
   dailyNewDataGb: number;
   totalStorageNeededTb: number;
   totalReplicatedStorageTb: number;
@@ -773,5 +796,12 @@ export interface CalculatorOutputs {
   estimatedServersNeeded: number;
   recommendedCacheMemoryGb: number;
   estimatedDbConnections: number;
+  ranges: {
+    replicatedStorageTb: EstimateRange;
+    serversNeeded: EstimateRange;
+    cacheMemoryGb: EstimateRange;
+    dbConnections: EstimateRange;
+  };
+  assumptions: Record<string, number | string>;
   formulas: Record<string, string>;
 }

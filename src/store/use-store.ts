@@ -227,6 +227,21 @@ const initialCalculatorInputs: CalculatorInputs = {
   replicationFactor: 3,
   slaAvailabilityPercent: 99.99,
   serverCapacityQps: 2000,
+  readRequestPayloadKb: 0.5,
+  readResponsePayloadKb: 2,
+  writeResponsePayloadKb: 0.2,
+  dbAverageServiceTimeMs: 20,
+  dbTargetUtilizationPercent: 70,
+  cacheWorkingSetDays: 1,
+  cacheHotSetPercent: 20,
+  cacheCompressionRatio: 0.7,
+  serverTargetUtilizationPercent: 70,
+  serverHeadroomPercent: 20,
+  failoverCapacityPercent: 20,
+  indexingOverheadPercent: 20,
+  metadataOverheadPercent: 5,
+  storageCompressionRatio: 0.7,
+  annualGrowthPercent: 30,
 };
 
 let lastConfigHistoryNodeId: string | null = null;

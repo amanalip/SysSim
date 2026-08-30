@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore } from '../store/use-store';
+import { calculateCapacity } from '../analysis/capacity-calculator';
 import { SysSimEngine } from '../engine/simulator';
 import { chaosRunner } from '../engine/metrics/chaos-runner';
 import { serializeCanvasState, decodeStateFromUrlHash, encodeStateToUrlHash } from '../utils/sharing';
@@ -100,14 +101,9 @@ describe('Quality Improvements & Bug Fixes Test Suite (10+ Verifications)', () =
     const inputs = useStore.getState().calculatorInputs;
     expect(inputs.qps).toBe(0);
 
-    // Verify safe bounds in calculation
-    const safeQps = Math.max(1, inputs.qps || 1);
-    const safeRatio = Math.max(0.01, inputs.readWriteRatio !== undefined ? inputs.readWriteRatio : 10);
-    const writeFraction = 1 / (safeRatio + 1);
-    const writeQps = safeQps * writeFraction;
-
-    expect(Number.isFinite(writeQps)).toBe(true);
-    expect(writeQps).toBeGreaterThan(0);
+    const output = calculateCapacity(inputs);
+    expect(Number.isFinite(output.writeQps)).toBe(true);
+    expect(output.estimatedServersNeeded).toBe(0);
   });
 
   it('5. calculates both Inbound and Outbound Bandwidth in Envelope Calculator', () => {
@@ -117,15 +113,9 @@ describe('Quality Improvements & Bug Fixes Test Suite (10+ Verifications)', () =
       readWriteRatio: 9, // 10% writes, 90% reads
     });
 
-    const inputs = useStore.getState().calculatorInputs;
-    const writeQps = inputs.qps * (1 / (inputs.readWriteRatio + 1)); // 1000 QPS
-    const readQps = inputs.qps - writeQps; // 9000 QPS
-
-    const inboundMbps = Math.round(((writeQps * inputs.payloadSizeKb * 8) / 1024) * 10) / 10;
-    const outboundMbps = Math.round(((readQps * inputs.payloadSizeKb * 8) / 1024) * 10) / 10;
-
-    expect(inboundMbps).toBe(15.6);
-    expect(outboundMbps).toBe(140.6);
+    const output = calculateCapacity(useStore.getState().calculatorInputs);
+    expect(output.inboundBandwidthMbps).toBe(52);
+    expect(output.outboundBandwidthMbps).toBe(145.6);
   });
 
   it('6. toggles edge cut status and updates simulation routing dynamically', () => {

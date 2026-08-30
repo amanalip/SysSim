@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { detectBottlenecks } from '../engine/metrics/bottleneck-detector';
 import { useStore } from '../store/use-store';
+import { calculateCapacity } from '../analysis/capacity-calculator';
 
 describe('Bottleneck Detection & Capacity Calculator Tests (Milestones 12 and 13)', () => {
   beforeEach(() => {
@@ -51,14 +52,9 @@ describe('Bottleneck Detection & Capacity Calculator Tests (Milestones 12 and 13
       serverCapacityQps: 2000,
     });
 
-    const inputs = useStore.getState().calculatorInputs;
-    const writeQps = inputs.qps / (inputs.readWriteRatio + 1); // 5000
-    const dailyDataGb = (writeQps * inputs.payloadSizeKb * 86400) / (1024 * 1024); // ~823.97 GB
-    const totalStorageTb = (dailyDataGb * inputs.retentionDays) / 1024;
-    const serversNeeded = Math.ceil(inputs.qps / inputs.serverCapacityQps); // 5
-
-    expect(serversNeeded).toBe(5);
-    expect(dailyDataGb).toBeGreaterThan(800);
-    expect(totalStorageTb).toBeGreaterThan(250);
+    const output = calculateCapacity(useStore.getState().calculatorInputs);
+    expect(output.estimatedServersNeeded).toBe(10);
+    expect(output.dailyNewDataGb).toBe(864);
+    expect(output.totalReplicatedStorageTb).toBeGreaterThan(800);
   });
 });

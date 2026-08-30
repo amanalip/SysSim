@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ALL_SCENARIOS } from '../scenarios';
+import { calculateCapacity } from '../analysis/capacity-calculator';
 import { useStore } from '../store/use-store';
 
 describe('Deep Audit Pass 8 Bug Fixes & Feature Tests (10+ Verifications)', () => {
@@ -51,31 +52,19 @@ describe('Deep Audit Pass 8 Bug Fixes & Feature Tests (10+ Verifications)', () =
   });
 
   it('6. verifies Chat Messaging preset calculations in EnvelopeCalculator', () => {
-    const qps = 20000;
-    const payloadSizeKb = 4;
-    const readWriteRatio = 2;
-    const writeFraction = 1 / (readWriteRatio + 1);
-    const writeQps = qps * writeFraction;
-    const writeThroughputKb = writeQps * payloadSizeKb;
-
-    expect(writeQps).toBeCloseTo(6666.67, 1);
-    expect(writeThroughputKb).toBeGreaterThan(0);
+    const output = calculateCapacity({ ...useStore.getState().calculatorInputs, qps: 20000, payloadSizeKb: 4, readWriteRatio: 2 });
+    expect(output.writeQps).toBeCloseTo(6666.67, 1);
+    expect(output.dailyNewDataGb).toBeGreaterThan(0);
   });
 
   it('7. verifies Video Streaming media-heavy bandwidth calculations', () => {
-    const qps = 10000;
-    const payloadSizeKb = 500;
-    const totalMbps = (qps * payloadSizeKb * 8) / 1024;
-
-    expect(totalMbps).toBeCloseTo(39062.5, 1);
+    const output = calculateCapacity({ ...useStore.getState().calculatorInputs, qps: 10000, payloadSizeKb: 500, readWriteRatio: 100, readResponsePayloadKb: 500 });
+    expect(output.outboundBandwidthMbps).toBeGreaterThan(39000);
   });
 
   it('8. verifies E-Commerce standard architecture preset settings', () => {
-    const qps = 15000;
-    const capacity = 1000;
-    const serversNeeded = Math.ceil(qps / capacity);
-
-    expect(serversNeeded).toBe(15);
+    const output = calculateCapacity({ ...useStore.getState().calculatorInputs, qps: 15000, serverCapacityQps: 1000 });
+    expect(output.estimatedServersNeeded).toBe(30);
   });
 
   it('9. verifies sidebar tab switching transitions state store properly', () => {

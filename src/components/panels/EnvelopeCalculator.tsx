@@ -1,9 +1,19 @@
 import React, { useMemo } from 'react';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Download } from 'lucide-react';
 import { useStore } from '../../store/use-store';
-import { CalculatorInputs, CalculatorOutputs } from '../../model/types';
+import { CalculatorInputs } from '../../model/types';
+import { buildCapacityAssumptionsJson, calculateCapacity, CAPACITY_UNIT_CONVENTION } from '../../analysis/capacity-calculator';
 import { ModelNotice } from '../ui/ModelNotice';
 import styles from './EnvelopeCalculator.module.css';
+
+const NumericAssumptionField: React.FC<{ label: string; value: number; min?: number; max?: number; step?: number; onChange: (value: number) => void }> =
+  ({ label, value, min = 0, max, step = 1, onChange }) => (
+    <div className={styles.fieldGroup}>
+      <label className={styles.fieldLabel}>{label}</label>
+      <input type="number" className={styles.input} value={value} min={min} max={max} step={step}
+        onChange={(event) => { const parsed = Number(event.target.value); if (Number.isFinite(parsed)) onChange(parsed); }} />
+    </div>
+  );
 
 export const EnvelopeCalculator: React.FC = () => {
   const { calculatorInputs, setCalculatorInputs, nodes, selectNode } = useStore();
@@ -31,57 +41,16 @@ export const EnvelopeCalculator: React.FC = () => {
     calculatorInputs.serverCapacityQps,
   ]);
 
-  const outputs: CalculatorOutputs = useMemo(() => {
-    const safeQps = Math.max(1, calculatorInputs.qps || 1);
-    const safePayload = Math.max(0.1, calculatorInputs.payloadSizeKb || 1);
-    const safeRetention = Math.max(1, calculatorInputs.retentionDays || 1);
-    const safeRatio = Math.max(0.01, calculatorInputs.readWriteRatio !== undefined ? calculatorInputs.readWriteRatio : 10);
-    const safeReplication = Math.max(1, calculatorInputs.replicationFactor || 1);
-    const safeCapacity = Math.max(1, calculatorInputs.serverCapacityQps || 1000);
+  const outputs = useMemo(() => calculateCapacity(calculatorInputs), [calculatorInputs]);
 
-    const writeFraction = 1 / (safeRatio + 1);
-    const writeQps = safeQps * writeFraction;
-    const readQps = Math.max(0, safeQps - writeQps);
-
-    // Daily new write data (GB) = writeQps * payloadKB * 86400 / 1024 / 1024
-    const dailyNewDataGb = Math.round(((writeQps * safePayload * 86400) / (1024 * 1024)) * 10) / 10;
-
-    // Total raw storage (TB) = (dailyNewDataGb * retentionDays) / 1024
-    const totalStorageNeededTb = Math.round(((dailyNewDataGb * safeRetention) / 1024) * 100) / 100;
-
-    // Replicated storage (TB)
-    const totalReplicatedStorageTb = Math.round(totalStorageNeededTb * safeReplication * 100) / 100;
-
-    // Inbound & Outbound Bandwidth (Mbps) = Full duplex request + response payload & header sizing
-    const inboundBandwidthMbps = Math.round(((writeQps * safePayload * 8 + readQps * 0.5 * 8) / 1024) * 10) / 10;
-    const outboundBandwidthMbps = Math.round(((readQps * safePayload * 8 + writeQps * 0.2 * 8) / 1024) * 10) / 10;
-
-    // Estimated servers needed = Math.ceil(qps / serverCapacityQps)
-    const estimatedServersNeeded = Math.max(1, Math.ceil(safeQps / safeCapacity));
-
-    // Recommended Cache memory (GB) = 20% of daily data (80/20 rule)
-    const recommendedCacheMemoryGb = Math.round(dailyNewDataGb * 0.2 * 10) / 10;
-
-    // Estimated DB connections = writeQps * 2 + readQps * 0.5
-    const estimatedDbConnections = Math.round(writeQps * 2 + readQps * 0.5);
-
-    return {
-      dailyNewDataGb,
-      totalStorageNeededTb,
-      totalReplicatedStorageTb,
-      inboundBandwidthMbps,
-      outboundBandwidthMbps,
-      estimatedServersNeeded,
-      recommendedCacheMemoryGb,
-      estimatedDbConnections,
-      formulas: {
-        dailyStorage: `(${Math.round(writeQps)} write QPS * ${safePayload} KB * 86,400s) / 10^6`,
-        servers: `${safeQps} total QPS / ${safeCapacity} QPS per instance`,
-        cache: `20% Pareto cache of daily write traffic (${dailyNewDataGb} GB)`,
-        bandwidth: `${safeQps} total QPS * ${safePayload} KB * 8 bits`,
-      },
-    };
-  }, [calculatorInputs]);
+  const downloadAssumptions = () => {
+    const url = URL.createObjectURL(new Blob([buildCapacityAssumptionsJson(calculatorInputs, outputs)], { type: 'application/json' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `syssim-capacity-assumptions-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handlePreset = (preset: Partial<CalculatorInputs>) => {
     setCalculatorInputs(preset);
@@ -95,14 +64,19 @@ export const EnvelopeCalculator: React.FC = () => {
     <div className={styles.calculatorContainer}>
       <ModelNotice
         kind="estimate"
-        detail="Results use simplified workload assumptions and are not production capacity guarantees."
+        detail={`${CAPACITY_UNIT_CONVENTION.qps} ${CAPACITY_UNIT_CONVENTION.storage} Results are ranges, not production guarantees.`}
         assumptionLabel="capacity worksheet simplifications"
         assumptionSection="deliberate-simplifications-and-rationale"
       />
 
       {/* Presets */}
       <div className={styles.presetsBar}>
-        <div className={styles.presetLabel}>Architecture Presets</div>
+        <div className={styles.presetHeader}>
+          <div className={styles.presetLabel}>Architecture Presets</div>
+          <button className={styles.downloadBtn} onClick={downloadAssumptions} title="Download inputs, formulas, units, and uncertainty ranges">
+            <Download size={11} /> Assumptions JSON
+          </button>
+        </div>
         <div className={styles.presetsGrid}>
           <button
             className={styles.presetBtn}
@@ -172,7 +146,7 @@ export const EnvelopeCalculator: React.FC = () => {
         <div className={styles.sectionTitle}>Input Parameters</div>
         <div className={styles.fieldGrid}>
           <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>Total QPS</label>
+            <label className={styles.fieldLabel}>Total QPS (reads + writes)</label>
             <input
               type="number"
               className={styles.input}
@@ -190,7 +164,7 @@ export const EnvelopeCalculator: React.FC = () => {
           </div>
 
           <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>Payload (KB)</label>
+            <label className={styles.fieldLabel}>Write / stored payload (decimal KB)</label>
             <input
               type="number"
               className={styles.input}
@@ -281,6 +255,33 @@ export const EnvelopeCalculator: React.FC = () => {
         </div>
       </div>
 
+      <div className={styles.section}>
+        <div className={styles.sectionTitle}>Workload & Reliability Assumptions</div>
+        <div className={styles.fieldGrid}>
+          <NumericAssumptionField label="Read request (KB)" value={calculatorInputs.readRequestPayloadKb ?? 0.5} step={0.1} onChange={(readRequestPayloadKb) => setCalculatorInputs({ readRequestPayloadKb })} />
+          <NumericAssumptionField label="Read response (KB)" value={calculatorInputs.readResponsePayloadKb ?? calculatorInputs.payloadSizeKb} step={0.1} onChange={(readResponsePayloadKb) => setCalculatorInputs({ readResponsePayloadKb })} />
+          <NumericAssumptionField label="Write response (KB)" value={calculatorInputs.writeResponsePayloadKb ?? 0.2} step={0.1} onChange={(writeResponsePayloadKb) => setCalculatorInputs({ writeResponsePayloadKb })} />
+          <NumericAssumptionField label="DB service time (ms)" value={calculatorInputs.dbAverageServiceTimeMs ?? 20} step={1} min={0.1} onChange={(dbAverageServiceTimeMs) => setCalculatorInputs({ dbAverageServiceTimeMs })} />
+          <NumericAssumptionField label="DB target utilization (%)" value={calculatorInputs.dbTargetUtilizationPercent ?? 70} max={100} onChange={(dbTargetUtilizationPercent) => setCalculatorInputs({ dbTargetUtilizationPercent })} />
+          <NumericAssumptionField label="Server target utilization (%)" value={calculatorInputs.serverTargetUtilizationPercent ?? 70} max={100} onChange={(serverTargetUtilizationPercent) => setCalculatorInputs({ serverTargetUtilizationPercent })} />
+          <NumericAssumptionField label="Server headroom (%)" value={calculatorInputs.serverHeadroomPercent ?? 20} onChange={(serverHeadroomPercent) => setCalculatorInputs({ serverHeadroomPercent })} />
+          <NumericAssumptionField label="Failover reserve (%)" value={calculatorInputs.failoverCapacityPercent ?? 20} onChange={(failoverCapacityPercent) => setCalculatorInputs({ failoverCapacityPercent })} />
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <div className={styles.sectionTitle}>Storage & Working-Set Assumptions</div>
+        <div className={styles.fieldGrid}>
+          <NumericAssumptionField label="Cache working set (days)" value={calculatorInputs.cacheWorkingSetDays ?? 1} step={0.1} min={0.01} onChange={(cacheWorkingSetDays) => setCalculatorInputs({ cacheWorkingSetDays })} />
+          <NumericAssumptionField label="Cache hot set (%)" value={calculatorInputs.cacheHotSetPercent ?? 20} max={100} onChange={(cacheHotSetPercent) => setCalculatorInputs({ cacheHotSetPercent })} />
+          <NumericAssumptionField label="Cache compression ratio" value={calculatorInputs.cacheCompressionRatio ?? 0.7} step={0.05} min={0.01} max={1} onChange={(cacheCompressionRatio) => setCalculatorInputs({ cacheCompressionRatio })} />
+          <NumericAssumptionField label="Index overhead (%)" value={calculatorInputs.indexingOverheadPercent ?? 20} onChange={(indexingOverheadPercent) => setCalculatorInputs({ indexingOverheadPercent })} />
+          <NumericAssumptionField label="Metadata overhead (%)" value={calculatorInputs.metadataOverheadPercent ?? 5} onChange={(metadataOverheadPercent) => setCalculatorInputs({ metadataOverheadPercent })} />
+          <NumericAssumptionField label="Storage compression ratio" value={calculatorInputs.storageCompressionRatio ?? 0.7} step={0.05} min={0.01} max={1} onChange={(storageCompressionRatio) => setCalculatorInputs({ storageCompressionRatio })} />
+          <NumericAssumptionField label="Annual growth reserve (%)" value={calculatorInputs.annualGrowthPercent ?? 30} onChange={(annualGrowthPercent) => setCalculatorInputs({ annualGrowthPercent })} />
+        </div>
+      </div>
+
       {/* Calculated Results */}
       <div className={styles.section}>
         <div className={styles.sectionTitle}>Capacity Estimations</div>
@@ -297,7 +298,7 @@ export const EnvelopeCalculator: React.FC = () => {
             <div className={styles.outputHeader}>
               <span className={styles.outputLabel}>Replicated Storage</span>
               <span className={styles.outputValue}>
-                {outputs.totalReplicatedStorageTb} TB
+                {outputs.ranges.replicatedStorageTb.low}–{outputs.ranges.replicatedStorageTb.high} TB
               </span>
             </div>
             {dbNode && (
@@ -314,7 +315,7 @@ export const EnvelopeCalculator: React.FC = () => {
             <div className={styles.outputHeader}>
               <span className={styles.outputLabel}>App Servers Needed</span>
               <span className={styles.outputValue} style={{ color: 'var(--accent-primary)' }}>
-                {outputs.estimatedServersNeeded} instances
+                {outputs.ranges.serversNeeded.low}–{outputs.ranges.serversNeeded.high} instances
               </span>
             </div>
             <span className={styles.formulaText}>{outputs.formulas.servers}</span>
@@ -332,7 +333,7 @@ export const EnvelopeCalculator: React.FC = () => {
             <div className={styles.outputHeader}>
               <span className={styles.outputLabel}>Recommended Cache RAM</span>
               <span className={styles.outputValue}>
-                {outputs.recommendedCacheMemoryGb} GB
+                {outputs.ranges.cacheMemoryGb.low}–{outputs.ranges.cacheMemoryGb.high} GB
               </span>
             </div>
             <span className={styles.formulaText}>{outputs.formulas.cache}</span>
@@ -348,32 +349,32 @@ export const EnvelopeCalculator: React.FC = () => {
 
           <div className={styles.outputCard}>
             <div className={styles.outputHeader}>
-              <span className={styles.outputLabel}>Inbound Bandwidth (Writes)</span>
+              <span className={styles.outputLabel}>Inbound Bandwidth (Request Bodies)</span>
               <span className={styles.outputValue}>
                 {outputs.inboundBandwidthMbps} Mbps
               </span>
             </div>
-            <span className={styles.formulaText}>Writes: {Math.round(outputs.dailyNewDataGb)} GB/day at {outputs.inboundBandwidthMbps} Mbps</span>
+            <span className={styles.formulaText}>{outputs.writeQps} write + {outputs.readQps} read QPS request bodies</span>
           </div>
 
           <div className={styles.outputCard}>
             <div className={styles.outputHeader}>
-              <span className={styles.outputLabel}>Outbound Bandwidth (Reads)</span>
+              <span className={styles.outputLabel}>Outbound Bandwidth (Response Bodies)</span>
               <span className={styles.outputValue}>
                 {outputs.outboundBandwidthMbps} Mbps
               </span>
             </div>
-            <span className={styles.formulaText}>Reads: {outputs.outboundBandwidthMbps} Mbps egress traffic</span>
+            <span className={styles.formulaText}>Read responses plus write acknowledgements; decimal Mbps</span>
           </div>
 
           <div className={styles.outputCard}>
             <div className={styles.outputHeader}>
               <span className={styles.outputLabel}>Estimated DB Pool</span>
               <span className={styles.outputValue}>
-                {outputs.estimatedDbConnections} conns
+                {outputs.ranges.dbConnections.low}–{outputs.ranges.dbConnections.high} conns
               </span>
             </div>
-            <span className={styles.formulaText}>Pool estimate: 2x writes + 0.5x reads</span>
+            <span className={styles.formulaText}>{outputs.formulas.dbConnections}</span>
             {dbNode && (
               <button
                 className={styles.linkNodeBtn}
