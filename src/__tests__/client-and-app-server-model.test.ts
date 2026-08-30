@@ -43,11 +43,12 @@ describe('client traffic inputs', () => {
       spikeFrequencySec: 1, seed: 5,
     });
     engine.start();
-    const { activeRequests } = engine.step(1000);
-    expect(activeRequests).toHaveLength(1);
-    expect(activeRequests[0]).toMatchObject({ requestKey: 'resource:0', payloadSizeKb: 12, operationType: 'write' });
-    expect(activeRequests[0].path[0].info).toContain('HTTP/3; write; 12 KB payload');
-    expect(activeRequests[0].path[0].latencyMs).toBeCloseTo(1.12);
+    const { activeRequests, recentRequests } = engine.step(1000);
+    expect(activeRequests).toHaveLength(0);
+    expect(recentRequests).toHaveLength(1);
+    expect(recentRequests[0]).toMatchObject({ requestKey: 'resource:0', payloadSizeKb: 12, operationType: 'write' });
+    expect(recentRequests[0].path[0].info).toContain('HTTP/3; write; 12 KB payload');
+    expect(recentRequests[0].path[0].latencyMs).toBeCloseTo(1.12);
   });
 });
 

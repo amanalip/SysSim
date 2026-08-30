@@ -128,6 +128,23 @@ export const PropertiesPanel: React.FC = () => {
               ))}
             </div>
           </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Latency Distribution</label>
+            <select className={styles.select} value={config.latencyDistribution || 'fixed'}
+              onChange={(event) => updateNodeConfig(config.id, { latencyDistribution: event.target.value as NonNullable<typeof config.latencyDistribution> })}>
+              <option value="fixed">Fixed (legacy)</option>
+              <option value="uniform">Uniform</option>
+              <option value="normal">Normal</option>
+              <option value="lognormal">Log-normal</option>
+            </select>
+          </div>
+          {config.latencyDistribution && config.latencyDistribution !== 'fixed' ? (
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Latency Jitter (%)</label>
+              <input type="number" min="0" max="100" className={styles.input} value={config.latencyJitterPercent ?? 10}
+                onChange={(event) => updateNodeConfig(config.id, { latencyJitterPercent: Math.min(100, Math.max(0, Number(event.target.value) || 0)) })} />
+            </div>
+          ) : null}
         </div>
 
         {/* Component Specific Config */}

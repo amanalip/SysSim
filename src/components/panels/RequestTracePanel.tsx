@@ -18,11 +18,11 @@ function getCacheStateLabel(hop: RequestHop): string | null {
 }
 
 export const RequestTracePanel: React.FC = () => {
-  const { activeRequests, selectNode, setIsPropertiesPanelOpen } = useStore();
+  const { recentRequests, selectNode, setIsPropertiesPanelOpen } = useStore();
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
 
   // Sample the most recent completed or in-flight requests
-  const traces = activeRequests.slice(-25).reverse();
+  const traces = recentRequests.slice(-25).reverse();
   const selectedTrace: SimRequest | undefined = traces.find((t) => t.id === selectedTraceId) || traces[0];
 
   if (traces.length === 0) {

@@ -122,6 +122,7 @@ export interface SysSimState {
   speedMultiplier: number;
   trafficConfig: TrafficConfig;
   activeRequests: SimRequest[];
+  recentRequests: SimRequest[];
   metrics: OverallMetrics;
   bottlenecks: BottleneckIssue[];
   isChaosMode: boolean;
@@ -134,6 +135,7 @@ export interface SysSimState {
   setSpeedMultiplier: (speed: number) => void;
   setTrafficConfig: (config: Partial<TrafficConfig>) => void;
   setActiveRequests: (requests: SimRequest[]) => void;
+  setRecentRequests: (requests: SimRequest[]) => void;
   updateMetrics: (metrics: Partial<OverallMetrics>) => void;
   setBottlenecks: (bottlenecks: BottleneckIssue[]) => void;
   setChaosMode: (enabled: boolean, intervalSec?: number) => void;
@@ -660,6 +662,7 @@ export const useStore = create<SysSimState>((set, get) => ({
   speedMultiplier: 1,
   trafficConfig: initialTrafficConfig,
   activeRequests: [],
+  recentRequests: [],
   metrics: initialMetrics,
   bottlenecks: [],
   isChaosMode: false,
@@ -672,6 +675,7 @@ export const useStore = create<SysSimState>((set, get) => ({
   setTrafficConfig: (config) =>
     set((state) => ({ trafficConfig: { ...state.trafficConfig, ...config } })),
   setActiveRequests: (activeRequests) => set({ activeRequests }),
+  setRecentRequests: (recentRequests) => set({ recentRequests }),
   updateMetrics: (partial) =>
     set((state) => ({ metrics: { ...state.metrics, ...partial } })),
   setBottlenecks: (bottlenecks) => set({ bottlenecks }),
@@ -693,6 +697,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     set({
       simState: 'idle',
       activeRequests: [],
+      recentRequests: [],
       metrics: initialMetrics,
       bottlenecks: [],
       nodeHealthOverrides: {},

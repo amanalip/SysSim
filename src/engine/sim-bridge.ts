@@ -24,9 +24,10 @@ class SimulationBridge {
         this.worker.onmessage = (event) => {
           const { type, payload } = event.data;
           if (type === 'TICK_UPDATE' && payload) {
-            const { metrics, activeRequests } = payload;
+            const { metrics, activeRequests, recentRequests } = payload;
             useStore.getState().updateMetrics(metrics);
             useStore.getState().setActiveRequests(activeRequests || []);
+            useStore.getState().setRecentRequests(recentRequests || []);
           }
         };
 
@@ -115,6 +116,7 @@ class SimulationBridge {
           const result = this.fallbackEngine.step(delta);
           useStore.getState().updateMetrics(result.metrics);
           useStore.getState().setActiveRequests(result.activeRequests);
+          useStore.getState().setRecentRequests(result.recentRequests);
         }
       }, 100);
     }
@@ -153,6 +155,7 @@ class SimulationBridge {
           const result = this.fallbackEngine.step(delta);
           useStore.getState().updateMetrics(result.metrics);
           useStore.getState().setActiveRequests(result.activeRequests);
+          useStore.getState().setRecentRequests(result.recentRequests);
         }
       }, 100);
     }
@@ -166,6 +169,7 @@ class SimulationBridge {
       const res = this.fallbackEngine.step(100);
       useStore.getState().updateMetrics(res.metrics);
       useStore.getState().setActiveRequests(res.activeRequests);
+      useStore.getState().setRecentRequests(res.recentRequests);
     }
   }
 

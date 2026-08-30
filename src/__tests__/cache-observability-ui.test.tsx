@@ -42,6 +42,7 @@ describe('cache observability UI', () => {
   beforeEach(() => {
     useStore.setState({
       activeRequests: [cacheHitRequest],
+      recentRequests: [cacheHitRequest],
       simState: 'paused',
       speedMultiplier: 1,
       nodes: [

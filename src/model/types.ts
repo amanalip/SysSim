@@ -89,6 +89,8 @@ export interface BaseComponentConfig {
   failureRatePercent?: number;
   maxThroughputQps?: number;
   zoneId?: string;
+  latencyDistribution?: 'fixed' | 'uniform' | 'normal' | 'lognormal';
+  latencyJitterPercent?: number;
 }
 
 export interface ClientConfig extends BaseComponentConfig {

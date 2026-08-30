@@ -17,7 +17,7 @@ const run = (seed: number) => {
   const engine = new SysSimEngine(structuredClone(graph), config);
   engine.start();
   const result = engine.step(1000);
-  return { statuses: result.activeRequests.map((request) => request.status), metrics: result.metrics };
+  return { statuses: result.recentRequests.map((request) => request.status), metrics: result.metrics };
 };
 
 describe('seed tasks 173-178', () => {

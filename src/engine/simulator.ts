@@ -39,6 +39,7 @@ import {
 import { AuthServiceModel, EncryptionServiceModel } from './components/security-service-models';
 import { deriveHealthFromCapacity, getHealthBehavior } from './health-state';
 import { SeededRandom, normalizeSeed } from './seeded-random';
+import { EventPriorityQueue, SimulationEvent, SimulationEventKind } from './event-queue';
 
 export interface SimNode {
   id: string;
@@ -97,6 +98,9 @@ export class SysSimEngine {
   private elapsedSimulationMs = 0;
   private completedRequests: SimRequest[] = [];
   private activeRequests: SimRequest[] = [];
+  private inFlightRequests = new Map<string, SimRequest>();
+  private pendingResults = new Map<string, TraversalResult>();
+  private eventQueue = new EventPriorityQueue();
   private nodeArrivalBuckets = new Map<string, { second: number; count: number }>();
   private effectiveHealth = new Map<string, AnyComponentConfig['health']>();
 
@@ -156,7 +160,13 @@ export class SysSimEngine {
   }
 
   public setGraph(graph: SimGraph): void {
+    const previousHealth = new Map(this.graph.nodes.map((node) => [node.id, node.config.health]));
     this.graph = graph;
+    for (const node of graph.nodes) {
+      if (previousHealth.has(node.id) && previousHealth.get(node.id) !== 'healthy' && node.config.health === 'healthy') {
+        this.eventQueue.schedule(this.elapsedSimulationMs, 'recovery', { nodeId: node.id });
+      }
+    }
     this.cacheModels.clear();
     this.rateLimiters.clear();
     this.authServiceModels.clear();
@@ -401,6 +411,9 @@ export class SysSimEngine {
     this.randomGenerator = new SeededRandom(normalizeSeed(this.config.seed ?? 1));
     this.completedRequests = [];
     this.activeRequests = [];
+    this.inFlightRequests.clear();
+    this.pendingResults.clear();
+    this.eventQueue.clear();
     this.totalSent = 0;
     this.totalSuccess = 0;
     this.totalFailed = 0;
@@ -482,18 +495,21 @@ export class SysSimEngine {
   public step(deltaMs: number): {
     metrics: OverallMetrics;
     activeRequests: SimRequest[];
+    recentRequests: SimRequest[];
   } {
     if (this.state !== 'running') {
       return {
         metrics: this.getMetricsSnapshot(),
         activeRequests: this.activeRequests,
+        recentRequests: this.completedRequests.slice(-100),
       };
     }
 
     const scaledDelta = deltaMs * this.speedMultiplier;
-    this.elapsedSimulationMs += scaledDelta;
+    const stepStartMs = this.elapsedSimulationMs;
+    const stepEndMs = stepStartMs + scaledDelta;
     this.flushReadyCacheFills();
-    const elapsedSec = this.elapsedSimulationMs / 1000;
+    const elapsedSec = stepEndMs / 1000;
 
     // Consumer processing is independent of producer acknowledgement.
     this.drainMessaging(scaledDelta);
@@ -521,7 +537,7 @@ export class SysSimEngine {
         const operationType = clientConfig?.operationType === 'mixed'
           ? (this.random() * 100 < clientConfig.readPercentage ? 'read' : 'write')
           : clientConfig?.operationType || 'read';
-        const arrivalTimeMs = this.elapsedSimulationMs - scaledDelta +
+        const arrivalTimeMs = stepStartMs +
           ((i + 1) * scaledDelta) / (selectedSources.length + 1);
         const req = createSimRequest(
           source.id,
@@ -534,12 +550,17 @@ export class SysSimEngine {
             simulationSeed: normalizeSeed(this.config.seed ?? 1),
           },
         );
-        this.processRequest(req);
+        this.eventQueue.schedule(arrivalTimeMs, 'arrival', req);
       }
     }
 
-    // Retain only latest 100 active requests for rendering particles
-    this.activeRequests = this.completedRequests.slice(-100);
+    this.eventQueue.schedule(stepEndMs, 'queue_drain', { deltaMs: scaledDelta });
+    this.eventQueue.drainUntil(stepEndMs, (event) => {
+      this.elapsedSimulationMs = event.timeMs;
+      this.handleEvent(event);
+    });
+    this.elapsedSimulationMs = stepEndMs;
+    this.activeRequests = [...this.inFlightRequests.values()].slice(-100);
 
     // Record time-series metrics point periodically (every ~1s in sim time)
     const currentSecBucket = Math.floor(elapsedSec);
@@ -573,10 +594,51 @@ export class SysSimEngine {
     return {
       metrics: this.getMetricsSnapshot(),
       activeRequests: this.activeRequests,
+      recentRequests: this.completedRequests.slice(-100),
     };
   }
 
-  private processRequest(req: SimRequest): void {
+  public getRecentRequests(): SimRequest[] { return this.completedRequests.slice(-100); }
+  public getPendingEventCount(): number { return this.eventQueue.size(); }
+  public getPendingEventKinds(): SimulationEventKind[] { return this.eventQueue.kinds(); }
+
+  private handleEvent(event: SimulationEvent): void {
+    if (event.kind === 'arrival') {
+      this.beginScheduledRequest(event.payload as SimRequest);
+    } else if (event.kind === 'request_completion' || event.kind === 'timeout') {
+      const request = event.payload as SimRequest;
+      const result = this.pendingResults.get(request.id);
+      if (result) this.finalizeRequest(request, result);
+      this.pendingResults.delete(request.id);
+      this.inFlightRequests.delete(request.id);
+    }
+    // Node/edge/retry/drain/recovery events are explicit clock landmarks. Their
+    // model-side reservations were established at arrival and released by the
+    // component models using these event timestamps.
+  }
+
+  private beginScheduledRequest(req: SimRequest): void {
+    const result = this.prepareRequest(req);
+    req.status = 'in_flight';
+    this.inFlightRequests.set(req.id, req);
+    this.pendingResults.set(req.id, result);
+    for (let index = 0; index < req.path.length; index++) {
+      const hop = req.path[index];
+      this.eventQueue.schedule(hop.exitTimeMs, 'node_service_completion', { requestId: req.id, nodeId: hop.nodeId });
+      const next = req.path[index + 1];
+      if (next && next.enterTimeMs >= hop.exitTimeMs) this.eventQueue.schedule(next.enterTimeMs, 'edge_transfer', { requestId: req.id, from: hop.nodeId, to: next.nodeId });
+      if (hop.viaEdgePurpose === 'fallback') this.eventQueue.schedule(hop.enterTimeMs, 'retry', { requestId: req.id, nodeId: hop.nodeId });
+    }
+    const completionKind = result.status === 'timeout' ? 'timeout' : 'request_completion';
+    this.eventQueue.schedule(req.timestamp + Math.max(0, result.latencyMs), completionKind, req);
+  }
+
+  public processRequest(req: SimRequest): void {
+    const result = this.prepareRequest(req);
+    this.finalizeRequest(req, result);
+  }
+
+  private prepareRequest(req: SimRequest): TraversalResult {
     this.flushReadyCacheFills();
     this.totalSent++;
     this.currentRequestArrivalMs = req.timestamp;
@@ -587,12 +649,16 @@ export class SysSimEngine {
       req.id,
       req.requestKey || 'resource:0',
       req.sourceNodeId,
-      0,
+      req.timestamp,
       new Set(),
     );
 
     req.path = result.hops;
     req.totalLatencyMs = result.latencyMs;
+    return result;
+  }
+
+  private finalizeRequest(req: SimRequest, result: TraversalResult): void {
     req.status = result.success ? 'success' : result.status;
 
     if (result.success) {
@@ -1246,6 +1312,7 @@ export class SysSimEngine {
       }
     }
 
+    hopLatency = this.sampleLatency(hopLatency, config.latencyDistribution || 'fixed', config.latencyJitterPercent ?? 10);
     if (effectiveHealth !== 'healthy') {
       hopLatency *= healthBehavior.latencyMultiplier;
       hopInfo = `${hopInfo || 'Processed request'}; ${effectiveHealth} health penalty (${healthBehavior.capacityMultiplier * 100}% capacity, ${healthBehavior.latencyMultiplier}× latency)`;
@@ -1628,6 +1695,19 @@ export class SysSimEngine {
 
   private random(): number {
     return this.randomGenerator.next();
+  }
+
+  private sampleLatency(baseMs: number, distribution: NonNullable<AnyComponentConfig['latencyDistribution']>, jitterPercent: number): number {
+    const base = Math.max(0, baseMs);
+    const jitter = Math.min(1, Math.max(0, jitterPercent / 100));
+    if (distribution === 'fixed' || jitter === 0 || base === 0) return base;
+    if (distribution === 'uniform') return base * (1 - jitter + this.random() * jitter * 2);
+    const u1 = Math.max(Number.EPSILON, this.random());
+    const u2 = this.random();
+    const normal = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    if (distribution === 'normal') return Math.max(0, base * (1 + normal * jitter));
+    const sigma = jitter;
+    return base * Math.exp(normal * sigma - (sigma * sigma) / 2);
   }
 
   private generateRequestKey(

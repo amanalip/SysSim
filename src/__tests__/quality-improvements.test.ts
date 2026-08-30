@@ -58,7 +58,7 @@ describe('Quality Improvements & Bug Fixes Test Suite (10+ Verifications)', () =
     const res = engine.step(200);
 
     expect(res.metrics.totalRequestsFailed).toBeGreaterThan(0);
-    const lastReq = res.activeRequests[res.activeRequests.length - 1];
+    const lastReq = res.recentRequests[res.recentRequests.length - 1];
     expect(lastReq).toBeDefined();
     expect(lastReq.status).toBe('error');
     expect(lastReq.path.some((p) => p.info?.includes('502 Bad Gateway'))).toBe(true);

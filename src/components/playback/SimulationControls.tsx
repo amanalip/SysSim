@@ -251,7 +251,7 @@ export const SimulationControls: React.FC = () => {
             key={spd}
             className={`${styles.speedPill} ${speedMultiplier === spd ? styles.speedPillActive : ''}`}
             onClick={() => handleSpeedChange(spd)}
-            title={`Set simulation speed to ${spd}x`}
+            title={`Set simulation clock speed to ${spd}x; UI refresh cadence stays constant`}
           >
             {spd}x
           </button>

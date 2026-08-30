@@ -614,5 +614,9 @@ export function getComponentMetadata(type: ComponentType): ComponentMetadata {
 
 export function createDefaultConfig(type: ComponentType, id: string, name?: string): AnyComponentConfig {
   const meta = getComponentMetadata(type);
-  return meta.defaultConfig(id, name);
+  return {
+    latencyDistribution: 'fixed',
+    latencyJitterPercent: 10,
+    ...meta.defaultConfig(id, name),
+  } as AnyComponentConfig;
 }

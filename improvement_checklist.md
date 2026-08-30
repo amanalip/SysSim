@@ -332,13 +332,13 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 ## Implement a real discrete-event core — P1
 
-- [ ] 179. Decide whether to retain tick-based approximation or build an event-priority queue.
-- [ ] 180. If using discrete events, represent arrivals, node service completion, edge transfer, timeout, retry, queue drain, and recovery as scheduled events.
-- [ ] 181. Track requests as genuinely in-flight instead of treating recently completed requests as active.
-- [ ] 182. Calculate active connections from start/end events.
-- [ ] 183. Support concurrent branches and join semantics.
-- [ ] 184. Apply latency distributions rather than fixed or minimally randomized values.
-- [ ] 185. Document simulation clock behavior at 0.5x through 10x.
+- [x] 179. Decide whether to retain tick-based approximation or build an event-priority queue.
+- [x] 180. If using discrete events, represent arrivals, node service completion, edge transfer, timeout, retry, queue drain, and recovery as scheduled events.
+- [x] 181. Track requests as genuinely in-flight instead of treating recently completed requests as active.
+- [x] 182. Calculate active connections from start/end events.
+- [x] 183. Support concurrent branches and join semantics.
+- [x] 184. Apply latency distributions rather than fixed or minimally randomized values.
+- [x] 185. Document simulation clock behavior at 0.5x through 10x.
 - [ ] 186. Ensure UI rendering cadence is independent of simulation event throughput.
 - [ ] 187. Bound memory use for events, traces, samples, and time series.
 - [ ] 188. Benchmark event processing at supported graph and QPS limits.

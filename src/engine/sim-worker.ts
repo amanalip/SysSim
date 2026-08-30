@@ -83,6 +83,7 @@ self.onmessage = (event: MessageEvent) => {
         payload: {
           metrics: engine.getMetricsSnapshot(),
           activeRequests: [],
+          recentRequests: [],
         },
       });
       break;

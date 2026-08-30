@@ -66,7 +66,7 @@ describe('Desktop UX/UI Enhancements (Features 17 & 18)', () => {
       ],
     };
 
-    useStore.setState({ activeRequests: [mockRequest] });
+    useStore.setState({ activeRequests: [mockRequest], recentRequests: [mockRequest] });
     expect(useStore.getState().activeRequests.length).toBe(1);
 
     const trace = useStore.getState().activeRequests[0];
