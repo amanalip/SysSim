@@ -2,124 +2,25 @@ import React, { useMemo, useState } from 'react';
 import { DollarSign, Server, Database, Zap, Radio, Globe } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { ModelNotice } from '../ui/ModelNotice';
+import { CloudProvider, estimateArchitectureCost, ILLUSTRATIVE_PRICING_CONTEXT } from '../../analysis/cost-estimator';
 import styles from './CostEstimatorPanel.module.css';
 
-interface CostLineItem {
-  id: string;
-  nodeName: string;
-  category: string;
-  instanceType: string;
-  replicas: number;
-  unitMonthlyCost: number;
-  totalMonthlyCost: number;
-}
-
 export const CostEstimatorPanel: React.FC = () => {
-  const { nodes, metrics } = useStore();
-  const [cloudProvider, setCloudProvider] = useState<'aws' | 'gcp' | 'azure'>('aws');
+  const { nodes, metrics, trafficConfig } = useStore();
+  const [cloudProvider, setCloudProvider] = useState<CloudProvider>('aws');
   const [useSpotInstances, setUseSpotInstances] = useState(false);
-
-  const discountMultiplier = useSpotInstances ? 0.4 : 1.0;
-
-  const costBreakdown = useMemo(() => {
-    let computeCost = 0;
-    let storageCost = 0;
-    let cachingCost = 0;
-    let networkingCost = 0;
-    let messagingCost = 0;
-    let otherCost = 0;
-
-    const billableNodes = nodes.filter((n) => n.data.config.type !== 'client');
-    const lineItems: CostLineItem[] = billableNodes.map((node) => {
-      const config = node.data.config as any;
-      const type = config.type;
-      const replicas = (config.type === 'sql_db'
-        ? (config.replicas || 1) + (config.readReplicasCount || 0)
-        : config.replicas) || 1;
-
-      let unitCost = 35;
-      let instanceType = 't4g.large (2 vCPU, 8GB)';
-      let category = 'Compute';
-
-      if (type === 'app_server' || type === 'worker') {
-        unitCost = 38 * discountMultiplier;
-        instanceType = cloudProvider === 'aws' ? 'c6g.large' : cloudProvider === 'gcp' ? 'c2-standard-4' : 'D4s_v5';
-        category = 'Compute';
-        computeCost += unitCost * replicas;
-      } else if (type === 'sql_db') {
-        unitCost = 145;
-        instanceType = cloudProvider === 'aws' ? 'db.r6g.xlarge' : cloudProvider === 'gcp' ? 'custom-4-16384' : 'E4s_v5';
-        category = 'Storage';
-        storageCost += unitCost * replicas;
-      } else if (type === 'nosql_db') {
-        unitCost = 95;
-        instanceType = 'Provisioned IOPS Tier';
-        category = 'Storage';
-        storageCost += unitCost * replicas;
-      } else if (type === 'redis_cache' || type === 'local_cache') {
-        unitCost = 55;
-        instanceType = cloudProvider === 'aws' ? 'cache.r6g.large' : cloudProvider === 'gcp' ? 'redis-standard-small' : 'Premium P1';
-        category = 'Caching';
-        cachingCost += unitCost * replicas;
-      } else if (type === 'load_balancer' || type === 'api_gateway') {
-        unitCost = 25;
-        instanceType = 'Application Load Balancer';
-        category = 'Networking';
-        networkingCost += unitCost * replicas;
-      } else if (type === 'cdn_cache') {
-        unitCost = 20;
-        instanceType = 'Edge Distribution';
-        category = 'Networking';
-        networkingCost += unitCost * replicas;
-      } else if (type === 'message_queue' || type === 'pubsub' || type === 'event_bus') {
-        unitCost = 42;
-        instanceType = 'Managed Cluster (3 Nodes)';
-        category = 'Messaging';
-        messagingCost += unitCost * replicas;
-      } else {
-        unitCost = 15;
-        instanceType = 'Standard Instance';
-        category = 'Other';
-        otherCost += unitCost * replicas;
-      }
-
-      return {
-        id: node.id,
-        nodeName: config.name,
-        category,
-        instanceType,
-        replicas,
-        unitMonthlyCost: Math.round(unitCost),
-        totalMonthlyCost: Math.round(unitCost * replicas),
-      };
-    });
-
-    // Bandwidth egress estimate: $0.08 per GB
-    const estimatedMonthlyGb = Math.round((metrics.currentQps * 2 * 3600 * 24 * 30) / (1024 * 1024));
-    const bandwidthCost = Math.round(estimatedMonthlyGb * 0.08);
-    networkingCost += bandwidthCost;
-
-    const totalMonthly = computeCost + storageCost + cachingCost + networkingCost + messagingCost + otherCost;
-
-    return {
-      totalMonthly: Math.round(totalMonthly),
-      computeCost: Math.round(computeCost),
-      storageCost: Math.round(storageCost),
-      cachingCost: Math.round(cachingCost),
-      networkingCost: Math.round(networkingCost),
-      messagingCost: Math.round(messagingCost),
-      bandwidthCost,
-      estimatedMonthlyGb,
-      lineItems,
-    };
-  }, [nodes, metrics.currentQps, cloudProvider, discountMultiplier]);
+  const workloadQps = metrics.completedThroughputQps || trafficConfig.baseQps;
+  const costBreakdown = useMemo(
+    () => estimateArchitectureCost(nodes, workloadQps, cloudProvider, useSpotInstances),
+    [nodes, workloadQps, cloudProvider, useSpotInstances],
+  );
 
   if (nodes.length === 0) {
     return (
       <div className={styles.container}>
         <ModelNotice
           kind="estimate"
-          detail="Static example rates are illustrative and are not a cloud-provider quote."
+          detail={`Illustrative ${ILLUSTRATIVE_PRICING_CONTEXT.currency} baseline dated ${ILLUSTRATIVE_PRICING_CONTEXT.effectiveDate} for ${ILLUSTRATIVE_PRICING_CONTEXT.region}; not live provider pricing or a billing quote.`}
           assumptionLabel="cloud-cost simplifications"
           assumptionSection="deliberate-simplifications-and-rationale"
         />
@@ -138,7 +39,7 @@ export const CostEstimatorPanel: React.FC = () => {
     <div className={styles.container}>
       <ModelNotice
         kind="estimate"
-        detail="Static example rates are illustrative and are not a cloud-provider quote."
+        detail={`Illustrative ${ILLUSTRATIVE_PRICING_CONTEXT.currency} baseline dated ${ILLUSTRATIVE_PRICING_CONTEXT.effectiveDate} for ${ILLUSTRATIVE_PRICING_CONTEXT.region}; not live provider pricing or a billing quote.`}
         assumptionLabel="cloud-cost simplifications"
         assumptionSection="deliberate-simplifications-and-rationale"
       />
@@ -154,7 +55,7 @@ export const CostEstimatorPanel: React.FC = () => {
               <span className={styles.perMonth}> / month</span>
             </div>
             <div className={styles.subtitle}>
-              Est. ${Math.round(costBreakdown.totalMonthly / 730 * 100) / 100}/hr across {nodes.length} nodes
+              Est. ${Math.round(costBreakdown.totalMonthly / 730 * 100) / 100}/hr across {nodes.length} nodes at {Math.round(workloadQps).toLocaleString()} QPS
             </div>
           </div>
         </div>
@@ -179,7 +80,7 @@ export const CostEstimatorPanel: React.FC = () => {
               checked={useSpotInstances}
               onChange={(e) => setUseSpotInstances(e.target.checked)}
             />
-            <span>Spot Instances (-60%)</span>
+            <span>Eligible compute spot (-60%)</span>
           </label>
         </div>
       </div>
