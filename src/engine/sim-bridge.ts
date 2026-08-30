@@ -1,210 +1,251 @@
-import { useStore } from '../store/use-store';
+import { OverallMetrics, SimRequest, SimulationState, TrafficConfig } from '../model/types';
 import { SimGraph, SysSimEngine } from './simulator';
-import { TrafficConfig } from '../model/types';
 import { SIMULATION_LIMITS } from './simulation-limits';
+import { isWorkerResponse, TickPayload, WorkerCommand } from './worker-protocol';
+
+export type SimulationRuntimeMode = 'worker' | 'fallback';
+
+export interface SimulationBridgeSnapshot {
+  graph: SimGraph;
+  graphRevision: number;
+  trafficConfig: TrafficConfig;
+  speedMultiplier: number;
+  simState: SimulationState;
+}
+
+export interface SimulationBridgeEvents {
+  onTick: (payload: TickPayload) => void;
+  onStateChange: (state: SimulationState) => void;
+  onModeChange: (mode: SimulationRuntimeMode) => void;
+  onReset: () => void;
+}
+
+interface WorkerPort {
+  onmessage: ((event: MessageEvent) => void) | null;
+  onerror: ((event: ErrorEvent) => void) | null;
+  postMessage(message: WorkerCommand): void;
+  terminate(): void;
+}
+
+export interface SimulationBridgeOptions {
+  workerFactory?: () => WorkerPort;
+  engineFactory?: () => SysSimEngine;
+  setIntervalFn?: typeof setInterval;
+  clearIntervalFn?: typeof clearInterval;
+  now?: () => number;
+}
 
 export function isCurrentGraphRevision(resultRevision: number, currentRevision: number): boolean {
   return Number.isInteger(resultRevision) && resultRevision === currentRevision;
 }
 
-export function createGraphUpdateMessage(graph: SimGraph, graphRevision: number) {
-  return { type: 'INIT_OR_UPDATE_GRAPH', payload: { graph, graphRevision } } as const;
+export function createGraphUpdateMessage(graph: SimGraph, graphRevision: number): WorkerCommand {
+  return { type: 'INIT_OR_UPDATE_GRAPH', payload: { graph, graphRevision } };
 }
 
-class SimulationBridge {
-  private worker: Worker | null = null;
+export class SimulationBridge {
+  private worker: WorkerPort | null = null;
   private fallbackEngine: SysSimEngine | null = null;
   private fallbackTimer: ReturnType<typeof setInterval> | null = null;
-  private isWorkerSupported: boolean;
+  private initialized = false;
+  private workerReady = false;
+  private acknowledgedGraphRevision = -1;
+  private pendingStart = false;
+  private mode: SimulationRuntimeMode = 'fallback';
+  private readonly engineFactory: () => SysSimEngine;
+  private readonly setIntervalFn: typeof setInterval;
+  private readonly clearIntervalFn: typeof clearInterval;
+  private readonly now: () => number;
 
-  constructor() {
-    this.isWorkerSupported = typeof Worker !== 'undefined';
-    this.init();
+  public constructor(
+    private readonly getSnapshot: () => SimulationBridgeSnapshot,
+    private readonly events: SimulationBridgeEvents,
+    private readonly options: SimulationBridgeOptions = {},
+  ) {
+    this.engineFactory = options.engineFactory || (() => new SysSimEngine());
+    this.setIntervalFn = options.setIntervalFn || setInterval;
+    this.clearIntervalFn = options.clearIntervalFn || clearInterval;
+    this.now = options.now || Date.now;
   }
 
-  private init(): void {
-    if (this.isWorkerSupported) {
-      try {
-        this.worker = new Worker(
-          new URL('./sim-worker.ts', import.meta.url),
-          { type: 'module' }
-        );
-
-        this.worker.onmessage = (event) => {
-          const { type, payload } = event.data;
-          if (type === 'TICK_UPDATE' && payload) {
-            const { metrics, activeRequests, recentRequests, graphRevision } = payload;
-            if (!isCurrentGraphRevision(graphRevision, useStore.getState().graphRevision)) return;
-            useStore.getState().updateMetrics(metrics);
-            useStore.getState().setActiveRequests(activeRequests || []);
-            useStore.getState().setRecentRequests(recentRequests || []);
-          }
-        };
-
-        this.worker.onerror = (err) => {
-          console.warn('Simulation Web Worker encountered an error, failing over to main thread engine:', err);
-          try {
-            this.worker?.terminate();
-          } catch {}
-          this.worker = null;
-          this.fallbackEngine = new SysSimEngine();
-          this.syncGraph();
-          this.syncConfig(useStore.getState().trafficConfig);
-          this.setSpeed(useStore.getState().speedMultiplier);
-          if (useStore.getState().simState === 'running') {
-            this.start();
-          }
-        };
-      } catch (err) {
-        console.warn('Web Worker initialization failed, using main thread fallback', err);
-        this.worker = null;
-        this.fallbackEngine = new SysSimEngine();
-      }
-    } else {
-      this.fallbackEngine = new SysSimEngine();
+  public initialize(): void {
+    if (this.initialized) return;
+    this.initialized = true;
+    const factory = this.options.workerFactory || this.defaultWorkerFactory();
+    if (!factory) return this.activateFallback();
+    try {
+      this.worker = factory();
+      this.mode = 'worker';
+      this.events.onModeChange('worker');
+      this.worker.onmessage = (event) => this.handleWorkerMessage(event.data);
+      this.worker.onerror = () => this.activateFallback();
+    } catch {
+      this.activateFallback();
     }
   }
+
+  private defaultWorkerFactory(): (() => WorkerPort) | null {
+    if (typeof Worker === 'undefined') return null;
+    return () => new Worker(new URL('./sim-worker.ts', import.meta.url), { type: 'module' });
+  }
+
+  private handleWorkerMessage(message: unknown): void {
+    if (!isWorkerResponse(message)) return;
+    if (message.type === 'WORKER_READY') {
+      this.workerReady = true;
+      this.syncGraph();
+      this.syncConfig(this.getSnapshot().trafficConfig);
+      this.setSpeed(this.getSnapshot().speedMultiplier);
+      return;
+    }
+    if (message.type === 'GRAPH_ACK') {
+      this.acknowledgedGraphRevision = message.payload.graphRevision;
+      if (this.pendingStart && this.acknowledgedGraphRevision === this.getSnapshot().graphRevision) {
+        this.pendingStart = false;
+        this.post({ type: 'START' });
+      }
+      return;
+    }
+    if (isCurrentGraphRevision(message.payload.graphRevision, this.getSnapshot().graphRevision)) {
+      this.events.onTick(message.payload);
+    }
+  }
+
+  private post(command: WorkerCommand): void { this.worker?.postMessage(command); }
 
   public syncGraph(): void {
-    const { nodes, edges, graphRevision } = useStore.getState();
-    const simGraph: SimGraph = {
-      nodes: nodes.map((n) => ({ id: n.id, config: n.data.config })),
-      edges: edges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        data: e.data,
-      })),
-    };
-
-    if (this.worker) {
-      this.worker.postMessage(createGraphUpdateMessage(simGraph, graphRevision));
-    } else if (this.fallbackEngine) {
-      this.fallbackEngine.setGraph(simGraph);
-    }
+    this.ensureInitialized();
+    const snapshot = this.getSnapshot();
+    if (this.worker && this.workerReady) this.post(createGraphUpdateMessage(snapshot.graph, snapshot.graphRevision));
+    if (this.fallbackEngine) this.fallbackEngine.setGraph(snapshot.graph);
   }
 
   public syncConfig(config: Partial<TrafficConfig>): void {
-    if (this.worker) {
-      this.worker.postMessage({ type: 'UPDATE_CONFIG', payload: config });
-    } else if (this.fallbackEngine) {
-      this.fallbackEngine.setConfig(config);
-    }
+    this.ensureInitialized();
+    if (this.worker && this.workerReady) this.post({ type: 'UPDATE_CONFIG', payload: config });
+    if (this.fallbackEngine) this.fallbackEngine.setConfig(config);
   }
 
   public setSpeed(multiplier: number): void {
-    if (this.worker) {
-      this.worker.postMessage({ type: 'SET_SPEED', payload: multiplier });
-    } else if (this.fallbackEngine) {
-      this.fallbackEngine.setSpeedMultiplier(multiplier);
-    }
+    this.ensureInitialized();
+    if (this.worker && this.workerReady) this.post({ type: 'SET_SPEED', payload: multiplier });
+    if (this.fallbackEngine) this.fallbackEngine.setSpeedMultiplier(multiplier);
   }
 
   public start(): void {
+    this.ensureInitialized();
+    const snapshot = this.getSnapshot();
     this.syncGraph();
-    this.syncConfig(useStore.getState().trafficConfig);
-    this.setSpeed(useStore.getState().speedMultiplier);
-    useStore.getState().setSimState('running');
-
+    this.syncConfig(snapshot.trafficConfig);
+    this.setSpeed(snapshot.speedMultiplier);
+    this.events.onStateChange('running');
     if (this.worker) {
-      this.worker.postMessage({ type: 'START' });
+      if (!this.workerReady || this.acknowledgedGraphRevision !== snapshot.graphRevision) this.pendingStart = true;
+      else this.post({ type: 'START' });
     } else if (this.fallbackEngine) {
       this.fallbackEngine.start();
-      if (this.fallbackTimer) {
-        clearInterval(this.fallbackTimer);
-        this.fallbackTimer = null;
-      }
-      let lastTime = Date.now();
-      this.fallbackTimer = setInterval(() => {
-        const now = Date.now();
-        const delta = now - lastTime;
-        lastTime = now;
-        if (this.fallbackEngine) {
-          const result = this.fallbackEngine.step(delta);
-          useStore.getState().updateMetrics(result.metrics);
-          useStore.getState().setActiveRequests(result.activeRequests);
-          useStore.getState().setRecentRequests(result.recentRequests);
-        }
-      }, SIMULATION_LIMITS.uiUpdateIntervalMs);
+      this.startFallbackTimer();
     }
   }
 
   public pause(): void {
-    useStore.getState().setSimState('paused');
-    if (this.worker) {
-      this.worker.postMessage({ type: 'PAUSE' });
-    } else if (this.fallbackEngine) {
-      this.fallbackEngine.pause();
-      if (this.fallbackTimer) {
-        clearInterval(this.fallbackTimer);
-        this.fallbackTimer = null;
-      }
-    }
+    this.ensureInitialized();
+    this.events.onStateChange('paused');
+    this.post({ type: 'PAUSE' });
+    this.fallbackEngine?.pause();
+    this.clearFallbackTimer();
   }
 
   public resume(): void {
+    this.ensureInitialized();
     this.syncGraph();
-    useStore.getState().setSimState('running');
-    if (this.worker) {
-      this.worker.postMessage({ type: 'RESUME' });
-    } else if (this.fallbackEngine) {
+    this.events.onStateChange('running');
+    if (this.worker) this.post({ type: 'RESUME' });
+    if (this.fallbackEngine) {
       this.fallbackEngine.resume();
-      if (this.fallbackTimer) {
-        clearInterval(this.fallbackTimer);
-        this.fallbackTimer = null;
-      }
-      let lastTime = Date.now();
-      this.fallbackTimer = setInterval(() => {
-        const now = Date.now();
-        const delta = now - lastTime;
-        lastTime = now;
-        if (this.fallbackEngine) {
-          const result = this.fallbackEngine.step(delta);
-          useStore.getState().updateMetrics(result.metrics);
-          useStore.getState().setActiveRequests(result.activeRequests);
-          useStore.getState().setRecentRequests(result.recentRequests);
-        }
-      }, SIMULATION_LIMITS.uiUpdateIntervalMs);
+      this.startFallbackTimer();
     }
   }
 
   public step(): void {
+    this.ensureInitialized();
     this.syncGraph();
-    if (this.worker) {
-      this.worker.postMessage({ type: 'STEP' });
-    } else if (this.fallbackEngine) {
-      const res = this.fallbackEngine.step(100);
-      useStore.getState().updateMetrics(res.metrics);
-      useStore.getState().setActiveRequests(res.activeRequests);
-      useStore.getState().setRecentRequests(res.recentRequests);
-    }
+    if (this.worker) this.post({ type: 'STEP' });
+    if (this.fallbackEngine) this.publishFallbackTick(this.fallbackEngine.step(100));
   }
 
   public stop(): void {
-    useStore.getState().setSimState('stopped');
-    if (this.worker) {
-      this.worker.postMessage({ type: 'STOP' });
-    } else if (this.fallbackEngine) {
-      this.fallbackEngine.stop();
-      if (this.fallbackTimer) {
-        clearInterval(this.fallbackTimer);
-        this.fallbackTimer = null;
-      }
-    }
+    this.ensureInitialized();
+    this.events.onStateChange('stopped');
+    this.post({ type: 'STOP' });
+    this.fallbackEngine?.stop();
+    this.clearFallbackTimer();
   }
 
   public reset(): void {
-    useStore.getState().resetSimulation();
+    this.ensureInitialized();
+    this.events.onReset();
+    this.post({ type: 'RESET' });
+    this.fallbackEngine?.reset();
+    this.clearFallbackTimer();
+  }
+
+  public getMode(): SimulationRuntimeMode { return this.mode; }
+
+  public dispose(): void {
+    this.clearFallbackTimer();
     if (this.worker) {
-      this.worker.postMessage({ type: 'RESET' });
-    } else if (this.fallbackEngine) {
-      this.fallbackEngine.reset();
-      if (this.fallbackTimer) {
-        clearInterval(this.fallbackTimer);
-        this.fallbackTimer = null;
-      }
+      this.post({ type: 'DISPOSE' });
+      this.worker.terminate();
+    }
+    this.worker = null;
+    this.fallbackEngine = null;
+    this.workerReady = false;
+    this.acknowledgedGraphRevision = -1;
+    this.pendingStart = false;
+    this.initialized = false;
+  }
+
+  private ensureInitialized(): void { if (!this.initialized) this.initialize(); }
+
+  private activateFallback(): void {
+    const shouldRun = this.getSnapshot().simState === 'running' || this.pendingStart;
+    this.worker?.terminate();
+    this.worker = null;
+    this.workerReady = false;
+    this.acknowledgedGraphRevision = -1;
+    this.pendingStart = false;
+    this.fallbackEngine = this.engineFactory();
+    const snapshot = this.getSnapshot();
+    this.fallbackEngine.setGraph(snapshot.graph);
+    this.fallbackEngine.setConfig(snapshot.trafficConfig);
+    this.fallbackEngine.setSpeedMultiplier(snapshot.speedMultiplier);
+    this.mode = 'fallback';
+    this.events.onModeChange('fallback');
+    if (shouldRun) {
+      this.fallbackEngine.start();
+      this.startFallbackTimer();
     }
   }
-}
 
-export const simBridge = new SimulationBridge();
+  private startFallbackTimer(): void {
+    this.clearFallbackTimer();
+    let lastTime = this.now();
+    this.fallbackTimer = this.setIntervalFn(() => {
+      const current = this.now();
+      const delta = Math.max(0, current - lastTime);
+      lastTime = current;
+      if (this.fallbackEngine) this.publishFallbackTick(this.fallbackEngine.step(delta));
+    }, SIMULATION_LIMITS.uiUpdateIntervalMs);
+  }
+
+  private clearFallbackTimer(): void {
+    if (!this.fallbackTimer) return;
+    this.clearIntervalFn(this.fallbackTimer);
+    this.fallbackTimer = null;
+  }
+
+  private publishFallbackTick(result: { metrics: OverallMetrics; activeRequests: SimRequest[]; recentRequests: SimRequest[] }): void {
+    this.events.onTick({ ...result, graphRevision: this.getSnapshot().graphRevision });
+  }
+}

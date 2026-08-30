@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle2, Circle, ChevronRight, Award, Target, Cpu, ShieldCheck, Play } from 'lucide-react';
 import { Scenario } from '../../model/types';
 import { useStore } from '../../store/use-store';
-import { simBridge } from '../../engine/sim-bridge';
+import { simulationRuntime as simBridge } from '../../engine/simulation-runtime';
 import styles from './ScenarioInterviewStepper.module.css';
 
 interface ScenarioInterviewStepperProps {

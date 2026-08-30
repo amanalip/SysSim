@@ -13,7 +13,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
-import { simBridge } from '../../engine/sim-bridge';
+import { simulationRuntime as simBridge } from '../../engine/simulation-runtime';
 import { ALL_SCENARIOS } from '../../scenarios';
 import { COMPONENT_METADATA_LIST } from '../../model/component-defaults';
 import { ComponentType } from '../../model/types';

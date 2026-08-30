@@ -20,9 +20,10 @@ import { validateConnection } from '../model/validation';
 import { inferEdgePurpose, validateEdgePurpose } from '../model/edge-semantics';
 import { migrateCanvasState } from '../model/canvas-migrations';
 import { computeAutoLayout } from '../layout/auto-layout';
-import { simBridge } from '../engine/sim-bridge';
+import { notifyGraphMutation, notifySimulationReset } from '../engine/simulation-command-bus';
 import { ThemeMode } from '../theme';
 import { HealthStateSource } from '../engine/health-state';
+import { validateArchitectureState } from '../model/architecture-schema';
 export type { ZoneData };
 
 export interface CanvasNode {
@@ -91,6 +92,8 @@ export interface SysSimState {
   historyPast: CanvasHistoryEntry[];
   historyFuture: CanvasHistoryEntry[];
   graphRevision: number;
+  canUndo: boolean;
+  canRedo: boolean;
 
   // Canvas Actions
   setNodes: (nodes: CanvasNode[] | ((prev: CanvasNode[]) => CanvasNode[])) => void;
@@ -117,11 +120,13 @@ export interface SysSimState {
   clearCanvas: () => void;
   loadCanvasState: (nodes: CanvasNode[], edges: CanvasEdge[], zones?: ZoneData[]) => void;
   pushHistory: () => void;
+  beginNodeDragHistory: () => void;
   undo: () => void;
   redo: () => void;
 
   // Simulation State
   simState: SimulationState;
+  simulationRuntimeMode: 'worker' | 'fallback';
   speedMultiplier: number;
   trafficConfig: TrafficConfig;
   activeRequests: SimRequest[];
@@ -224,9 +229,21 @@ const initialCalculatorInputs: CalculatorInputs = {
   serverCapacityQps: 2000,
 };
 
+let lastConfigHistoryNodeId: string | null = null;
+let lastConfigHistoryAt = 0;
+
+function readStoredTheme(): ThemeMode {
+  try {
+    const value = localStorage.getItem('syssim_theme');
+    return value === 'light' || value === 'dark' ? value : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
 export const useStore = create<SysSimState>((set, get) => ({
   // Theme & UI state
-  theme: (localStorage.getItem('syssim_theme') as ThemeMode) || 'dark',
+  theme: readStoredTheme(),
   setTheme: (theme) => {
     localStorage.setItem('syssim_theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
@@ -273,6 +290,8 @@ export const useStore = create<SysSimState>((set, get) => ({
   historyPast: [],
   historyFuture: [],
   graphRevision: 0,
+  canUndo: false,
+  canRedo: false,
 
   setNodes: (nodesOrUpdater) => {
     set((state) => ({
@@ -284,7 +303,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       edges: typeof edgesOrUpdater === 'function' ? edgesOrUpdater(state.edges) : edgesOrUpdater,
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
   removeGraphItems: (nodeIds, edgeIds) => {
     const nodesToRemove = new Set(nodeIds);
@@ -304,7 +323,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       isPropertiesPanelOpen: state.selectedNodeId && nodesToRemove.has(state.selectedNodeId) ? false : state.isPropertiesPanelOpen,
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
   setZones: (zonesOrUpdater) => {
     set((state) => ({
@@ -314,7 +333,8 @@ export const useStore = create<SysSimState>((set, get) => ({
 
   addNode: (type, position, customName) => {
     const id = `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const config = createDefaultConfig(type, id, customName);
+    const normalizedName = customName?.trim();
+    const config = createDefaultConfig(type, id, normalizedName || undefined);
     const newNode: CanvasNode = {
       id,
       type: 'customComponent',
@@ -330,7 +350,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       isPropertiesPanelOpen: true,
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
     return id;
   },
 
@@ -358,7 +378,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       isPropertiesPanelOpen: true,
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
     return id;
   },
 
@@ -369,6 +389,10 @@ export const useStore = create<SysSimState>((set, get) => ({
   },
 
   updateNodeConfig: (id, partialConfig) => {
+    const now = Date.now();
+    if (lastConfigHistoryNodeId !== id || now - lastConfigHistoryAt > 750) get().pushHistory();
+    lastConfigHistoryNodeId = id;
+    lastConfigHistoryAt = now;
     set((state) => ({
       nodes: state.nodes.map((node) => {
         if (node.id === id) {
@@ -384,7 +408,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       }),
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
 
   updateNodeConfigs: (updates) => {
@@ -395,7 +419,7 @@ export const useStore = create<SysSimState>((set, get) => ({
         : node),
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
 
   removeNode: (id) => {
@@ -407,7 +431,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       isPropertiesPanelOpen: state.selectedNodeId === id ? false : state.isPropertiesPanelOpen,
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
 
   addEdge: (source, target, preferredProtocol, preferredPurpose) => {
@@ -470,7 +494,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedNodeId: null,
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
     return true;
   },
 
@@ -497,7 +521,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       ),
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
 
   updateEdgePurpose: (edgeId, purpose) => {
@@ -523,7 +547,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       ),
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
 
   toggleCutEdge: (edgeId) => {
@@ -543,7 +567,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       ),
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
 
   removeEdge: (edgeId) => {
@@ -553,7 +577,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedEdgeId: state.selectedEdgeId === edgeId ? null : state.selectedEdgeId,
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
 
   selectNode: (nodeId) => {
@@ -598,6 +622,7 @@ export const useStore = create<SysSimState>((set, get) => ({
   },
 
   updateZone: (zoneId, partial) => {
+    get().pushHistory();
     set((state) => ({
       zones: state.zones.map((z) => (z.id === zoneId ? { ...z, ...partial } : z)),
     }));
@@ -608,7 +633,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     if (nodes.length === 0) return;
     get().pushHistory();
     const arranged = computeAutoLayout(nodes, edges, zones);
-    set({ nodes: arranged });
+    set({ nodes: arranged, canUndo: true, canRedo: false });
   },
 
   clearCanvas: () => {
@@ -622,8 +647,8 @@ export const useStore = create<SysSimState>((set, get) => ({
       isPropertiesPanelOpen: false,
       graphRevision: get().graphRevision + 1,
     });
-    simBridge.reset();
-    simBridge.syncGraph();
+    notifySimulationReset();
+    notifyGraphMutation();
   },
 
   loadCanvasState: (nodes, edges, zones = []) => {
@@ -632,22 +657,23 @@ export const useStore = create<SysSimState>((set, get) => ({
       edges,
       zones,
     } as SerializedCanvasState);
-    const migratedEdges = edges.map((edge, index) => ({
+    const validated = validateArchitectureState(migrated, { repairDanglingEdges: true });
+    const migratedEdges = validated.edges.map((edge, index) => ({
       ...edge,
-      type: edge.type || 'protocolEdge',
-      data: migrated.edges[index].data,
+      type: edges.find((candidate) => candidate.id === edge.id)?.type || 'protocolEdge',
+      data: validated.edges[index].data,
     }));
     get().pushHistory();
     set({
-      nodes: migrated.nodes as CanvasNode[],
+      nodes: validated.nodes as CanvasNode[],
       edges: migratedEdges,
-      zones: migrated.zones || [],
+      zones: validated.zones || [],
       selectedNodeId: null,
       selectedEdgeId: null,
       isPropertiesPanelOpen: false,
       graphRevision: get().graphRevision + 1,
     });
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
 
   pushHistory: () => {
@@ -660,8 +686,12 @@ export const useStore = create<SysSimState>((set, get) => ({
     set({
       historyPast: [...historyPast.slice(-20), snapshot],
       historyFuture: [],
+      canUndo: true,
+      canRedo: false,
     });
   },
+
+  beginNodeDragHistory: () => get().pushHistory(),
 
   undo: () => {
     const { historyPast, historyFuture, nodes, edges, zones } = get();
@@ -682,8 +712,10 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedNodeId: null,
       selectedEdgeId: null,
       graphRevision: get().graphRevision + 1,
+      canUndo: historyPast.length > 1,
+      canRedo: true,
     });
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
 
   redo: () => {
@@ -705,12 +737,15 @@ export const useStore = create<SysSimState>((set, get) => ({
       selectedNodeId: null,
       selectedEdgeId: null,
       graphRevision: get().graphRevision + 1,
+      canUndo: true,
+      canRedo: historyFuture.length > 1,
     });
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
 
   // Simulation State
   simState: 'idle',
+  simulationRuntimeMode: 'fallback',
   speedMultiplier: 1,
   trafficConfig: initialTrafficConfig,
   activeRequests: [],
@@ -744,7 +779,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       ),
       graphRevision: state.graphRevision + 1,
     }));
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
   resetSimulation: () =>
     set({
@@ -765,7 +800,10 @@ export const useStore = create<SysSimState>((set, get) => ({
     try {
       if (typeof localStorage !== 'undefined') {
         const stored = localStorage.getItem('syssim_completed_scenarios');
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return [...new Set(parsed.filter((id) => Number.isInteger(id) && id > 0 && id <= 10_000))];
+        }
       }
     } catch {
       // safe fallback
@@ -806,7 +844,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       isPropertiesPanelOpen: false,
       graphRevision: get().graphRevision + 1,
     });
-    simBridge.syncGraph();
+    notifyGraphMutation();
   },
 
   closeScenario: () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useStore } from '../store/use-store';
-import { simBridge } from '../engine/sim-bridge';
+import { simulationRuntime as simBridge } from '../engine/simulation-runtime';
 import { ALL_SCENARIOS } from '../scenarios';
 
 describe('Bugs Batch 1: Snapshot Manager & Scenario Interview Stepper', () => {

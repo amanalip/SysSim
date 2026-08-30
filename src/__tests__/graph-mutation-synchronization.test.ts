@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { simBridge } from '../engine/sim-bridge';
+import { configureGraphMutationListener } from '../engine/simulation-command-bus';
 import { useStore } from '../store/use-store';
 
 describe('authoritative graph mutations tasks 205-210', () => {
@@ -16,10 +16,12 @@ describe('authoritative graph mutations tasks 205-210', () => {
       simState: 'running',
     });
     vi.restoreAllMocks();
+    configureGraphMutationListener(null);
   });
 
   it('synchronizes node and edge additions from the store', () => {
-    const sync = vi.spyOn(simBridge, 'syncGraph').mockImplementation(() => undefined);
+    const sync = vi.fn();
+    configureGraphMutationListener(sync);
     const client = useStore.getState().addNode('client', { x: 0, y: 0 });
     const app = useStore.getState().addNode('app_server', { x: 100, y: 0 });
     expect(useStore.getState().addEdge(client, app)).toBe(true);
@@ -28,7 +30,8 @@ describe('authoritative graph mutations tasks 205-210', () => {
   });
 
   it('keeps position-only changes local to the canvas', () => {
-    const sync = vi.spyOn(simBridge, 'syncGraph').mockImplementation(() => undefined);
+    const sync = vi.fn();
+    configureGraphMutationListener(sync);
     const node = useStore.getState().addNode('client', { x: 0, y: 0 });
     sync.mockClear();
     const revision = useStore.getState().graphRevision;
@@ -38,7 +41,8 @@ describe('authoritative graph mutations tasks 205-210', () => {
   });
 
   it('batches React Flow-style multi-item deletion into one history entry and sync', () => {
-    const sync = vi.spyOn(simBridge, 'syncGraph').mockImplementation(() => undefined);
+    const sync = vi.fn();
+    configureGraphMutationListener(sync);
     const client = useStore.getState().addNode('client', { x: 0, y: 0 });
     const app = useStore.getState().addNode('app_server', { x: 100, y: 0 });
     const db = useStore.getState().addNode('sql_db', { x: 200, y: 0 });

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createGraphUpdateMessage, isCurrentGraphRevision, simBridge } from '../engine/sim-bridge';
+import { createGraphUpdateMessage, isCurrentGraphRevision } from '../engine/sim-bridge';
+import { configureGraphMutationListener } from '../engine/simulation-command-bus';
 import { createSimRequest } from '../engine/request';
 import { SysSimEngine } from '../engine/simulator';
 import { createDefaultConfig } from '../model/component-defaults';
@@ -9,6 +10,7 @@ describe('graph revision and live routing tasks 211-215', () => {
   beforeEach(() => {
     useStore.setState({ nodes: [], edges: [], zones: [], graphRevision: 0, historyPast: [], historyFuture: [] });
     vi.restoreAllMocks();
+    configureGraphMutationListener(null);
   });
 
   it('tags graph messages and rejects results from every stale revision', () => {
@@ -37,7 +39,8 @@ describe('graph revision and live routing tasks 211-215', () => {
   });
 
   it('keeps rapid semantic edits monotonically revisioned', () => {
-    const sync = vi.spyOn(simBridge, 'syncGraph').mockImplementation(() => undefined);
+    const sync = vi.fn();
+    configureGraphMutationListener(sync);
     const client = useStore.getState().addNode('client', { x: 0, y: 0 });
     const firstRevision = useStore.getState().graphRevision;
     const app = useStore.getState().addNode('app_server', { x: 100, y: 0 });

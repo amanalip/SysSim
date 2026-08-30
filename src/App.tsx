@@ -11,7 +11,7 @@ import { EnvelopeCalculator } from './components/panels/EnvelopeCalculator';
 import { ShortcutsModal } from './components/modals/ShortcutsModal';
 import { ToastContainer } from './components/ui/Toast';
 import { chaosRunner } from './engine/metrics/chaos-runner';
-import { simBridge } from './engine/sim-bridge';
+import { initializeSimulationRuntime, disposeSimulationRuntime, simulationRuntime as simBridge } from './engine/simulation-runtime';
 import { decodeStateFromUrlHash } from './utils/sharing';
 import { CORE_SCENARIOS } from './scenarios/core';
 import styles from './App.module.css';
@@ -46,6 +46,11 @@ export function App() {
 
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    initializeSimulationRuntime();
+    return () => disposeSimulationRuntime();
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);

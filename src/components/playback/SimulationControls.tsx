@@ -12,7 +12,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
-import { simBridge } from '../../engine/sim-bridge';
+import { simulationRuntime as simBridge } from '../../engine/simulation-runtime';
 import { RequestKeyDistribution, TrafficPattern } from '../../model/types';
 import styles from './SimulationControls.module.css';
 
@@ -30,6 +30,7 @@ export const SimulationControls: React.FC = () => {
     isBottomDrawerOpen,
     setIsBottomDrawerOpen,
     addToast,
+    simulationRuntimeMode,
   } = useStore();
 
   const [qpsText, setQpsText] = React.useState(String(trafficConfig.baseQps));
@@ -143,7 +144,7 @@ export const SimulationControls: React.FC = () => {
       {/* Active Status Indicator */}
       <div
         className={`${styles.statusDot} ${isRunning ? styles.statusRunning : simState === 'paused' ? styles.statusPaused : styles.statusIdle}`}
-        title={`Engine status: ${simState}`}
+        title={`Engine status: ${simState}; runtime: ${simulationRuntimeMode === 'worker' ? 'background worker' : 'compatibility mode'}`}
       />
 
       {/* Primary Play/Pause/Step/Reset */}

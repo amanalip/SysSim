@@ -1,6 +1,7 @@
 import { SysSimEngine, SimGraph } from './simulator';
 import { TrafficConfig } from '../model/types';
 import { SIMULATION_LIMITS } from './simulation-limits';
+import { isWorkerCommand, WorkerResponse } from './worker-protocol';
 
 const engine = new SysSimEngine();
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -8,24 +9,27 @@ let lastTickTime = Date.now();
 let graphRevision = 0;
 
 const postTick = (payload: ReturnType<SysSimEngine['step']>) => {
-  self.postMessage({ type: 'TICK_UPDATE', payload: { ...payload, graphRevision } });
+  const message: WorkerResponse = { type: 'TICK_UPDATE', payload: { ...payload, graphRevision } };
+  self.postMessage(message);
 };
 
 self.onmessage = (event: MessageEvent) => {
-  const { type, payload } = event.data;
+  if (!isWorkerCommand(event.data)) return;
+  const message = event.data;
 
-  switch (type) {
+  switch (message.type) {
     case 'INIT_OR_UPDATE_GRAPH':
-      engine.setGraph(payload.graph as SimGraph);
-      graphRevision = payload.graphRevision;
+      engine.setGraph(message.payload.graph as SimGraph);
+      graphRevision = message.payload.graphRevision;
+      self.postMessage({ type: 'GRAPH_ACK', payload: { graphRevision } } satisfies WorkerResponse);
       break;
 
     case 'UPDATE_CONFIG':
-      engine.setConfig(payload as Partial<TrafficConfig>);
+      engine.setConfig(message.payload as Partial<TrafficConfig>);
       break;
 
     case 'SET_SPEED':
-      engine.setSpeedMultiplier(payload as number);
+      engine.setSpeedMultiplier(message.payload as number);
       break;
 
     case 'START':
@@ -95,5 +99,13 @@ self.onmessage = (event: MessageEvent) => {
         },
       });
       break;
+
+    case 'DISPOSE':
+      if (timer) clearInterval(timer);
+      timer = null;
+      self.close();
+      break;
   }
 };
+
+self.postMessage({ type: 'WORKER_READY' } satisfies WorkerResponse);

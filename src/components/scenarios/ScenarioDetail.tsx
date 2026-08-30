@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Scenario } from '../../model/types';
 import { useStore } from '../../store/use-store';
-import { simBridge } from '../../engine/sim-bridge';
+import { simulationRuntime as simBridge } from '../../engine/simulation-runtime';
 import { ScenarioInterviewStepper } from './ScenarioInterviewStepper';
 import styles from './ScenarioDetail.module.css';
 

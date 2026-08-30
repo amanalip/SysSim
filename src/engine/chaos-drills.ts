@@ -1,7 +1,7 @@
 import { AnyComponentConfig, NodeHealthStatus, ProtocolEdgeData, TrafficConfig } from '../model/types';
 import { CanvasEdge, useStore } from '../store/use-store';
 import { getEdgePurpose } from '../model/edge-semantics';
-import { simBridge } from './sim-bridge';
+import { simulationRuntime as simBridge } from './simulation-runtime';
 
 export type ChaosDrillId = 'db_outage' | 'cache_stampede' | 'flash_crowd' | 'ingress_partition' | 'network_latency';
 

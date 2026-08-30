@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore } from '../store/use-store';
-import { simBridge } from '../engine/sim-bridge';
+import { simulationRuntime as simBridge } from '../engine/simulation-runtime';
 import { ALL_SCENARIOS } from '../scenarios';
 
 describe('Deep Audit Pass 6 Bug Fixes & Feature Tests (10+ Verifications)', () => {

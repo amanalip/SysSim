@@ -1,23 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Bookmark, X, Save, Upload, Trash2, Clock } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Bookmark, X, Save, Upload, Trash2, Clock, Download, FileUp } from 'lucide-react';
 import { useStore, CanvasNode, CanvasEdge } from '../../store/use-store';
-import { TrafficConfig, ZoneData } from '../../model/types';
-import { simBridge } from '../../engine/sim-bridge';
+import { simulationRuntime as simBridge } from '../../engine/simulation-runtime';
+import { APPLICATION_VERSION, ARCHITECTURE_SCHEMA_VERSION } from '../../model/architecture-schema';
+import { emptySnapshotSlot, exportSnapshotSlots, importSnapshotSlots, parseSnapshotSlots, persistSnapshotSlots, SNAPSHOT_STORAGE_KEY, SnapshotSlot } from '../../model/snapshot-storage';
 import styles from './SnapshotManagerModal.module.css';
-
-interface SnapshotSlot {
-  id: number;
-  name: string;
-  timestamp: number | null;
-  nodeCount: number;
-  edgeCount: number;
-  nodes?: CanvasNode[];
-  edges?: CanvasEdge[];
-  zones?: ZoneData[];
-  trafficConfig?: TrafficConfig;
-}
-
-const STORAGE_KEY = 'syssim_architecture_snapshots';
 
 interface SnapshotManagerModalProps {
   isOpen: boolean;
@@ -28,6 +15,7 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
   const { nodes, edges, zones, trafficConfig, setTrafficConfig, loadCanvasState, addToast } = useStore();
   const [slots, setSlots] = useState<SnapshotSlot[]>([]);
   const [customNames, setCustomNames] = useState<Record<number, string>>({});
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -42,31 +30,21 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        setSlots(JSON.parse(saved));
-      } else {
-        // Initialize 5 empty slots
-        const initialSlots: SnapshotSlot[] = Array.from({ length: 5 }, (_, i) => ({
-          id: i + 1,
-          name: `Architecture Snapshot ${i + 1}`,
-          timestamp: null,
-          nodeCount: 0,
-          edgeCount: 0,
-        }));
-        setSlots(initialSlots);
-      }
-    } catch {
-      // safe fallback
+      setSlots(parseSnapshotSlots(localStorage.getItem(SNAPSHOT_STORAGE_KEY)));
+    } catch (error) {
+      setSlots(parseSnapshotSlots(null));
+      addToast(`Could not read snapshots: ${error instanceof Error ? error.message : 'storage unavailable'}`, 'error');
     }
   }, [isOpen]);
 
-  const saveSlotsToStorage = (updated: SnapshotSlot[]) => {
-    setSlots(updated);
+  const saveSlotsToStorage = (updated: SnapshotSlot[]): boolean => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    } catch {
-      // safe fallback
+      persistSnapshotSlots(localStorage, updated);
+      setSlots(updated);
+      return true;
+    } catch (error) {
+      addToast(`Snapshot storage failed${error instanceof DOMException && error.name === 'QuotaExceededError' ? ': browser quota exceeded' : ''}`, 'error');
+      return false;
     }
   };
 
@@ -88,13 +66,17 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
           edges: JSON.parse(JSON.stringify(edges)),
           zones: JSON.parse(JSON.stringify(zones)),
           trafficConfig: JSON.parse(JSON.stringify(trafficConfig)),
+          schemaVersion: ARCHITECTURE_SCHEMA_VERSION,
+          applicationVersion: APPLICATION_VERSION,
+          restorationMode: 'architecture-and-traffic-reset-simulation' as const,
+          corrupted: false,
+          corruptionReason: undefined,
         };
       }
       return s;
     });
 
-    saveSlotsToStorage(updated);
-    addToast(`Saved canvas design to Slot ${slotId}`, 'success');
+    if (saveSlotsToStorage(updated)) addToast(`Saved canvas design to Slot ${slotId}`, 'success');
   };
 
   const handleLoadFromSlot = (slot: SnapshotSlot) => {
@@ -104,7 +86,7 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
     }
 
     simBridge.reset();
-    loadCanvasState(slot.nodes, slot.edges || [], slot.zones || []);
+    loadCanvasState(slot.nodes as CanvasNode[], (slot.edges || []) as CanvasEdge[], slot.zones || []);
     if (slot.trafficConfig) {
       setTrafficConfig(slot.trafficConfig);
       simBridge.syncConfig(slot.trafficConfig);
@@ -116,19 +98,31 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
   const handleClearSlot = (slotId: number) => {
     const updated = slots.map((s) => {
       if (s.id === slotId) {
-        return {
-          id: slotId,
-          name: `Architecture Snapshot ${slotId}`,
-          timestamp: null,
-          nodeCount: 0,
-          edgeCount: 0,
-        };
+        return emptySnapshotSlot(slotId);
       }
       return s;
     });
 
-    saveSlotsToStorage(updated);
-    addToast(`Cleared Snapshot Slot ${slotId}`, 'info');
+    if (saveSlotsToStorage(updated)) addToast(`Cleared Snapshot Slot ${slotId}`, 'info');
+  };
+
+  const handleExportAll = () => {
+    const url = URL.createObjectURL(new Blob([exportSnapshotSlots(slots)], { type: 'application/json' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `syssim-snapshots-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    addToast('Exported all snapshot slots', 'success');
+  };
+
+  const handleImportAll = async (file: File) => {
+    try {
+      const imported = importSnapshotSlots(await file.text());
+      if (saveSlotsToStorage(imported)) addToast('Imported and validated all snapshot slots', 'success');
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Snapshot import failed', 'error');
+    }
   };
 
   if (!isOpen) return null;
@@ -148,14 +142,28 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
               </div>
             </div>
           </div>
-          <button className={styles.closeBtn} onClick={onClose}>
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close snapshot manager">
             <X size={15} />
           </button>
         </div>
 
+        <div className={styles.slotActions}>
+          <button className={styles.saveBtn} onClick={handleExportAll} title="Export all snapshot slots as JSON">
+            <Download size={12} /><span>Export all</span>
+          </button>
+          <button className={styles.loadBtn} onClick={() => importInputRef.current?.click()} title="Import all snapshot slots from JSON">
+            <FileUp size={12} /><span>Import all</span>
+          </button>
+          <input ref={importInputRef} type="file" accept="application/json,.json" hidden onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void handleImportAll(file);
+            event.currentTarget.value = '';
+          }} />
+        </div>
+
         <div className={styles.slotsList}>
           {slots.map((slot) => {
-            const hasData = slot.timestamp !== null;
+            const hasData = slot.timestamp !== null && !slot.corrupted;
             return (
               <div
                 key={slot.id}
@@ -172,9 +180,10 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
                         setCustomNames((prev) => ({ ...prev, [slot.id]: e.target.value }))
                       }
                       onBlur={() => {
-                        if (customNames[slot.id]) {
+                        if (customNames[slot.id] !== undefined) {
+                          const normalized = customNames[slot.id].trim();
                           const updated = slots.map((s) =>
-                            s.id === slot.id ? { ...s, name: customNames[slot.id].trim() } : s
+                            s.id === slot.id ? { ...s, name: normalized || `Architecture Snapshot ${slot.id}` } : s
                           );
                           saveSlotsToStorage(updated);
                         }
@@ -182,7 +191,9 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
                       placeholder={`Snapshot ${slot.id}`}
                     />
                     <div className={styles.slotMeta}>
-                      {hasData ? (
+                      {slot.corrupted ? (
+                        <span className={styles.emptyLabel}>Corrupted: {slot.corruptionReason}</span>
+                      ) : hasData ? (
                         <>
                           <span className={styles.statPill}>
                             {slot.nodeCount} nodes • {slot.edgeCount} links
@@ -209,16 +220,16 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
                     <span>Save</span>
                   </button>
 
-                  {hasData && (
+                  {(hasData || slot.corrupted) && (
                     <>
-                      <button
+                      {hasData ? <button
                         className={styles.loadBtn}
                         onClick={() => handleLoadFromSlot(slot)}
                         title="Load this snapshot onto canvas"
                       >
                         <Upload size={12} />
                         <span>Load</span>
-                      </button>
+                      </button> : null}
                       <button
                         className={styles.clearBtn}
                         onClick={() => handleClearSlot(slot.id)}

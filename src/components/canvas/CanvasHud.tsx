@@ -9,6 +9,8 @@ import {
   Spline,
   GitCommit,
   MoveRight,
+  Undo2,
+  Redo2,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import styles from './CanvasHud.module.css';
@@ -23,6 +25,10 @@ export const CanvasHud: React.FC = () => {
     edgeRouting,
     setEdgeRouting,
     addToast,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useStore();
 
   return (
@@ -63,6 +69,17 @@ export const CanvasHud: React.FC = () => {
         >
           <MoveRight size={13} />
           <span>Straight</span>
+        </button>
+      </div>
+
+      <div className={styles.divider} />
+
+      <div className={styles.toolsGroup}>
+        <button className={styles.iconBtn} onClick={undo} disabled={!canUndo} title="Undo graph change">
+          <Undo2 size={14} />
+        </button>
+        <button className={styles.iconBtn} onClick={redo} disabled={!canRedo} title="Redo graph change">
+          <Redo2 size={14} />
         </button>
       </div>
 

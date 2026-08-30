@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useStore } from '../store/use-store';
-import { simBridge } from '../engine/sim-bridge';
+import { simulationRuntime as simBridge } from '../engine/simulation-runtime';
+import { configureGraphMutationListener } from '../engine/simulation-command-bus';
 
 describe('Bugs Batch 2: Properties Panel Health Sync & Chaos Drills', () => {
   beforeEach(() => {
+    configureGraphMutationListener(null);
     useStore.setState({
       nodes: [],
       edges: [],
@@ -13,7 +15,8 @@ describe('Bugs Batch 2: Properties Panel Health Sync & Chaos Drills', () => {
   });
 
   it('Bug 3: setNodeHealthOverride updates node health and triggers graph sync', () => {
-    const syncGraphSpy = vi.spyOn(simBridge, 'syncGraph');
+    const syncGraphSpy = vi.fn();
+    configureGraphMutationListener(syncGraphSpy);
     const { addNode, setNodeHealthOverride } = useStore.getState();
 
     const nodeId = addNode('app_server', { x: 100, y: 100 }, 'App Tier');

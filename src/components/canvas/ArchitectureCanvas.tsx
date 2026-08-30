@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -24,7 +24,6 @@ import { ContextMenu, ContextMenuState } from './ContextMenu';
 import { ZoneGroup } from './zones/ZoneGroup';
 import { RequestParticleLayer } from './animation/RequestParticleLayer';
 import { CanvasHud } from './CanvasHud';
-import { computeAutoLayout } from '../../layout/auto-layout';
 import { ComponentType } from '../../model/types';
 import styles from './ArchitectureCanvas.module.css';
 
@@ -54,11 +53,14 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
     showReferenceOverlay,
     undo,
     redo,
+    beginNodeDragHistory,
+    autoLayout,
     theme,
   } = useStore();
 
   const reactFlowInstance = useReactFlow();
   const viewport = useViewport();
+  const nodeDragActive = useRef(false);
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     isOpen: false,
@@ -99,6 +101,14 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
+      const hasDraggingPosition = changes.some((change) => change.type === 'position' && change.dragging === true);
+      if (hasDraggingPosition && !nodeDragActive.current) {
+        beginNodeDragHistory();
+        nodeDragActive.current = true;
+      }
+      if (nodeDragActive.current && changes.some((change) => change.type === 'position' && change.dragging === false)) {
+        nodeDragActive.current = false;
+      }
       const removedNodeIds = changes.filter((change) => change.type === 'remove').map((change) => change.id);
       if (removedNodeIds.length > 0) removeGraphItems(removedNodeIds, []);
       const visualChanges = changes.filter((change) => change.type !== 'remove');
@@ -106,7 +116,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         setNodes((nds) => applyNodeChanges(visualChanges, nds as unknown as Node[]) as any);
       }
     },
-    [removeGraphItems, setNodes]
+    [beginNodeDragHistory, removeGraphItems, setNodes]
   );
 
   const onEdgesChange = useCallback(
@@ -155,12 +165,11 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
   );
 
   const handleAutoLayout = useCallback(() => {
-    const layouted = computeAutoLayout(nodes, edges);
-    setNodes(layouted);
+    autoLayout();
     setTimeout(() => {
       reactFlowInstance.fitView({ padding: 0.2, duration: 400 });
     }, 50);
-  }, [nodes, edges, setNodes, reactFlowInstance]);
+  }, [autoLayout, reactFlowInstance]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
