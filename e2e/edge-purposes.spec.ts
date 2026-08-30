@@ -18,6 +18,8 @@ const cases: Array<{
 
 for (const testCase of cases) {
   test(`loads, displays, and simulates a ${testCase.purpose} edge`, async ({ page }) => {
+    const pageErrors: Error[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error));
     const state: SerializedCanvasState = {
       version: 2,
       nodes: [
@@ -47,6 +49,6 @@ for (const testCase of cases) {
     await expect(page.getByRole('button', { name: new RegExp(`Edge purpose: ${testCase.purpose}`) })).toBeVisible();
     await page.getByRole('button', { name: /^Simulate$/ }).click();
     await expect(page.getByRole('button', { name: /^Pause$/ })).toBeVisible();
-    await expect(page.locator('body')).not.toContainText(/error overlay|uncaught error/i);
+    expect(pageErrors).toEqual([]);
   });
 }

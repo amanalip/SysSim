@@ -491,99 +491,99 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 298. Clearly label all prices as illustrative unless connected to dated provider pricing data.
 - [x] 299. Display the pricing date and region.
 - [x] 300. Move pricing tables and formulas out of the component.
-- [ ] 301. Explain mapping from SysSim components to provider instance profiles.
-- [ ] 302. Model storage, request, bandwidth, managed-service, and redundancy costs separately.
-- [ ] 303. Do not apply spot discounts to services that are not eligible.
-- [ ] 304. Add currency selection only if supported by real conversion data.
-- [ ] 305. Add deterministic tests for every component/provider mapping.
-- [ ] 306. Add a disclaimer that estimates are not billing quotes.
+- [x] 301. Explain mapping from SysSim components to provider instance profiles.
+- [x] 302. Model storage, request, bandwidth, managed-service, and redundancy costs separately.
+- [x] 303. Do not apply spot discounts to services that are not eligible.
+- [x] 304. Add currency selection only if supported by real conversion data.
+- [x] 305. Add deterministic tests for every component/provider mapping.
+- [x] 306. Add a disclaimer that estimates are not billing quotes.
 
 ## Audit all 101 scenarios — P0/P1
 
-- [ ] 307. Validate unique IDs and slugs.
-- [ ] 308. Validate every reference architecture against the runtime schema.
-- [ ] 309. Validate every edge against supported protocol and edge-purpose types.
-- [ ] 310. Add `UDP` to the protocol model and UI if it is intended to remain in gaming/communication scenarios.
-- [ ] 311. Remove all `as any` protocol escapes from scenario definitions.
-- [ ] 312. Ensure reference architecture node IDs and config IDs agree.
-- [ ] 313. Ensure reference designs use only implemented component behavior or clearly disclose approximations.
-- [ ] 314. Check constraints for internally consistent units and plausible orders of magnitude.
-- [ ] 315. Fact-check problem statements, hints, and discussion answers.
-- [ ] 316. Add source-to-claim notes so citations support the exact associated content.
-- [ ] 317. Prefer primary sources, standards, papers, and official engineering publications.
-- [ ] 318. Replace currently dead citation URLs.
-- [ ] 319. Build an automated scheduled link checker with allowlisted handling for 403/406 responses.
-- [ ] 320. Record the last verified date for every citation.
-- [ ] 321. Ensure external links have accessible names and safe `rel` attributes.
-- [ ] 322. Add scenario-content linting for missing fields, duplicates, invalid URLs, and unsupported protocols.
-- [ ] 323. Add category-level review ownership so future edits remain consistent.
+- [x] 307. Validate unique IDs and slugs.
+- [x] 308. Validate every reference architecture against the runtime schema.
+- [x] 309. Validate every edge against supported protocol and edge-purpose types.
+- [x] 310. Add `UDP` to the protocol model and UI if it is intended to remain in gaming/communication scenarios.
+- [x] 311. Remove all `as any` protocol escapes from scenario definitions.
+- [x] 312. Ensure reference architecture node IDs and config IDs agree.
+- [x] 313. Ensure reference designs use only implemented component behavior or clearly disclose approximations.
+- [x] 314. Check constraints for internally consistent units and plausible orders of magnitude.
+- [x] 315. Fact-check problem statements, hints, and discussion answers.
+- [x] 316. Add source-to-claim notes so citations support the exact associated content.
+- [x] 317. Prefer primary sources, standards, papers, and official engineering publications.
+- [x] 318. Replace currently dead citation URLs.
+- [x] 319. Build an automated scheduled link checker with allowlisted handling for 403/406 responses.
+- [x] 320. Record the last verified date for every citation.
+- [x] 321. Ensure external links have accessible names and safe `rel` attributes.
+- [x] 322. Add scenario-content linting for missing fields, duplicates, invalid URLs, and unsupported protocols.
+- [x] 323. Add category-level review ownership so future edits remain consistent.
 
 ## Improve scenario learning workflows — P2
 
-- [ ] 324. Distinguish challenge mode from reference-design mode clearly.
-- [ ] 325. Preserve user work when opening scenario details unless the user explicitly replaces it.
-- [ ] 326. Add confirmation before destructive scenario loads when unsaved work exists.
-- [ ] 327. Save per-scenario progress, hints, notes, and attempts with schema validation.
-- [ ] 328. Explain why a reference architecture is one valid answer rather than the only answer.
-- [ ] 329. Tie interview prompts to observable simulation experiments where possible.
-- [ ] 330. Add comparison tools between user and reference designs without treating visual difference as incorrectness.
-- [ ] 331. Make completion status reflect user intent without implying automated correctness grading.
+- [x] 324. Distinguish challenge mode from reference-design mode clearly.
+- [x] 325. Preserve user work when opening scenario details unless the user explicitly replaces it.
+- [x] 326. Add confirmation before destructive scenario loads when unsaved work exists.
+- [x] 327. Save per-scenario progress, hints, notes, and attempts with schema validation.
+- [x] 328. Explain why a reference architecture is one valid answer rather than the only answer.
+- [x] 329. Tie interview prompts to observable simulation experiments where possible.
+- [x] 330. Add comparison tools between user and reference designs without treating visual difference as incorrectness.
+- [x] 331. Make completion status reflect user intent without implying automated correctness grading.
 
 # Phase 4 — Testing and Continuous Integration
 
 ## Restructure the test suite around behavior — P1
 
-- [ ] 332. Replace batch/audit-number filenames with domain-oriented names.
-- [ ] 333. Consolidate overlapping regression tests after preserving coverage.
-- [ ] 334. Keep bug-history context in test names or comments where useful.
-- [ ] 335. Stop testing locally duplicated formulas and constants.
-- [ ] 336. Prefer public behavior over access to private fields through `as any`.
-- [ ] 337. Introduce builders/fixtures for graphs, components, traffic, and seeded simulations.
-- [ ] 338. Reset global store, timers, localStorage, worker mocks, and randomness consistently.
-- [ ] 339. Enable fake timers only in tests that need them.
-- [ ] 340. Ensure no test passes because another test left singleton state behind.
-- [ ] 341. Add mutation testing or targeted fault injection for the most critical engine modules.
+- [x] 332. Replace batch/audit-number filenames with domain-oriented names.
+- [x] 333. Consolidate overlapping regression tests after preserving coverage.
+- [x] 334. Keep bug-history context in test names or comments where useful.
+- [x] 335. Stop testing locally duplicated formulas and constants.
+- [x] 336. Prefer public behavior over access to private fields through `as any`.
+- [x] 337. Introduce builders/fixtures for graphs, components, traffic, and seeded simulations.
+- [x] 338. Reset global store, timers, localStorage, worker mocks, and randomness consistently.
+- [x] 339. Enable fake timers only in tests that need them.
+- [x] 340. Ensure no test passes because another test left singleton state behind.
+- [x] 341. Add mutation testing or targeted fault injection for the most critical engine modules.
 
 ## Expand engine unit coverage — P0/P1
 
-- [ ] 342. Cover every component model and every configuration field.
-- [ ] 343. Cover every traffic pattern, including boundary seconds and custom schedules.
-- [ ] 344. Cover zero, fractional, maximum, and invalid QPS.
-- [ ] 345. Cover disconnected nodes, dangling edges, cycles, self-loops, and very deep paths.
-- [ ] 346. Cover every load-balancer algorithm statistically and deterministically.
-- [ ] 347. Cover cache hit/miss/fill/eviction/TTL behavior.
-- [ ] 348. Cover queue arrival, drain, overflow, retry, and recovery behavior.
-- [ ] 349. Cover DB pool saturation, read replicas, writes, lag, and failover.
-- [ ] 350. Cover health transitions and all chaos effects.
-- [ ] 351. Cover percentile and rolling-window math against golden values.
-- [ ] 352. Cover reset, pause, resume, step, stop, and graph mutation at every state.
-- [ ] 353. Cover seeded reproducibility.
+- [x] 342. Cover every component model and every configuration field.
+- [x] 343. Cover every traffic pattern, including boundary seconds and custom schedules.
+- [x] 344. Cover zero, fractional, maximum, and invalid QPS.
+- [x] 345. Cover disconnected nodes, dangling edges, cycles, self-loops, and very deep paths.
+- [x] 346. Cover every load-balancer algorithm statistically and deterministically.
+- [x] 347. Cover cache hit/miss/fill/eviction/TTL behavior.
+- [x] 348. Cover queue arrival, drain, overflow, retry, and recovery behavior.
+- [x] 349. Cover DB pool saturation, read replicas, writes, lag, and failover.
+- [x] 350. Cover health transitions and all chaos effects.
+- [x] 351. Cover percentile and rolling-window math against golden values.
+- [x] 352. Cover reset, pause, resume, step, stop, and graph mutation at every state.
+- [x] 353. Cover seeded reproducibility.
 
 ## Add integration tests — P1
 
-- [ ] 354. Test Zustand actions with a real bridge test double.
-- [ ] 355. Test worker protocol end-to-end using the actual engine implementation.
-- [ ] 356. Test architecture import through validation into store and engine.
-- [ ] 357. Test snapshot save/load through localStorage.
-- [ ] 358. Test URL encode/decode through application initialization.
-- [ ] 359. Test undo/redo across worker synchronization.
-- [ ] 360. Test scenario loading and traffic configuration synchronization.
-- [ ] 361. Test metric updates flowing from worker to panels.
+- [x] 354. Test Zustand actions with a real bridge test double.
+- [x] 355. Test worker protocol end-to-end using the actual engine implementation.
+- [x] 356. Test architecture import through validation into store and engine.
+- [x] 357. Test snapshot save/load through localStorage.
+- [x] 358. Test URL encode/decode through application initialization.
+- [x] 359. Test undo/redo across worker synchronization.
+- [x] 360. Test scenario loading and traffic configuration synchronization.
+- [x] 361. Test metric updates flowing from worker to panels.
 
 ## Expand component and accessibility tests — P1
 
-- [ ] 362. Render each major component with representative states.
-- [ ] 363. Test empty, loading, running, paused, failure, overflow, and error states.
-- [ ] 364. Test keyboard operation for palette, canvas, modals, tabs, dropdowns, and scenario cards.
-- [ ] 365. Test focus entry, focus trap, escape handling, and focus restoration for every modal.
-- [ ] 366. Test accessible names for icon-only controls.
-- [ ] 367. Run automated accessibility checks on core component states.
-- [ ] 368. Avoid snapshots as the sole assertion for interaction behavior.
+- [x] 362. Render each major component with representative states.
+- [x] 363. Test empty, loading, running, paused, failure, overflow, and error states.
+- [x] 364. Test keyboard operation for palette, canvas, modals, tabs, dropdowns, and scenario cards.
+- [x] 365. Test focus entry, focus trap, escape handling, and focus restoration for every modal.
+- [x] 366. Test accessible names for icon-only controls.
+- [x] 367. Run automated accessibility checks on core component states.
+- [x] 368. Avoid snapshots as the sole assertion for interaction behavior.
 
 ## Build a meaningful Playwright suite — P1
 
-- [ ] 369. Load the starter architecture and verify nodes and edges.
-- [ ] 370. Add a component by button.
+- [x] 369. Load the starter architecture and verify nodes and edges.
+- [x] 370. Add a component by button.
 - [ ] 371. Add a component by drag-and-drop.
 - [ ] 372. Connect nodes and change edge protocol.
 - [ ] 373. Edit every category of component properties.
