@@ -1,12 +1,15 @@
 import { useStore } from '../../store/use-store';
 import { simBridge } from '../sim-bridge';
+import { SeededRandom } from '../seeded-random';
 
 class ChaosRunner {
   private timer: ReturnType<typeof setInterval> | null = null;
   private originalHealth = new Map<string, import('../../model/types').NodeHealthStatus>();
+  private random = new SeededRandom(1);
 
   public start(intervalSec: number = 10): void {
     this.stop(false);
+    this.random = new SeededRandom(useStore.getState().trafficConfig.seed ?? 1);
     this.timer = setInterval(() => {
       const { nodes, isChaosMode, simState } = useStore.getState();
       if (!isChaosMode || simState !== 'running' || nodes.length === 0) {
@@ -17,7 +20,7 @@ class ChaosRunner {
       const candidateNodes = nodes.filter((n) => n.data.config.type !== 'client');
       if (candidateNodes.length === 0) return;
 
-      const randomNode = candidateNodes[Math.floor(Math.random() * candidateNodes.length)];
+      const randomNode = candidateNodes[Math.floor(this.random.next() * candidateNodes.length)];
       const currentHealth = randomNode.data.config.health;
       const nextHealth = currentHealth === 'down' ? 'healthy' : 'down';
 

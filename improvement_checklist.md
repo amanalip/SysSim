@@ -323,12 +323,12 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 ## Make randomness deterministic and reproducible — P0
 
-- [ ] 173. Introduce a seeded pseudo-random number generator owned by each simulation run.
-- [ ] 174. Remove direct `Math.random()` use from simulation models.
-- [ ] 175. Allow users to view, copy, and optionally set the seed.
-- [ ] 176. Include the seed in JSON exports, snapshots, traces, and bug reports where appropriate.
-- [ ] 177. Add tests proving identical graph, configuration, seed, and steps yield identical results.
-- [ ] 178. Add tests proving different seeds vary outcomes within expected statistical bounds.
+- [x] 173. Introduce a seeded pseudo-random number generator owned by each simulation run.
+- [x] 174. Remove direct `Math.random()` use from simulation models.
+- [x] 175. Allow users to view, copy, and optionally set the seed.
+- [x] 176. Include the seed in JSON exports, snapshots, traces, and bug reports where appropriate.
+- [x] 177. Add tests proving identical graph, configuration, seed, and steps yield identical results.
+- [x] 178. Add tests proving different seeds vary outcomes within expected statistical bounds.
 
 ## Implement a real discrete-event core — P1
 

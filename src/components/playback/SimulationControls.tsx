@@ -29,9 +29,11 @@ export const SimulationControls: React.FC = () => {
     setChaosMode,
     isBottomDrawerOpen,
     setIsBottomDrawerOpen,
+    addToast,
   } = useStore();
 
   const [qpsText, setQpsText] = React.useState(String(trafficConfig.baseQps));
+  const [seedText, setSeedText] = React.useState(String(trafficConfig.seed ?? 1));
   const [customKeysText, setCustomKeysText] = React.useState(() =>
     (trafficConfig.customRequestKeys || []).map((entry) => `${entry.key}:${entry.weight}`).join(','),
   );
@@ -39,6 +41,22 @@ export const SimulationControls: React.FC = () => {
   React.useEffect(() => {
     setQpsText(String(trafficConfig.baseQps));
   }, [trafficConfig.baseQps]);
+
+  React.useEffect(() => setSeedText(String(trafficConfig.seed ?? 1)), [trafficConfig.seed]);
+
+  const applySeed = () => {
+    const value = Number(seedText);
+    if (!Number.isFinite(value)) return setSeedText(String(trafficConfig.seed ?? 1));
+    const seed = (Math.floor(value) >>> 0) || 1;
+    setSeedText(String(seed));
+    setTrafficConfig({ seed });
+    simBridge.syncConfig({ seed });
+  };
+
+  const copySeed = async () => {
+    await navigator.clipboard.writeText(String(trafficConfig.seed ?? 1));
+    addToast(`Copied simulation seed ${trafficConfig.seed ?? 1}`, 'success');
+  };
 
   const isRunning = simState === 'running';
   const hasNodes = nodes.length > 0;
@@ -217,6 +235,13 @@ export const SimulationControls: React.FC = () => {
           max="50000"
           step="50"
         />
+      </div>
+
+      <div className={styles.configGroup}>
+        <label className={styles.label} htmlFor="simulation-seed">Seed</label>
+        <input id="simulation-seed" aria-label="Simulation seed" type="number" className={styles.qpsInput}
+          value={seedText} onChange={(event) => setSeedText(event.target.value)} onBlur={applySeed} min="1" step="1" />
+        <button className={styles.controlBtn} onClick={copySeed} title="Copy simulation seed">Copy</button>
       </div>
 
       {/* Segmented Speed Selector */}

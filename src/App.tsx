@@ -37,6 +37,7 @@ export function App() {
     loadCanvasState,
     loadScenario,
     loadReferenceDesign,
+    setTrafficConfig,
     addToast,
     autoLayout,
     isBottomDrawerOpen,
@@ -60,6 +61,10 @@ export function App() {
           decoded.edges as unknown as CanvasEdge[],
           (decoded.zones || []) as ZoneData[]
         );
+        if (decoded.trafficConfig) {
+          setTrafficConfig(decoded.trafficConfig);
+          simBridge.syncConfig(decoded.trafficConfig);
+        }
         addToast('Loaded shared architecture from URL', 'success');
         simBridge.syncGraph();
         return;

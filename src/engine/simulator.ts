@@ -38,6 +38,7 @@ import {
 } from './components/storage-models';
 import { AuthServiceModel, EncryptionServiceModel } from './components/security-service-models';
 import { deriveHealthFromCapacity, getHealthBehavior } from './health-state';
+import { SeededRandom, normalizeSeed } from './seeded-random';
 
 export interface SimNode {
   id: string;
@@ -85,7 +86,7 @@ export class SysSimEngine {
   };
   private speedMultiplier = 1;
   private state: SimulationState = 'idle';
-  private randomState = 1;
+  private randomGenerator = new SeededRandom(1);
   private requestSequence = 0;
   private clientSelectionCredits = new Map<string, number>();
   private currentRequestArrivalMs = 0;
@@ -365,7 +366,7 @@ export class SysSimEngine {
 
   public setConfig(config: Partial<TrafficConfig>): void {
     this.config = { ...this.config, ...config };
-    if (config.seed !== undefined) this.randomState = this.normalizeSeed(config.seed);
+    if (config.seed !== undefined) this.randomGenerator = new SeededRandom(config.seed);
   }
 
   public setSpeedMultiplier(multiplier: number): void {
@@ -397,7 +398,7 @@ export class SysSimEngine {
     this.elapsedSimulationMs = 0;
     this.fractionalRequestAccumulator = 0;
     this.requestSequence = 0;
-    this.randomState = this.normalizeSeed(this.config.seed ?? 1);
+    this.randomGenerator = new SeededRandom(normalizeSeed(this.config.seed ?? 1));
     this.completedRequests = [];
     this.activeRequests = [];
     this.totalSent = 0;
@@ -530,6 +531,7 @@ export class SysSimEngine {
           {
             payloadSizeKb: clientConfig?.requestPayloadKb || 0,
             operationType,
+            simulationSeed: normalizeSeed(this.config.seed ?? 1),
           },
         );
         this.processRequest(req);
@@ -1624,17 +1626,8 @@ export class SysSimEngine {
     }
   }
 
-  private normalizeSeed(seed: number): number {
-    const normalized = Math.floor(seed) >>> 0;
-    return normalized || 1;
-  }
-
-  /** Mulberry32: small deterministic PRNG suitable for repeatable simulations. */
   private random(): number {
-    let value = (this.randomState += 0x6d2b79f5);
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    return this.randomGenerator.next();
   }
 
   private generateRequestKey(

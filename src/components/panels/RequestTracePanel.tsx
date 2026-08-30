@@ -118,6 +118,7 @@ export const RequestTracePanel: React.FC = () => {
           <div className={styles.waterfallView}>
             <div className={styles.waterfallHeader}>
               <div className={styles.traceOverview}>
+                <span>Seed {selectedTrace.simulationSeed ?? 'not recorded'}</span>
                 <span className={styles.waterfallTitle}>
                   Trace #{selectedTrace.id.slice(0, 12)}
                 </span>

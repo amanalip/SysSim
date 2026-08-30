@@ -453,6 +453,7 @@ export interface SimRequest {
   requestKey?: string;
   payloadSizeKb?: number;
   operationType?: 'read' | 'write';
+  simulationSeed?: number;
   currentEdgeId?: string;
   currentEdgeProgress?: number; // 0 to 1
   path: RequestHop[];
@@ -677,6 +678,7 @@ export interface SerializedCanvasState {
     data: ProtocolEdgeData;
   }>;
   zones?: ZoneData[];
+  trafficConfig?: TrafficConfig;
 }
 
 export type ScenarioCategory =

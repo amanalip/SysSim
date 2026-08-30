@@ -64,5 +64,6 @@ export function migrateCanvasState(input: SerializedCanvasState): SerializedCanv
     nodes,
     edges,
     zones: structuredClone(input.zones || []),
+    trafficConfig: input.trafficConfig ? structuredClone(input.trafficConfig) : undefined,
   };
 }

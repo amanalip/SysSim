@@ -3,7 +3,10 @@ import { ComponentType, NodeHealthStatus, SimRequest } from '../model/types';
 interface RequestInputs {
   payloadSizeKb?: number;
   operationType?: 'read' | 'write';
+  simulationSeed?: number;
 }
+
+let fallbackRequestSequence = 0;
 
 export function createSimRequest(
   sourceNodeId: string,
@@ -13,7 +16,7 @@ export function createSimRequest(
   inputs: RequestInputs = {},
 ): SimRequest {
   const id = requestSequence === undefined
-    ? `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+    ? `req_manual_${fallbackRequestSequence++}`
     : `req_${requestSequence}`;
   return {
     id,
@@ -22,6 +25,7 @@ export function createSimRequest(
     requestKey,
     payloadSizeKb: inputs.payloadSizeKb,
     operationType: inputs.operationType,
+    simulationSeed: inputs.simulationSeed,
     path: [],
     totalLatencyMs: 0,
     status: 'in_flight',

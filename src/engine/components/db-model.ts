@@ -1,4 +1,5 @@
 import { NodeHealthStatus, SqlDbConfig } from '../../model/types';
+import { createRandom } from '../seeded-random';
 
 export interface DatabaseQueryResult {
   latencyMs: number;
@@ -50,7 +51,7 @@ export class DatabaseModel {
     private baseLatencyMs: number = 20,
     private maxConnections: number = 500,
     private readReplicas: number = 2,
-    private random: () => number = Math.random,
+    private random: () => number = createRandom(),
     private options: DatabaseOptions = {},
   ) {
     this.shardHits = Array.from({ length: Math.max(1, options.shardCount || 1) }, () => 0);

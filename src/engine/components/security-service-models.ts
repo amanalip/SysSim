@@ -1,4 +1,5 @@
 import { AuthServiceConfig, EncryptionServiceConfig } from '../../model/types';
+import { createRandom } from '../seeded-random';
 
 export class AuthServiceModel {
   private cacheHits = 0;
@@ -6,7 +7,7 @@ export class AuthServiceModel {
   private validationLatencyTotalMs = 0;
   private validations = 0;
 
-  constructor(private config: AuthServiceConfig, private random: () => number = Math.random) {}
+  constructor(private config: AuthServiceConfig, private random: () => number = createRandom()) {}
 
   public validate() {
     let latencyMs: number;

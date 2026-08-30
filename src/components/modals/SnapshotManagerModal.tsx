@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bookmark, X, Save, Upload, Trash2, Clock } from 'lucide-react';
 import { useStore, CanvasNode, CanvasEdge } from '../../store/use-store';
-import { ZoneData } from '../../model/types';
+import { TrafficConfig, ZoneData } from '../../model/types';
 import { simBridge } from '../../engine/sim-bridge';
 import styles from './SnapshotManagerModal.module.css';
 
@@ -14,6 +14,7 @@ interface SnapshotSlot {
   nodes?: CanvasNode[];
   edges?: CanvasEdge[];
   zones?: ZoneData[];
+  trafficConfig?: TrafficConfig;
 }
 
 const STORAGE_KEY = 'syssim_architecture_snapshots';
@@ -24,7 +25,7 @@ interface SnapshotManagerModalProps {
 }
 
 export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOpen, onClose }) => {
-  const { nodes, edges, zones, loadCanvasState, addToast } = useStore();
+  const { nodes, edges, zones, trafficConfig, setTrafficConfig, loadCanvasState, addToast } = useStore();
   const [slots, setSlots] = useState<SnapshotSlot[]>([]);
   const [customNames, setCustomNames] = useState<Record<number, string>>({});
 
@@ -86,6 +87,7 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
           nodes: JSON.parse(JSON.stringify(nodes)),
           edges: JSON.parse(JSON.stringify(edges)),
           zones: JSON.parse(JSON.stringify(zones)),
+          trafficConfig: JSON.parse(JSON.stringify(trafficConfig)),
         };
       }
       return s;
@@ -103,6 +105,10 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
 
     simBridge.reset();
     loadCanvasState(slot.nodes, slot.edges || [], slot.zones || []);
+    if (slot.trafficConfig) {
+      setTrafficConfig(slot.trafficConfig);
+      simBridge.syncConfig(slot.trafficConfig);
+    }
     simBridge.syncGraph();
     addToast(`Loaded ${slot.name} to canvas`, 'success');
     onClose();

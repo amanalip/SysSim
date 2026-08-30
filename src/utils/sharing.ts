@@ -4,7 +4,7 @@ import { SerializedCanvasState, ZoneData } from '../model/types';
 import { CURRENT_CANVAS_VERSION, migrateCanvasState } from '../model/canvas-migrations';
 
 export function serializeCanvasState(): SerializedCanvasState {
-  const { nodes, edges, zones } = useStore.getState();
+  const { nodes, edges, zones, trafficConfig } = useStore.getState();
   return {
     version: CURRENT_CANVAS_VERSION,
     nodes: nodes.map((n) => ({
@@ -35,6 +35,7 @@ export function serializeCanvasState(): SerializedCanvasState {
       width: z.width,
       height: z.height,
     })),
+    trafficConfig: structuredClone(trafficConfig),
   };
 }
 
@@ -92,6 +93,9 @@ export function importArchitectureJson(file: File, onSuccess: () => void, onErro
         migrated.edges as unknown as CanvasEdge[],
         (migrated.zones || []) as ZoneData[]
       );
+      if (migrated.trafficConfig) {
+        useStore.getState().setTrafficConfig(migrated.trafficConfig);
+      }
       onSuccess();
     } catch {
       onError('Failed to parse architecture JSON file');
