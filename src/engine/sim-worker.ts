@@ -2,10 +2,11 @@ import { SysSimEngine, SimGraph } from './simulator';
 import { TrafficConfig } from '../model/types';
 import { SIMULATION_LIMITS } from './simulation-limits';
 import { isWorkerCommand, WorkerResponse } from './worker-protocol';
+import { monotonicNowMs } from '../platform/time';
 
 const engine = new SysSimEngine();
 let timer: ReturnType<typeof setInterval> | null = null;
-let lastTickTime = Date.now();
+let lastTickTime = monotonicNowMs();
 let graphRevision = 0;
 
 const postTick = (payload: ReturnType<SysSimEngine['step']>, stepCpuMs = 0) => {
@@ -13,6 +14,7 @@ const postTick = (payload: ReturnType<SysSimEngine['step']>, stepCpuMs = 0) => {
     type: 'TICK_UPDATE',
     payload: {
       ...payload,
+      elapsedSimulationMs: engine.getElapsedSimulationMs(),
       graphRevision,
       performance: { stepCpuMs, messageBytes: 0 },
     },
@@ -50,10 +52,10 @@ self.onmessage = (event: MessageEvent) => {
 
     case 'START':
       engine.start();
-      lastTickTime = Date.now();
+      lastTickTime = monotonicNowMs();
       if (!timer) {
         timer = setInterval(() => {
-          const now = Date.now();
+          const now = monotonicNowMs();
           const delta = now - lastTickTime;
           lastTickTime = now;
           stepWithTiming(delta);
@@ -71,10 +73,10 @@ self.onmessage = (event: MessageEvent) => {
 
     case 'RESUME':
       engine.resume();
-      lastTickTime = Date.now();
+      lastTickTime = monotonicNowMs();
       if (!timer) {
         timer = setInterval(() => {
-          const now = Date.now();
+          const now = monotonicNowMs();
           const delta = now - lastTickTime;
           lastTickTime = now;
           stepWithTiming(delta);
@@ -110,6 +112,7 @@ self.onmessage = (event: MessageEvent) => {
           metrics: engine.getMetricsSnapshot(),
           activeRequests: [],
           recentRequests: [],
+          elapsedSimulationMs: 0,
           graphRevision,
         },
       });

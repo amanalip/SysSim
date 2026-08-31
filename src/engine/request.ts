@@ -10,7 +10,7 @@ let fallbackRequestSequence = 0;
 
 export function createSimRequest(
   sourceNodeId: string,
-  timestampMs: number = Date.now(),
+  timestampMs: number,
   requestKey: string = 'resource:0',
   requestSequence?: number,
   inputs: RequestInputs = {},

@@ -1,12 +1,15 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { createSimRequest } from '../engine/request';
 import { SysSimEngine } from '../engine/simulator';
 import { ARCHITECTURE_BLUEPRINTS } from '../model/blueprints';
 import { SimRequest } from '../model/types';
+import { setIdEntropySource } from '../platform/id';
 
 describe('event-driven blueprint semantics', () => {
+  afterEach(() => setIdEntropySource());
+
   it('acknowledges at the queue and later completes both consumer-group deliveries', () => {
-    vi.spyOn(Date, 'now').mockReturnValue(1234);
+    setIdEntropySource(() => 'fixture');
     const blueprint = ARCHITECTURE_BLUEPRINTS.find((entry) => entry.id === 'event_driven_pipeline');
     const graph = blueprint!.create(0, 0);
     const engine = new SysSimEngine(
@@ -29,23 +32,27 @@ describe('event-driven blueprint semantics', () => {
       },
     );
 
-    const request = createSimRequest('gw_1234', 0, 'order:1', 1);
+    const gatewayId = graph.nodes.find((node) => node.data.config.type === 'api_gateway')!.id;
+    const queueId = graph.nodes.find((node) => node.data.config.type === 'message_queue')!.id;
+    const workerIds = graph.nodes
+      .filter((node) => node.data.config.type === 'worker')
+      .map((node) => node.id);
+    const request = createSimRequest(gatewayId, 0, 'order:1', 1);
     (engine as unknown as { processRequest: (value: SimRequest) => void }).processRequest(request);
-    expect(request.path.map((hop) => hop.nodeId)).toEqual(['gw_1234', 'q_1234']);
+    expect(request.path.map((hop) => hop.nodeId)).toEqual([gatewayId, queueId]);
     expect(request.path.at(-1)?.status).toBe('queued');
 
     engine.start();
     engine.step(1000);
     const metrics = engine.getMetricsSnapshot();
-    expect(metrics.componentMetrics.q_1234).toMatchObject({
+    expect(metrics.componentMetrics[queueId]).toMatchObject({
       producerAccepted: 1,
       consumerSucceeded: 2,
       queueDepth: 0,
     });
     expect(
-      metrics.componentMetrics.w1_1234.totalRequests +
-        metrics.componentMetrics.w2_1234.totalRequests,
+      metrics.componentMetrics[workerIds[0]].totalRequests +
+        metrics.componentMetrics[workerIds[1]].totalRequests,
     ).toBe(2);
-    vi.restoreAllMocks();
   });
 });

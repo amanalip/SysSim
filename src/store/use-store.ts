@@ -47,6 +47,8 @@ import {
   createInitialMetrics,
   createInitialTrafficConfig,
 } from './slices/initial-state';
+import { createId } from '../platform/id';
+import { nextOrderedWallTimeMs } from '../platform/time';
 export type { ZoneData };
 export type { CanvasEdge, CanvasHistoryEntry, CanvasNode } from '../model/canvas-types';
 
@@ -60,6 +62,8 @@ export interface SysSimState {
   // Theme & UI state
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
+  motionPreference: 'system' | 'reduced';
+  setMotionPreference: (preference: 'system' | 'reduced') => void;
   keyboardShortcutsEnabled: boolean;
   setKeyboardShortcutsEnabled: (enabled: boolean) => void;
   activeSidebarTab: 'palette' | 'scenarios' | 'calculator';
@@ -139,6 +143,8 @@ export interface SysSimState {
   // Simulation State
   simState: SimulationState;
   simulationRuntimeMode: 'worker' | 'fallback';
+  simulationElapsedMs: number;
+  lastSimulationTickAt: number | null;
   speedMultiplier: number;
   trafficConfig: TrafficConfig;
   activeRequests: SimRequest[];
@@ -156,6 +162,7 @@ export interface SysSimState {
   setTrafficConfig: (config: Partial<TrafficConfig>) => void;
   setActiveRequests: (requests: SimRequest[]) => void;
   setRecentRequests: (requests: SimRequest[]) => void;
+  setSimulationTiming: (elapsedMs: number, receivedAt: number) => void;
   updateMetrics: (metrics: Partial<OverallMetrics>) => void;
   setBottlenecks: (bottlenecks: BottleneckIssue[]) => void;
   setChaosMode: (enabled: boolean, intervalSec?: number) => void;
@@ -235,6 +242,8 @@ export const useStore = create<SysSimState>((set, get) => ({
     document.documentElement.setAttribute('data-theme', theme);
     set({ theme });
   },
+  motionPreference: 'system',
+  setMotionPreference: (motionPreference) => set({ motionPreference }),
   keyboardShortcutsEnabled: readStoredShortcutPreference(),
   setKeyboardShortcutsEnabled: (keyboardShortcutsEnabled) => {
     try {
@@ -265,7 +274,7 @@ export const useStore = create<SysSimState>((set, get) => ({
   // Toasts
   toasts: [],
   addToast: (message, type = 'info') => {
-    const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const id = createId('toast');
     set((state) => ({
       toasts: [...state.toasts, { id, message, type }],
     }));
@@ -338,7 +347,7 @@ export const useStore = create<SysSimState>((set, get) => ({
   },
 
   addNode: (type, position, customName) => {
-    const id = `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const id = createId(type);
     const normalizedName = customName?.trim();
     const config = createDefaultConfig(type, id, normalizedName || undefined);
     const newNode: CanvasNode = {
@@ -364,7 +373,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     const target = get().nodes.find((n) => n.id === nodeId);
     if (!target) return null;
 
-    const id = `${target.data.config.type}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const id = createId(target.data.config.type);
     const clonedConfig = structuredClone(target.data.config);
     clonedConfig.id = id;
     clonedConfig.name = `${clonedConfig.name} (Copy)`;
@@ -475,7 +484,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       }
     }
 
-    const id = `edge_${source}_${target}_${Date.now()}`;
+    const id = createId('edge');
     const purpose =
       preferredPurpose ||
       (sourceNode && targetNode
@@ -614,7 +623,7 @@ export const useStore = create<SysSimState>((set, get) => ({
 
   addZone: (label, category, bounds) => {
     get().pushHistory();
-    const id = `zone_${Date.now()}`;
+    const id = createId('zone');
     const colors: Record<ZoneData['category'], string> = {
       public: 'rgba(59, 130, 246, 0.08)',
       private: 'rgba(139, 92, 246, 0.08)',
@@ -669,7 +678,12 @@ export const useStore = create<SysSimState>((set, get) => ({
   loadCanvasState: (nodes, edges, zones = []) => {
     const migrated = migrateCanvasState({
       nodes,
-      edges,
+      edges: edges.map((edge) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        data: edge.data,
+      })),
       zones,
     } as SerializedCanvasState);
     const validated = validateArchitectureState(migrated, { repairDanglingEdges: true });
@@ -749,6 +763,8 @@ export const useStore = create<SysSimState>((set, get) => ({
   // Simulation State
   simState: 'idle',
   simulationRuntimeMode: 'fallback',
+  simulationElapsedMs: 0,
+  lastSimulationTickAt: null,
   speedMultiplier: 1,
   trafficConfig: createInitialTrafficConfig(),
   activeRequests: [],
@@ -768,6 +784,8 @@ export const useStore = create<SysSimState>((set, get) => ({
   },
   setActiveRequests: (activeRequests) => set({ activeRequests }),
   setRecentRequests: (recentRequests) => set({ recentRequests }),
+  setSimulationTiming: (simulationElapsedMs, lastSimulationTickAt) =>
+    set({ simulationElapsedMs, lastSimulationTickAt }),
   updateMetrics: (partial) => set((state) => ({ metrics: { ...state.metrics, ...partial } })),
   setBottlenecks: (bottlenecks) => set({ bottlenecks }),
   setChaosMode: (isChaosMode, chaosIntervalSec = 15) => set({ isChaosMode, chaosIntervalSec }),
@@ -787,6 +805,8 @@ export const useStore = create<SysSimState>((set, get) => ({
       simState: 'idle',
       activeRequests: [],
       recentRequests: [],
+      simulationElapsedMs: 0,
+      lastSimulationTickAt: null,
       metrics: createInitialMetrics(),
       bottlenecks: [],
       nodeHealthOverrides: {},
@@ -915,7 +935,7 @@ export const useStore = create<SysSimState>((set, get) => ({
 
   updateScenarioProgress: (scenarioId, partial) => {
     const existing = get().scenarioProgress[scenarioId] || createScenarioProgress(scenarioId);
-    const next = { ...existing, ...partial, scenarioId, updatedAt: Date.now() };
+    const next = { ...existing, ...partial, scenarioId, updatedAt: nextOrderedWallTimeMs() };
     const scenarioProgress = { ...get().scenarioProgress, [scenarioId]: next };
     try {
       writeScenarioProgress(scenarioProgress);

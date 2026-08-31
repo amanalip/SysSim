@@ -30,12 +30,13 @@ function createBridge(): SimulationBridge {
       };
     },
     {
-      onTick: ({ metrics, activeRequests, recentRequests, performance }) => {
+      onTick: ({ metrics, activeRequests, recentRequests, elapsedSimulationMs, performance }) => {
         if (performance) recordWorkerPerformance(performance.stepCpuMs, performance.messageBytes);
         const state = useStore.getState();
         state.updateMetrics(metrics);
         state.setActiveRequests(activeRequests);
         state.setRecentRequests(recentRequests);
+        state.setSimulationTiming(elapsedSimulationMs, Date.now());
       },
       onStateChange: (simState) => useStore.getState().setSimState(simState),
       onModeChange: (simulationRuntimeMode) => useStore.setState({ simulationRuntimeMode }),

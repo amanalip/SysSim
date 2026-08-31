@@ -1,5 +1,6 @@
-import { CanvasNode, CanvasEdge } from '../store/use-store';
+import type { CanvasEdge, CanvasNode } from './canvas-types';
 import { createDefaultConfig } from './component-defaults';
+import { createId } from '../platform/id';
 
 export interface ArchitectureBlueprint {
   id: string;
@@ -18,7 +19,7 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
     description: 'Load Balancer + 2 App Server nodes + Redis Cache',
     icon: 'Server',
     create: (baseX, baseY) => {
-      const ts = Date.now();
+      const ts = createId('blueprint');
       const lbId = `lb_${ts}`;
       const app1Id = `app1_${ts}`;
       const app2Id = `app2_${ts}`;
@@ -89,7 +90,7 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
       "Primary + 2 replica nodes; replication-edge traffic is independent of each SQL node's virtual lag/failover model",
     icon: 'Database',
     create: (baseX, baseY) => {
-      const ts = Date.now();
+      const ts = createId('blueprint');
       const primaryId = `db_primary_${ts}`;
       const replica1Id = `db_rep1_${ts}`;
       const replica2Id = `db_rep2_${ts}`;
@@ -145,7 +146,7 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
       'Gateway acknowledgement + 2 consumer-group deliveries + NoSQL sink; consumers drain independently',
     icon: 'Radio',
     create: (baseX, baseY) => {
-      const ts = Date.now();
+      const ts = createId('blueprint');
       const gwId = `gw_${ts}`;
       const queueId = `q_${ts}`;
       const w1Id = `w1_${ts}`;

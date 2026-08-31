@@ -547,6 +547,10 @@ export class SysSimEngine {
     return calculateScheduledQps(this.config, elapsedSec);
   }
 
+  public getElapsedSimulationMs(): number {
+    return this.elapsedSimulationMs;
+  }
+
   public step(deltaMs: number): {
     metrics: OverallMetrics;
     activeRequests: SimRequest[];

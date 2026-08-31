@@ -285,6 +285,7 @@ export class SimulationBridge {
   ): void {
     const payload: TickPayload = {
       ...result,
+      elapsedSimulationMs: this.fallbackEngine?.getElapsedSimulationMs() ?? 0,
       graphRevision: this.getSnapshot().graphRevision,
       performance: { stepCpuMs, messageBytes: 0 },
     };

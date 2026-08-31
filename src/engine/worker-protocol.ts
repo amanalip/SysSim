@@ -8,6 +8,7 @@ export type WorkerCommand =
   | { type: 'START' | 'PAUSE' | 'RESUME' | 'STEP' | 'STOP' | 'RESET' | 'DISPOSE' };
 
 export interface TickPayload {
+  elapsedSimulationMs: number;
   metrics: OverallMetrics;
   activeRequests: SimRequest[];
   recentRequests: SimRequest[];
@@ -60,6 +61,7 @@ export function isWorkerResponse(value: unknown): value is WorkerResponse {
   const payload = message.payload as Partial<TickPayload>;
   return (
     Number.isInteger(payload.graphRevision) &&
+    typeof payload.elapsedSimulationMs === 'number' &&
     Boolean(payload.metrics) &&
     Array.isArray(payload.activeRequests) &&
     Array.isArray(payload.recentRequests)
