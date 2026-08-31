@@ -6,6 +6,13 @@ import {
   validateArchitectureState,
 } from './architecture-schema';
 import { migrateCanvasState } from './canvas-migrations';
+import {
+  assertSafeUntrustedValue,
+  byteLength,
+  truncateUntrustedText,
+} from '../security/untrusted-data';
+
+export const SNAPSHOT_IMPORT_MAX_BYTES = 1_000_000;
 
 export const SNAPSHOT_STORAGE_KEY = 'syssim_architecture_snapshots';
 export const SNAPSHOT_SLOT_COUNT = 5;
@@ -46,6 +53,11 @@ export function parseSnapshotSlots(serialized: string | null): SnapshotSlot[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(serialized);
+    assertSafeUntrustedValue(parsed, {
+      maxDepth: 8,
+      maxEntries: 10_000,
+      maxStringLength: 10_000,
+    });
   } catch {
     return [
       {
@@ -81,7 +93,7 @@ export function parseSnapshotSlots(serialized: string | null): SnapshotSlot[] {
           id,
           name:
             typeof raw.name === 'string' && raw.name.trim()
-              ? raw.name.trim().slice(0, 120)
+              ? truncateUntrustedText(raw.name.trim(), 120)
               : fallback.name,
         });
       const state = validateArchitectureState(
@@ -99,7 +111,7 @@ export function parseSnapshotSlots(serialized: string | null): SnapshotSlot[] {
         id,
         name:
           typeof raw.name === 'string' && raw.name.trim()
-            ? raw.name.trim().slice(0, 120)
+            ? truncateUntrustedText(raw.name.trim(), 120)
             : fallback.name,
         nodeCount: state.nodes.length,
         edgeCount: state.edges.length,
@@ -146,9 +158,16 @@ export function exportSnapshotSlots(slots: SnapshotSlot[]): string {
 }
 
 export function importSnapshotSlots(serialized: string): SnapshotSlot[] {
+  if (byteLength(serialized) > SNAPSHOT_IMPORT_MAX_BYTES)
+    throw new Error('Snapshot import exceeds the 1,000,000 byte limit');
   let parsed: unknown;
   try {
     parsed = JSON.parse(serialized);
+    assertSafeUntrustedValue(parsed, {
+      maxDepth: 9,
+      maxEntries: 12_000,
+      maxStringLength: 10_000,
+    });
   } catch {
     throw new Error('Snapshot import is not valid JSON');
   }

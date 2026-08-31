@@ -383,6 +383,13 @@ export type AnyComponentConfig =
   | AuthServiceConfig
   | EncryptionServiceConfig;
 
+/** A patch must match at least one concrete component configuration shape. */
+export type ComponentConfigPatch = AnyComponentConfig extends infer Config
+  ? Config extends AnyComponentConfig
+    ? Partial<Config>
+    : never
+  : never;
+
 export interface ZoneData {
   id: string;
   label: string;
@@ -394,7 +401,7 @@ export interface ZoneData {
   height: number;
 }
 
-export interface ProtocolEdgeData {
+export interface ProtocolEdgeData extends Record<string, unknown> {
   protocol: EdgeProtocol;
   purpose?: EdgePurpose;
   bandwidthMbps?: number;

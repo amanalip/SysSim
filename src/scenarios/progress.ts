@@ -72,9 +72,9 @@ export function validateScenarioProgress(value: unknown): ScenarioProgress | nul
 }
 
 export function readScenarioProgress(
-  storage: Pick<Storage, 'getItem'> | undefined = typeof localStorage === 'undefined'
-    ? undefined
-    : localStorage,
+  storage:
+    | (Pick<Storage, 'getItem'> & Partial<Pick<Storage, 'removeItem'>>)
+    | undefined = typeof localStorage === 'undefined' ? undefined : localStorage,
 ): Record<number, ScenarioProgress> {
   if (!storage) return {};
   try {
@@ -82,13 +82,17 @@ export function readScenarioProgress(
       string,
       unknown
     >;
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      storage.removeItem?.(SCENARIO_PROGRESS_STORAGE_KEY);
+      return {};
+    }
     return Object.values(raw).reduce<Record<number, ScenarioProgress>>((result, value) => {
       const valid = validateScenarioProgress(value);
       if (valid) result[valid.scenarioId] = valid;
       return result;
     }, {});
   } catch {
+    storage.removeItem?.(SCENARIO_PROGRESS_STORAGE_KEY);
     return {};
   }
 }

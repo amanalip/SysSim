@@ -1,6 +1,11 @@
 import { COMPONENT_METADATA_LIST, createDefaultConfig } from './component-defaults';
 import { EDGE_PURPOSES } from './edge-semantics';
 import { EdgeProtocol, SerializedCanvasState, TrafficConfig, ZoneData } from './types';
+import {
+  assertAllowedKeys,
+  assertSafeUntrustedValue,
+  isPlainRecord,
+} from '../security/untrusted-data';
 
 export const ARCHITECTURE_SCHEMA_VERSION = 10 as const;
 export const APPLICATION_VERSION = '1.0.0';
@@ -41,6 +46,34 @@ export const SUPPORTED_EDGE_PROTOCOLS: readonly EdgeProtocol[] = [
 const PROTOCOLS = new Set<EdgeProtocol>(SUPPORTED_EDGE_PROTOCOLS);
 const ZONE_CATEGORIES = new Set<ZoneData['category']>(['public', 'private', 'data', 'edge']);
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$/;
+export const ARCHITECTURE_ROOT_KEYS = new Set([
+  'version',
+  'appVersion',
+  'nodes',
+  'edges',
+  'zones',
+  'trafficConfig',
+  'simulationMetadata',
+]);
+const NODE_KEYS = new Set(['id', 'type', 'position', 'data']);
+const POSITION_KEYS = new Set(['x', 'y']);
+const NODE_DATA_KEYS = new Set(['config']);
+const EDGE_KEYS = new Set(['id', 'source', 'target', 'sourceHandle', 'targetHandle', 'data']);
+const EDGE_DATA_KEYS = new Set(['protocol', 'purpose', 'bandwidthMbps', 'latencyMs', 'isCut']);
+const ZONE_KEYS = new Set(['id', 'label', 'category', 'color', 'x', 'y', 'width', 'height']);
+const TRAFFIC_KEYS = new Set([
+  'pattern',
+  'baseQps',
+  'burstMultiplier',
+  'rampDurationSec',
+  'spikeFrequencySec',
+  'customSchedule',
+  'seed',
+  'requestKeyDistribution',
+  'requestKeySpaceSize',
+  'customRequestKeys',
+]);
+const SIMULATION_METADATA_KEYS = new Set(['savedAt', 'appVersion', 'state']);
 const ENUM_VALUES: Record<string, ReadonlySet<string>> = {
   connectionType: new Set(['HTTP/2', 'HTTP/3', 'WebSocket']),
   operationType: new Set(['read', 'write', 'mixed']),
@@ -185,9 +218,14 @@ function validateValueAgainstDefault(
 }
 
 function validateTraffic(value: unknown, path: string, issues: string[]): value is TrafficConfig {
-  if (!value || typeof value !== 'object') {
+  if (!isPlainRecord(value)) {
     issues.push(`${path} must be an object`);
     return false;
+  }
+  try {
+    assertAllowedKeys(value, TRAFFIC_KEYS, path);
+  } catch (error) {
+    issues.push(error instanceof Error ? error.message : `${path} contains unexpected fields`);
   }
   const traffic = value as Partial<TrafficConfig>;
   if (!['steady', 'bursty', 'ramp', 'spike'].includes(String(traffic.pattern)))
@@ -229,12 +267,23 @@ export function validateArchitectureState(
   options: { repairDanglingEdges?: boolean } = {},
 ): SerializedCanvasState {
   const issues: string[] = [];
-  if (!input || typeof input !== 'object' || Array.isArray(input))
-    throw new ArchitectureValidationError(['root must be an object']);
-  const raw = structuredClone(input) as SerializedCanvasState;
-  if (!Array.isArray(raw.nodes)) issues.push('nodes must be an array');
-  if (!Array.isArray(raw.edges)) issues.push('edges must be an array');
+  assertSafeUntrustedValue(input, {
+    maxDepth: 8,
+    maxEntries: 8_000,
+    maxStringLength: ARCHITECTURE_LIMITS.maxTextLength,
+  });
+  if (!isPlainRecord(input)) throw new ArchitectureValidationError(['root must be an object']);
+  if (!Array.isArray(input.nodes)) issues.push('nodes must be an array');
+  if (!Array.isArray(input.edges)) issues.push('edges must be an array');
   if (issues.length) throw new ArchitectureValidationError(issues);
+  try {
+    assertAllowedKeys(input, ARCHITECTURE_ROOT_KEYS, 'root');
+  } catch (error) {
+    throw new ArchitectureValidationError([
+      error instanceof Error ? error.message : 'root contains unexpected fields',
+    ]);
+  }
+  const raw = structuredClone(input) as unknown as SerializedCanvasState;
   if (raw.nodes.length > ARCHITECTURE_LIMITS.maxNodes)
     issues.push(`nodes exceeds maximum ${ARCHITECTURE_LIMITS.maxNodes}`);
   if (raw.edges.length > ARCHITECTURE_LIMITS.maxEdges)
@@ -245,7 +294,15 @@ export function validateArchitectureState(
   const nodeIds = new Set<string>();
   raw.nodes.forEach((node, index) => {
     const path = `nodes[${index}]`;
-    if (!node || typeof node !== 'object') return issues.push(`${path} must be an object`);
+    if (!isPlainRecord(node)) return issues.push(`${path} must be an object`);
+    try {
+      assertAllowedKeys(node, NODE_KEYS, path);
+      if (isPlainRecord(node.position))
+        assertAllowedKeys(node.position, POSITION_KEYS, `${path}.position`);
+      if (isPlainRecord(node.data)) assertAllowedKeys(node.data, NODE_DATA_KEYS, `${path}.data`);
+    } catch (error) {
+      issues.push(error instanceof Error ? error.message : `${path} contains unexpected fields`);
+    }
     if (validateId(node.id, `${path}.id`, issues)) {
       if (nodeIds.has(node.id)) issues.push(`${path}.id duplicates ${node.id}`);
       nodeIds.add(node.id);
@@ -281,6 +338,15 @@ export function validateArchitectureState(
       issues.push(`${path}.data.config.name must not be blank`);
     }
     const defaults = createDefaultConfig(config.type, config.id, config.name);
+    try {
+      assertAllowedKeys(
+        config as unknown as Record<string, unknown>,
+        new Set(Object.keys(defaults)),
+        `${path}.data.config`,
+      );
+    } catch (error) {
+      issues.push(error instanceof Error ? error.message : `${path}.data.config is invalid`);
+    }
     validateStructuredValue(config, `${path}.data.config`, issues);
     for (const [key, template] of Object.entries(defaults)) {
       validateValueAgainstDefault(
@@ -296,9 +362,15 @@ export function validateArchitectureState(
   const edgeIds = new Set<string>();
   const validEdges = raw.edges.filter((edge, index) => {
     const path = `edges[${index}]`;
-    if (!edge || typeof edge !== 'object') {
+    if (!isPlainRecord(edge)) {
       issues.push(`${path} must be an object`);
       return false;
+    }
+    try {
+      assertAllowedKeys(edge, EDGE_KEYS, path);
+      if (isPlainRecord(edge.data)) assertAllowedKeys(edge.data, EDGE_DATA_KEYS, `${path}.data`);
+    } catch (error) {
+      issues.push(error instanceof Error ? error.message : `${path} contains unexpected fields`);
     }
     if (validateId(edge.id, `${path}.id`, issues)) {
       if (edgeIds.has(edge.id)) issues.push(`${path}.id duplicates ${edge.id}`);
@@ -327,6 +399,12 @@ export function validateArchitectureState(
   const zoneIds = new Set<string>();
   (raw.zones || []).forEach((zone, index) => {
     const path = `zones[${index}]`;
+    if (!isPlainRecord(zone)) return issues.push(`${path} must be an object`);
+    try {
+      assertAllowedKeys(zone, ZONE_KEYS, path);
+    } catch (error) {
+      issues.push(error instanceof Error ? error.message : `${path} contains unexpected fields`);
+    }
     if (validateId(zone.id, `${path}.id`, issues)) {
       if (zoneIds.has(zone.id)) issues.push(`${path}.id duplicates ${zone.id}`);
       zoneIds.add(zone.id);
@@ -360,9 +438,13 @@ export function validateArchitectureState(
     boundedString(raw.appVersion, 'appVersion', issues, ARCHITECTURE_LIMITS.maxNameLength);
   if (raw.simulationMetadata !== undefined) {
     const metadata = raw.simulationMetadata;
-    if (!metadata || typeof metadata !== 'object')
-      issues.push('simulationMetadata must be an object');
+    if (!isPlainRecord(metadata)) issues.push('simulationMetadata must be an object');
     else {
+      try {
+        assertAllowedKeys(metadata, SIMULATION_METADATA_KEYS, 'simulationMetadata');
+      } catch (error) {
+        issues.push(error instanceof Error ? error.message : 'simulationMetadata is invalid');
+      }
       finiteNumber(metadata.savedAt, 'simulationMetadata.savedAt', issues, {
         min: 0,
         max: ARCHITECTURE_LIMITS.maxNumericValue * 10_000,

@@ -1,13 +1,38 @@
 import LZString from 'lz-string';
-import { CanvasEdge, CanvasNode, useStore } from '../store/use-store';
+import { useStore } from '../store/use-store';
 import { SerializedCanvasState, ZoneData } from '../model/types';
-import { CURRENT_CANVAS_VERSION, migrateCanvasState } from '../model/canvas-migrations';
+import { CURRENT_CANVAS_VERSION } from '../model/canvas-migrations';
 import {
   APPLICATION_VERSION,
   ARCHITECTURE_LIMITS,
   formatArchitectureError,
-  validateArchitectureState,
 } from '../model/architecture-schema';
+import { toCanvasEdges, toCanvasNodes } from '../model/canvas-types';
+import { parseImportedArchitecture } from '../model/imported-architecture';
+import { byteLength, safeDownloadName } from '../security/untrusted-data';
+import { AppError } from '../errors/app-error';
+
+export const PRACTICAL_SHARE_URL_LENGTH = 8_000;
+const SENSITIVE_FIELD_NAMES = new Set([
+  'password',
+  'secret',
+  'apiKey',
+  'credential',
+  'privateKey',
+  'accessToken',
+  'refreshToken',
+]);
+
+export function findSensitiveShareFields(value: unknown, path = 'architecture'): string[] {
+  if (!value || typeof value !== 'object') return [];
+  if (Array.isArray(value))
+    return value.flatMap((item, index) => findSensitiveShareFields(item, `${path}[${index}]`));
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, item]) =>
+    SENSITIVE_FIELD_NAMES.has(key)
+      ? [`${path}.${key}`]
+      : findSensitiveShareFields(item, `${path}.${key}`),
+  );
+}
 
 export function serializeCanvasState(): SerializedCanvasState {
   const { nodes, edges, zones, trafficConfig } = useStore.getState();
@@ -16,7 +41,7 @@ export function serializeCanvasState(): SerializedCanvasState {
     appVersion: APPLICATION_VERSION,
     nodes: nodes.map((n) => ({
       id: n.id,
-      type: n.type,
+      type: n.type ?? 'customComponent',
       position: n.position,
       data: n.data,
     })),
@@ -53,6 +78,12 @@ export function serializeCanvasState(): SerializedCanvasState {
 
 export function encodeStateToUrlHash(): string {
   const state = serializeCanvasState();
+  const sensitiveFields = findSensitiveShareFields(state);
+  if (sensitiveFields.length)
+    throw new AppError(
+      'user',
+      `Share URL blocked because sensitive field ${sensitiveFields[0]} would be included`,
+    );
   const jsonStr = JSON.stringify(state);
   const compressed = LZString.compressToEncodedURIComponent(jsonStr);
   return `#data=${compressed}`;
@@ -65,19 +96,8 @@ export function decodeStateFromUrlHash(hash: string): SerializedCanvasState | nu
     if (compressed.length > ARCHITECTURE_LIMITS.maxImportBytes) return null;
     const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
     if (!decompressed) return null;
-    if (new Blob([decompressed]).size > ARCHITECTURE_LIMITS.maxDecompressedUrlBytes) return null;
-    const parsed = JSON.parse(decompressed);
-    if (
-      !parsed ||
-      typeof parsed !== 'object' ||
-      !Array.isArray(parsed.nodes) ||
-      !Array.isArray(parsed.edges)
-    ) {
-      return null;
-    }
-    return validateArchitectureState(migrateCanvasState(parsed as SerializedCanvasState), {
-      repairDanglingEdges: true,
-    });
+    if (byteLength(decompressed) > ARCHITECTURE_LIMITS.maxDecompressedUrlBytes) return null;
+    return parseImportedArchitecture(JSON.parse(decompressed));
   } catch {
     return null;
   }
@@ -91,7 +111,7 @@ export function exportArchitectureJson(): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `syssim_architecture_${Date.now()}.json`;
+  a.download = safeDownloadName(`syssim_architecture_${Date.now()}`, 'json');
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -113,15 +133,14 @@ export function importArchitectureJson(
   reader.onload = (e) => {
     try {
       const content = e.target?.result as string;
-      if (new Blob([content]).size > ARCHITECTURE_LIMITS.maxImportBytes)
+      if (byteLength(content) > ARCHITECTURE_LIMITS.maxImportBytes)
         throw new Error('Architecture content exceeds the import size limit');
-      const parsed = JSON.parse(content) as SerializedCanvasState;
-      const migrated = validateArchitectureState(migrateCanvasState(parsed));
+      const migrated = parseImportedArchitecture(JSON.parse(content));
       useStore
         .getState()
         .loadCanvasState(
-          migrated.nodes as unknown as CanvasNode[],
-          migrated.edges as unknown as CanvasEdge[],
+          toCanvasNodes(migrated.nodes),
+          toCanvasEdges(migrated.edges),
           (migrated.zones || []) as ZoneData[],
         );
       if (migrated.trafficConfig) {
@@ -132,20 +151,25 @@ export function importArchitectureJson(
       onError(formatArchitectureError(error));
     }
   };
+  reader.onerror = () => onError('Persistence error: the architecture file could not be read');
   reader.readAsText(file);
 }
 
 export async function exportCanvasToPng(canvasElementId: string = 'syssim-canvas'): Promise<void> {
   const element = document.getElementById(canvasElementId);
   if (!element) {
-    throw new Error('Canvas element not found for export');
+    throw new AppError('export', 'Canvas element not found for export');
   }
+
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
   const { toPng } = await import('html-to-image');
   const dataUrl = await toPng(element, {
     backgroundColor:
       getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim() ||
       '#0d1117',
+    pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+    cacheBust: false,
     filter: (node) => {
       // Exclude controls, floating HUD, and particle overlay from static screenshot
       const className =
@@ -162,7 +186,7 @@ export async function exportCanvasToPng(canvasElementId: string = 'syssim-canvas
 
   const a = document.createElement('a');
   a.href = dataUrl;
-  a.download = `syssim_architecture_${Date.now()}.png`;
+  a.download = safeDownloadName(`syssim_architecture_${Date.now()}`, 'png');
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
