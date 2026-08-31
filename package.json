@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:accessibility": "vitest run src/__tests__/accessibility-contracts.test.tsx src/__tests__/responsive-and-keyboard-contracts.test.ts",
-    "test:performance": "vitest run src/__tests__/event-core-benchmark.test.ts src/__tests__/capacity-calculator-production.test.ts",
+    "test:performance": "vitest run src/__tests__/event-core-benchmark.test.ts src/__tests__/capacity-calculator-production.test.ts src/__tests__/scalability-benchmark.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:release": "playwright test --project=chromium --project=firefox --project=webkit",
     "lint": "eslint . --report-unused-disable-directives",
@@ -26,11 +26,7 @@
     "check:scenario-links": "node scripts/check-scenario-links.mjs"
   },
   "dependencies": {
-    "@tanstack/react-table": "^8.21.2",
     "@xyflow/react": "^12.4.4",
-    "@xyflow/system": "^0.0.52",
-    "canvas-confetti": "^1.9.4",
-    "framer-motion": "^12.4.10",
     "html-to-image": "^1.11.13",
     "lucide-react": "^1.16.0",
     "lz-string": "^1.5.0",

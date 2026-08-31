@@ -11,7 +11,6 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes('/node_modules/@xyflow/')) return 'react-flow';
           if (id.includes('/node_modules/lucide-react/')) return 'icons';
-          if (id.includes('/node_modules/framer-motion/')) return 'motion';
           return undefined;
         },
       },
