@@ -25,6 +25,7 @@ function fixture() {
     onStateChange: vi.fn(),
     onModeChange: vi.fn(),
     onReset: vi.fn(),
+    onError: vi.fn(),
   };
   const posted: WorkerCommand[] = [];
   const worker = {
@@ -86,6 +87,10 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
     } as MessageEvent);
     f.worker.onmessage?.({ data: { type: 'TICK_UPDATE', payload: null } } as MessageEvent);
     expect(f.events.onTick).not.toHaveBeenCalled();
+    expect(f.events.onError).toHaveBeenCalledWith(
+      'worker',
+      'Simulation worker returned an invalid message',
+    );
   });
 
   it('falls back independently, preserves displayed metrics, and never duplicates timers', () => {
@@ -129,6 +134,7 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
     f.worker.onerror?.({} as ErrorEvent);
     expect(f.worker.terminate).toHaveBeenCalledTimes(1);
     expect(bridge.getMode()).toBe('fallback');
+    expect(f.events.onError).toHaveBeenCalledWith('worker', 'Simulation worker failed');
     bridge.dispose();
     expect(clearIntervalFn).toHaveBeenCalled();
   });

@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useStore, CanvasNode, CanvasEdge } from './store/use-store';
+import { useStore } from './store/use-store';
 import { ZoneData } from './model/types';
+import { toCanvasEdges, toCanvasNodes } from './model/canvas-types';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { ComponentPalette } from './components/palette/ComponentPalette';
@@ -20,6 +21,7 @@ import { decodeStateFromUrlHash } from './utils/sharing';
 import { CORE_SCENARIOS } from './scenarios/core';
 import { normalizeScenario } from './scenarios/normalize';
 import styles from './App.module.css';
+import { startUiPerformanceMonitor } from './diagnostics/runtime-performance';
 
 const MetricsDashboard = lazy(() =>
   import('./components/panels/MetricsDashboard').then((module) => ({
@@ -85,6 +87,10 @@ export function App() {
   const bootstrappedRef = useRef(false);
 
   useEffect(() => {
+    return startUiPerformanceMonitor();
+  }, []);
+
+  useEffect(() => {
     const media = window.matchMedia('(min-width: 1101px)');
     const syncSidebar = (event: MediaQueryListEvent | MediaQueryList) =>
       setIsSidebarOpen(event.matches);
@@ -110,8 +116,8 @@ export function App() {
       const decoded = decodeStateFromUrlHash(window.location.hash);
       if (decoded && decoded.nodes && decoded.edges) {
         loadCanvasState(
-          decoded.nodes as unknown as CanvasNode[],
-          decoded.edges as unknown as CanvasEdge[],
+          toCanvasNodes(decoded.nodes),
+          toCanvasEdges(decoded.edges),
           (decoded.zones || []) as ZoneData[],
         );
         if (decoded.trafficConfig) {

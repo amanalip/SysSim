@@ -18,6 +18,7 @@ export interface SimulationBridgeEvents {
   onStateChange: (state: SimulationState) => void;
   onModeChange: (mode: SimulationRuntimeMode) => void;
   onReset: () => void;
+  onError?: (category: 'worker' | 'engine', message: string) => void;
 }
 
 interface WorkerPort {
@@ -78,8 +79,15 @@ export class SimulationBridge {
       this.mode = 'worker';
       this.events.onModeChange('worker');
       this.worker.onmessage = (event) => this.handleWorkerMessage(event.data);
-      this.worker.onerror = () => this.activateFallback();
-    } catch {
+      this.worker.onerror = (event) => {
+        this.events.onError?.('worker', event.message || 'Simulation worker failed');
+        this.activateFallback();
+      };
+    } catch (error) {
+      this.events.onError?.(
+        'worker',
+        error instanceof Error ? error.message : 'Simulation worker could not start',
+      );
       this.activateFallback();
     }
   }
@@ -90,7 +98,10 @@ export class SimulationBridge {
   }
 
   private handleWorkerMessage(message: unknown): void {
-    if (!isWorkerResponse(message)) return;
+    if (!isWorkerResponse(message)) {
+      this.events.onError?.('worker', 'Simulation worker returned an invalid message');
+      return;
+    }
     if (message.type === 'WORKER_READY') {
       this.workerReady = true;
       this.syncGraph();
@@ -178,7 +189,11 @@ export class SimulationBridge {
     this.ensureInitialized();
     this.syncGraph();
     if (this.worker) this.post({ type: 'STEP' });
-    if (this.fallbackEngine) this.publishFallbackTick(this.fallbackEngine.step(100));
+    if (this.fallbackEngine) {
+      const startedAt = performance.now();
+      const result = this.fallbackEngine.step(100);
+      this.publishFallbackTick(result, performance.now() - startedAt);
+    }
   }
 
   public stop(): void {
@@ -246,7 +261,11 @@ export class SimulationBridge {
       const current = this.now();
       const delta = Math.max(0, current - lastTime);
       lastTime = current;
-      if (this.fallbackEngine) this.publishFallbackTick(this.fallbackEngine.step(delta));
+      if (this.fallbackEngine) {
+        const startedAt = performance.now();
+        const result = this.fallbackEngine.step(delta);
+        this.publishFallbackTick(result, performance.now() - startedAt);
+      }
     }, SIMULATION_LIMITS.uiUpdateIntervalMs);
   }
 
@@ -256,11 +275,22 @@ export class SimulationBridge {
     this.fallbackTimer = null;
   }
 
-  private publishFallbackTick(result: {
-    metrics: OverallMetrics;
-    activeRequests: SimRequest[];
-    recentRequests: SimRequest[];
-  }): void {
-    this.events.onTick({ ...result, graphRevision: this.getSnapshot().graphRevision });
+  private publishFallbackTick(
+    result: {
+      metrics: OverallMetrics;
+      activeRequests: SimRequest[];
+      recentRequests: SimRequest[];
+    },
+    stepCpuMs = 0,
+  ): void {
+    const payload: TickPayload = {
+      ...result,
+      graphRevision: this.getSnapshot().graphRevision,
+      performance: { stepCpuMs, messageBytes: 0 },
+    };
+    payload.performance!.messageBytes = new TextEncoder().encode(
+      JSON.stringify(payload),
+    ).byteLength;
+    this.events.onTick(payload);
   }
 }

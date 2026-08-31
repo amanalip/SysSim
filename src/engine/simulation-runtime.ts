@@ -5,6 +5,7 @@ import {
   configureSimulationResetListener,
   configureTrafficConfigListener,
 } from './simulation-command-bus';
+import { recordWorkerPerformance } from '../diagnostics/runtime-performance';
 
 let bridge: SimulationBridge | null = null;
 
@@ -29,7 +30,8 @@ function createBridge(): SimulationBridge {
       };
     },
     {
-      onTick: ({ metrics, activeRequests, recentRequests }) => {
+      onTick: ({ metrics, activeRequests, recentRequests, performance }) => {
+        if (performance) recordWorkerPerformance(performance.stepCpuMs, performance.messageBytes);
         const state = useStore.getState();
         state.updateMetrics(metrics);
         state.setActiveRequests(activeRequests);
@@ -38,6 +40,13 @@ function createBridge(): SimulationBridge {
       onStateChange: (simState) => useStore.getState().setSimState(simState),
       onModeChange: (simulationRuntimeMode) => useStore.setState({ simulationRuntimeMode }),
       onReset: () => useStore.getState().resetSimulation(),
+      onError: (category, message) =>
+        useStore
+          .getState()
+          .addToast(
+            `${category === 'worker' ? 'Worker' : 'Engine'} error: ${message}. Safe fallback enabled.`,
+            'warning',
+          ),
     },
   );
 }

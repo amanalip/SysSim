@@ -1,4 +1,5 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Share2,
   Download,
@@ -14,6 +15,7 @@ import {
   Bookmark,
   Menu,
   PanelLeft,
+  ClipboardCopy,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import {
@@ -21,8 +23,11 @@ import {
   exportArchitectureJson,
   exportCanvasToPng,
   importArchitectureJson,
+  PRACTICAL_SHARE_URL_LENGTH,
 } from '../../utils/sharing';
 import styles from './Header.module.css';
+import { safeErrorMessage } from '../../errors/app-error';
+import { buildDiagnosticReport } from '../../diagnostics/diagnostic-report';
 
 const ShortcutsModal = lazy(() =>
   import('../modals/ShortcutsModal').then((module) => ({ default: module.ShortcutsModal })),
@@ -42,7 +47,31 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSidebar }) => {
-  const { theme, setTheme, clearCanvas, autoLayout, addToast, nodes, edges } = useStore();
+  const {
+    theme,
+    setTheme,
+    clearCanvas,
+    autoLayout,
+    addToast,
+    nodes,
+    edges,
+    trafficConfig,
+    simState,
+    simulationRuntimeMode,
+  } = useStore(
+    useShallow((state) => ({
+      theme: state.theme,
+      setTheme: state.setTheme,
+      clearCanvas: state.clearCanvas,
+      autoLayout: state.autoLayout,
+      addToast: state.addToast,
+      nodes: state.nodes,
+      edges: state.edges,
+      trafficConfig: state.trafficConfig,
+      simState: state.simState,
+      simulationRuntimeMode: state.simulationRuntimeMode,
+    })),
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
@@ -75,13 +104,21 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
       addToast('Construct an architecture on the canvas before sharing', 'warning');
       return;
     }
-    const hash = encodeStateToUrlHash();
-    window.location.hash = hash;
     try {
+      const hash = encodeStateToUrlHash();
+      window.location.hash = hash;
+      if (window.location.href.length > PRACTICAL_SHARE_URL_LENGTH)
+        addToast(
+          'Share URL is unusually long and may be rejected by browsers or services',
+          'warning',
+        );
       await navigator.clipboard.writeText(window.location.href);
-      addToast('Shareable architecture link copied to clipboard', 'success');
-    } catch {
-      addToast('Failed to copy link automatically. URL updated in address bar', 'info');
+      addToast(
+        'Share link copied. It contains architecture data and may remain in history, logs, or referrers',
+        'success',
+      );
+    } catch (error) {
+      addToast(safeErrorMessage(error, 'user'), 'error');
     }
   };
 
@@ -94,8 +131,24 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
       addToast('Generating architecture PNG...', 'info');
       await exportCanvasToPng();
       addToast('PNG export downloaded successfully', 'success');
-    } catch (err: any) {
-      addToast(`PNG export failed: ${err?.message || 'Unknown error'}`, 'error');
+    } catch (error: unknown) {
+      addToast(safeErrorMessage(error, 'export'), 'error');
+    }
+  };
+
+  const handleCopyDiagnostics = async () => {
+    const report = buildDiagnosticReport({
+      simulationSeed: trafficConfig.seed || 1,
+      simulationState: simState,
+      runtimeMode: simulationRuntimeMode,
+      nodeCount: nodes.length,
+      edgeCount: edges.length,
+    });
+    try {
+      await navigator.clipboard.writeText(report);
+      addToast('Privacy-safe diagnostic report copied', 'success');
+    } catch (error) {
+      addToast(safeErrorMessage(error, 'user'), 'error');
     }
   };
 
@@ -246,6 +299,15 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
           >
             <Upload size={13} />
             <span>Import</span>
+          </button>
+
+          <button
+            className={styles.actionBtn}
+            onClick={handleCopyDiagnostics}
+            title="Copy privacy-safe app, browser, schema, seed, and performance diagnostics"
+          >
+            <ClipboardCopy size={13} />
+            <span>Diagnostics</span>
           </button>
 
           <input

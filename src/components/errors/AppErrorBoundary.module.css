@@ -1,0 +1,38 @@
+.boundary {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  color: var(--text-primary, #f0f6fc);
+  background: var(--bg-primary, #0d1117);
+}
+
+.card {
+  width: min(620px, 100%);
+  padding: 24px;
+  border: 1px solid var(--error, #f85149);
+  border-radius: 12px;
+  background: var(--bg-secondary, #161b22);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.actions button {
+  min-height: 40px;
+  padding: 8px 14px;
+  color: inherit;
+  cursor: pointer;
+  border: 1px solid var(--border-primary, #30363d);
+  border-radius: 8px;
+  background: var(--bg-tertiary, #21262d);
+}
+
+.details {
+  color: var(--text-secondary, #8b949e);
+  overflow-wrap: anywhere;
+}

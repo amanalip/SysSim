@@ -12,6 +12,10 @@ export interface TickPayload {
   activeRequests: SimRequest[];
   recentRequests: SimRequest[];
   graphRevision: number;
+  performance?: {
+    stepCpuMs: number;
+    messageBytes: number;
+  };
 }
 
 export type WorkerResponse =
