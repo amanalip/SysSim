@@ -20,7 +20,7 @@ describe('Product contract labels', () => {
       screen.getByRole('link', { name: 'Assumptions: synthetic request model' }),
     ).toHaveAttribute('href', expect.stringContaining('#what-the-simulation-represents'));
 
-    fireEvent.click(screen.getByRole('button', { name: /Bottleneck Inspector/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Bottleneck Inspector/ }));
     expect(
       screen.getByLabelText(
         'Heuristic guidance: Findings are rules-based design prompts, not proof of production readiness.',
@@ -30,7 +30,7 @@ describe('Product contract labels', () => {
       screen.getByRole('link', { name: 'Assumptions: heuristic interpretation' }),
     ).toHaveAttribute('href', expect.stringContaining('#interpreting-results-responsibly'));
 
-    fireEvent.click(screen.getByRole('button', { name: '5-Pillar Health Radar' }));
+    fireEvent.click(screen.getByRole('tab', { name: '5-Pillar Health Radar' }));
     expect(
       screen.getByLabelText(
         'Heuristic guidance: Design-time rules and runtime telemetry are scored separately. The radar is a discussion aid and has not been externally validated.',
@@ -40,7 +40,7 @@ describe('Product contract labels', () => {
       screen.getByRole('link', { name: 'Assumptions: documented health-score formulas' }),
     ).toHaveAttribute('href', expect.stringContaining('#health-scoring-formulas'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Distributed Traces' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Distributed Traces' }));
     expect(
       screen.getByLabelText(
         'Simulated output: Traces are synthetic model paths, not telemetry captured from a deployed system.',
@@ -50,7 +50,7 @@ describe('Product contract labels', () => {
       screen.getByRole('link', { name: 'Assumptions: request and hop model' }),
     ).toHaveAttribute('href', expect.stringContaining('#what-the-simulation-represents'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cloud Cost Estimator' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Cloud Cost Estimator' }));
     expect(
       screen.getByLabelText(
         'Planning estimate: Illustrative USD baseline dated 2026-08-01 for US reference region; not live provider pricing or a billing quote.',
@@ -60,7 +60,7 @@ describe('Product contract labels', () => {
       screen.getByRole('link', { name: 'Assumptions: cloud-cost simplifications' }),
     ).toHaveAttribute('href', expect.stringContaining('#deliberate-simplifications-and-rationale'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Calculator' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Calculator' }));
     expect(
       screen.getByLabelText(
         'Planning estimate: Total QPS includes read and write operations. readWriteRatio is reads per write. Decimal SI: 1 KB = 1,000 bytes; 1 GB = 1,000,000,000 bytes; 1 TB = 1,000 GB. Results are ranges, not production guarantees.',

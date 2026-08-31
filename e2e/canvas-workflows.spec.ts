@@ -6,7 +6,7 @@ test('adds by drag, connects nodes, and changes edge protocol', async ({ page })
   await expect(page.getByTestId('rf__node-client')).toBeVisible();
   const before = await page.locator('.react-flow__node').count();
   await page
-    .locator('[title^="Click or drag to place App Server"]')
+    .getByRole('group', { name: 'App Server: draggable component' })
     .dragTo(page.locator('.react-flow__pane'), {
       targetPosition: { x: 600, y: 220 },
     });
@@ -78,8 +78,11 @@ test('runs the full lifecycle, receives worker metrics, and uses every analysis 
     'Distributed Traces',
     'Cloud Cost Estimator',
   ]) {
-    await page.getByRole('button', { name: tab, exact: true }).click();
-    await expect(page.getByRole('button', { name: tab, exact: true })).toBeVisible();
+    await page.getByRole('tab', { name: tab, exact: true }).click();
+    await expect(page.getByRole('tab', { name: tab, exact: true })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   }
 });
 

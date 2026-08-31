@@ -8,7 +8,9 @@ import { CommandPalette } from '../components/modals/CommandPalette';
 import { ShortcutsModal } from '../components/modals/ShortcutsModal';
 import { SnapshotManagerModal } from '../components/modals/SnapshotManagerModal';
 import { SimulationControls } from '../components/playback/SimulationControls';
+import { PropertiesPanel } from '../components/panels/PropertiesPanel';
 import { useStore } from '../store/use-store';
+import { themes } from '../theme';
 
 afterEach(cleanup);
 
@@ -82,4 +84,57 @@ describe('automated accessibility checks on core application states', () => {
       await act(async () => expectNoAutomatedViolations(container));
     },
   );
+});
+
+describe('visual, form, and shortcut accessibility contracts', () => {
+  const luminance = (hex: string) => {
+    const channels = hex
+      .slice(1)
+      .match(/.{2}/g)!
+      .map((value) => parseInt(value, 16) / 255)
+      .map((value) => (value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  };
+  const contrast = (foreground: string, background: string) => {
+    const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+    return (values[0] + 0.05) / (values[1] + 0.05);
+  };
+
+  it.each(['dark', 'light'] as const)('%s theme text and focus tokens meet AA contrast', (mode) => {
+    const colors = themes[mode];
+    expect(contrast(colors.textPrimary, colors.bgPrimary)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(colors.textSecondary, colors.bgPrimary)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(colors.accentHover, colors.bgPrimary)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('gives every property input a name, description, range state, and shared error message', async () => {
+    useStore.getState().addNode('app_server', { x: 0, y: 0 });
+    const { container } = render(<PropertiesPanel />);
+    await waitFor(() => {
+      const controls = [
+        ...container.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select'),
+      ];
+      expect(controls.length).toBeGreaterThan(0);
+      for (const control of controls) {
+        expect(control).toHaveAccessibleName();
+        expect(control).toHaveAttribute('aria-describedby');
+      }
+      for (const control of controls.filter(
+        (candidate): candidate is HTMLInputElement =>
+          candidate instanceof HTMLInputElement && candidate.type === 'number',
+      )) {
+        expect(control).toHaveAttribute('aria-invalid', 'false');
+        expect(control).toHaveAttribute('aria-errormessage', 'properties-field-error');
+      }
+    });
+  });
+
+  it('allows single-key shortcuts to be disabled while retaining modified commands', async () => {
+    useStore.setState({ keyboardShortcutsEnabled: false, isChaosMode: false });
+    render(<App />);
+    fireEvent.keyDown(window, { key: 'c' });
+    expect(useStore.getState().isChaosMode).toBe(false);
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+    expect(await screen.findByRole('dialog', { name: /command palette/i })).toBeVisible();
+  });
 });

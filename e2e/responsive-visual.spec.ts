@@ -7,7 +7,38 @@ const viewports = [
   { name: 'tablet-1024x768', width: 1024, height: 768 },
   { name: 'compact-1280x720', width: 1280, height: 720 },
   { name: 'desktop-1440x900', width: 1440, height: 900 },
+  { name: 'large-desktop-1920x1080', width: 1920, height: 1080 },
 ];
+
+test('keyboard, zoom, reduced-motion, and forced-color accessibility remain usable', async ({
+  page,
+  browserName,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/');
+  const firstNode = page.locator('.react-flow__node').first();
+  await firstNode.focus();
+  await firstNode.press('Enter');
+  await expect(firstNode).toHaveClass(/selected/);
+  const before = await page.locator('.react-flow__node').first().getAttribute('style');
+  await firstNode.press('ArrowRight');
+  await expect
+    .poll(() => page.locator('.react-flow__node').first().getAttribute('style'))
+    .not.toBe(before);
+
+  await page.evaluate(() => {
+    document.documentElement.style.zoom = '2';
+  });
+  await expect(page.getByRole('banner')).toBeVisible();
+  await expect(page.locator('#syssim-canvas')).toBeVisible();
+
+  await page.emulateMedia(
+    browserName === 'chromium'
+      ? { reducedMotion: 'reduce', forcedColors: 'active' }
+      : { reducedMotion: 'reduce' },
+  );
+  await expect(page.getByRole('region', { name: /architecture canvas/i })).toBeVisible();
+});
 
 test('mobile and tablet navigation supports touch-sized placement and property sheets', async ({
   page,
