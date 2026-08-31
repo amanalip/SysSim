@@ -2,6 +2,16 @@
   "name": "syssim",
   "version": "1.0.0",
   "description": "Simulate before you scale.",
+  "license": "GPL-3.0-only",
+  "author": "Aman Ali",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/amanalip/SysSim.git"
+  },
+  "engines": {
+    "node": ">=20 <23",
+    "npm": ">=10"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -22,6 +32,7 @@
     "check:duplicates": "jscpd src --min-lines 10 --min-tokens 75 --threshold 6 --reporters console,json --output reports/duplication",
     "check:bundle": "npm run build && node scripts/check-bundle-size.mjs",
     "check:security": "npm audit --audit-level=high",
+    "check:licenses": "node scripts/check-licenses.mjs",
     "generate:sbom": "node scripts/generate-sbom.mjs",
     "test:scenario-content": "vitest run src/__tests__/scenario-catalog-audit.test.ts",
     "check:scenario-links": "node scripts/check-scenario-links.mjs"
@@ -52,7 +63,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.5",
-    "jscpd": "^5.1.0",
+    "jscpd": "^5.1.1",
     "jsdom": "^26.0.0",
     "prettier": "^3.9.6",
     "typescript": "^5.7.3",

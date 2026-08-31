@@ -104,6 +104,8 @@ jobs:
         run: npm ci
       - name: Audit production and development dependencies
         run: npm run check:security
+      - name: Verify dependency-license policy
+        run: npm run check:licenses
       - name: Generate CycloneDX software bill of materials
         run: npm run generate:sbom
       - name: Upload software bill of materials

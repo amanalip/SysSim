@@ -68,6 +68,7 @@ export default tseslint.config(
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+      'no-duplicate-imports': 'error',
       'no-constant-condition': ['error', { checkLoops: false }],
       'no-case-declarations': 'off',
       'jsx-a11y/alt-text': 'error',
@@ -80,8 +81,35 @@ export default tseslint.config(
     },
   },
   {
+    files: [
+      'src/engine/components/**/*.ts',
+      'src/engine/metrics/{bottleneck-detector,capacity,quantile,rolling-quantile}.ts',
+      'src/engine/routing/**/*.ts',
+      'src/engine/{event-queue,graph,request,seeded-random,simulator,traffic-schedule}.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '../../components/**',
+                '../../../components/**',
+                '../../store/**',
+                '../../../store/**',
+              ],
+              message:
+                'Pure simulation modules must not depend on React UI or the application store.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/__tests__/**/*.{ts,tsx}', 'e2e/**/*.ts'],
-    rules: { '@typescript-eslint/no-unused-vars': 'off' },
+    rules: { '@typescript-eslint/no-unused-vars': 'off', 'no-duplicate-imports': 'off' },
   },
   {
     files: ['scripts/**/*.mjs', '*.config.{js,ts}'],

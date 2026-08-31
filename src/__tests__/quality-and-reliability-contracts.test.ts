@@ -16,7 +16,7 @@ describe('Quality Improvements & Bug Fixes Test Suite (10+ Verifications)', () =
     useStore.getState().resetSimulation();
   });
 
-  it('1. distributes requests across multiple outgoing edges on non-LB nodes (fanout routing)', () => {
+  it('1. reaches both explicitly connected gateway targets over repeated requests', () => {
     const clientNode = {
       id: 'client_1',
       config: createDefaultConfig('client', 'client_1', 'Client'),

@@ -35,9 +35,18 @@ SysSim's synthetic results are designed to build intuition. They are not product
 
 ## Getting Started
 
+### Two-minute workflow demo
+
+1. Drag a client, gateway, application server, and database onto the canvas.
+2. Draw arrows from source to target and choose each connection's purpose (request, fallback, async, fanout, replication, or observability).
+3. Set a deterministic seed and offered QPS, run the synthetic model, then inspect completed throughput, drops, rolling latency percentiles, and hop-by-hop traces.
+4. Stop to receive a run summary. Compare a scenario reference, undo changes, save a snapshot, or export the architecture as versioned JSON/PNG.
+
+This is an interactive learning loop, not a load test: component capacity, latency, failures, and costs are simplified models. See the [product contract](docs/product-contract.md) for exact terms and limitations.
+
 ### Prerequisites
 
-Node.js 20.x is the supported development and build runtime.
+Node.js `>=20 <23` and npm `>=10` are the supported development and build ranges. CI uses Node 20. Use the committed lockfile rather than regenerating dependency versions casually.
 
 ### Installation
 
@@ -52,6 +61,8 @@ npm ci
 # Start development server
 npm run dev
 ```
+
+Use `npm ci` for clean, reproducible installs in CI and fresh checkouts. Use `npm install` only when intentionally changing dependencies and commit the resulting lockfile update.
 
 Visit `http://localhost:5173/SysSim/` in a current Chromium-based desktop browser. The currently supported viewport is 1280 × 720 CSS pixels or larger with keyboard and mouse/trackpad input. Other browsers, touch input, and smaller layouts are currently best effort; see the [supported environment](docs/product-contract.md#supported-environment).
 
@@ -91,4 +102,4 @@ npm run preview
 
 ## License
 
-GNU General Public License v3.0. See [LICENSE](LICENSE).
+Copyright (C) 2026 Aman Ali. SysSim is licensed under the GNU General Public License v3.0 only (`GPL-3.0-only`). See [LICENSE](LICENSE), [notices](NOTICE.md), and the [dependency-license review](docs/dependency-licenses.md).
