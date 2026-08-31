@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -8,10 +9,11 @@ import {
   EdgeProps,
 } from '@xyflow/react';
 import { ChevronDown, X, Scissors } from 'lucide-react';
-import { EdgeProtocol, EdgePurpose, ProtocolEdgeData } from '../../../model/types';
+import { EdgeProtocol, EdgePurpose } from '../../../model/types';
 import { EDGE_PURPOSES, getEdgePurpose, validateEdgePurpose } from '../../../model/edge-semantics';
 import { useStore } from '../../../store/use-store';
 import styles from './ProtocolEdge.module.css';
+import type { CanvasEdge } from '../../../model/canvas-types';
 
 const PROTOCOL_OPTIONS: EdgeProtocol[] = [
   'HTTP',
@@ -23,7 +25,7 @@ const PROTOCOL_OPTIONS: EdgeProtocol[] = [
   'MQTT',
 ];
 
-export const ProtocolEdge: React.FC<EdgeProps> = ({
+export const ProtocolEdge: React.FC<EdgeProps<CanvasEdge>> = ({
   id,
   source,
   target,
@@ -47,7 +49,18 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
     selectEdge,
     toggleCutEdge,
     addToast,
-  } = useStore();
+  } = useStore(
+    useShallow((state) => ({
+      edgeRouting: state.edgeRouting,
+      nodes: state.nodes,
+      updateEdgeProtocol: state.updateEdgeProtocol,
+      updateEdgePurpose: state.updateEdgePurpose,
+      removeEdge: state.removeEdge,
+      selectEdge: state.selectEdge,
+      toggleCutEdge: state.toggleCutEdge,
+      addToast: state.addToast,
+    })),
+  );
 
   let edgePath = '';
   let labelX = 0;
@@ -70,7 +83,7 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
     [edgePath, labelX, labelY] = getBezierPath(pathParams);
   }
 
-  const edgeData = (data as unknown as ProtocolEdgeData) || { protocol: 'HTTP' };
+  const edgeData = data || { protocol: 'HTTP' as const };
   const currentProtocol = edgeData.protocol || 'HTTP';
   const currentPurpose = getEdgePurpose(edgeData);
   const isCut = edgeData.isCut;

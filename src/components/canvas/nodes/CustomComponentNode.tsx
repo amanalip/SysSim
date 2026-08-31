@@ -17,14 +17,10 @@ import { categoryColors } from '../../../theme';
 import { ComponentIcon } from '../../icons/ComponentIcon';
 import { useStore } from '../../../store/use-store';
 import styles from './CustomComponentNode.module.css';
+import type { CanvasNode } from '../../../model/canvas-types';
 
-interface NodeData {
-  config: AnyComponentConfig;
-}
-
-export const CustomComponentNode: React.FC<NodeProps> = ({ id, data, selected }) => {
-  const nodeData = data as unknown as NodeData;
-  const config = nodeData.config;
+export const CustomComponentNode: React.FC<NodeProps<CanvasNode>> = ({ id, data, selected }) => {
+  const config: AnyComponentConfig = data.config;
   const {
     selectNode,
     removeNode,

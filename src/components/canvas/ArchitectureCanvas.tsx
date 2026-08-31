@@ -13,8 +13,7 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
   Connection,
-  Edge,
-  Node,
+  EdgeTypes,
   MarkerType,
   useViewport,
 } from '@xyflow/react';
@@ -27,9 +26,10 @@ import { RequestParticleLayer } from './animation/RequestParticleLayer';
 import { CanvasHud } from './CanvasHud';
 import { ComponentType } from '../../model/types';
 import styles from './ArchitectureCanvas.module.css';
+import type { CanvasEdge, CanvasNode } from '../../model/canvas-types';
 
 interface ArchitectureCanvasProps {
-  customEdgeTypes?: Record<string, React.ComponentType<any>>;
+  customEdgeTypes?: EdgeTypes;
 }
 
 const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => {
@@ -134,7 +134,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
   );
 
   const onNodesChange = useCallback(
-    (changes: NodeChange[]) => {
+    (changes: NodeChange<CanvasNode>[]) => {
       const hasDraggingPosition = changes.some(
         (change) => change.type === 'position' && change.dragging === true,
       );
@@ -154,21 +154,21 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
       if (removedNodeIds.length > 0) removeGraphItems(removedNodeIds, []);
       const visualChanges = changes.filter((change) => change.type !== 'remove');
       if (visualChanges.length > 0) {
-        setNodes((nds) => applyNodeChanges(visualChanges, nds as unknown as Node[]) as any);
+        setNodes((nds) => applyNodeChanges<CanvasNode>(visualChanges, nds));
       }
     },
     [beginNodeDragHistory, removeGraphItems, setNodes],
   );
 
   const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
+    (changes: EdgeChange<CanvasEdge>[]) => {
       const removedEdgeIds = changes
         .filter((change) => change.type === 'remove')
         .map((change) => change.id);
       if (removedEdgeIds.length > 0) removeGraphItems([], removedEdgeIds);
       const remainingChanges = changes.filter((change) => change.type !== 'remove');
       if (remainingChanges.length > 0) {
-        setEdges((eds) => applyEdgeChanges(remainingChanges, eds as unknown as Edge[]) as any);
+        setEdges((eds) => applyEdgeChanges<CanvasEdge>(remainingChanges, eds));
       }
     },
     [removeGraphItems, setEdges],
@@ -355,9 +355,9 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         <ZoneGroup key={zone.id} zone={zone} viewport={viewport} />
       ))}
 
-      <ReactFlow
-        nodes={nodes as unknown as Node[]}
-        edges={edges as unknown as Edge[]}
+      <ReactFlow<CanvasNode, CanvasEdge>
+        nodes={nodes}
+        edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
@@ -389,13 +389,12 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
           <MiniMap
             zoomable
             pannable
-            nodeColor={(n) => {
-              const nodeData = n.data as any;
-              if (nodeData?.config?.category === 'compute') return '#3b82f6';
-              if (nodeData?.config?.category === 'networking') return '#8b5cf6';
-              if (nodeData?.config?.category === 'storage') return '#10b981';
-              if (nodeData?.config?.category === 'caching') return '#f59e0b';
-              if (nodeData?.config?.category === 'messaging') return '#ec4899';
+            nodeColor={(n: CanvasNode) => {
+              if (n.data.config.category === 'compute') return '#3b82f6';
+              if (n.data.config.category === 'networking') return '#8b5cf6';
+              if (n.data.config.category === 'storage') return '#10b981';
+              if (n.data.config.category === 'caching') return '#f59e0b';
+              if (n.data.config.category === 'messaging') return '#ec4899';
               return '#ef4444';
             }}
           />
