@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Network, AlertTriangle, Eye } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { RequestHop, SimRequest } from '../../model/types';
@@ -18,7 +19,13 @@ function getCacheStateLabel(hop: RequestHop): string | null {
 }
 
 export const RequestTracePanel: React.FC = () => {
-  const { recentRequests, selectNode, setIsPropertiesPanelOpen } = useStore();
+  const { recentRequests, selectNode, setIsPropertiesPanelOpen } = useStore(
+    useShallow((state) => ({
+      recentRequests: state.recentRequests,
+      selectNode: state.selectNode,
+      setIsPropertiesPanelOpen: state.setIsPropertiesPanelOpen,
+    })),
+  );
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
 
   // Sample the most recent completed or in-flight requests

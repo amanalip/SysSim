@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import {
   AnyComponentConfig,
+  ComponentConfigPatch,
   BottleneckIssue,
   CalculatorInputs,
   EdgeProtocol,
   EdgePurpose,
   NodeHealthStatus,
   OverallMetrics,
-  ProtocolEdgeData,
   Scenario,
   SerializedCanvasState,
   SimRequest,
@@ -34,34 +34,21 @@ import {
   ScenarioProgress,
   writeScenarioProgress,
 } from '../scenarios/progress';
+import {
+  toCanvasEdges,
+  toCanvasNodes,
+  type CanvasEdge,
+  type CanvasHistoryEntry,
+  type CanvasNode,
+} from '../model/canvas-types';
+import { cloneGraphState, removeGraphItemsPure, updateNodePositionPure } from './graph-operations';
+import {
+  createInitialCalculatorInputs,
+  createInitialMetrics,
+  createInitialTrafficConfig,
+} from './slices/initial-state';
 export type { ZoneData };
-
-export interface CanvasNode {
-  id: string;
-  type: string;
-  position: { x: number; y: number };
-  data: {
-    config: AnyComponentConfig;
-  };
-  selected?: boolean;
-}
-
-export interface CanvasEdge {
-  id: string;
-  source: string;
-  target: string;
-  type?: string;
-  sourceHandle?: string | null;
-  targetHandle?: string | null;
-  data: ProtocolEdgeData;
-  selected?: boolean;
-}
-
-export interface CanvasHistoryEntry {
-  nodes: CanvasNode[];
-  edges: CanvasEdge[];
-  zones: ZoneData[];
-}
+export type { CanvasEdge, CanvasHistoryEntry, CanvasNode } from '../model/canvas-types';
 
 export interface ToastItem {
   id: string;
@@ -119,8 +106,8 @@ export interface SysSimState {
   ) => string;
   duplicateNode: (nodeId: string) => string | null;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
-  updateNodeConfig: (id: string, partialConfig: Partial<AnyComponentConfig>) => void;
-  updateNodeConfigs: (updates: Record<string, Partial<AnyComponentConfig>>) => void;
+  updateNodeConfig: (id: string, partialConfig: ComponentConfigPatch) => void;
+  updateNodeConfigs: (updates: Record<string, ComponentConfigPatch>) => void;
   removeNode: (id: string) => void;
   addEdge: (
     source: string,
@@ -216,69 +203,6 @@ export interface SysSimState {
   setCalculatorInputs: (inputs: Partial<CalculatorInputs>) => void;
 }
 
-const initialTrafficConfig: TrafficConfig = {
-  pattern: 'steady',
-  baseQps: 500,
-  burstMultiplier: 3,
-  rampDurationSec: 30,
-  spikeFrequencySec: 10,
-  seed: 1,
-  requestKeyDistribution: 'uniform',
-  requestKeySpaceSize: 100,
-};
-
-const initialMetrics: OverallMetrics = {
-  totalRequestsSent: 0,
-  totalRequestsSuccess: 0,
-  totalRequestsFailed: 0,
-  currentQps: 0,
-  avgEndToEndLatencyMs: 0,
-  p50LatencyMs: 0,
-  p95LatencyMs: 0,
-  p99LatencyMs: 0,
-  overallErrorRatePercent: 0,
-  overallCacheHitRatioPercent: 0,
-  totalCacheHits: 0,
-  totalCacheMisses: 0,
-  totalCacheBypasses: 0,
-  totalCacheCoalescedRequests: 0,
-  totalProducerAccepted: 0,
-  totalProducerRejected: 0,
-  totalConsumerSucceeded: 0,
-  totalConsumerFailed: 0,
-  totalMessageRetries: 0,
-  totalMessagesDropped: 0,
-  totalMessagesExpired: 0,
-  totalDeadLettered: 0,
-  timeSeries: [],
-  componentMetrics: {},
-};
-
-const initialCalculatorInputs: CalculatorInputs = {
-  qps: 10000,
-  payloadSizeKb: 2,
-  retentionDays: 365,
-  readWriteRatio: 10,
-  replicationFactor: 3,
-  slaAvailabilityPercent: 99.99,
-  serverCapacityQps: 2000,
-  readRequestPayloadKb: 0.5,
-  readResponsePayloadKb: 2,
-  writeResponsePayloadKb: 0.2,
-  dbAverageServiceTimeMs: 20,
-  dbTargetUtilizationPercent: 70,
-  cacheWorkingSetDays: 1,
-  cacheHotSetPercent: 20,
-  cacheCompressionRatio: 0.7,
-  serverTargetUtilizationPercent: 70,
-  serverHeadroomPercent: 20,
-  failoverCapacityPercent: 20,
-  indexingOverheadPercent: 20,
-  metadataOverheadPercent: 5,
-  storageCompressionRatio: 0.7,
-  annualGrowthPercent: 30,
-};
-
 let lastConfigHistoryNodeId: string | null = null;
 let lastConfigHistoryAt = 0;
 
@@ -303,16 +227,24 @@ export const useStore = create<SysSimState>((set, get) => ({
   // Theme & UI state
   theme: readStoredTheme(),
   setTheme: (theme) => {
-    localStorage.setItem('syssim_theme', theme);
+    try {
+      localStorage.setItem('syssim_theme', theme);
+    } catch {
+      get().addToast('Persistence error: theme preference could not be saved', 'warning');
+    }
     document.documentElement.setAttribute('data-theme', theme);
     set({ theme });
   },
   keyboardShortcutsEnabled: readStoredShortcutPreference(),
   setKeyboardShortcutsEnabled: (keyboardShortcutsEnabled) => {
-    localStorage.setItem(
-      'syssim_keyboard_shortcuts',
-      keyboardShortcutsEnabled ? 'enabled' : 'disabled',
-    );
+    try {
+      localStorage.setItem(
+        'syssim_keyboard_shortcuts',
+        keyboardShortcutsEnabled ? 'enabled' : 'disabled',
+      );
+    } catch {
+      get().addToast('Persistence error: shortcut preference could not be saved', 'warning');
+    }
     set({ keyboardShortcutsEnabled });
   },
   activeSidebarTab: 'palette',
@@ -382,13 +314,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     if (!hasTarget) return;
     get().pushHistory();
     set((state) => ({
-      nodes: state.nodes.filter((node) => !nodesToRemove.has(node.id)),
-      edges: state.edges.filter(
-        (edge) =>
-          !edgesToRemove.has(edge.id) &&
-          !nodesToRemove.has(edge.source) &&
-          !nodesToRemove.has(edge.target),
-      ),
+      ...removeGraphItemsPure(state.nodes, state.edges, nodeIds, edgeIds),
       selectedNodeId:
         state.selectedNodeId && nodesToRemove.has(state.selectedNodeId)
           ? null
@@ -439,7 +365,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     if (!target) return null;
 
     const id = `${target.data.config.type}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const clonedConfig = JSON.parse(JSON.stringify(target.data.config));
+    const clonedConfig = structuredClone(target.data.config);
     clonedConfig.id = id;
     clonedConfig.name = `${clonedConfig.name} (Copy)`;
 
@@ -464,7 +390,7 @@ export const useStore = create<SysSimState>((set, get) => ({
 
   updateNodePosition: (id, position) => {
     set((state) => ({
-      nodes: state.nodes.map((node) => (node.id === id ? { ...node, position } : node)),
+      nodes: updateNodePositionPure(state.nodes, id, position),
     }));
   },
 
@@ -754,7 +680,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     }));
     get().pushHistory();
     set({
-      nodes: validated.nodes as CanvasNode[],
+      nodes: toCanvasNodes(validated.nodes),
       edges: migratedEdges,
       zones: validated.zones || [],
       selectedNodeId: null,
@@ -767,11 +693,7 @@ export const useStore = create<SysSimState>((set, get) => ({
 
   pushHistory: () => {
     const { nodes, edges, zones, historyPast } = get();
-    const snapshot: CanvasHistoryEntry = {
-      nodes: JSON.parse(JSON.stringify(nodes)),
-      edges: JSON.parse(JSON.stringify(edges)),
-      zones: JSON.parse(JSON.stringify(zones)),
-    };
+    const snapshot = cloneGraphState(nodes, edges, zones);
     set({
       historyPast: [...historyPast.slice(-20), snapshot],
       historyFuture: [],
@@ -786,11 +708,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     const { historyPast, historyFuture, nodes, edges, zones } = get();
     if (historyPast.length === 0) return;
     const previous = historyPast[historyPast.length - 1];
-    const current: CanvasHistoryEntry = {
-      nodes: JSON.parse(JSON.stringify(nodes)),
-      edges: JSON.parse(JSON.stringify(edges)),
-      zones: JSON.parse(JSON.stringify(zones)),
-    };
+    const current = cloneGraphState(nodes, edges, zones);
 
     set({
       nodes: previous.nodes,
@@ -811,11 +729,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     const { historyPast, historyFuture, nodes, edges, zones } = get();
     if (historyFuture.length === 0) return;
     const next = historyFuture[0];
-    const current: CanvasHistoryEntry = {
-      nodes: JSON.parse(JSON.stringify(nodes)),
-      edges: JSON.parse(JSON.stringify(edges)),
-      zones: JSON.parse(JSON.stringify(zones)),
-    };
+    const current = cloneGraphState(nodes, edges, zones);
 
     set({
       nodes: next.nodes,
@@ -836,10 +750,10 @@ export const useStore = create<SysSimState>((set, get) => ({
   simState: 'idle',
   simulationRuntimeMode: 'fallback',
   speedMultiplier: 1,
-  trafficConfig: initialTrafficConfig,
+  trafficConfig: createInitialTrafficConfig(),
   activeRequests: [],
   recentRequests: [],
-  metrics: initialMetrics,
+  metrics: createInitialMetrics(),
   bottlenecks: [],
   isChaosMode: false,
   chaosIntervalSec: 15,
@@ -873,7 +787,7 @@ export const useStore = create<SysSimState>((set, get) => ({
       simState: 'idle',
       activeRequests: [],
       recentRequests: [],
-      metrics: initialMetrics,
+      metrics: createInitialMetrics(),
       bottlenecks: [],
       nodeHealthOverrides: {},
       nodeHealthSources: {},
@@ -896,7 +810,7 @@ export const useStore = create<SysSimState>((set, get) => ({
         }
       }
     } catch {
-      // safe fallback
+      get().addToast('Persistence error: scenario completion could not be saved', 'warning');
     }
     return [];
   })(),
@@ -940,8 +854,8 @@ export const useStore = create<SysSimState>((set, get) => ({
     const migrated = migrateCanvasState(refDesign);
     get().pushHistory();
     set({
-      nodes: migrated.nodes as unknown as CanvasNode[],
-      edges: migrated.edges.map((edge) => ({ ...edge, type: 'protocolEdge' })) as CanvasEdge[],
+      nodes: toCanvasNodes(migrated.nodes),
+      edges: toCanvasEdges(migrated.edges),
       zones: (migrated.zones || []) as ZoneData[],
       selectedNodeId: null,
       selectedEdgeId: null,
@@ -991,7 +905,7 @@ export const useStore = create<SysSimState>((set, get) => ({
         localStorage.setItem('syssim_completed_scenarios', JSON.stringify(updated));
       }
     } catch {
-      // safe fallback
+      get().addToast('Persistence error: completion status could not be saved', 'warning');
     }
     set({ completedScenarioIds: updated });
     get().updateScenarioProgress(scenarioId, {
@@ -1006,7 +920,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     try {
       writeScenarioProgress(scenarioProgress);
     } catch {
-      /* storage is optional */
+      get().addToast('Persistence error: scenario notes could not be saved', 'warning');
     }
     set({ scenarioProgress });
   },
@@ -1024,7 +938,7 @@ export const useStore = create<SysSimState>((set, get) => ({
   setScenarioCategoryFilter: (scenarioCategoryFilter) => set({ scenarioCategoryFilter }),
 
   // Capacity Calculator State
-  calculatorInputs: initialCalculatorInputs,
+  calculatorInputs: createInitialCalculatorInputs(),
   setCalculatorInputs: (inputs) =>
     set((state) => ({ calculatorInputs: { ...state.calculatorInputs, ...inputs } })),
 }));

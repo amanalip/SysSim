@@ -1,4 +1,5 @@
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Play,
   Pause,
@@ -32,7 +33,23 @@ export const SimulationControls: React.FC = () => {
     setIsBottomDrawerOpen,
     addToast,
     simulationRuntimeMode,
-  } = useStore();
+  } = useStore(
+    useShallow((state) => ({
+      simState: state.simState,
+      speedMultiplier: state.speedMultiplier,
+      setSpeedMultiplier: state.setSpeedMultiplier,
+      trafficConfig: state.trafficConfig,
+      setTrafficConfig: state.setTrafficConfig,
+      metrics: state.metrics,
+      nodes: state.nodes,
+      isChaosMode: state.isChaosMode,
+      setChaosMode: state.setChaosMode,
+      isBottomDrawerOpen: state.isBottomDrawerOpen,
+      setIsBottomDrawerOpen: state.setIsBottomDrawerOpen,
+      addToast: state.addToast,
+      simulationRuntimeMode: state.simulationRuntimeMode,
+    })),
+  );
 
   const [qpsText, setQpsText] = React.useState(String(trafficConfig.baseQps));
   const [seedText, setSeedText] = React.useState(String(trafficConfig.seed ?? 1));

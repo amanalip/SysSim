@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Search,
   Play,
@@ -56,7 +57,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     loadScenario,
     addToast,
     nodes,
-  } = useStore();
+  } = useStore(
+    useShallow((state) => ({
+      simState: state.simState,
+      isChaosMode: state.isChaosMode,
+      setChaosMode: state.setChaosMode,
+      theme: state.theme,
+      setTheme: state.setTheme,
+      autoLayout: state.autoLayout,
+      clearCanvas: state.clearCanvas,
+      addNode: state.addNode,
+      loadScenario: state.loadScenario,
+      addToast: state.addToast,
+      nodes: state.nodes,
+    })),
+  );
 
   useEffect(() => {
     if (isOpen) {

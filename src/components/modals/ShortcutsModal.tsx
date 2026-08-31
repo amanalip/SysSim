@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Keyboard, X } from 'lucide-react';
 import styles from './ShortcutsModal.module.css';
 import { useModalAccessibility } from './useModalAccessibility';
@@ -11,7 +12,12 @@ interface ShortcutsModalProps {
 }
 
 export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose }) => {
-  const { keyboardShortcutsEnabled, setKeyboardShortcutsEnabled } = useStore();
+  const { keyboardShortcutsEnabled, setKeyboardShortcutsEnabled } = useStore(
+    useShallow((state) => ({
+      keyboardShortcutsEnabled: state.keyboardShortcutsEnabled,
+      setKeyboardShortcutsEnabled: state.setKeyboardShortcutsEnabled,
+    })),
+  );
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalAccessibility(isOpen, onClose, dialogRef);
 

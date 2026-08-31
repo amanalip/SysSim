@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { detectBottlenecks } from '../../engine/metrics/bottleneck-detector';
@@ -6,7 +7,14 @@ import { ModelNotice } from '../ui/ModelNotice';
 import styles from './BottleneckPanel.module.css';
 
 export const BottleneckPanel: React.FC = () => {
-  const { nodes, edges, metrics, selectNode } = useStore();
+  const { nodes, edges, metrics, selectNode } = useStore(
+    useShallow((state) => ({
+      nodes: state.nodes,
+      edges: state.edges,
+      metrics: state.metrics,
+      selectNode: state.selectNode,
+    })),
+  );
 
   const issues = useMemo(() => {
     return detectBottlenecks(nodes, edges, metrics);

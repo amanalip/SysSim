@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Search, ChevronDown, ChevronRight, Plus, X, Layers, Sparkles } from 'lucide-react';
 import { COMPONENT_METADATA_LIST, ComponentMetadata } from '../../model/component-defaults';
 import { ComponentCategory, ComponentType } from '../../model/types';
@@ -20,7 +21,15 @@ const CATEGORY_ORDER: Array<{ key: ComponentCategory; label: string }> = [
 export const ComponentPalette: React.FC = () => {
   const [search, setSearch] = useState('');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
-  const { addNode, nodes, edges, loadCanvasState, addToast } = useStore();
+  const { addNode, nodes, edges, loadCanvasState, addToast } = useStore(
+    useShallow((state) => ({
+      addNode: state.addNode,
+      nodes: state.nodes,
+      edges: state.edges,
+      loadCanvasState: state.loadCanvasState,
+      addToast: state.addToast,
+    })),
+  );
 
   const toggleCategory = (category: string) => {
     setCollapsedCategories((prev) => ({

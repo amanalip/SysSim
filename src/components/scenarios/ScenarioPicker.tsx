@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Search, CheckCircle2, X, Trophy } from 'lucide-react';
 import { ALL_SCENARIOS, SCENARIO_CATEGORIES } from '../../scenarios';
 import { useStore } from '../../store/use-store';
@@ -12,7 +13,12 @@ interface ScenarioPickerProps {
 type StatusFilter = 'All' | 'Solved' | 'Unsolved';
 
 export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario }) => {
-  const { currentScenario, completedScenarioIds } = useStore();
+  const { currentScenario, completedScenarioIds } = useStore(
+    useShallow((state) => ({
+      currentScenario: state.currentScenario,
+      completedScenarioIds: state.completedScenarioIds,
+    })),
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');

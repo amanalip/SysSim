@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { X, Edit2 } from 'lucide-react';
 import { ZoneData } from '../../../model/types';
 import { useStore } from '../../../store/use-store';
@@ -10,7 +11,9 @@ interface ZoneGroupProps {
 }
 
 export const ZoneGroup: React.FC<ZoneGroupProps> = ({ zone, viewport }) => {
-  const { removeZone, updateZone } = useStore();
+  const { removeZone, updateZone } = useStore(
+    useShallow((state) => ({ removeZone: state.removeZone, updateZone: state.updateZone })),
+  );
   const [isEditing, setIsEditing] = useState(false);
   const [editLabel, setEditLabel] = useState(zone.label);
 

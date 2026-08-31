@@ -1,10 +1,13 @@
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, CheckCircle, Info, XCircle, X } from 'lucide-react';
 import { useStore, ToastItem } from '../../store/use-store';
 import styles from './Toast.module.css';
 
 export const ToastContainer: React.FC = () => {
-  const { toasts, removeToast } = useStore();
+  const { toasts, removeToast } = useStore(
+    useShallow((state) => ({ toasts: state.toasts, removeToast: state.removeToast })),
+  );
 
   if (toasts.length === 0) return null;
 

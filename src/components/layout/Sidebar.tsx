@@ -1,4 +1,5 @@
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Box, BookOpen, Calculator } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import styles from './Sidebar.module.css';
@@ -18,7 +19,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen = true,
   onClose,
 }) => {
-  const { activeSidebarTab, setActiveSidebarTab } = useStore();
+  const { activeSidebarTab, setActiveSidebarTab } = useStore(
+    useShallow((state) => ({
+      activeSidebarTab: state.activeSidebarTab,
+      setActiveSidebarTab: state.setActiveSidebarTab,
+    })),
+  );
 
   return (
     <>

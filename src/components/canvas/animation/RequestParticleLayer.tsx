@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useViewport } from '@xyflow/react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../../../store/use-store';
 import styles from './RequestParticleLayer.module.css';
 
@@ -14,13 +15,34 @@ interface ActiveParticle {
 }
 
 export const RequestParticleLayer: React.FC = () => {
-  const { activeRequests, nodes, edges, simState, speedMultiplier } = useStore();
+  const { activeRequests, nodes, edgeCount, simState, speedMultiplier } = useStore(
+    useShallow((state) => ({
+      activeRequests: state.activeRequests,
+      nodes: state.nodes,
+      edgeCount: state.edges.length,
+      simState: state.simState,
+      speedMultiplier: state.speedMultiplier,
+    })),
+  );
   const viewport = useViewport();
   const [particles, setParticles] = useState<ActiveParticle[]>([]);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
   const animFrameRef = useRef<number | null>(null);
+  const particleBudget = useMemo(() => {
+    const cores = typeof navigator === 'undefined' ? 4 : navigator.hardwareConcurrency || 4;
+    if (nodes.length >= 75 || cores <= 2) return 12;
+    if (nodes.length >= 30 || cores <= 4) return 24;
+    return 40;
+  }, [nodes.length]);
+  const nodePositions = useMemo(() => {
+    const positions = new Map<string, { x: number; y: number }>();
+    nodes.forEach((node) =>
+      positions.set(node.id, { x: node.position.x + 90, y: node.position.y + 35 }),
+    );
+    return positions;
+  }, [nodes]);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -36,21 +58,12 @@ export const RequestParticleLayer: React.FC = () => {
       return;
     }
 
-    if (activeRequests.length === 0 || edges.length === 0) {
+    if (activeRequests.length === 0 || edgeCount === 0) {
       return;
     }
 
-    const nodePositions: Record<string, { x: number; y: number }> = {};
-    nodes.forEach((n) => {
-      // Node center approximation (width ~180, height ~70)
-      nodePositions[n.id] = {
-        x: n.position.x + 90,
-        y: n.position.y + 35,
-      };
-    });
-
     const newParticles: ActiveParticle[] = [];
-    const sample = activeRequests.slice(-40); // Cap visible active particles for smooth rendering
+    const sample = activeRequests.slice(-particleBudget);
 
     sample.forEach((req, idx) => {
       if (req.path.length > 1) {
@@ -59,8 +72,8 @@ export const RequestParticleLayer: React.FC = () => {
         const sourceHop = req.path[hopIndex];
         const targetHop = req.path[hopIndex + 1];
 
-        const srcPos = nodePositions[sourceHop?.nodeId];
-        const tgtPos = nodePositions[targetHop?.nodeId];
+        const srcPos = nodePositions.get(sourceHop?.nodeId);
+        const tgtPos = nodePositions.get(targetHop?.nodeId);
 
         if (srcPos && tgtPos) {
           newParticles.push({
@@ -77,7 +90,7 @@ export const RequestParticleLayer: React.FC = () => {
     });
 
     setParticles(newParticles);
-  }, [activeRequests, nodes, edges, simState]);
+  }, [activeRequests, edgeCount, nodePositions, particleBudget, simState]);
 
   // Smooth animation loop
   useEffect(() => {

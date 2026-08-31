@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   ArrowLeft,
   HelpCircle,
@@ -35,12 +36,34 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({ scenario, onBack
     scenarioProgress,
     updateScenarioProgress,
     recordScenarioAttempt,
-  } = useStore();
+  } = useStore(
+    useShallow((state) => ({
+      loadReferenceDesign: state.loadReferenceDesign,
+      showReferenceOverlay: state.showReferenceOverlay,
+      setShowReferenceOverlay: state.setShowReferenceOverlay,
+      markScenarioCompleted: state.markScenarioCompleted,
+      completedScenarioIds: state.completedScenarioIds,
+      nodes: state.nodes,
+      edges: state.edges,
+      sideBySideMode: state.sideBySideMode,
+      setSideBySideMode: state.setSideBySideMode,
+      scenarioProgress: state.scenarioProgress,
+      updateScenarioProgress: state.updateScenarioProgress,
+      recordScenarioAttempt: state.recordScenarioAttempt,
+    })),
+  );
 
   const [openAnswers, setOpenAnswers] = useState<Record<number, boolean>>({});
   const progress = scenarioProgress[scenario.id] || createScenarioProgress(scenario.id);
   const comparison = useMemo(
-    () => compareArchitectures({ nodes, edges }, scenario.referenceDesign),
+    () =>
+      compareArchitectures(
+        {
+          nodes: nodes.map((node) => ({ ...node, type: node.type ?? 'customComponent' })),
+          edges,
+        },
+        scenario.referenceDesign,
+      ),
     [nodes, edges, scenario.referenceDesign],
   );
 

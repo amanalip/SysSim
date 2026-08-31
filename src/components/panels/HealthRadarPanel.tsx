@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   ShieldCheck,
   Zap,
@@ -46,7 +47,15 @@ const color = (score: number | null): string =>
         : 'var(--error)';
 
 export const HealthRadarPanel: React.FC = () => {
-  const { nodes, edges, metrics, bottlenecks, trafficConfig } = useStore();
+  const { nodes, edges, metrics, bottlenecks, trafficConfig } = useStore(
+    useShallow((state) => ({
+      nodes: state.nodes,
+      edges: state.edges,
+      metrics: state.metrics,
+      bottlenecks: state.bottlenecks,
+      trafficConfig: state.trafficConfig,
+    })),
+  );
   const pillars = useMemo(
     () => scoreArchitectureHealth({ nodes, edges, metrics, bottlenecks, trafficConfig }),
     [nodes, edges, metrics, bottlenecks, trafficConfig],

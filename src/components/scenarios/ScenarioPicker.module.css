@@ -126,6 +126,8 @@
 }
 
 .scenarioCard {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 88px;
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);

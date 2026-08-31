@@ -37,7 +37,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
     () => chaosDrills.getActiveRecords()[0] || null,
   );
   const [stampedeProtection, setStampedeProtection] = useState(false);
-  const { addToast } = useStore();
+  const addToast = useStore((state) => state.addToast);
 
   const launch = (id: ChaosDrillId) => {
     const result = chaosDrills.launch(id, { stampedeProtection });

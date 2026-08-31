@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { DollarSign, Server, Database, Zap, Radio, Globe } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { ModelNotice } from '../ui/ModelNotice';
@@ -10,7 +11,13 @@ import {
 import styles from './CostEstimatorPanel.module.css';
 
 export const CostEstimatorPanel: React.FC = () => {
-  const { nodes, metrics, trafficConfig } = useStore();
+  const { nodes, metrics, trafficConfig } = useStore(
+    useShallow((state) => ({
+      nodes: state.nodes,
+      metrics: state.metrics,
+      trafficConfig: state.trafficConfig,
+    })),
+  );
   const [cloudProvider, setCloudProvider] = useState<CloudProvider>('aws');
   const [useSpotInstances, setUseSpotInstances] = useState(false);
   const workloadQps = metrics.completedThroughputQps || trafficConfig.baseQps;

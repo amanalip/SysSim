@@ -1,4 +1,5 @@
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useReactFlow } from '@xyflow/react';
 import {
   ZoomIn,
@@ -29,7 +30,21 @@ export const CanvasHud: React.FC = () => {
     redo,
     canUndo,
     canRedo,
-  } = useStore();
+  } = useStore(
+    useShallow((state) => ({
+      snapToGrid: state.snapToGrid,
+      setSnapToGrid: state.setSnapToGrid,
+      showMinimap: state.showMinimap,
+      setShowMinimap: state.setShowMinimap,
+      edgeRouting: state.edgeRouting,
+      setEdgeRouting: state.setEdgeRouting,
+      addToast: state.addToast,
+      undo: state.undo,
+      redo: state.redo,
+      canUndo: state.canUndo,
+      canRedo: state.canRedo,
+    })),
+  );
 
   return (
     <div className={styles.hudContainer}>
