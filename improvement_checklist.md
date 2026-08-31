@@ -584,80 +584,80 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 
 - [x] 369. Load the starter architecture and verify nodes and edges.
 - [x] 370. Add a component by button.
-- [ ] 371. Add a component by drag-and-drop.
-- [ ] 372. Connect nodes and change edge protocol.
-- [ ] 373. Edit every category of component properties.
-- [ ] 374. Start, pause, resume, step, stop, and reset a simulation.
-- [ ] 375. Verify metrics update from the Web Worker.
-- [ ] 376. Inject and restore node and edge failures.
-- [ ] 377. Run every chaos drill.
-- [ ] 378. Open and use the metrics, bottleneck, health, trace, and cost tabs.
-- [ ] 379. Save and restore snapshots.
-- [ ] 380. Export and re-import architecture JSON.
-- [ ] 381. Generate and reload a shared URL.
-- [ ] 382. Exercise undo, redo, duplicate, delete, auto-layout, and keyboard shortcuts.
-- [ ] 383. Search and load scenarios.
-- [ ] 384. Verify a representative scenario from each category.
-- [ ] 385. Test dark and light themes.
-- [ ] 386. Test mobile and tablet navigation once responsive design exists.
-- [ ] 387. Capture trace/video/screenshots on failure in CI.
-- [ ] 388. Run Chromium, Firefox, and WebKit for release qualification if they are supported.
+- [x] 371. Add a component by drag-and-drop.
+- [x] 372. Connect nodes and change edge protocol.
+- [x] 373. Edit every category of component properties.
+- [x] 374. Start, pause, resume, step, stop, and reset a simulation.
+- [x] 375. Verify metrics update from the Web Worker.
+- [x] 376. Inject and restore node and edge failures.
+- [x] 377. Run every chaos drill.
+- [x] 378. Open and use the metrics, bottleneck, health, trace, and cost tabs.
+- [x] 379. Save and restore snapshots.
+- [x] 380. Export and re-import architecture JSON.
+- [x] 381. Generate and reload a shared URL.
+- [x] 382. Exercise undo, redo, duplicate, delete, auto-layout, and keyboard shortcuts.
+- [x] 383. Search and load scenarios.
+- [x] 384. Verify a representative scenario from each category.
+- [x] 385. Test dark and light themes.
+- [x] 386. Test mobile and tablet navigation once responsive design exists.
+- [x] 387. Capture trace/video/screenshots on failure in CI.
+- [x] 388. Run Chromium, Firefox, and WebKit for release qualification if they are supported.
 
 ## Add coverage and quality thresholds — P1
 
-- [ ] 389. Add unit-test coverage reporting.
-- [ ] 390. Establish initial realistic thresholds without hiding untested files.
-- [ ] 391. Raise thresholds as critical domains gain coverage.
-- [ ] 392. Require near-complete branch coverage for schema validation and core engine transitions.
-- [ ] 393. Publish coverage artifacts in CI.
-- [ ] 394. Add a bundle-size report.
-- [ ] 395. Add duplicate-code or complexity reporting if it provides actionable value.
+- [x] 389. Add unit-test coverage reporting.
+- [x] 390. Establish initial realistic thresholds without hiding untested files.
+- [x] 391. Raise thresholds as critical domains gain coverage.
+- [x] 392. Require near-complete branch coverage for schema validation and core engine transitions.
+- [x] 393. Publish coverage artifacts in CI.
+- [x] 394. Add a bundle-size report.
+- [x] 395. Add duplicate-code or complexity reporting if it provides actionable value.
 
 ## Correct and strengthen CI — P1
 
-- [ ] 396. Add a real lint script.
-- [ ] 397. Add a standalone type-check script.
-- [ ] 398. Rename CI steps so their labels match the commands they execute.
-- [ ] 399. Run formatting checks.
-- [ ] 400. Run unit and integration tests.
-- [ ] 401. Run the production build.
-- [ ] 402. Install Playwright browsers and run E2E tests.
-- [ ] 403. Run automated accessibility tests.
-- [ ] 404. Run dependency and lockfile security checks.
-- [ ] 405. Run citation validation on a schedule rather than blocking every pull request on third-party availability.
-- [ ] 406. Enforce bundle-size and performance budgets.
-- [ ] 407. Upload test, coverage, browser trace, and bundle artifacts.
-- [ ] 408. Use concurrency cancellation for superseded CI runs where appropriate.
-- [ ] 409. Pin or securely manage GitHub Action versions.
-- [ ] 410. Add branch protection requiring all mandatory checks.
-- [ ] 411. Ensure deployment depends on successful release-quality checks.
+- [x] 396. Add a real lint script.
+- [x] 397. Add a standalone type-check script.
+- [x] 398. Rename CI steps so their labels match the commands they execute.
+- [x] 399. Run formatting checks.
+- [x] 400. Run unit and integration tests.
+- [x] 401. Run the production build.
+- [x] 402. Install Playwright browsers and run E2E tests.
+- [x] 403. Run automated accessibility tests.
+- [x] 404. Run dependency and lockfile security checks.
+- [x] 405. Run citation validation on a schedule rather than blocking every pull request on third-party availability.
+- [x] 406. Enforce bundle-size and performance budgets.
+- [x] 407. Upload test, coverage, browser trace, and bundle artifacts.
+- [x] 408. Use concurrency cancellation for superseded CI runs where appropriate.
+- [x] 409. Pin or securely manage GitHub Action versions.
+- [ ] 410. Add branch protection requiring all mandatory checks. (Required checks are documented; applying the repository rule is blocked until GitHub CLI authentication is restored.)
+- [x] 411. Ensure deployment depends on successful release-quality checks.
 
 # Phase 5 — Responsive Design and Accessibility
 
 ## Define responsive layouts — P1
 
-- [ ] 412. Choose supported breakpoints based on content needs, not device brand names.
-- [ ] 413. Design desktop, compact desktop/tablet, and mobile interaction models.
-- [ ] 414. Replace the permanently fixed 320-pixel sidebar with a collapsible drawer on constrained widths.
-- [ ] 415. Collapse header actions into an accessible overflow menu.
-- [ ] 416. Ensure the canvas remains usable when side panels are closed or docked.
-- [ ] 417. Convert the properties panel to a drawer or sheet on narrow screens.
-- [ ] 418. Make simulation controls wrap, collapse, or open in a dedicated panel without obscuring content.
-- [ ] 419. Make metrics panels usable in portrait and landscape orientations.
-- [ ] 420. Set sensible minimum canvas dimensions and provide an unsupported-size message if necessary.
-- [ ] 421. Ensure modals fit small viewports and their content scrolls correctly.
-- [ ] 422. Ensure touch targets are at least 44 by 44 CSS pixels where practical.
-- [ ] 423. Support touch-based node placement, selection, connection, zoom, and pan if mobile editing is claimed.
-- [ ] 424. Add visual regression screenshots for representative viewport sizes.
+- [x] 412. Choose supported breakpoints based on content needs, not device brand names.
+- [x] 413. Design desktop, compact desktop/tablet, and mobile interaction models.
+- [x] 414. Replace the permanently fixed 320-pixel sidebar with a collapsible drawer on constrained widths.
+- [x] 415. Collapse header actions into an accessible overflow menu.
+- [x] 416. Ensure the canvas remains usable when side panels are closed or docked.
+- [x] 417. Convert the properties panel to a drawer or sheet on narrow screens.
+- [x] 418. Make simulation controls wrap, collapse, or open in a dedicated panel without obscuring content.
+- [x] 419. Make metrics panels usable in portrait and landscape orientations.
+- [x] 420. Set sensible minimum canvas dimensions and provide an unsupported-size message if necessary.
+- [x] 421. Ensure modals fit small viewports and their content scrolls correctly.
+- [x] 422. Ensure touch targets are at least 44 by 44 CSS pixels where practical.
+- [x] 423. Support touch-based node placement, selection, connection, zoom, and pan if mobile editing is claimed.
+- [x] 424. Add visual regression screenshots for representative viewport sizes.
 
 ### Acceptance viewports
 
-- [ ] 425. 360 × 800 portrait.
-- [ ] 426. 390 × 844 portrait.
-- [ ] 427. 768 × 1024 tablet portrait.
-- [ ] 428. 1024 × 768 tablet landscape.
-- [ ] 429. 1280 × 720 compact desktop.
-- [ ] 430. 1440 × 900 standard desktop.
+- [x] 425. 360 × 800 portrait.
+- [x] 426. 390 × 844 portrait.
+- [x] 427. 768 × 1024 tablet portrait.
+- [x] 428. 1024 × 768 tablet landscape.
+- [x] 429. 1280 × 720 compact desktop.
+- [x] 430. 1440 × 900 standard desktop.
 - [ ] 431. 1920 × 1080 large desktop.
 
 ## Meet keyboard-accessibility expectations — P1
@@ -1185,11 +1185,13 @@ Copy this block beneath a task when its implementation requires non-trivial evid
 
 ```markdown
 Implementation:
+
 - Commit/PR:
 - Files changed:
 - Design decision:
 
 Verification:
+
 - [ ] Focused unit/integration tests pass.
 - [ ] Full unit test suite passes.
 - [ ] Production build passes.
