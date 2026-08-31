@@ -658,97 +658,97 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 428. 1024 × 768 tablet landscape.
 - [x] 429. 1280 × 720 compact desktop.
 - [x] 430. 1440 × 900 standard desktop.
-- [ ] 431. 1920 × 1080 large desktop.
+- [x] 431. 1920 × 1080 large desktop.
 
 ## Meet keyboard-accessibility expectations — P1
 
-- [ ] 432. Replace clickable non-semantic `<div>` elements with buttons or add complete keyboard semantics.
-- [ ] 433. Ensure all interactive controls are reachable in a logical tab order.
-- [ ] 434. Add visible focus indicators with sufficient contrast.
-- [ ] 435. Ensure keyboard shortcuts do not conflict with browser or assistive-technology conventions.
-- [ ] 436. Provide a way to disable or customize single-key shortcuts.
-- [ ] 437. Ensure shortcuts do not fire while editing content or interacting with modal controls.
-- [ ] 438. Add keyboard equivalents for drag-only operations.
-- [ ] 439. Make canvas nodes and edges operable without a pointer.
-- [ ] 440. Announce selection and graph changes to assistive technology where appropriate.
+- [x] 432. Replace clickable non-semantic `<div>` elements with buttons or add complete keyboard semantics.
+- [x] 433. Ensure all interactive controls are reachable in a logical tab order.
+- [x] 434. Add visible focus indicators with sufficient contrast.
+- [x] 435. Ensure keyboard shortcuts do not conflict with browser or assistive-technology conventions.
+- [x] 436. Provide a way to disable or customize single-key shortcuts.
+- [x] 437. Ensure shortcuts do not fire while editing content or interacting with modal controls.
+- [x] 438. Add keyboard equivalents for drag-only operations.
+- [x] 439. Make canvas nodes and edges operable without a pointer.
+- [x] 440. Announce selection and graph changes to assistive technology where appropriate.
 
 ## Implement accessible modal/dialog behavior — P1
 
-- [ ] 441. Give every modal `role="dialog"` or use a semantic dialog implementation.
-- [ ] 442. Set `aria-modal="true"` where appropriate.
-- [ ] 443. Connect each dialog to an accessible title and description.
-- [ ] 444. Move focus into the dialog when it opens.
-- [ ] 445. Trap focus inside the dialog.
-- [ ] 446. Close on Escape unless an irreversible action is in progress.
-- [ ] 447. Restore focus to the invoking control on close.
-- [ ] 448. Prevent background content from being interactable or exposed while modal.
-- [ ] 449. Add accessible names to close buttons.
+- [x] 441. Give every modal `role="dialog"` or use a semantic dialog implementation.
+- [x] 442. Set `aria-modal="true"` where appropriate.
+- [x] 443. Connect each dialog to an accessible title and description.
+- [x] 444. Move focus into the dialog when it opens.
+- [x] 445. Trap focus inside the dialog.
+- [x] 446. Close on Escape unless an irreversible action is in progress.
+- [x] 447. Restore focus to the invoking control on close.
+- [x] 448. Prevent background content from being interactable or exposed while modal.
+- [x] 449. Add accessible names to close buttons.
 
 ## Improve forms, tabs, status, and charts — P1
 
-- [ ] 450. Associate every input with a programmatic label.
-- [ ] 451. Add descriptions, units, valid ranges, and error messages.
-- [ ] 452. Use `aria-invalid` and error associations for invalid values.
-- [ ] 453. Implement correct tablist/tab/tabpanel semantics.
-- [ ] 454. Expose toggle pressed/selected state through ARIA.
-- [ ] 455. Add live-region announcements for toasts, simulation state, failures, and completed exports.
-- [ ] 456. Ensure color is not the only indicator of health, severity, cache hit, or failure.
-- [ ] 457. Provide textual summaries or tables for every chart.
-- [ ] 458. Verify screen-reader reading order for canvas nodes, edges, and panels.
-- [ ] 459. Test zoom up to 200% without loss of content or functionality.
+- [x] 450. Associate every input with a programmatic label.
+- [x] 451. Add descriptions, units, valid ranges, and error messages.
+- [x] 452. Use `aria-invalid` and error associations for invalid values.
+- [x] 453. Implement correct tablist/tab/tabpanel semantics.
+- [x] 454. Expose toggle pressed/selected state through ARIA.
+- [x] 455. Add live-region announcements for toasts, simulation state, failures, and completed exports.
+- [x] 456. Ensure color is not the only indicator of health, severity, cache hit, or failure.
+- [x] 457. Provide textual summaries or tables for every chart.
+- [x] 458. Verify screen-reader reading order for canvas nodes, edges, and panels.
+- [x] 459. Test zoom up to 200% without loss of content or functionality.
 
 ## Verify visual accessibility — P1
 
-- [ ] 460. Audit foreground/background contrast in both themes.
-- [ ] 461. Audit focus-indicator contrast.
-- [ ] 462. Support reduced-motion preferences for particles, transitions, and confetti.
-- [ ] 463. Ensure animation can be paused when it is not essential.
-- [ ] 464. Avoid rapid flashing during chaos or error visualization.
-- [ ] 465. Test high-contrast/forced-colors mode where supported.
-- [ ] 466. Avoid relying on tiny text below readable minimums.
-- [ ] 467. Document WCAG 2.2 AA exceptions, if any, with remediation plans.
+- [x] 460. Audit foreground/background contrast in both themes.
+- [x] 461. Audit focus-indicator contrast.
+- [x] 462. Support reduced-motion preferences for particles, transitions, and confetti.
+- [x] 463. Ensure animation can be paused when it is not essential.
+- [x] 464. Avoid rapid flashing during chaos or error visualization.
+- [x] 465. Test high-contrast/forced-colors mode where supported.
+- [x] 466. Avoid relying on tiny text below readable minimums.
+- [x] 467. Document WCAG 2.2 AA exceptions, if any, with remediation plans.
 
 # Phase 6 — Performance and Scalability
 
 ## Reduce initial bundle size — P1
 
-- [ ] 468. Establish a JavaScript and CSS budget for the initial route.
-- [ ] 469. Lazy-load scenario detail/data where practical.
-- [ ] 470. Lazy-load charts and advanced metrics panels.
-- [ ] 471. Lazy-load infrequently used modals and export tooling.
-- [ ] 472. Split large scenario datasets by category or dynamic import.
-- [ ] 473. Inspect tree-shaking for icon, chart, motion, table, and image-export dependencies.
-- [ ] 474. Remove unused direct dependencies such as internal packages that are not intentionally imported.
-- [ ] 475. Configure stable manual chunks only where measurement shows a benefit.
-- [ ] 476. Re-run bundle analysis after each split.
-- [ ] 477. Keep worker code in its own chunk and ensure it is cached efficiently.
+- [x] 468. Establish a JavaScript and CSS budget for the initial route.
+- [x] 469. Lazy-load scenario detail/data where practical.
+- [x] 470. Lazy-load charts and advanced metrics panels.
+- [x] 471. Lazy-load infrequently used modals and export tooling.
+- [x] 472. Split large scenario datasets by category or dynamic import.
+- [x] 473. Inspect tree-shaking for icon, chart, motion, table, and image-export dependencies.
+- [x] 474. Remove unused direct dependencies such as internal packages that are not intentionally imported.
+- [x] 475. Configure stable manual chunks only where measurement shows a benefit.
+- [x] 476. Re-run bundle analysis after each split.
+- [x] 477. Keep worker code in its own chunk and ensure it is cached efficiently.
 
 ### Suggested initial budgets
 
-- [ ] 478. Initial application JavaScript below 250 KB gzip.
-- [ ] 479. Initial CSS below 75 KB uncompressed unless justified.
-- [ ] 480. No unplanned individual JavaScript chunk above 500 KB minified.
+- [x] 478. Initial application JavaScript below 250 KB gzip.
+- [x] 479. Initial CSS below 75 KB uncompressed unless justified.
+- [x] 480. No unplanned individual JavaScript chunk above 500 KB minified.
 
 ## Optimize engine hot paths — P1
 
-- [ ] 481. Pre-index nodes by ID rather than searching the node array on every hop.
-- [ ] 482. Pre-index outgoing and incoming edges by node ID.
-- [ ] 483. Avoid filtering the complete edge array on every request hop.
-- [ ] 484. Avoid sorting complete latency arrays for every 100ms metrics update.
-- [ ] 485. Use bounded histograms, sketches, or interval aggregation for percentiles at scale.
-- [ ] 486. Avoid cloning custom schedules on every QPS calculation.
-- [ ] 487. Bound per-node statistics and trace retention explicitly.
-- [ ] 488. Measure structured-clone/postMessage overhead from worker to UI.
-- [ ] 489. Throttle UI metric updates independently from engine steps.
-- [ ] 490. Avoid re-rendering all nodes for high-frequency telemetry changes where possible.
-- [ ] 491. Add profiling for 10, 100, 500, and maximum-supported node graphs.
+- [x] 481. Pre-index nodes by ID rather than searching the node array on every hop.
+- [x] 482. Pre-index outgoing and incoming edges by node ID.
+- [x] 483. Avoid filtering the complete edge array on every request hop.
+- [x] 484. Avoid sorting complete latency arrays for every 100ms metrics update.
+- [x] 485. Use bounded histograms, sketches, or interval aggregation for percentiles at scale.
+- [x] 486. Avoid cloning custom schedules on every QPS calculation.
+- [x] 487. Bound per-node statistics and trace retention explicitly.
+- [x] 488. Measure structured-clone/postMessage overhead from worker to UI.
+- [x] 489. Throttle UI metric updates independently from engine steps.
+- [x] 490. Avoid re-rendering all nodes for high-frequency telemetry changes where possible.
+- [x] 491. Add profiling for 10, 100, 500, and maximum-supported node graphs.
 
 ## Add stress and endurance tests — P1/P2
 
-- [ ] 492. Benchmark minimum, typical, and maximum QPS.
-- [ ] 493. Benchmark long-running simulations for memory growth.
-- [ ] 494. Benchmark large graphs and dense edge sets.
-- [ ] 495. Benchmark high fanout and large queue depths.
+- [x] 492. Benchmark minimum, typical, and maximum QPS.
+- [x] 493. Benchmark long-running simulations for memory growth.
+- [x] 494. Benchmark large graphs and dense edge sets.
+- [x] 495. Benchmark high fanout and large queue depths.
 - [ ] 496. Measure worker CPU time, UI frame rate, memory, and message size.
 - [ ] 497. Verify pause, reset, and graph edits remain responsive under load.
 - [ ] 498. Fail gracefully or clamp inputs beyond supported limits.
