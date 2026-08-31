@@ -41,8 +41,8 @@ import { deriveHealthFromCapacity, getHealthBehavior } from './health-state';
 import { SeededRandom, normalizeSeed } from './seeded-random';
 import { EventPriorityQueue, SimulationEvent, SimulationEventKind } from './event-queue';
 import { SIMULATION_LIMITS } from './simulation-limits';
-import { nearestRankQuantile } from './metrics/quantile';
 import { capacityUtilizationPercent } from './metrics/capacity';
+import { RollingQuantile } from './metrics/rolling-quantile';
 
 export interface SimNode {
   id: string;
@@ -78,6 +78,10 @@ interface PendingCacheFill {
 
 export class SysSimEngine {
   private graph: SimGraph = { nodes: [], edges: [] };
+  private nodeById = new Map<string, SimNode>();
+  private outgoingEdgesByNode = new Map<string, SimEdge[]>();
+  private incomingEdgesByNode = new Map<string, SimEdge[]>();
+  private trafficSourceNodes: SimNode[] = [];
   private config: TrafficConfig = {
     pattern: 'steady',
     baseQps: 500,
@@ -133,6 +137,8 @@ export class SysSimEngine {
     }
   > = {};
   private timeSeries: TimeSeriesDataPoint[] = [];
+  private successfulLatencyWindow = new RollingQuantile(SIMULATION_LIMITS.maxCompletedRequests);
+  private nodeLatencyWindows = new Map<string, RollingQuantile>();
   private fractionalRequestAccumulator = 0;
 
   // Component model instances cache
@@ -175,6 +181,19 @@ export class SysSimEngine {
   public setGraph(graph: SimGraph): void {
     const previousHealth = new Map(this.graph.nodes.map((node) => [node.id, node.config.health]));
     this.graph = graph;
+    this.nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
+    this.outgoingEdgesByNode = new Map();
+    this.incomingEdgesByNode = new Map();
+    for (const edge of graph.edges) {
+      const outgoing = this.outgoingEdgesByNode.get(edge.source) || [];
+      outgoing.push(edge);
+      this.outgoingEdgesByNode.set(edge.source, outgoing);
+      const incoming = this.incomingEdgesByNode.get(edge.target) || [];
+      incoming.push(edge);
+      this.incomingEdgesByNode.set(edge.target, incoming);
+    }
+    const clients = graph.nodes.filter((node) => node.config.type === 'client');
+    this.trafficSourceNodes = clients.length > 0 ? clients : graph.nodes.slice(0, 1);
     for (const node of graph.nodes) {
       if (
         previousHealth.has(node.id) &&
@@ -206,6 +225,9 @@ export class SysSimEngine {
     this.reverseProxyReservations.clear();
     this.nodeArrivalBuckets.clear();
     this.effectiveHealth.clear();
+    for (const nodeId of this.nodeLatencyWindows.keys()) {
+      if (!this.nodeById.has(nodeId)) this.nodeLatencyWindows.delete(nodeId);
+    }
 
     const validNodeIds = new Set(graph.nodes.map((n) => n.id));
     const validLoadBalancerIds = new Set(
@@ -251,10 +273,16 @@ export class SysSimEngine {
         };
       }
       this.activeConnections[n.id] = 0;
+      if (!this.nodeLatencyWindows.has(n.id)) {
+        this.nodeLatencyWindows.set(
+          n.id,
+          new RollingQuantile(SIMULATION_LIMITS.maxLatencySamplesPerNode),
+        );
+      }
 
       // Initialize models
       if (n.config.type === 'load_balancer') {
-        const outgoing = this.graph.edges
+        const outgoing = (this.outgoingEdgesByNode.get(n.id) || [])
           .filter(
             (e) => e.source === n.id && !e.data?.isCut && getEdgePurpose(e.data) === 'request',
           )
@@ -281,7 +309,7 @@ export class SysSimEngine {
         if (existingGateway) existingGateway.updateConfig(n.config);
         else this.apiGatewayModels.set(n.id, new ApiGatewayModel(n.config));
       } else if (n.config.type === 'dns') {
-        const targets = this.graph.edges
+        const targets = (this.outgoingEdgesByNode.get(n.id) || [])
           .filter(
             (edge) =>
               edge.source === n.id && getEdgePurpose(edge.data) === 'request' && !edge.data?.isCut,
@@ -484,6 +512,8 @@ export class SysSimEngine {
     this.totalOffered = 0;
     this.loadBuckets.clear();
     this.timeSeries = [];
+    this.successfulLatencyWindow.clear();
+    this.nodeLatencyWindows.forEach((window) => window.clear());
     this.activeConnections = {};
     this.loadBalancerConnectionEnds.clear();
     this.rateLimiters.forEach((rl) => rl.reset());
@@ -550,9 +580,13 @@ export class SysSimEngine {
       }
       case 'custom': {
         if (this.config.customSchedule && this.config.customSchedule.length > 0) {
-          const entry = [...this.config.customSchedule]
-            .reverse()
-            .find((s) => elapsedSec >= s.timeSec);
+          let entry: (typeof this.config.customSchedule)[number] | undefined;
+          for (let index = this.config.customSchedule.length - 1; index >= 0; index--) {
+            if (elapsedSec >= this.config.customSchedule[index].timeSec) {
+              entry = this.config.customSchedule[index];
+              break;
+            }
+          }
           qps = entry ? entry.qps : base;
           break;
         }
@@ -611,8 +645,7 @@ export class SysSimEngine {
     );
 
     // Find origin client nodes (or any roots if no clients exist)
-    const clientNodes = this.graph.nodes.filter((n) => n.config.type === 'client');
-    const sourceNodes = clientNodes.length > 0 ? clientNodes : this.graph.nodes.slice(0, 1);
+    const sourceNodes = this.trafficSourceNodes;
 
     if (sourceNodes.length > 0) {
       const selectedSources = this.selectTrafficSources(sourceNodes, requestsToGenerate);
@@ -844,6 +877,7 @@ export class SysSimEngine {
 
     if (result.success) {
       this.totalSuccess++;
+      this.successfulLatencyWindow.add(req.totalLatencyMs);
       const hasCacheHit = result.hops.some((hop) => hop.status === 'hit');
       const hasMessagingHop = result.hops.some((hop) =>
         ['message_queue', 'pubsub', 'event_bus', 'task_queue'].includes(hop.nodeType),
@@ -862,7 +896,9 @@ export class SysSimEngine {
 
     this.completedRequests.push(req);
     if (this.completedRequests.length > SIMULATION_LIMITS.maxCompletedRequests) {
-      this.completedRequests.shift();
+      const removed = this.completedRequests.shift();
+      if (removed?.status === 'success')
+        this.successfulLatencyWindow.remove(removed.totalLatencyMs);
     }
   }
 
@@ -876,7 +912,7 @@ export class SysSimEngine {
     viaEdgePurpose?: EdgePurpose,
     hopCount: number = 0,
   ): TraversalResult {
-    const node = this.graph.nodes.find((candidate) => candidate.id === nodeId);
+    const node = this.nodeById.get(nodeId);
     if (!node) {
       return {
         success: false,
@@ -934,8 +970,8 @@ export class SysSimEngine {
     // simulation steps so their processing is not charged to producer latency.
     if (this.isMessagingNode(node) && nodeResult.success) return nodeResult;
 
-    const outgoingEdges = this.graph.edges.filter(
-      (edge) => edge.source === nodeId && !edge.data?.isCut,
+    const outgoingEdges = (this.outgoingEdgesByNode.get(nodeId) || []).filter(
+      (edge) => !edge.data?.isCut,
     );
     const edgesByPurpose = (purpose: EdgePurpose) =>
       outgoingEdges.filter((edge) => getEdgePurpose(edge.data) === purpose);
@@ -1468,14 +1504,11 @@ export class SysSimEngine {
       hopLatency = admission?.latencyMs ?? 0;
       hopInfo = `${config.authMode === 'None' ? 'No authentication' : `${config.authMode} authentication`} overhead`;
     } else if (config.type === 'dns') {
-      const requestEdges = this.graph.edges.filter(
-        (edge) =>
-          edge.source === node.id && !edge.data?.isCut && getEdgePurpose(edge.data) === 'request',
+      const requestEdges = (this.outgoingEdgesByNode.get(node.id) || []).filter(
+        (edge) => !edge.data?.isCut && getEdgePurpose(edge.data) === 'request',
       );
       const eligibleEdges = requestEdges.filter(
-        (edge) =>
-          this.graph.nodes.find((candidate) => candidate.id === edge.target)?.config.health !==
-          'down',
+        (edge) => this.nodeById.get(edge.target)?.config.health !== 'down',
       );
       const edgeLatencies = Object.fromEntries(
         eligibleEdges.map((edge) => [edge.target, this.getEdgeLatency(edge)]),
@@ -1585,6 +1618,7 @@ export class SysSimEngine {
     stats.latencies.push(hopLatency);
     if (stats.latencies.length > SIMULATION_LIMITS.maxLatencySamplesPerNode)
       stats.latencies.shift();
+    this.nodeLatencyWindows.get(node.id)?.add(hopLatency);
     stats.successfulRequests++;
 
     return {
@@ -1617,12 +1651,12 @@ export class SysSimEngine {
     sourceNodeId: string,
     requestEdges: SimEdge[],
   ): SimEdge[] {
-    const loadBalancer = this.graph.nodes.find((candidate) => candidate.id === nodeId);
+    const loadBalancer = this.nodeById.get(nodeId);
     if (loadBalancer?.config.type !== 'load_balancer') return [];
     const loadBalancerConfig = loadBalancer.config;
     const healthModel = this.loadBalancerHealthModels.get(nodeId);
     const eligibleEdges = requestEdges.filter((edge) => {
-      const target = this.graph.nodes.find((candidate) => candidate.id === edge.target);
+      const target = this.nodeById.get(edge.target);
       return Boolean(
         target &&
         healthModel?.isEligible(
@@ -1692,15 +1726,10 @@ export class SysSimEngine {
     );
     activeEnds.push(Math.max(startAtMs, endAtMs));
     this.loadBalancerConnectionEnds.set(connectionKey, activeEnds);
-    const loadBalancer = this.graph.nodes.find((node) => node.id === loadBalancerId);
+    const loadBalancer = this.nodeById.get(loadBalancerId);
     if (loadBalancer) {
-      const targets = this.graph.edges
-        .filter(
-          (edge) =>
-            edge.source === loadBalancerId &&
-            getEdgePurpose(edge.data) === 'request' &&
-            !edge.data?.isCut,
-        )
+      const targets = (this.outgoingEdgesByNode.get(loadBalancerId) || [])
+        .filter((edge) => getEdgePurpose(edge.data) === 'request' && !edge.data?.isCut)
         .map((edge) => edge.target);
       this.activeConnections[loadBalancerId] = Object.values(
         this.getLoadBalancerActiveConnections(loadBalancerId, targets, startAtMs),
@@ -1827,8 +1856,8 @@ export class SysSimEngine {
   private drainMessaging(deltaMs: number): void {
     this.workerModels.forEach((worker) => worker.beginStep());
     for (const [nodeId, model] of this.queueModels) {
-      const edges = this.graph.edges.filter((edge) => {
-        if (edge.source !== nodeId || edge.data?.isCut) return false;
+      const edges = (this.outgoingEdgesByNode.get(nodeId) || []).filter((edge) => {
+        if (edge.data?.isCut) return false;
         const purpose = getEdgePurpose(edge.data);
         return purpose === 'request' || purpose === 'fanout' || purpose === 'async';
       });
@@ -1837,7 +1866,7 @@ export class SysSimEngine {
       let totalRate = 0;
       let totalConcurrency = 0;
       for (const edge of edges) {
-        const target = this.graph.nodes.find((node) => node.id === edge.target);
+        const target = this.nodeById.get(edge.target);
         if (!target || target.config.health === 'down') continue;
         if (target.config.type === 'worker') {
           const replicas = Math.max(1, target.config.replicas || 1);
@@ -1872,11 +1901,11 @@ export class SysSimEngine {
             getEdgePurpose(edge.data),
             1,
           );
-          const target = this.graph.nodes.find((candidate) => candidate.id === edge.target);
+          const target = this.nodeById.get(edge.target);
           if (target?.config.type === 'worker') {
             const worker = this.workerModels.get(target.id);
             const retryLimit = worker?.retryLimit ?? target.config.retryLimit;
-            const broker = this.graph.nodes.find((candidate) => candidate.id === nodeId);
+            const broker = this.nodeById.get(nodeId);
             const brokerRetryLimit =
               broker && 'retryLimit' in broker.config ? broker.config.retryLimit : retryLimit;
             worker?.recordAttempt(
@@ -1891,7 +1920,7 @@ export class SysSimEngine {
       const stats = this.nodeStats[nodeId];
       if (stats) stats.queueDepth = model.getDepth();
       const workers = edges
-        .map((edge) => this.graph.nodes.find((candidate) => candidate.id === edge.target))
+        .map((edge) => this.nodeById.get(edge.target))
         .filter((target) => target?.config.type === 'worker');
       const queuedPerWorker = workers.length > 0 ? Math.ceil(model.getDepth() / workers.length) : 0;
       workers.forEach(
@@ -1972,7 +2001,7 @@ export class SysSimEngine {
   private flushReadyCacheFills(): void {
     for (const [pendingKey, pending] of this.pendingCacheFills) {
       if (pending.readyAtMs > this.elapsedSimulationMs) continue;
-      const node = this.graph.nodes.find((candidate) => candidate.id === pending.cacheNodeId);
+      const node = this.nodeById.get(pending.cacheNodeId);
       if (node?.config.health !== 'down') {
         this.cacheModels.get(pending.cacheNodeId)?.put(pending.cacheKey, this.elapsedSimulationMs);
       }
@@ -2081,16 +2110,13 @@ export class SysSimEngine {
       (request) => request.status === 'success',
     );
     const failedRequests = this.completedRequests.filter((request) => request.status !== 'success');
-    const latencies = successfulRequests
-      .map((request) => request.totalLatencyMs)
-      .sort((a, b) => a - b);
     const failedLatencies = failedRequests.map((request) => request.totalLatencyMs);
     const average = (values: readonly number[]) =>
       values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
-    const p50 = nearestRankQuantile(latencies, 0.5);
-    const p95 = nearestRankQuantile(latencies, 0.95);
-    const p99 = nearestRankQuantile(latencies, 0.99);
-    const avg = average(latencies);
+    const p50 = this.successfulLatencyWindow.quantile(0.5);
+    const p95 = this.successfulLatencyWindow.quantile(0.95);
+    const p99 = this.successfulLatencyWindow.quantile(0.99);
+    const avg = this.successfulLatencyWindow.average();
     const allRecentRequests = [...successfulRequests, ...failedRequests];
     const avgQueueWait = average(allRecentRequests.map((request) => request.queueWaitMs || 0));
     const avgServiceTime = average(allRecentRequests.map((request) => request.serviceTimeMs || 0));
@@ -2141,8 +2167,7 @@ export class SysSimEngine {
           ? stats.latencies.reduce((a, b) => a + b, 0) / stats.latencies.length
           : 0;
 
-      const sortedNodeLat = [...stats.latencies].sort((a, b) => a - b);
-      const nodeP95 = nearestRankQuantile(sortedNodeLat, 0.95);
+      const nodeP95 = this.nodeLatencyWindows.get(n.id)?.quantile(0.95) || 0;
 
       const nodeErrorRate =
         stats.totalRequests > 0 ? (stats.failedRequests / stats.totalRequests) * 100 : 0;
