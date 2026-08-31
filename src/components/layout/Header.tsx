@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
   Share2,
   Download,
@@ -22,10 +22,19 @@ import {
   exportCanvasToPng,
   importArchitectureJson,
 } from '../../utils/sharing';
-import { ShortcutsModal } from '../modals/ShortcutsModal';
-import { ChaosDrillModal } from '../modals/ChaosDrillModal';
-import { SnapshotManagerModal } from '../modals/SnapshotManagerModal';
 import styles from './Header.module.css';
+
+const ShortcutsModal = lazy(() =>
+  import('../modals/ShortcutsModal').then((module) => ({ default: module.ShortcutsModal })),
+);
+const ChaosDrillModal = lazy(() =>
+  import('../modals/ChaosDrillModal').then((module) => ({ default: module.ChaosDrillModal })),
+);
+const SnapshotManagerModal = lazy(() =>
+  import('../modals/SnapshotManagerModal').then((module) => ({
+    default: module.SnapshotManagerModal,
+  })),
+);
 
 interface HeaderProps {
   isSidebarOpen?: boolean;
@@ -267,9 +276,17 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
         </div>
       </div>
 
-      <ShortcutsModal isOpen={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)} />
-      <ChaosDrillModal isOpen={isChaosDrillsOpen} onClose={() => setIsChaosDrillsOpen(false)} />
-      <SnapshotManagerModal isOpen={isSnapshotsOpen} onClose={() => setIsSnapshotsOpen(false)} />
+      <Suspense fallback={null}>
+        {isShortcutsOpen ? (
+          <ShortcutsModal isOpen onClose={() => setIsShortcutsOpen(false)} />
+        ) : null}
+        {isChaosDrillsOpen ? (
+          <ChaosDrillModal isOpen onClose={() => setIsChaosDrillsOpen(false)} />
+        ) : null}
+        {isSnapshotsOpen ? (
+          <SnapshotManagerModal isOpen onClose={() => setIsSnapshotsOpen(false)} />
+        ) : null}
+      </Suspense>
     </header>
   );
 };

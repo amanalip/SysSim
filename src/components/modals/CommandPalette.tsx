@@ -19,6 +19,7 @@ import { COMPONENT_METADATA_LIST } from '../../model/component-defaults';
 import { ComponentType } from '../../model/types';
 import styles from './CommandPalette.module.css';
 import { useModalAccessibility } from './useModalAccessibility';
+import { ModalPortal } from './ModalPortal';
 
 interface CommandItem {
   id: string;
@@ -217,71 +218,76 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div
-        ref={dialogRef}
-        className={styles.modal}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Command palette"
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={styles.searchBar}>
-          <Search size={16} color="var(--text-muted)" />
-          <input
-            ref={inputRef}
-            type="text"
-            className={styles.searchInput}
-            placeholder="Type a command, add component, or search scenario..."
-            aria-label="Search commands, components, and scenarios"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-          <span className={styles.escBadge}>ESC</span>
-        </div>
+    <ModalPortal>
+      <div className={styles.overlay}>
+        <div
+          ref={dialogRef}
+          className={styles.modal}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Command palette"
+          aria-describedby="command-palette-description"
+          tabIndex={-1}
+        >
+          <p id="command-palette-description" className={styles.srOnly}>
+            Search commands, components, and scenarios. Use arrow keys to choose and Enter to run.
+          </p>
+          <div className={styles.searchBar}>
+            <Search size={16} color="var(--text-muted)" />
+            <input
+              ref={inputRef}
+              type="text"
+              className={styles.searchInput}
+              placeholder="Type a command, add component, or search scenario..."
+              aria-label="Search commands, components, and scenarios"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <span className={styles.escBadge}>ESC</span>
+          </div>
 
-        <div className={styles.commandList} ref={listRef}>
-          {filteredCommands.length === 0 ? (
-            <div className={styles.emptyState}>No matching commands or components found</div>
-          ) : (
-            filteredCommands.map((cmd, idx) => (
-              <button
-                type="button"
-                key={cmd.id}
-                className={`${styles.commandItem} ${idx === selectedIndex ? styles.commandItemActive : ''}`}
-                onClick={() => {
-                  cmd.action();
-                  onClose();
-                }}
-                onMouseEnter={() => setSelectedIndex(idx)}
-              >
-                <div className={styles.itemLeft}>
-                  <div className={styles.iconBox}>{cmd.icon}</div>
-                  <div className={styles.itemText}>
-                    <span className={styles.itemTitle}>{cmd.title}</span>
-                    {cmd.subtitle && <span className={styles.itemSubtitle}>{cmd.subtitle}</span>}
+          <div className={styles.commandList} ref={listRef}>
+            {filteredCommands.length === 0 ? (
+              <div className={styles.emptyState}>No matching commands or components found</div>
+            ) : (
+              filteredCommands.map((cmd, idx) => (
+                <button
+                  type="button"
+                  key={cmd.id}
+                  className={`${styles.commandItem} ${idx === selectedIndex ? styles.commandItemActive : ''}`}
+                  onClick={() => {
+                    cmd.action();
+                    onClose();
+                  }}
+                  onMouseEnter={() => setSelectedIndex(idx)}
+                >
+                  <div className={styles.itemLeft}>
+                    <div className={styles.iconBox}>{cmd.icon}</div>
+                    <div className={styles.itemText}>
+                      <span className={styles.itemTitle}>{cmd.title}</span>
+                      {cmd.subtitle && <span className={styles.itemSubtitle}>{cmd.subtitle}</span>}
+                    </div>
                   </div>
-                </div>
-                {cmd.shortcut && <span className={styles.shortcutBadge}>{cmd.shortcut}</span>}
-              </button>
-            ))
-          )}
-        </div>
+                  {cmd.shortcut && <span className={styles.shortcutBadge}>{cmd.shortcut}</span>}
+                </button>
+              ))
+            )}
+          </div>
 
-        <div className={styles.footerHints}>
-          <span>
-            Use <b>↑↓</b> to navigate
-          </span>
-          <span>
-            <b>Enter</b> to select
-          </span>
-          <span>
-            <b>ESC</b> to close
-          </span>
+          <div className={styles.footerHints}>
+            <span>
+              Use <b>↑↓</b> to navigate
+            </span>
+            <span>
+              <b>Enter</b> to select
+            </span>
+            <span>
+              <b>ESC</b> to close
+            </span>
+          </div>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 };

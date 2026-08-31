@@ -14,6 +14,7 @@ import { useStore } from '../../store/use-store';
 import { chaosDrills, ChaosDrillId, ChaosDrillRecord } from '../../engine/chaos-drills';
 import styles from './ChaosDrillModal.module.css';
 import { useModalAccessibility } from './useModalAccessibility';
+import { ModalPortal } from './ModalPortal';
 
 interface ChaosDrillModalProps {
   isOpen: boolean;
@@ -100,91 +101,93 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div
-        ref={dialogRef}
-        className={styles.modal}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="chaos-drills-title"
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={styles.modalHeader}>
-          <div className={styles.titleGroup}>
-            <div className={styles.iconBadge}>
-              <Flame size={16} color="var(--error)" />
-            </div>
-            <div>
-              <div id="chaos-drills-title" className={styles.modalTitle}>
-                Chaos Engineering Drills
+    <ModalPortal>
+      <div className={styles.overlay}>
+        <div
+          ref={dialogRef}
+          className={styles.modal}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="chaos-drills-title"
+          aria-describedby="chaos-drills-description"
+          tabIndex={-1}
+        >
+          <div className={styles.modalHeader}>
+            <div className={styles.titleGroup}>
+              <div className={styles.iconBadge}>
+                <Flame size={16} color="var(--error)" />
               </div>
-              <div className={styles.modalSubtitle}>
-                Explore simplified failure states; results do not certify fault tolerance
-              </div>
-            </div>
-          </div>
-          <button
-            className={styles.closeBtn}
-            onClick={onClose}
-            aria-label="Close chaos engineering drills"
-          >
-            <X size={15} />
-          </button>
-        </div>
-
-        {activeDrill && (
-          <div className={styles.activeBanner}>
-            <AlertTriangle size={14} color="var(--error)" />
-            <span>{activeDrill.observedResult}</span>
-            <button className={styles.restoreBtn} onClick={handleRestore}>
-              <RotateCcw size={12} />
-              <span>Restore System</span>
-            </button>
-          </div>
-        )}
-
-        <div className={styles.drillList}>
-          <label className={styles.protectionOption}>
-            <input
-              type="checkbox"
-              checked={stampedeProtection}
-              onChange={(event) => setStampedeProtection(event.target.checked)}
-              disabled={Boolean(activeDrill)}
-            />
-            Compare cache stampede with request coalescing protection
-          </label>
-          {drills.map((drill) => (
-            <div key={drill.id} className={styles.drillCard}>
-              <div className={styles.cardLeft}>
-                <div className={styles.drillIconBox}>{drill.icon}</div>
-                <div className={styles.drillInfo}>
-                  <div className={styles.drillHeaderRow}>
-                    <span className={styles.drillName}>{drill.name}</span>
-                    <span className={styles.drillCategory}>{drill.category}</span>
-                  </div>
-                  <span className={styles.drillDesc}>{drill.description}</span>
+              <div>
+                <div id="chaos-drills-title" className={styles.modalTitle}>
+                  Chaos Engineering Drills
+                </div>
+                <div id="chaos-drills-description" className={styles.modalSubtitle}>
+                  Explore simplified failure states; results do not certify fault tolerance
                 </div>
               </div>
-              <button
-                className={styles.triggerBtn}
-                onClick={drill.execute}
-                disabled={Boolean(activeDrill)}
-                title={`Launch ${drill.name}`}
-              >
-                Launch Drill
+            </div>
+            <button
+              className={styles.closeBtn}
+              onClick={onClose}
+              aria-label="Close chaos engineering drills"
+            >
+              <X size={15} />
+            </button>
+          </div>
+
+          {activeDrill && (
+            <div className={styles.activeBanner}>
+              <AlertTriangle size={14} color="var(--error)" />
+              <span>{activeDrill.observedResult}</span>
+              <button className={styles.restoreBtn} onClick={handleRestore}>
+                <RotateCcw size={12} />
+                <span>Restore System</span>
               </button>
             </div>
-          ))}
-        </div>
+          )}
 
-        <div className={styles.modalFooter}>
-          <button className={styles.restoreFooterBtn} onClick={handleRestore}>
-            <RotateCcw size={13} />
-            <span>Restore Active Drill</span>
-          </button>
+          <div className={styles.drillList}>
+            <label className={styles.protectionOption}>
+              <input
+                type="checkbox"
+                checked={stampedeProtection}
+                onChange={(event) => setStampedeProtection(event.target.checked)}
+                disabled={Boolean(activeDrill)}
+              />
+              Compare cache stampede with request coalescing protection
+            </label>
+            {drills.map((drill) => (
+              <div key={drill.id} className={styles.drillCard}>
+                <div className={styles.cardLeft}>
+                  <div className={styles.drillIconBox}>{drill.icon}</div>
+                  <div className={styles.drillInfo}>
+                    <div className={styles.drillHeaderRow}>
+                      <span className={styles.drillName}>{drill.name}</span>
+                      <span className={styles.drillCategory}>{drill.category}</span>
+                    </div>
+                    <span className={styles.drillDesc}>{drill.description}</span>
+                  </div>
+                </div>
+                <button
+                  className={styles.triggerBtn}
+                  onClick={drill.execute}
+                  disabled={Boolean(activeDrill)}
+                  title={`Launch ${drill.name}`}
+                >
+                  Launch Drill
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.modalFooter}>
+            <button className={styles.restoreFooterBtn} onClick={handleRestore}>
+              <RotateCcw size={13} />
+              <span>Restore Active Drill</span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 };

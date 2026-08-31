@@ -20,6 +20,12 @@ export function useModalAccessibility(
   onCloseRef.current = onClose;
   useEffect(() => {
     if (!isOpen) return;
+    const appRoot = document.getElementById('root');
+    const previousAriaHidden = appRoot?.getAttribute('aria-hidden');
+    if (appRoot) {
+      appRoot.inert = true;
+      appRoot.setAttribute('aria-hidden', 'true');
+    }
     const previouslyFocused =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusInitial = () => {
@@ -59,6 +65,11 @@ export function useModalAccessibility(
     return () => {
       cancelAnimationFrame(frame);
       document.removeEventListener('keydown', handleKeyDown);
+      if (appRoot) {
+        appRoot.inert = false;
+        if (previousAriaHidden == null) appRoot.removeAttribute('aria-hidden');
+        else appRoot.setAttribute('aria-hidden', previousAriaHidden);
+      }
       previouslyFocused?.focus();
     };
   }, [dialogRef, initialFocusRef, isOpen]);

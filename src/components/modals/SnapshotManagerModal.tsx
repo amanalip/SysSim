@@ -14,6 +14,7 @@ import {
 } from '../../model/snapshot-storage';
 import styles from './SnapshotManagerModal.module.css';
 import { useModalAccessibility } from './useModalAccessibility';
+import { ModalPortal } from './ModalPortal';
 
 interface SnapshotManagerModalProps {
   isOpen: boolean;
@@ -39,7 +40,7 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
         'error',
       );
     }
-  }, [isOpen]);
+  }, [addToast, isOpen]);
 
   const saveSlotsToStorage = (updated: SnapshotSlot[]): boolean => {
     try {
@@ -141,156 +142,162 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div
-        ref={dialogRef}
-        className={styles.modal}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="snapshot-manager-title"
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={styles.modalHeader}>
-          <div className={styles.titleGroup}>
-            <div className={styles.iconBadge}>
-              <Bookmark size={16} color="var(--accent-primary)" />
-            </div>
-            <div>
-              <div id="snapshot-manager-title" className={styles.modalTitle}>
-                Architecture Snapshots Manager
+    <ModalPortal>
+      <div className={styles.overlay}>
+        <div
+          ref={dialogRef}
+          className={styles.modal}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="snapshot-manager-title"
+          aria-describedby="snapshot-manager-description"
+          tabIndex={-1}
+        >
+          <div className={styles.modalHeader}>
+            <div className={styles.titleGroup}>
+              <div className={styles.iconBadge}>
+                <Bookmark size={16} color="var(--accent-primary)" />
               </div>
-              <div className={styles.modalSubtitle}>
-                Save and recall multi-slot architecture checkpoints locally
+              <div>
+                <div id="snapshot-manager-title" className={styles.modalTitle}>
+                  Architecture Snapshots Manager
+                </div>
+                <div id="snapshot-manager-description" className={styles.modalSubtitle}>
+                  Save and recall multi-slot architecture checkpoints locally
+                </div>
               </div>
             </div>
+            <button
+              className={styles.closeBtn}
+              onClick={onClose}
+              aria-label="Close snapshot manager"
+            >
+              <X size={15} />
+            </button>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Close snapshot manager">
-            <X size={15} />
-          </button>
-        </div>
 
-        <div className={styles.slotActions}>
-          <button
-            className={styles.saveBtn}
-            onClick={handleExportAll}
-            title="Export all snapshot slots as JSON"
-          >
-            <Download size={12} />
-            <span>Export all</span>
-          </button>
-          <button
-            className={styles.loadBtn}
-            onClick={() => importInputRef.current?.click()}
-            title="Import all snapshot slots from JSON"
-          >
-            <FileUp size={12} />
-            <span>Import all</span>
-          </button>
-          <input
-            ref={importInputRef}
-            type="file"
-            accept="application/json,.json"
-            hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void handleImportAll(file);
-              event.currentTarget.value = '';
-            }}
-          />
-        </div>
+          <div className={styles.slotActions}>
+            <button
+              className={styles.saveBtn}
+              onClick={handleExportAll}
+              title="Export all snapshot slots as JSON"
+            >
+              <Download size={12} />
+              <span>Export all</span>
+            </button>
+            <button
+              className={styles.loadBtn}
+              onClick={() => importInputRef.current?.click()}
+              title="Import all snapshot slots from JSON"
+            >
+              <FileUp size={12} />
+              <span>Import all</span>
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void handleImportAll(file);
+                event.currentTarget.value = '';
+              }}
+            />
+          </div>
 
-        <div className={styles.slotsList}>
-          {slots.map((slot) => {
-            const hasData = slot.timestamp !== null && !slot.corrupted;
-            return (
-              <div
-                key={slot.id}
-                className={`${styles.slotCard} ${hasData ? styles.slotCardFilled : ''}`}
-              >
-                <div className={styles.slotLeft}>
-                  <div className={styles.slotBadge}>#{slot.id}</div>
-                  <div className={styles.slotInfo}>
-                    <input
-                      type="text"
-                      className={styles.slotNameInput}
-                      value={customNames[slot.id] ?? slot.name}
-                      onChange={(e) =>
-                        setCustomNames((prev) => ({ ...prev, [slot.id]: e.target.value }))
-                      }
-                      onBlur={() => {
-                        if (customNames[slot.id] !== undefined) {
-                          const normalized = customNames[slot.id].trim();
-                          const updated = slots.map((s) =>
-                            s.id === slot.id
-                              ? { ...s, name: normalized || `Architecture Snapshot ${slot.id}` }
-                              : s,
-                          );
-                          saveSlotsToStorage(updated);
+          <div className={styles.slotsList}>
+            {slots.map((slot) => {
+              const hasData = slot.timestamp !== null && !slot.corrupted;
+              return (
+                <div
+                  key={slot.id}
+                  className={`${styles.slotCard} ${hasData ? styles.slotCardFilled : ''}`}
+                >
+                  <div className={styles.slotLeft}>
+                    <div className={styles.slotBadge}>#{slot.id}</div>
+                    <div className={styles.slotInfo}>
+                      <input
+                        type="text"
+                        className={styles.slotNameInput}
+                        value={customNames[slot.id] ?? slot.name}
+                        onChange={(e) =>
+                          setCustomNames((prev) => ({ ...prev, [slot.id]: e.target.value }))
                         }
-                      }}
-                      placeholder={`Snapshot ${slot.id}`}
-                    />
-                    <div className={styles.slotMeta}>
-                      {slot.corrupted ? (
-                        <span className={styles.emptyLabel}>
-                          Corrupted: {slot.corruptionReason}
-                        </span>
-                      ) : hasData ? (
-                        <>
-                          <span className={styles.statPill}>
-                            {slot.nodeCount} nodes • {slot.edgeCount} links
+                        onBlur={() => {
+                          if (customNames[slot.id] !== undefined) {
+                            const normalized = customNames[slot.id].trim();
+                            const updated = slots.map((s) =>
+                              s.id === slot.id
+                                ? { ...s, name: normalized || `Architecture Snapshot ${slot.id}` }
+                                : s,
+                            );
+                            saveSlotsToStorage(updated);
+                          }
+                        }}
+                        placeholder={`Snapshot ${slot.id}`}
+                      />
+                      <div className={styles.slotMeta}>
+                        {slot.corrupted ? (
+                          <span className={styles.emptyLabel}>
+                            Corrupted: {slot.corruptionReason}
                           </span>
-                          <span className={styles.datePill}>
-                            <Clock size={10} />
-                            {new Date(slot.timestamp!).toLocaleTimeString()}
-                          </span>
-                        </>
-                      ) : (
-                        <span className={styles.emptyLabel}>Empty Slot</span>
-                      )}
+                        ) : hasData ? (
+                          <>
+                            <span className={styles.statPill}>
+                              {slot.nodeCount} nodes • {slot.edgeCount} links
+                            </span>
+                            <span className={styles.datePill}>
+                              <Clock size={10} />
+                              {new Date(slot.timestamp!).toLocaleTimeString()}
+                            </span>
+                          </>
+                        ) : (
+                          <span className={styles.emptyLabel}>Empty Slot</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className={styles.slotActions}>
-                  <button
-                    className={styles.saveBtn}
-                    onClick={() => handleSaveToSlot(slot.id)}
-                    title="Save current canvas state to this slot"
-                  >
-                    <Save size={12} />
-                    <span>Save</span>
-                  </button>
+                  <div className={styles.slotActions}>
+                    <button
+                      className={styles.saveBtn}
+                      onClick={() => handleSaveToSlot(slot.id)}
+                      title="Save current canvas state to this slot"
+                    >
+                      <Save size={12} />
+                      <span>Save</span>
+                    </button>
 
-                  {(hasData || slot.corrupted) && (
-                    <>
-                      {hasData ? (
+                    {(hasData || slot.corrupted) && (
+                      <>
+                        {hasData ? (
+                          <button
+                            className={styles.loadBtn}
+                            onClick={() => handleLoadFromSlot(slot)}
+                            title="Load this snapshot onto canvas"
+                          >
+                            <Upload size={12} />
+                            <span>Load</span>
+                          </button>
+                        ) : null}
                         <button
-                          className={styles.loadBtn}
-                          onClick={() => handleLoadFromSlot(slot)}
-                          title="Load this snapshot onto canvas"
+                          className={styles.clearBtn}
+                          onClick={() => handleClearSlot(slot.id)}
+                          aria-label={`Clear snapshot slot ${slot.id}`}
+                          title="Clear this snapshot slot"
                         >
-                          <Upload size={12} />
-                          <span>Load</span>
+                          <Trash2 size={12} />
                         </button>
-                      ) : null}
-                      <button
-                        className={styles.clearBtn}
-                        onClick={() => handleClearSlot(slot.id)}
-                        aria-label={`Clear snapshot slot ${slot.id}`}
-                        title="Clear this snapshot slot"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </>
-                  )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 };
