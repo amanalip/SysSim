@@ -749,99 +749,99 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 493. Benchmark long-running simulations for memory growth.
 - [x] 494. Benchmark large graphs and dense edge sets.
 - [x] 495. Benchmark high fanout and large queue depths.
-- [ ] 496. Measure worker CPU time, UI frame rate, memory, and message size.
-- [ ] 497. Verify pause, reset, and graph edits remain responsive under load.
-- [ ] 498. Fail gracefully or clamp inputs beyond supported limits.
-- [ ] 499. Publish tested limits and representative hardware assumptions.
+- [x] 496. Measure worker CPU time, UI frame rate, memory, and message size.
+- [x] 497. Verify pause, reset, and graph edits remain responsive under load.
+- [x] 498. Fail gracefully or clamp inputs beyond supported limits.
+- [x] 499. Publish tested limits and representative hardware assumptions.
 
 ## Improve rendering performance — P2
 
-- [ ] 500. Profile React renders while simulation metrics update.
-- [ ] 501. Use focused Zustand selectors to avoid subscribing components to unrelated state.
-- [ ] 502. Stabilize callback and derived-value identities where meaningful.
-- [ ] 503. Virtualize long scenario and palette lists if measurement warrants it.
-- [ ] 504. Reduce particle count adaptively under load and reduced-motion settings.
-- [ ] 505. Avoid unnecessary full-canvas image export work.
-- [ ] 506. Add performance regression checks for core interactions.
+- [x] 500. Profile React renders while simulation metrics update.
+- [x] 501. Use focused Zustand selectors to avoid subscribing components to unrelated state.
+- [x] 502. Stabilize callback and derived-value identities where meaningful.
+- [x] 503. Virtualize long scenario and palette lists if measurement warrants it.
+- [x] 504. Reduce particle count adaptively under load and reduced-motion settings.
+- [x] 505. Avoid unnecessary full-canvas image export work.
+- [x] 506. Add performance regression checks for core interactions.
 
 # Phase 7 — Security and Reliability
 
 ## Harden untrusted data handling — P0
 
-- [ ] 507. Treat URL hashes, imported files, localStorage, and future shared content as untrusted input.
-- [ ] 508. Apply versioned runtime validation before writing any imported state to the store.
-- [ ] 509. Reject prototype-polluting keys and unexpected fields where relevant.
-- [ ] 510. Limit file size before reading and JSON parsing.
-- [ ] 511. Limit decompressed URL payload size.
-- [ ] 512. Limit text lengths displayed in nodes, zones, snapshots, and scenarios.
-- [ ] 513. Ensure invalid data cannot create infinite simulation work or render explosions.
-- [ ] 514. Fuzz architecture decoding and import validation.
-- [ ] 515. Add safe recovery behavior for corrupted persisted state.
+- [x] 507. Treat URL hashes, imported files, localStorage, and future shared content as untrusted input.
+- [x] 508. Apply versioned runtime validation before writing any imported state to the store.
+- [x] 509. Reject prototype-polluting keys and unexpected fields where relevant.
+- [x] 510. Limit file size before reading and JSON parsing.
+- [x] 511. Limit decompressed URL payload size.
+- [x] 512. Limit text lengths displayed in nodes, zones, snapshots, and scenarios.
+- [x] 513. Ensure invalid data cannot create infinite simulation work or render explosions.
+- [x] 514. Fuzz architecture decoding and import validation.
+- [x] 515. Add safe recovery behavior for corrupted persisted state.
 
 ## Add browser security controls — P1
 
-- [ ] 516. Define a Content Security Policy compatible with the deployment model.
-- [ ] 517. Decide whether externally hosted Google Fonts are acceptable; self-host if privacy or CSP requirements demand it.
-- [ ] 518. Configure `Referrer-Policy`, `X-Content-Type-Options`, and relevant Permissions Policy headers where hosting permits.
-- [ ] 519. Verify all external links use safe opener/referrer behavior.
-- [ ] 520. Ensure exported filenames and user-provided names cannot cause unsafe behavior.
-- [ ] 521. Confirm no sensitive data is unintentionally included in share URLs.
-- [ ] 522. Warn users that URL-encoded architectures may be stored in browser history, logs, or referrers.
+- [x] 516. Define a Content Security Policy compatible with the deployment model.
+- [x] 517. Decide whether externally hosted Google Fonts are acceptable; self-host if privacy or CSP requirements demand it.
+- [x] 518. Configure `Referrer-Policy`, `X-Content-Type-Options`, and relevant Permissions Policy headers where hosting permits.
+- [x] 519. Verify all external links use safe opener/referrer behavior.
+- [x] 520. Ensure exported filenames and user-provided names cannot cause unsafe behavior.
+- [x] 521. Confirm no sensitive data is unintentionally included in share URLs.
+- [x] 522. Warn users that URL-encoded architectures may be stored in browser history, logs, or referrers.
 
 ## Maintain dependency and supply-chain hygiene — P1
 
-- [ ] 523. Keep lockfile-based reproducible installation with `npm ci` in CI.
-- [ ] 524. Run production and development dependency audits regularly.
-- [ ] 525. Configure automated dependency update pull requests.
-- [ ] 526. Review major-version upgrades deliberately rather than applying them blindly.
-- [ ] 527. Remove redundant or unused dependencies.
-- [ ] 528. Document why direct low-level dependencies are required.
-- [ ] 529. Generate and retain an SBOM for releases if distribution warrants it.
-- [ ] 530. Pin release tooling and GitHub Actions appropriately.
-- [ ] 531. Add a security policy describing responsible vulnerability reporting.
+- [x] 523. Keep lockfile-based reproducible installation with `npm ci` in CI.
+- [x] 524. Run production and development dependency audits regularly.
+- [x] 525. Configure automated dependency update pull requests.
+- [x] 526. Review major-version upgrades deliberately rather than applying them blindly.
+- [x] 527. Remove redundant or unused dependencies.
+- [x] 528. Document why direct low-level dependencies are required.
+- [x] 529. Generate and retain an SBOM for releases if distribution warrants it.
+- [x] 530. Pin release tooling and GitHub Actions appropriately.
+- [x] 531. Add a security policy describing responsible vulnerability reporting.
 
 ## Improve error handling and observability — P1
 
-- [ ] 532. Add an application-level error boundary.
-- [ ] 533. Provide recovery actions for canvas/render failures.
-- [ ] 534. Replace silently swallowed persistence errors with user-visible, non-disruptive feedback.
-- [ ] 535. Log diagnostic context without leaking architecture content unexpectedly.
-- [ ] 536. Add a copyable diagnostic report containing app version, browser, schema version, and simulation seed.
-- [ ] 537. Distinguish user errors, validation errors, engine errors, worker errors, and export errors.
-- [ ] 538. Ensure failure to export PNG does not leave misleading success notifications.
-- [ ] 539. Add tests for every user-visible error state.
+- [x] 532. Add an application-level error boundary.
+- [x] 533. Provide recovery actions for canvas/render failures.
+- [x] 534. Replace silently swallowed persistence errors with user-visible, non-disruptive feedback.
+- [x] 535. Log diagnostic context without leaking architecture content unexpectedly.
+- [x] 536. Add a copyable diagnostic report containing app version, browser, schema version, and simulation seed.
+- [x] 537. Distinguish user errors, validation errors, engine errors, worker errors, and export errors.
+- [x] 538. Ensure failure to export PNG does not leave misleading success notifications.
+- [x] 539. Add tests for every user-visible error state.
 
 # Phase 8 — Code Architecture and Maintainability
 
 ## Decompose the global Zustand store — P1/P2
 
-- [ ] 540. Separate UI, graph, simulation, scenario, persistence, toast, and calculator state into coherent slices.
-- [ ] 541. Keep pure graph operations independent of React and bridge side effects.
-- [ ] 542. Introduce typed selectors for high-frequency consumers.
-- [ ] 543. Avoid subscribing large components to the full store.
-- [ ] 544. Centralize reset behavior so initial objects are not accidentally shared or mutated.
-- [ ] 545. Document side effects for each action.
-- [ ] 546. Add slice-level tests.
+- [x] 540. Separate UI, graph, simulation, scenario, persistence, toast, and calculator state into coherent slices.
+- [x] 541. Keep pure graph operations independent of React and bridge side effects.
+- [x] 542. Introduce typed selectors for high-frequency consumers.
+- [x] 543. Avoid subscribing large components to the full store.
+- [x] 544. Centralize reset behavior so initial objects are not accidentally shared or mutated.
+- [x] 545. Document side effects for each action.
+- [x] 546. Add slice-level tests.
 
 ## Strengthen TypeScript modeling — P1
 
-- [ ] 547. Remove avoidable `any` casts from production code.
-- [ ] 548. Type React Flow nodes and edges using generics rather than repeated double casts.
-- [ ] 549. Replace generic partial config updates with component-discriminated update helpers where practical.
-- [ ] 550. Ensure protocols used by scenarios are part of `EdgeProtocol`.
-- [ ] 551. Add exhaustive switches for component and protocol behavior.
-- [ ] 552. Use `never` checks so newly added component types cannot silently receive default simulation behavior.
-- [ ] 553. Type worker messages as discriminated unions.
-- [ ] 554. Type imported schemas separately from validated domain objects.
-- [ ] 555. Consider branded IDs or helper types for node, edge, zone, request, and scenario IDs.
-- [ ] 556. Keep runtime schema and TypeScript types synchronized through generation or shared definitions.
+- [x] 547. Remove avoidable `any` casts from production code.
+- [x] 548. Type React Flow nodes and edges using generics rather than repeated double casts.
+- [x] 549. Replace generic partial config updates with component-discriminated update helpers where practical.
+- [x] 550. Ensure protocols used by scenarios are part of `EdgeProtocol`.
+- [x] 551. Add exhaustive switches for component and protocol behavior.
+- [x] 552. Use `never` checks so newly added component types cannot silently receive default simulation behavior.
+- [x] 553. Type worker messages as discriminated unions.
+- [x] 554. Type imported schemas separately from validated domain objects.
+- [x] 555. Consider branded IDs or helper types for node, edge, zone, request, and scenario IDs.
+- [x] 556. Keep runtime schema and TypeScript types synchronized through generation or shared definitions.
 
 ## Break up oversized modules — P2
 
-- [ ] 557. Split the simulation engine into routing, scheduling, component execution, metrics, and state lifecycle modules.
-- [ ] 558. Split component property editors into type-specific subcomponents.
-- [ ] 559. Split metrics dashboard views into independently loaded components.
-- [ ] 560. Extract calculator formulas and formatting.
+- [x] 557. Split the simulation engine into routing, scheduling, component execution, metrics, and state lifecycle modules.
+- [x] 558. Split component property editors into type-specific subcomponents.
+- [x] 559. Split metrics dashboard views into independently loaded components.
+- [x] 560. Extract calculator formulas and formatting.
 - [ ] 561. Split scenario data from scenario registry metadata where useful for code loading.
 - [ ] 562. Keep files cohesive rather than enforcing an arbitrary line limit.
 - [ ] 563. Add architecture dependency rules to prevent UI-to-engine/store cycles.
