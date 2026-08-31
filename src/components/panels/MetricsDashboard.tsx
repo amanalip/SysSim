@@ -26,6 +26,7 @@ import { ModelNotice } from '../ui/ModelNotice';
 import { BottleneckPanel } from './BottleneckPanel';
 import { buildMetricsCsv } from '../../utils/metrics-export';
 import styles from './MetricsDashboard.module.css';
+import { formatUtcDateForFilename } from '../../platform/time';
 
 const HealthRadarPanel = lazy(() =>
   import('./HealthRadarPanel').then((module) => ({ default: module.HealthRadarPanel })),
@@ -62,7 +63,7 @@ export const MetricsDashboard: React.FC = () => {
 
   const [viewMode, setViewMode] = useState<'charts' | 'table'>('charts');
 
-  // Closed state: render a sleek persistent mini-ticker bar
+  // Closed state keeps a compact, accessible telemetry summary visible.
   if (!isBottomDrawerOpen) {
     const successPercent =
       metrics.totalRequestsSent > 0
@@ -136,7 +137,7 @@ export const MetricsDashboard: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `syssim_metrics_${Date.now()}.csv`);
+    link.setAttribute('download', `syssim-metrics-${formatUtcDateForFilename(Date.now())}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -254,6 +255,12 @@ export const MetricsDashboard: React.FC = () => {
         {activeBottomTab === 'bottlenecks' && <BottleneckPanel />}
         {activeBottomTab === 'metrics' && (
           <>
+            {(metrics.totalRequestsCompleted ?? 0) === 0 && (
+              <p className={styles.metricsEmptyState} role="status">
+                No completed samples yet. Zero load and empty percentile fields are not health
+                grades; start the simulator and allow requests to complete.
+              </p>
+            )}
             {/* KPI Summary Cards */}
             <div className={styles.summaryCardsGrid}>
               <div className={styles.summaryCard}>
@@ -271,19 +278,19 @@ export const MetricsDashboard: React.FC = () => {
                 </span>
               </div>
               <div className={styles.summaryCard}>
-                <span className={styles.summaryLabel}>Recent Successful p50</span>
+                <span className={styles.summaryLabel}>Recent Successful p50 (rolling sample)</span>
                 <span className={styles.summaryValue}>
                   {metrics.totalRequestsSuccess > 0 ? `${metrics.p50LatencyMs}ms` : '--'}
                 </span>
               </div>
               <div className={styles.summaryCard}>
-                <span className={styles.summaryLabel}>Recent Successful p95</span>
+                <span className={styles.summaryLabel}>Recent Successful p95 (rolling sample)</span>
                 <span className={styles.summaryValue}>
                   {metrics.totalRequestsSuccess > 0 ? `${metrics.p95LatencyMs}ms` : '--'}
                 </span>
               </div>
               <div className={styles.summaryCard}>
-                <span className={styles.summaryLabel}>Recent Successful p99</span>
+                <span className={styles.summaryLabel}>Recent Successful p99 (rolling sample)</span>
                 <span className={styles.summaryValue}>
                   {metrics.totalRequestsSuccess > 0 ? `${metrics.p99LatencyMs}ms` : '--'}
                 </span>
@@ -367,12 +374,12 @@ export const MetricsDashboard: React.FC = () => {
                     <AreaChart data={metrics.timeSeries}>
                       <defs>
                         <linearGradient id="p50Grad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#58a6ff" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#58a6ff" stopOpacity={0.0} />
+                          <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0.0} />
                         </linearGradient>
                         <linearGradient id="p99Grad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#f85149" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#f85149" stopOpacity={0.0} />
+                          <stop offset="5%" stopColor="var(--chart-4)" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="var(--chart-4)" stopOpacity={0.0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
@@ -398,7 +405,7 @@ export const MetricsDashboard: React.FC = () => {
                         type="monotone"
                         dataKey="p95LatencyMs"
                         name="p95 (ms)"
-                        stroke="#f59e0b"
+                        stroke="var(--chart-2)"
                         strokeWidth={1.5}
                         fill="none"
                       />
@@ -427,12 +434,12 @@ export const MetricsDashboard: React.FC = () => {
                     <AreaChart data={metrics.timeSeries}>
                       <defs>
                         <linearGradient id="qpsGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3fb950" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#3fb950" stopOpacity={0.0} />
+                          <stop offset="5%" stopColor="var(--chart-3)" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="var(--chart-3)" stopOpacity={0.0} />
                         </linearGradient>
                         <linearGradient id="errGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#f85149" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#f85149" stopOpacity={0.0} />
+                          <stop offset="5%" stopColor="var(--chart-4)" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="var(--chart-4)" stopOpacity={0.0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
@@ -450,7 +457,7 @@ export const MetricsDashboard: React.FC = () => {
                         type="monotone"
                         dataKey="throughputQps"
                         name="Throughput (QPS)"
-                        stroke="#3fb950"
+                        stroke="var(--chart-3)"
                         strokeWidth={1.5}
                         fill="url(#qpsGrad)"
                       />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Network, AlertTriangle, Eye } from 'lucide-react';
 import { useStore } from '../../store/use-store';
@@ -6,6 +6,7 @@ import { RequestHop, SimRequest } from '../../model/types';
 import { ComponentIcon } from '../icons/ComponentIcon';
 import { ModelNotice } from '../ui/ModelNotice';
 import styles from './RequestTracePanel.module.css';
+import { formatSimulationDuration } from '../../platform/time';
 
 const CACHE_TYPES = new Set(['cdn', 'redis_cache', 'local_cache', 'cdn_cache', 'browser_cache']);
 
@@ -27,9 +28,39 @@ export const RequestTracePanel: React.FC = () => {
     })),
   );
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [routeFilter, setRouteFilter] = useState('');
+  const [nodeFilter, setNodeFilter] = useState('');
+  const [timeWindowMs, setTimeWindowMs] = useState(0);
 
-  // Sample the most recent completed or in-flight requests
-  const traces = recentRequests.slice(-25).reverse();
+  const latestTimestamp = recentRequests.at(-1)?.timestamp ?? 0;
+  const traces = useMemo(
+    () =>
+      recentRequests
+        .filter((trace) => statusFilter === 'all' || trace.status === statusFilter)
+        .filter((trace) =>
+          routeFilter.trim()
+            ? trace.path
+                .map((hop) => hop.nodeName)
+                .join(' → ')
+                .toLowerCase()
+                .includes(routeFilter.trim().toLowerCase())
+            : true,
+        )
+        .filter((trace) =>
+          nodeFilter.trim()
+            ? trace.path.some(
+                (hop) =>
+                  hop.nodeName.toLowerCase().includes(nodeFilter.trim().toLowerCase()) ||
+                  hop.nodeType.toLowerCase().includes(nodeFilter.trim().toLowerCase()),
+              )
+            : true,
+        )
+        .filter((trace) => timeWindowMs === 0 || trace.timestamp >= latestTimestamp - timeWindowMs)
+        .slice(-100)
+        .reverse(),
+    [recentRequests, statusFilter, routeFilter, nodeFilter, timeWindowMs, latestTimestamp],
+  );
   const selectedTrace: SimRequest | undefined =
     traces.find((t) => t.id === selectedTraceId) || traces[0];
 
@@ -74,8 +105,48 @@ export const RequestTracePanel: React.FC = () => {
         <div className={styles.traceList}>
           <div className={styles.listHeader}>
             <span>Recorded Traces ({traces.length})</span>
+            <div className={styles.filters}>
+              <select
+                aria-label="Filter traces by status"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                <option value="all">All statuses</option>
+                <option value="success">Success</option>
+                <option value="error">Error</option>
+                <option value="timeout">Timeout</option>
+                <option value="blocked">Blocked</option>
+                <option value="rate_limited">Rate limited</option>
+                <option value="dropped">Dropped</option>
+              </select>
+              <input
+                aria-label="Filter traces by route"
+                placeholder="Route…"
+                value={routeFilter}
+                onChange={(event) => setRouteFilter(event.target.value)}
+              />
+              <input
+                aria-label="Filter traces by node"
+                placeholder="Node…"
+                value={nodeFilter}
+                onChange={(event) => setNodeFilter(event.target.value)}
+              />
+              <select
+                aria-label="Filter traces by simulation time"
+                value={timeWindowMs}
+                onChange={(event) => setTimeWindowMs(Number(event.target.value))}
+              >
+                <option value={0}>All modeled time</option>
+                <option value={10_000}>Last 10 sim seconds</option>
+                <option value={30_000}>Last 30 sim seconds</option>
+                <option value={60_000}>Last 60 sim seconds</option>
+              </select>
+            </div>
           </div>
           <div className={styles.listBody}>
+            {traces.length === 0 && (
+              <p className={styles.noMatches}>No traces match these filters.</p>
+            )}
             {traces.map((trace) => {
               const isSelected = trace.id === (selectedTrace?.id || traces[0]?.id);
               const isSuccess = trace.status === 'success';
@@ -92,19 +163,13 @@ export const RequestTracePanel: React.FC = () => {
                 >
                   <div className={styles.traceItemTop}>
                     <span
-                      className={styles.statusPill}
-                      style={{
-                        backgroundColor: isSuccess
-                          ? 'rgba(63, 185, 80, 0.15)'
+                      className={`${styles.statusPill} ${
+                        isSuccess
+                          ? styles.statusSuccess
                           : isRateLimited || isBlocked
-                            ? 'rgba(210, 153, 34, 0.15)'
-                            : 'rgba(248, 81, 73, 0.15)',
-                        color: isSuccess
-                          ? 'var(--success)'
-                          : isRateLimited || isBlocked
-                            ? 'var(--warning)'
-                            : 'var(--error)',
-                      }}
+                            ? styles.statusWarning
+                            : styles.statusError
+                      }`}
                     >
                       {isSuccess
                         ? '200 OK'
@@ -119,7 +184,7 @@ export const RequestTracePanel: React.FC = () => {
                   <div className={styles.traceItemBottom}>
                     <span className={styles.traceHopsCount}>{trace.path.length} hops</span>
                     <span className={styles.traceTime}>
-                      {new Date(trace.timestamp).toLocaleTimeString()}
+                      t+{formatSimulationDuration(trace.timestamp)}
                     </span>
                   </div>
                 </button>

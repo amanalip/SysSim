@@ -82,7 +82,7 @@ export const RequestParticleLayer: React.FC = () => {
             sourceY: srcPos.y,
             targetX: tgtPos.x,
             targetY: tgtPos.y,
-            progress: (Date.now() / 800 + idx * 0.15) % 1,
+            progress: (performance.now() / 800 + idx * 0.15) % 1,
             color: req.color || '#58a6ff',
           });
         }

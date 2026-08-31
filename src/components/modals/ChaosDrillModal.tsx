@@ -36,11 +36,13 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
   const [activeDrill, setActiveDrill] = useState<ChaosDrillRecord | null>(
     () => chaosDrills.getActiveRecords()[0] || null,
   );
+  const [lastResult, setLastResult] = useState<ChaosDrillRecord | null>(activeDrill);
   const [stampedeProtection, setStampedeProtection] = useState(false);
   const addToast = useStore((state) => state.addToast);
 
   const launch = (id: ChaosDrillId) => {
     const result = chaosDrills.launch(id, { stampedeProtection });
+    setLastResult(result);
     setActiveDrill(result.succeeded ? result : chaosDrills.getActiveRecords()[0] || null);
     addToast(result.observedResult, result.succeeded ? 'warning' : 'error');
   };
@@ -97,6 +99,7 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
   const handleRestore = () => {
     if (activeDrill?.succeeded) chaosDrills.restore(activeDrill.id);
     setActiveDrill(null);
+    setLastResult(null);
     addToast('Restored the active drill to its exact pre-injection state', 'success');
   };
 
@@ -135,13 +138,13 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
             </button>
           </div>
 
-          {activeDrill && (
+          {lastResult && (
             <div className={styles.activeBanner}>
               <AlertTriangle size={14} color="var(--error)" />
-              <span>{activeDrill.observedResult}</span>
+              <span>{lastResult.observedResult}</span>
               <button className={styles.restoreBtn} onClick={handleRestore}>
                 <RotateCcw size={12} />
-                <span>Restore System</span>
+                <span>{activeDrill ? 'Restore System' : 'Dismiss Result'}</span>
               </button>
             </div>
           )}

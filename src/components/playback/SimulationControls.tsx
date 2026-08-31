@@ -17,6 +17,8 @@ import { useStore } from '../../store/use-store';
 import { simulationRuntime as simBridge } from '../../engine/simulation-runtime';
 import { RequestKeyDistribution, TrafficPattern } from '../../model/types';
 import styles from './SimulationControls.module.css';
+import { safeErrorMessage } from '../../errors/app-error';
+import { formatSimulationDuration } from '../../platform/time';
 
 export const SimulationControls: React.FC = () => {
   const {
@@ -33,6 +35,8 @@ export const SimulationControls: React.FC = () => {
     setIsBottomDrawerOpen,
     addToast,
     simulationRuntimeMode,
+    simulationElapsedMs,
+    lastSimulationTickAt,
   } = useStore(
     useShallow((state) => ({
       simState: state.simState,
@@ -48,6 +52,8 @@ export const SimulationControls: React.FC = () => {
       setIsBottomDrawerOpen: state.setIsBottomDrawerOpen,
       addToast: state.addToast,
       simulationRuntimeMode: state.simulationRuntimeMode,
+      simulationElapsedMs: state.simulationElapsedMs,
+      lastSimulationTickAt: state.lastSimulationTickAt,
     })),
   );
 
@@ -58,6 +64,13 @@ export const SimulationControls: React.FC = () => {
       .map((entry) => `${entry.key}:${entry.weight}`)
       .join(','),
   );
+  const [wallClockNow, setWallClockNow] = React.useState(Date.now());
+
+  React.useEffect(() => {
+    if (simState !== 'running') return;
+    const timer = window.setInterval(() => setWallClockNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, [simState]);
 
   React.useEffect(() => {
     setQpsText(String(trafficConfig.baseQps));
@@ -74,8 +87,12 @@ export const SimulationControls: React.FC = () => {
   };
 
   const copySeed = async () => {
-    await navigator.clipboard.writeText(String(trafficConfig.seed ?? 1));
-    addToast(`Copied simulation seed ${trafficConfig.seed ?? 1}`, 'success');
+    try {
+      await navigator.clipboard.writeText(String(trafficConfig.seed ?? 1));
+      addToast(`Copied simulation seed ${trafficConfig.seed ?? 1}`, 'success');
+    } catch (error) {
+      addToast(safeErrorMessage(error, 'user'), 'error');
+    }
   };
 
   const isRunning = simState === 'running';
@@ -97,6 +114,12 @@ export const SimulationControls: React.FC = () => {
 
   const handleStop = () => {
     simBridge.stop();
+    const completed =
+      metrics.totalRequestsCompleted ?? metrics.totalRequestsSuccess + metrics.totalRequestsFailed;
+    addToast(
+      `Run stopped at ${formatSimulationDuration(simulationElapsedMs)}: ${completed.toLocaleString()} completed, ${(metrics.totalRequestsDropped ?? 0).toLocaleString()} dropped, p95 ${metrics.p95LatencyMs || 0} ms`,
+      metrics.totalRequestsDropped ? 'warning' : 'info',
+    );
   };
 
   const handleReset = () => {
@@ -151,6 +174,14 @@ export const SimulationControls: React.FC = () => {
   };
 
   const speeds = [0.5, 1, 2, 5, 10];
+  const completed =
+    metrics.totalRequestsCompleted ?? metrics.totalRequestsSuccess + metrics.totalRequestsFailed;
+  const completedThroughput =
+    simulationElapsedMs > 0 ? completed / (simulationElapsedMs / 1000) : 0;
+  const isWarming = completed > 0 && completed < 20;
+  const isStale =
+    isRunning && lastSimulationTickAt !== null && wallClockNow - lastSimulationTickAt > 1_500;
+  const dropped = metrics.totalRequestsDropped ?? 0;
   const patterns: Array<{ key: TrafficPattern; label: string; icon: React.ReactNode }> = [
     { key: 'steady', label: 'Steady', icon: <Activity size={10} /> },
     { key: 'bursty', label: 'Bursty', icon: <Waves size={10} /> },
@@ -165,6 +196,19 @@ export const SimulationControls: React.FC = () => {
         className={`${styles.statusDot} ${isRunning ? styles.statusRunning : simState === 'paused' ? styles.statusPaused : styles.statusIdle}`}
         title={`Engine status: ${simState}; runtime: ${simulationRuntimeMode === 'worker' ? 'background worker' : 'compatibility mode'}`}
       />
+
+      {(isStale || dropped > 0 || isWarming) && (
+        <span
+          className={`${styles.runtimeNotice} ${isStale || dropped > 0 ? styles.runtimeWarning : ''}`}
+          role="status"
+        >
+          {isStale
+            ? 'Worker update delayed'
+            : dropped > 0
+              ? `${dropped.toLocaleString()} dropped`
+              : 'Warming up percentiles'}
+        </span>
+      )}
 
       {/* Primary Play/Pause/Step/Reset */}
       <div className={styles.buttonGroup}>
@@ -322,6 +366,10 @@ export const SimulationControls: React.FC = () => {
 
       {/* Telemetry Stats */}
       <div className={styles.statsCluster}>
+        <div className={styles.statItem} title="Elapsed modeled time, not wall-clock time">
+          <span className={styles.statVal}>{formatSimulationDuration(simulationElapsedMs)}</span>
+          <span className={styles.statLbl}>Sim Time</span>
+        </div>
         <div className={styles.statItem}>
           <span className={styles.statVal}>
             {(metrics.totalRequestsOffered ?? metrics.totalRequestsSent).toLocaleString()}
@@ -333,6 +381,13 @@ export const SimulationControls: React.FC = () => {
             {metrics.totalRequestsSuccess.toLocaleString()}
           </span>
           <span className={styles.statLbl}>Succeeded</span>
+        </div>
+        <div
+          className={styles.statItem}
+          title="Completed requests divided by elapsed modeled seconds"
+        >
+          <span className={styles.statVal}>{completedThroughput.toFixed(1)}</span>
+          <span className={styles.statLbl}>Completed QPS</span>
         </div>
         <div className={styles.statItem}>
           <span className={`${styles.statVal} ${styles.failVal}`}>

@@ -104,6 +104,17 @@
   box-shadow: 0 0 8px var(--warning);
 }
 
+.runtimeNotice {
+  max-width: 120px;
+  color: var(--warning);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.runtimeWarning {
+  color: var(--error);
+}
+
 @keyframes pulse {
   0% {
     opacity: 0.5;

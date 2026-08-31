@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { chaosDrills } from '../engine/chaos-drills';
 import { createDefaultConfig } from '../model/component-defaults';
 import { CanvasEdge, CanvasNode, useStore } from '../store/use-store';
+import { parseImportedArchitecture } from '../model/imported-architecture';
+import { toCanvasEdges, toCanvasNodes } from '../model/canvas-types';
 
 const node = (
   type: Parameters<typeof createDefaultConfig>[0],
@@ -64,6 +66,24 @@ describe('chaos drill tasks 158 and 160-171', () => {
     expect(useStore.getState().nodeHealthSources.db).toBe('chaos');
     expect(chaosDrills.restore('db_outage')).toBe(true);
     expect(useStore.getState().nodes[0].data.config.health).toBe('overloaded');
+  });
+
+  it('preserves failover configuration through an older imported architecture', () => {
+    const db = node('sql_db', 'db', {
+      automaticFailover: true,
+      readReplicasCount: 1,
+      replicas: 2,
+    });
+    const imported = parseImportedArchitecture({ version: 9, nodes: [db], edges: [], zones: [] });
+    useStore
+      .getState()
+      .loadCanvasState(toCanvasNodes(imported.nodes), toCanvasEdges(imported.edges));
+    expect(useStore.getState().nodes[0].data.config).toMatchObject({
+      automaticFailover: true,
+      readReplicasCount: 1,
+      replicas: 2,
+    });
+    expect(chaosDrills.launch('db_outage').succeeded).toBe(true);
   });
 
   it('reports a failover failure without a replica or topology target', () => {
