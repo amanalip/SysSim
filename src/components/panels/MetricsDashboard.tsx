@@ -49,10 +49,12 @@ export const MetricsDashboard: React.FC = () => {
         : null;
 
     return (
-      <div
+      <button
+        type="button"
         className={styles.miniTickerBar}
         onClick={() => setIsBottomDrawerOpen(true)}
         title="Click to open full Metrics & Telemetry Dashboard (M)"
+        aria-label="Open simulation metrics and telemetry dashboard"
       >
         <div className={styles.miniTickerLeft}>
           <div className={styles.miniPulseDot} />
@@ -98,7 +100,7 @@ export const MetricsDashboard: React.FC = () => {
           <span className={styles.expandLabel}>Expand Telemetry</span>
           <ChevronUp size={14} />
         </div>
-      </div>
+      </button>
     );
   }
 
@@ -130,12 +132,14 @@ export const MetricsDashboard: React.FC = () => {
             <span>Simulation Metrics & Telemetry</span>
           </div>
 
-          <div className={styles.subTabs}>
+          <div className={styles.subTabs} role="tablist" aria-label="Telemetry views">
             <button
               className={`${styles.tabBtn} ${
                 activeBottomTab === 'metrics' ? styles.tabBtnActive : ''
               }`}
               onClick={() => setActiveBottomTab('metrics')}
+              role="tab"
+              aria-selected={activeBottomTab === 'metrics'}
             >
               Real-Time Metrics
             </button>
@@ -144,6 +148,8 @@ export const MetricsDashboard: React.FC = () => {
                 activeBottomTab === 'bottlenecks' ? styles.tabBtnActive : ''
               }`}
               onClick={() => setActiveBottomTab('bottlenecks')}
+              role="tab"
+              aria-selected={activeBottomTab === 'bottlenecks'}
             >
               Bottleneck Inspector {bottlenecks.length > 0 && `(${bottlenecks.length})`}
             </button>
@@ -152,6 +158,8 @@ export const MetricsDashboard: React.FC = () => {
                 activeBottomTab === 'health' ? styles.tabBtnActive : ''
               }`}
               onClick={() => setActiveBottomTab('health')}
+              role="tab"
+              aria-selected={activeBottomTab === 'health'}
             >
               5-Pillar Health Radar
             </button>
@@ -160,6 +168,8 @@ export const MetricsDashboard: React.FC = () => {
                 activeBottomTab === 'trace' ? styles.tabBtnActive : ''
               }`}
               onClick={() => setActiveBottomTab('trace')}
+              role="tab"
+              aria-selected={activeBottomTab === 'trace'}
             >
               Distributed Traces
             </button>
@@ -168,6 +178,8 @@ export const MetricsDashboard: React.FC = () => {
                 activeBottomTab === 'cost' ? styles.tabBtnActive : ''
               }`}
               onClick={() => setActiveBottomTab('cost')}
+              role="tab"
+              aria-selected={activeBottomTab === 'cost'}
             >
               Cloud Cost Estimator
             </button>
@@ -181,6 +193,7 @@ export const MetricsDashboard: React.FC = () => {
                 className={styles.btn}
                 onClick={() => setViewMode(viewMode === 'charts' ? 'table' : 'charts')}
                 title="Toggle Charts or Table View"
+                aria-pressed={viewMode === 'table'}
               >
                 {viewMode === 'charts' ? <Table size={13} /> : <LineChartIcon size={13} />}
                 <span>{viewMode === 'charts' ? 'Table View' : 'Charts View'}</span>
@@ -208,7 +221,7 @@ export const MetricsDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className={styles.drawerBody}>
+      <div className={styles.drawerBody} role="tabpanel" aria-live="polite">
         {activeBottomTab === 'metrics' && (
           <ModelNotice
             kind="simulation"
@@ -324,6 +337,11 @@ export const MetricsDashboard: React.FC = () => {
                 {/* Latency Percentiles Area Chart */}
                 <div className={styles.chartContainer}>
                   <span className={styles.chartTitle}>Latency Percentiles (ms)</span>
+                  <p className={styles.srOnly}>
+                    Latency chart. Current p50 {metrics.p50LatencyMs} milliseconds, p95{' '}
+                    {metrics.p95LatencyMs} milliseconds, and p99 {metrics.p99LatencyMs}{' '}
+                    milliseconds. Use Table View for a textual component breakdown.
+                  </p>
                   <ResponsiveContainer width="100%" height={140}>
                     <AreaChart data={metrics.timeSeries}>
                       <defs>
@@ -378,6 +396,12 @@ export const MetricsDashboard: React.FC = () => {
                 {/* Throughput & Errors Area Chart */}
                 <div className={styles.chartContainer}>
                   <span className={styles.chartTitle}>Throughput & Error Rate</span>
+                  <p className={styles.srOnly}>
+                    Throughput chart. Current completed throughput{' '}
+                    {metrics.completedThroughputQps || metrics.currentQps} requests per second and
+                    error rate {metrics.overallErrorRatePercent} percent. Use Table View for a
+                    textual component breakdown.
+                  </p>
                   <ResponsiveContainer width="100%" height={140}>
                     <AreaChart data={metrics.timeSeries}>
                       <defs>

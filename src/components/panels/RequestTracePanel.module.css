@@ -94,7 +94,7 @@
 }
 
 .statusPill {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   font-family: var(--font-mono);
   padding: 1px 5px;
@@ -214,7 +214,7 @@
 }
 
 .hopType {
-  font-size: 9.5px;
+  font-size: 10px;
   color: var(--text-muted);
   background-color: var(--bg-secondary);
   padding: 1px 5px;
@@ -227,7 +227,7 @@
   border-radius: var(--radius-full);
   color: var(--warning);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   padding: 1px 6px;
 }
@@ -245,7 +245,7 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--warning);
   background-color: rgba(210, 153, 34, 0.15);

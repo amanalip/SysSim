@@ -76,10 +76,12 @@ export const RequestTracePanel: React.FC = () => {
               const isBlocked = trace.status === 'blocked';
 
               return (
-                <div
+                <button
+                  type="button"
                   key={trace.id}
                   className={`${styles.traceItem} ${isSelected ? styles.traceItemActive : ''}`}
                   onClick={() => setSelectedTraceId(trace.id)}
+                  aria-pressed={isSelected}
                 >
                   <div className={styles.traceItemTop}>
                     <span
@@ -113,7 +115,7 @@ export const RequestTracePanel: React.FC = () => {
                       {new Date(trace.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

@@ -17,6 +17,7 @@ import {
 import styles from './PropertiesPanel.module.css';
 
 export const PropertiesPanel: React.FC = () => {
+  const panelRef = React.useRef<HTMLDivElement>(null);
   const {
     nodes,
     edges,
@@ -42,6 +43,49 @@ export const PropertiesPanel: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isPropertiesPanelOpen, setIsPropertiesPanelOpen, selectNode]);
+
+  React.useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel || !isPropertiesPanelOpen || !selectedNode) return;
+
+    const synchronizeControl = (control: HTMLInputElement | HTMLSelectElement) => {
+      const group = control.closest<HTMLElement>(`.${styles.fieldGroup}`);
+      const label = group?.querySelector<HTMLElement>(`.${styles.fieldLabel}`);
+      const index = [...panel.querySelectorAll('input, select')].indexOf(control);
+      const controlId = control.id || `property-${selectedNode.id}-${index}`;
+      const labelId = `${controlId}-label`;
+      control.id = controlId;
+      if (label) {
+        label.id = labelId;
+        control.setAttribute('aria-describedby', labelId);
+        const labelText = label.textContent?.replace(/\s+/g, ' ').trim();
+        if (!control.getAttribute('aria-label') && labelText)
+          control.setAttribute('aria-label', labelText);
+        if (label instanceof HTMLLabelElement) label.htmlFor = controlId;
+      }
+      if (control instanceof HTMLInputElement && control.type === 'number') {
+        const invalid = !control.validity.valid;
+        control.setAttribute('aria-invalid', String(invalid));
+        control.setAttribute('aria-errormessage', 'properties-field-error');
+        const range = [
+          control.min ? `minimum ${control.min}` : '',
+          control.max ? `maximum ${control.max}` : '',
+          control.step ? `step ${control.step}` : '',
+        ]
+          .filter(Boolean)
+          .join(', ');
+        if (range) control.title = `${control.getAttribute('aria-label') || 'Value'}: ${range}`;
+      }
+    };
+
+    const synchronizeAll = () =>
+      panel
+        .querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select')
+        .forEach(synchronizeControl);
+    synchronizeAll();
+    panel.addEventListener('input', synchronizeAll);
+    return () => panel.removeEventListener('input', synchronizeAll);
+  }, [isPropertiesPanelOpen, selectedNode]);
 
   if (!isPropertiesPanelOpen || !selectedNode) {
     return null;
@@ -78,13 +122,21 @@ export const PropertiesPanel: React.FC = () => {
   };
 
   return (
-    <div className={styles.panel}>
+    <div ref={panelRef} className={styles.panel} aria-label={`${config.name} properties`}>
+      <span id="properties-field-error" className={styles.srOnly}>
+        Enter a value within the documented minimum and maximum range.
+      </span>
       <div className={styles.panelHeader}>
         <div className={styles.headerLeft}>
           <ComponentIcon type={config.type} size={16} color="var(--accent-primary)" />
           <span className={styles.headerTitle}>Properties</span>
         </div>
-        <button className={styles.closeBtn} onClick={handleClose} title="Close properties panel">
+        <button
+          className={styles.closeBtn}
+          onClick={handleClose}
+          title="Close properties panel"
+          aria-label="Close properties panel"
+        >
           <X size={15} />
         </button>
       </div>

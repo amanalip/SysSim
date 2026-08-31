@@ -35,9 +35,13 @@ export const ToastContainer: React.FC = () => {
   };
 
   return (
-    <div className={styles.toastContainer}>
+    <div className={styles.toastContainer} aria-live="polite" aria-relevant="additions removals">
       {toasts.map((toast) => (
-        <div key={toast.id} className={`${styles.toastItem} ${getToastClass(toast.type)}`}>
+        <div
+          key={toast.id}
+          className={`${styles.toastItem} ${getToastClass(toast.type)}`}
+          role={toast.type === 'error' ? 'alert' : 'status'}
+        >
           <div className={styles.toastLeft}>
             {getToastIcon(toast.type)}
             <span>{toast.message}</span>
@@ -46,6 +50,7 @@ export const ToastContainer: React.FC = () => {
             className={styles.dismissBtn}
             onClick={() => removeToast(toast.id)}
             title="Dismiss notification"
+            aria-label={`Dismiss notification: ${toast.message}`}
           >
             <X size={13} />
           </button>
