@@ -121,7 +121,12 @@ export const CustomComponentNode: React.FC<NodeProps<CanvasNode>> = ({ id, data,
     >
       {/* Floating Action Toolbar on Canvas Selection */}
       {selected && (
-        <div className={styles.floatingToolbar}>
+        <div
+          className={`${styles.floatingToolbar} nodrag nopan`}
+          role="toolbar"
+          aria-label={`${config.name} actions`}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
           <button
             className={styles.floatingBtn}
             onClick={handleDuplicate}

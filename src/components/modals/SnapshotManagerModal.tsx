@@ -15,6 +15,13 @@ import {
 import styles from './SnapshotManagerModal.module.css';
 import { useModalAccessibility } from './useModalAccessibility';
 import { ModalPortal } from './ModalPortal';
+import { confirmCanvasReplacement } from '../../utils/destructive-actions';
+import {
+  formatTimestamp,
+  formatUtcDateForFilename,
+  nextOrderedWallTimeMs,
+} from '../../platform/time';
+import { serializeCanvasState } from '../../utils/sharing';
 
 interface SnapshotManagerModalProps {
   isOpen: boolean;
@@ -62,18 +69,19 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
       return;
     }
 
+    const serialized = serializeCanvasState();
     const updated = slots.map((s) => {
       if (s.id === slotId) {
         return {
           ...s,
           name: customNames[slotId]?.trim() || s.name,
-          timestamp: Date.now(),
+          timestamp: nextOrderedWallTimeMs(),
           nodeCount: nodes.length,
           edgeCount: edges.length,
-          nodes: JSON.parse(JSON.stringify(nodes)),
-          edges: JSON.parse(JSON.stringify(edges)),
-          zones: JSON.parse(JSON.stringify(zones)),
-          trafficConfig: JSON.parse(JSON.stringify(trafficConfig)),
+          nodes: structuredClone(serialized.nodes),
+          edges: structuredClone(serialized.edges),
+          zones: structuredClone(serialized.zones ?? []),
+          trafficConfig: structuredClone(serialized.trafficConfig ?? trafficConfig),
           schemaVersion: ARCHITECTURE_SCHEMA_VERSION,
           applicationVersion: APPLICATION_VERSION,
           restorationMode: 'architecture-and-traffic-reset-simulation' as const,
@@ -92,6 +100,13 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
       addToast(`Slot ${slot.id} is empty`, 'warning');
       return;
     }
+    if (
+      !confirmCanvasReplacement(
+        { nodes: nodes.length, edges: edges.length, zones: zones.length },
+        `Restore “${slot.name}”`,
+      )
+    )
+      return;
 
     simBridge.reset();
     loadCanvasState(
@@ -123,7 +138,7 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
     );
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `syssim-snapshots-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.download = `syssim-snapshots-${formatUtcDateForFilename(Date.now())}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
     addToast('Exported all snapshot slots', 'success');
@@ -249,7 +264,7 @@ export const SnapshotManagerModal: React.FC<SnapshotManagerModalProps> = ({ isOp
                             </span>
                             <span className={styles.datePill}>
                               <Clock size={10} />
-                              {new Date(slot.timestamp!).toLocaleTimeString()}
+                              {formatTimestamp(slot.timestamp!, { timeZone: 'UTC' })} UTC
                             </span>
                           </>
                         ) : (

@@ -51,6 +51,11 @@
   transition: all 0.15s ease;
 }
 
+.helpBtn {
+  composes: hudBtn;
+  min-height: 28px;
+}
+
 .hudBtn:hover {
   color: var(--text-primary);
   background-color: var(--bg-tertiary);

@@ -14,6 +14,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
+import { confirmCanvasReplacement } from '../../utils/destructive-actions';
 import { simulationRuntime as simBridge } from '../../engine/simulation-runtime';
 import { ALL_SCENARIOS } from '../../scenarios';
 import { COMPONENT_METADATA_LIST } from '../../model/component-defaults';
@@ -57,6 +58,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     loadScenario,
     addToast,
     nodes,
+    edges,
+    zones,
   } = useStore(
     useShallow((state) => ({
       simState: state.simState,
@@ -70,6 +73,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       loadScenario: state.loadScenario,
       addToast: state.addToast,
       nodes: state.nodes,
+      edges: state.edges,
+      zones: state.zones,
     })),
   );
 
@@ -143,8 +148,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         title: 'Clear Canvas Architecture',
         icon: <Trash2 size={14} color="var(--error)" />,
         action: () => {
-          clearCanvas();
-          addToast('Canvas cleared', 'info');
+          if (
+            confirmCanvasReplacement(
+              { nodes: nodes.length, edges: edges.length, zones: zones.length },
+              'Clear canvas',
+            )
+          ) {
+            clearCanvas();
+            addToast('Canvas cleared. Use Undo to restore it', 'info');
+          }
         },
       },
     ];
@@ -189,6 +201,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     loadScenario,
     addToast,
     nodes.length,
+    edges.length,
+    zones.length,
   ]);
 
   const filteredCommands = useMemo(() => {

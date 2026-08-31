@@ -12,6 +12,7 @@ import {
   MoveRight,
   Undo2,
   Redo2,
+  HelpCircle,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import styles from './CanvasHud.module.css';
@@ -92,12 +93,30 @@ export const CanvasHud: React.FC = () => {
 
       <div className={styles.divider} />
 
+      <button
+        className={styles.helpBtn}
+        onClick={() =>
+          addToast(
+            'Connect from a source handle to a target. Arrows show flow direction; select a connection to set request, async, fanout, fallback, replication, or observability purpose.',
+            'info',
+          )
+        }
+        title="How to create and classify connections"
+        aria-label="Connection tutorial"
+      >
+        <HelpCircle size={14} />
+        <span>Connections</span>
+      </button>
+
+      <div className={styles.divider} />
+
       <div className={styles.toolsGroup}>
         <button
           className={styles.iconBtn}
           onClick={undo}
           disabled={!canUndo}
           title="Undo graph change"
+          aria-label="Undo graph change"
         >
           <Undo2 size={14} />
         </button>
@@ -106,6 +125,7 @@ export const CanvasHud: React.FC = () => {
           onClick={redo}
           disabled={!canRedo}
           title="Redo graph change"
+          aria-label="Redo graph change"
         >
           <Redo2 size={14} />
         </button>
@@ -150,6 +170,7 @@ export const CanvasHud: React.FC = () => {
           className={styles.iconBtn}
           onClick={() => zoomIn({ duration: 200 })}
           title="Zoom In"
+          aria-label="Zoom in"
         >
           <ZoomIn size={14} />
         </button>
@@ -157,6 +178,7 @@ export const CanvasHud: React.FC = () => {
           className={styles.iconBtn}
           onClick={() => zoomOut({ duration: 200 })}
           title="Zoom Out"
+          aria-label="Zoom out"
         >
           <ZoomOut size={14} />
         </button>
@@ -164,6 +186,7 @@ export const CanvasHud: React.FC = () => {
           className={styles.iconBtn}
           onClick={() => fitView({ padding: 0.2, duration: 300 })}
           title="Fit Architecture into View"
+          aria-label="Fit architecture into view"
         >
           <Maximize2 size={14} />
         </button>

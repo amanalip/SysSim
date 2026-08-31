@@ -30,7 +30,7 @@
 .selected {
   border-color: var(--accent-primary) !important;
   box-shadow:
-    0 0 0 2px var(--accent-subtle),
+    0 0 0 3px var(--accent-primary),
     var(--shadow-lg) !important;
 }
 
@@ -66,8 +66,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: none;
   background: none;

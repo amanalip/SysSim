@@ -127,10 +127,10 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         type: MarkerType.ArrowClosed,
         width: 14,
         height: 14,
-        color: '#58a6ff',
+        color: theme === 'dark' ? '#58a6ff' : '#0969da',
       },
     }),
-    [],
+    [theme],
   );
 
   const onNodesChange = useCallback(
@@ -277,12 +277,22 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         setNodes((nds) => nds.map((n) => ({ ...n, selected: true })));
+        setEdges((currentEdges) => currentEdges.map((edge) => ({ ...edge, selected: true })));
+        selectNode(null);
+        selectEdge(null);
         e.preventDefault();
         return;
       }
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedNodeId) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.nativeEvent.stopImmediatePropagation();
+        const selectedNodeIds = nodes.filter((node) => node.selected).map((node) => node.id);
+        const selectedEdgeIds = edges.filter((edge) => edge.selected).map((edge) => edge.id);
+        if (selectedNodeIds.length || selectedEdgeIds.length) {
+          removeGraphItems(selectedNodeIds, selectedEdgeIds);
+        } else if (selectedNodeId) {
           removeNode(selectedNodeId);
         } else if (selectedEdgeId) {
           removeEdge(selectedEdgeId);
@@ -292,14 +302,18 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
     [
       beginNodeDragHistory,
       duplicateNode,
+      edges,
       nodes,
       redo,
       removeEdge,
       removeNode,
+      removeGraphItems,
       selectNode,
+      selectEdge,
       selectedEdgeId,
       selectedNodeId,
       setNodes,
+      setEdges,
       undo,
       updateNodePosition,
     ],
