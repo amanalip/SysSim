@@ -3,6 +3,7 @@ import { architectureUrl, twoNodeArchitecture } from './helpers';
 
 test('adds by drag, connects nodes, and changes edge protocol', async ({ page }) => {
   await page.goto(architectureUrl([{ id: 'client', type: 'client', x: 80, y: 160 }]));
+  await expect(page.getByTestId('rf__node-client')).toBeVisible();
   const before = await page.locator('.react-flow__node').count();
   await page
     .locator('[title^="Click or drag to place App Server"]')
