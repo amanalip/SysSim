@@ -11,6 +11,7 @@ import { toCanvasEdges, toCanvasNodes } from '../model/canvas-types';
 import { parseImportedArchitecture } from '../model/imported-architecture';
 import { byteLength, safeDownloadName } from '../security/untrusted-data';
 import { AppError } from '../errors/app-error';
+import { formatUtcDateForFilename } from '../platform/time';
 
 export const PRACTICAL_SHARE_URL_LENGTH = 8_000;
 const SENSITIVE_FIELD_NAMES = new Set([
@@ -103,7 +104,7 @@ export function decodeStateFromUrlHash(hash: string): SerializedCanvasState | nu
   }
 }
 
-export function exportArchitectureJson(): void {
+export function exportArchitectureJson(baseName = 'syssim-architecture'): void {
   const state = serializeCanvasState();
   const blob = new Blob([JSON.stringify(state, null, 2)], {
     type: 'application/json',
@@ -111,7 +112,7 @@ export function exportArchitectureJson(): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = safeDownloadName(`syssim_architecture_${Date.now()}`, 'json');
+  a.download = safeDownloadName(`${baseName}-${formatUtcDateForFilename(Date.now())}`, 'json');
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -123,39 +124,84 @@ export function importArchitectureJson(
   onSuccess: () => void,
   onError: (msg: string) => void,
 ): void {
-  if (file.size > ARCHITECTURE_LIMITS.maxImportBytes) {
-    onError(
-      `Architecture file exceeds the ${ARCHITECTURE_LIMITS.maxImportBytes.toLocaleString()} byte limit`,
-    );
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const content = e.target?.result as string;
-      if (byteLength(content) > ARCHITECTURE_LIMITS.maxImportBytes)
-        throw new Error('Architecture content exceeds the import size limit');
-      const migrated = parseImportedArchitecture(JSON.parse(content));
-      useStore
-        .getState()
-        .loadCanvasState(
-          toCanvasNodes(migrated.nodes),
-          toCanvasEdges(migrated.edges),
-          (migrated.zones || []) as ZoneData[],
-        );
-      if (migrated.trafficConfig) {
-        useStore.getState().setTrafficConfig(migrated.trafficConfig);
-      }
+  readArchitectureJson(file)
+    .then((migrated) => {
+      applyImportedArchitecture(migrated);
       onSuccess();
-    } catch (error) {
-      onError(formatArchitectureError(error));
-    }
-  };
-  reader.onerror = () => onError('Persistence error: the architecture file could not be read');
-  reader.readAsText(file);
+    })
+    .catch((error) => onError(formatArchitectureError(error)));
 }
 
-export async function exportCanvasToPng(canvasElementId: string = 'syssim-canvas'): Promise<void> {
+export function readArchitectureJson(file: File): Promise<SerializedCanvasState> {
+  if (file.size > ARCHITECTURE_LIMITS.maxImportBytes) {
+    return Promise.reject(
+      new Error(
+        `Architecture file exceeds the ${ARCHITECTURE_LIMITS.maxImportBytes.toLocaleString()} byte limit`,
+      ),
+    );
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const content = event.target?.result;
+        if (typeof content !== 'string') throw new Error('Architecture file is not text');
+        if (byteLength(content) > ARCHITECTURE_LIMITS.maxImportBytes)
+          throw new Error('Architecture content exceeds the import size limit');
+        resolve(parseImportedArchitecture(JSON.parse(content)));
+      } catch (error) {
+        reject(error);
+      }
+    };
+    reader.onerror = () =>
+      reject(new Error('Persistence error: the architecture file could not be read'));
+    reader.readAsText(file);
+  });
+}
+
+export function applyImportedArchitecture(migrated: SerializedCanvasState): void {
+  useStore
+    .getState()
+    .loadCanvasState(
+      toCanvasNodes(migrated.nodes),
+      toCanvasEdges(migrated.edges),
+      (migrated.zones || []) as ZoneData[],
+    );
+  if (migrated.trafficConfig) {
+    useStore.getState().setTrafficConfig(migrated.trafficConfig);
+  }
+}
+
+export function getCanvasPngOptions(element: HTMLElement): {
+  backgroundColor: string;
+  pixelRatio: number;
+  cacheBust: false;
+  filter: (node: HTMLElement) => boolean;
+} {
+  return {
+    backgroundColor:
+      getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim() ||
+      '#0d1117',
+    pixelRatio: Math.min(Math.max(window.devicePixelRatio || 1, 1), 2),
+    cacheBust: false,
+    filter: (node) => {
+      if (node === element) return true;
+      const className = typeof node.className === 'string' ? node.className : '';
+      return ![
+        'controlsBar',
+        'particleLayer',
+        'hudToolbar',
+        'emptyCanvasNotice',
+        'floatingToolbar',
+      ].some((excludedClass) => className.includes(excludedClass));
+    },
+  };
+}
+
+export async function exportCanvasToPng(
+  canvasElementId: string = 'syssim-canvas',
+  baseName = 'syssim-architecture',
+): Promise<void> {
   const element = document.getElementById(canvasElementId);
   if (!element) {
     throw new AppError('export', 'Canvas element not found for export');
@@ -164,29 +210,11 @@ export async function exportCanvasToPng(canvasElementId: string = 'syssim-canvas
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
   const { toPng } = await import('html-to-image');
-  const dataUrl = await toPng(element, {
-    backgroundColor:
-      getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim() ||
-      '#0d1117',
-    pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
-    cacheBust: false,
-    filter: (node) => {
-      // Exclude controls, floating HUD, and particle overlay from static screenshot
-      const className =
-        typeof (node as HTMLElement).className === 'string' ? (node as HTMLElement).className : '';
-      return (
-        !className.includes('controlsBar') &&
-        !className.includes('particleLayer') &&
-        !className.includes('hudToolbar') &&
-        !className.includes('emptyCanvasNotice') &&
-        !className.includes('floatingToolbar')
-      );
-    },
-  });
+  const dataUrl = await toPng(element, getCanvasPngOptions(element));
 
   const a = document.createElement('a');
   a.href = dataUrl;
-  a.download = safeDownloadName(`syssim_architecture_${Date.now()}`, 'png');
+  a.download = safeDownloadName(`${baseName}-${formatUtcDateForFilename(Date.now())}`, 'png');
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

@@ -16,18 +16,21 @@ import {
   Menu,
   PanelLeft,
   ClipboardCopy,
+  Accessibility,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import {
   encodeStateToUrlHash,
   exportArchitectureJson,
   exportCanvasToPng,
-  importArchitectureJson,
+  applyImportedArchitecture,
+  readArchitectureJson,
   PRACTICAL_SHARE_URL_LENGTH,
 } from '../../utils/sharing';
 import styles from './Header.module.css';
 import { safeErrorMessage } from '../../errors/app-error';
 import { buildDiagnosticReport } from '../../diagnostics/diagnostic-report';
+import { confirmCanvasReplacement } from '../../utils/destructive-actions';
 
 const ShortcutsModal = lazy(() =>
   import('../modals/ShortcutsModal').then((module) => ({ default: module.ShortcutsModal })),
@@ -50,6 +53,8 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
   const {
     theme,
     setTheme,
+    motionPreference,
+    setMotionPreference,
     clearCanvas,
     autoLayout,
     addToast,
@@ -62,6 +67,8 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
     useShallow((state) => ({
       theme: state.theme,
       setTheme: state.setTheme,
+      motionPreference: state.motionPreference,
+      setMotionPreference: state.setMotionPreference,
       clearCanvas: state.clearCanvas,
       autoLayout: state.autoLayout,
       addToast: state.addToast,
@@ -79,6 +86,13 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
   const [isChaosDrillsOpen, setIsChaosDrillsOpen] = useState(false);
   const [isSnapshotsOpen, setIsSnapshotsOpen] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
+
+  const handleClearCanvas = () => {
+    if (confirmCanvasReplacement({ nodes: nodes.length, edges: edges.length }, 'Clear canvas')) {
+      clearCanvas();
+      addToast('Canvas cleared. Use Undo to restore it', 'info');
+    }
+  };
 
   useEffect(() => {
     if (!isActionsOpen) return;
@@ -106,13 +120,18 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
     }
     try {
       const hash = encodeStateToUrlHash();
-      window.location.hash = hash;
-      if (window.location.href.length > PRACTICAL_SHARE_URL_LENGTH)
+      const shareUrl = `${window.location.href.split('#')[0]}${hash}`;
+      if (shareUrl.length > PRACTICAL_SHARE_URL_LENGTH) {
         addToast(
-          'Share URL is unusually long and may be rejected by browsers or services',
+          'Architecture is too large for a reliable share URL. Use JSON Export instead',
           'warning',
         );
-      await navigator.clipboard.writeText(window.location.href);
+        return;
+      }
+      window.location.hash = hash;
+      if (!navigator.clipboard?.writeText)
+        throw new Error('Clipboard is unavailable. Copy the address from the browser bar');
+      await navigator.clipboard.writeText(shareUrl);
       addToast(
         'Share link copied. It contains architecture data and may remain in history, logs, or referrers',
         'success',
@@ -161,15 +180,26 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
     addToast('Architecture JSON exported', 'success');
   };
 
-  const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    importArchitectureJson(
-      file,
-      () => addToast('Architecture JSON imported successfully', 'success'),
-      (msg) => addToast(msg, 'error'),
-    );
+    try {
+      const imported = await readArchitectureJson(file);
+      const replace = confirmCanvasReplacement(
+        { nodes: nodes.length, edges: edges.length },
+        `Import ${imported.nodes.length} components, ${imported.edges.length} links, ${imported.zones?.length ?? 0} zones (schema v${imported.version}, app ${imported.appVersion ?? 'unknown'}) from “${file.name}”`,
+      );
+      if (replace) {
+        applyImportedArchitecture(imported);
+        addToast(
+          'Architecture JSON imported successfully. Use Undo to restore the prior canvas',
+          'success',
+        );
+      }
+    } catch (error) {
+      addToast(safeErrorMessage(error, 'persistence'), 'error');
+    }
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -195,17 +225,7 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
           <span className={styles.title}>SysSim</span>
           <span className={styles.subtitle}>Interactive System Design Simulator</span>
         </div>
-        <span
-          style={{
-            fontSize: 10,
-            color: 'var(--text-muted)',
-            backgroundColor: 'var(--bg-tertiary)',
-            padding: '2px 8px',
-            borderRadius: 12,
-            border: '1px solid var(--border-primary)',
-            marginLeft: 8,
-          }}
-        >
+        <span className={styles.graphCount}>
           {nodes.length} components • {edges.length} links
         </span>
       </div>
@@ -227,7 +247,7 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
           role={isActionsOpen ? 'menu' : undefined}
         >
           <button
-            className={styles.actionBtn}
+            className={`${styles.actionBtn} ${styles.dangerAction}`}
             onClick={autoLayout}
             title="Topologically arrange components (L)"
           >
@@ -248,7 +268,6 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
             className={styles.actionBtn}
             onClick={() => setIsChaosDrillsOpen(true)}
             title="Run targeted Chaos Engineering drills"
-            style={{ color: 'var(--error)' }}
           >
             <Flame size={13} />
             <span>Chaos Drills</span>
@@ -256,7 +275,7 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
 
           <button
             className={styles.actionBtn}
-            onClick={clearCanvas}
+            onClick={handleClearCanvas}
             title="Clear all components from canvas"
           >
             <Trash2 size={13} />
@@ -314,7 +333,7 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
             ref={fileInputRef}
             type="file"
             accept=".json"
-            style={{ display: 'none' }}
+            hidden
             onChange={handleImportFileChange}
           />
 
@@ -326,6 +345,22 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
             title="Keyboard shortcuts (?)"
           >
             <Keyboard size={15} />
+          </button>
+
+          <button
+            className={styles.iconBtn}
+            onClick={() =>
+              setMotionPreference(motionPreference === 'reduced' ? 'system' : 'reduced')
+            }
+            title={
+              motionPreference === 'reduced'
+                ? 'Use system motion preference'
+                : 'Reduce motion explicitly'
+            }
+            aria-pressed={motionPreference === 'reduced'}
+            aria-label="Reduce motion"
+          >
+            <Accessibility size={15} />
           </button>
 
           <button

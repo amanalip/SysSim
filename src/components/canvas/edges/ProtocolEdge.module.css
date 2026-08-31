@@ -11,24 +11,24 @@
   stroke-dasharray: 8 4;
 }
 .purpose_async {
-  stroke: #a855f7;
+  stroke: var(--chart-4);
   stroke-dasharray: 3 4;
 }
 .purpose_fanout {
-  stroke: #f59e0b;
+  stroke: var(--chart-2);
 }
 .purpose_replication {
-  stroke: #22c55e;
+  stroke: var(--chart-3);
   stroke-dasharray: 10 3;
 }
 .purpose_observability {
-  stroke: #94a3b8;
+  stroke: var(--text-muted);
   stroke-dasharray: 2 5;
 }
 
 .edgePathSelected {
-  stroke: #60a5fa !important;
-  stroke-width: 3 !important;
+  stroke: var(--accent-hover) !important;
+  stroke-width: 4 !important;
 }
 
 .edgePathCut {
@@ -76,13 +76,13 @@
   color: var(--warning);
 }
 .badge_async {
-  color: #c084fc;
+  color: var(--chart-4);
 }
 .badge_fanout {
-  color: #f59e0b;
+  color: var(--chart-2);
 }
 .badge_replication {
-  color: #4ade80;
+  color: var(--chart-3);
 }
 .badge_observability {
   color: var(--text-secondary);
