@@ -2,29 +2,135 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  build-and-test:
+  quality:
+    name: Quality / static checks
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
+          cache: npm
+      - name: Install locked dependencies
         run: npm ci
+      - name: Lint TypeScript and React
+        run: npm run lint
+      - name: Type-check without emitting files
+        run: npm run typecheck
+      - name: Verify repository formatting
+        run: npm run format:check
+      - name: Report duplicate code
+        run: npm run check:duplicates
+      - name: Upload duplication report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: duplication-report
+          path: reports/duplication
+          if-no-files-found: ignore
 
-      - name: Run linter and type check
-        run: npm run test -- --run
+  tests:
+    name: Tests / unit, integration, accessibility, coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Run unit and integration tests with coverage
+        run: npm run test:coverage
+      - name: Run focused automated accessibility tests
+        run: npm run test:accessibility
+      - name: Upload unit-test and coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-and-coverage-reports
+          path: |
+            coverage
+            reports/unit-tests.xml
+          if-no-files-found: warn
 
-      - name: Build production bundle
-        run: npm run build
+  build:
+    name: Build / production and budgets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build production bundle and enforce size budgets
+        run: npm run check:bundle
+      - name: Run bounded performance checks
+        run: npm run test:performance
+      - name: Upload production bundle and bundle report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: production-bundle
+          path: |
+            dist
+            reports/bundle-report.json
+          if-no-files-found: warn
+
+  security:
+    name: Security / dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Verify lockfile installation
+        run: npm ci
+      - name: Audit production and development dependencies
+        run: npm run check:security
+
+  e2e:
+    name: E2E / ${{ matrix.browser }}
+    needs: [quality, tests, build, security]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install ${{ matrix.browser }} browser and system dependencies
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Run ${{ matrix.browser }} browser tests
+        run: npm run test:e2e -- --project=${{ matrix.browser }}
+      - name: Upload browser traces, videos, screenshots, and reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: e2e-${{ matrix.browser }}-artifacts
+          path: |
+            playwright-report
+            test-results
+            reports/e2e-results.xml
+          if-no-files-found: ignore
