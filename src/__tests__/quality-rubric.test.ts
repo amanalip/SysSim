@@ -10,7 +10,7 @@ describe('Persistent quality rubric', () => {
 
   it('contains binary evidence requirements totaling exactly 100 points', () => {
     const rubricRows = [
-      ...rubric.matchAll(/^\| ([A-Z0-9]+-\d+) \| (\d+) \| (.+) \| (.+) \|$/gm),
+      ...rubric.matchAll(/^\|\s*([A-Z0-9]+-\d+)\s*\|\s*(\d+)\s*\|\s*([^|]+)\|\s*([^|]+)\|$/gm),
     ];
     const totalWeight = rubricRows.reduce((sum, row) => sum + Number(row[2]), 0);
 
@@ -27,7 +27,9 @@ describe('Persistent quality rubric', () => {
     expect(rubric).toContain('at least **95/100**');
     expect(rubric).toContain('## Score history');
     expect(rubric).toContain('| 2026-08-27 | `042d627` |');
-    expect(rubric).toContain('| 2026-08-27 | `438a79d` | 6 | −43; cap 49 | 0 |');
+    expect(rubric).toMatch(
+      /\|\s*2026-08-27\s*\|\s*`438a79d`\s*\|\s*6\s*\|\s*−43; cap 49\s*\|\s*0\s*\|/,
+    );
   });
 
   it('keeps README positioning and license aligned with the product contract', () => {
