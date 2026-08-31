@@ -343,7 +343,7 @@
 }
 
 .statLbl {
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;

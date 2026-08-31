@@ -87,6 +87,39 @@ textarea {
   color: inherit;
 }
 
+:where(button, input, select, textarea, a[href], [tabindex]:not([tabindex='-1'])):focus-visible {
+  outline: 3px solid var(--accent-hover);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px var(--bg-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(button, input, select, textarea, a[href], [role='button']) {
+    forced-color-adjust: auto;
+    border: 1px solid ButtonText;
+  }
+
+  :where(button, input, select, textarea, a[href], [tabindex]):focus-visible {
+    outline: 3px solid Highlight;
+  }
+
+  .react-flow__node.selected,
+  .react-flow__edge.selected path {
+    outline: 2px solid Highlight;
+  }
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
