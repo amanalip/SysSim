@@ -147,8 +147,7 @@ export const ComponentPalette: React.FC = () => {
                 <div
                   key={bp.id}
                   className={styles.componentCard}
-                  onClick={() => handleAddBlueprint(bp)}
-                  title={`Click to insert ${bp.name} (${bp.description})`}
+                  title={`${bp.name}: ${bp.description}`}
                 >
                   <div className={styles.cardLeft}>
                     <div
@@ -216,10 +215,11 @@ export const ComponentPalette: React.FC = () => {
                   <div
                     key={component.type}
                     className={styles.componentCard}
+                    role="group"
+                    aria-label={`${component.name}: draggable component with add button`}
                     draggable
                     onDragStart={(e) => onDragStart(e, component.type)}
-                    onClick={() => handleQuickAdd(component.type, component.name)}
-                    title={`Click or drag to place ${component.name} (${component.description})`}
+                    title={`Drag to place ${component.name} (${component.description}), or use its add button`}
                   >
                     <div className={styles.cardLeft}>
                       <div

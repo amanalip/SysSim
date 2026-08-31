@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   ReactFlow,
   Background,
@@ -54,9 +55,37 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
     undo,
     redo,
     beginNodeDragHistory,
+    updateNodePosition,
     autoLayout,
     theme,
-  } = useStore();
+  } = useStore(
+    useShallow((state) => ({
+      nodes: state.nodes,
+      edges: state.edges,
+      zones: state.zones,
+      setNodes: state.setNodes,
+      setEdges: state.setEdges,
+      removeGraphItems: state.removeGraphItems,
+      addNode: state.addNode,
+      duplicateNode: state.duplicateNode,
+      addEdge: state.addEdge,
+      selectNode: state.selectNode,
+      selectEdge: state.selectEdge,
+      removeNode: state.removeNode,
+      removeEdge: state.removeEdge,
+      selectedNodeId: state.selectedNodeId,
+      selectedEdgeId: state.selectedEdgeId,
+      snapToGrid: state.snapToGrid,
+      showMinimap: state.showMinimap,
+      showReferenceOverlay: state.showReferenceOverlay,
+      undo: state.undo,
+      redo: state.redo,
+      beginNodeDragHistory: state.beginNodeDragHistory,
+      updateNodePosition: state.updateNodePosition,
+      autoLayout: state.autoLayout,
+      theme: state.theme,
+    })),
+  );
 
   const reactFlowInstance = useReactFlow();
   const viewport = useViewport();
@@ -70,6 +99,11 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
     flowY: 0,
     nodeId: null,
   });
+  const selectedDescription = selectedNodeId
+    ? `Selected component ${nodes.find((node) => node.id === selectedNodeId)?.data.config.name || selectedNodeId}`
+    : selectedEdgeId
+      ? `Selected connection ${selectedEdgeId}`
+      : 'No graph item selected';
 
   const nodeTypes = useMemo(
     () => ({
@@ -190,6 +224,39 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         return;
       }
 
+      const focusedNode = target.closest<HTMLElement>('.react-flow__node[data-id]');
+      const focusedNodeId = focusedNode?.dataset.id;
+      if (focusedNodeId && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        selectNode(focusedNodeId);
+        return;
+      }
+      const nodeMovement: Record<string, { x: number; y: number }> = {
+        ArrowLeft: { x: -16, y: 0 },
+        ArrowRight: { x: 16, y: 0 },
+        ArrowUp: { x: 0, y: -16 },
+        ArrowDown: { x: 0, y: 16 },
+      };
+      const movement = focusedNodeId ? nodeMovement[e.key] : undefined;
+      if (focusedNodeId && movement) {
+        const node = nodes.find((candidate) => candidate.id === focusedNodeId);
+        if (!node) return;
+        e.preventDefault();
+        beginNodeDragHistory();
+        updateNodePosition(focusedNodeId, {
+          x: node.position.x + movement.x,
+          y: node.position.y + movement.y,
+        });
+        selectNode(focusedNodeId);
+        useStore
+          .getState()
+          .addToast(
+            `${node.data.config.name} moved ${e.key.replace('Arrow', '').toLowerCase()}`,
+            'info',
+          );
+        return;
+      }
+
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         if (e.shiftKey) {
           redo();
@@ -223,16 +290,18 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
       }
     },
     [
-      selectedNodeId,
-      selectedEdgeId,
-      nodes,
-      setNodes,
-      addNode,
+      beginNodeDragHistory,
       duplicateNode,
-      removeNode,
-      removeEdge,
-      undo,
+      nodes,
       redo,
+      removeEdge,
+      removeNode,
+      selectNode,
+      selectedEdgeId,
+      selectedNodeId,
+      setNodes,
+      undo,
+      updateNodePosition,
     ],
   );
 
@@ -264,7 +333,18 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
       onKeyDown={handleKeyDown}
       onContextMenu={(e) => handleContextMenu(e, null)}
       tabIndex={0}
+      role="region"
+      aria-label={`Architecture canvas with ${nodes.length} components, ${edges.length} connections, and ${zones.length} zones`}
+      aria-describedby="canvas-keyboard-help"
     >
+      <p id="canvas-keyboard-help" className={styles.srOnly}>
+        Tab to components and connection controls. Press Enter to select a component and use arrow
+        keys to move it by one grid step. Delete removes the selected graph item.
+      </p>
+      <div className={styles.srOnly} aria-live="polite" aria-atomic="true">
+        {selectedDescription}. Graph contains {nodes.length} components and {edges.length}{' '}
+        connections.
+      </div>
       {showReferenceOverlay && (
         <div className={styles.referenceOverlayBadge}>
           <span>Reference Architecture Overlay Active</span>

@@ -17,7 +17,17 @@ export const RequestParticleLayer: React.FC = () => {
   const { activeRequests, nodes, edges, simState, speedMultiplier } = useStore();
   const viewport = useViewport();
   const [particles, setParticles] = useState<ActiveParticle[]>([]);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
   const animFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setPrefersReducedMotion(media.matches);
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
 
   // Synchronize particles with activeRequests
   useEffect(() => {
@@ -71,7 +81,7 @@ export const RequestParticleLayer: React.FC = () => {
 
   // Smooth animation loop
   useEffect(() => {
-    if (simState !== 'running') {
+    if (simState !== 'running' || prefersReducedMotion) {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       return;
     }
@@ -99,9 +109,9 @@ export const RequestParticleLayer: React.FC = () => {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [simState, speedMultiplier]);
+  }, [prefersReducedMotion, simState, speedMultiplier]);
 
-  if (particles.length === 0) return null;
+  if (particles.length === 0 || prefersReducedMotion) return null;
 
   return (
     <div className={styles.particleLayer}>

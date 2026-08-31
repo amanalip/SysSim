@@ -1,4 +1,5 @@
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import {
   Power,
@@ -30,15 +31,25 @@ export const CustomComponentNode: React.FC<NodeProps> = ({ id, data, selected })
     duplicateNode,
     setNodeHealthOverride,
     bottlenecks,
-    metrics,
+    nodeMetric,
     simState,
     addToast,
-  } = useStore();
+  } = useStore(
+    useShallow((state) => ({
+      selectNode: state.selectNode,
+      removeNode: state.removeNode,
+      duplicateNode: state.duplicateNode,
+      setNodeHealthOverride: state.setNodeHealthOverride,
+      bottlenecks: state.bottlenecks,
+      nodeMetric: state.metrics.componentMetrics?.[id],
+      simState: state.simState,
+      addToast: state.addToast,
+    })),
+  );
 
   const categoryColor = categoryColors[config.category]?.main || 'var(--accent-primary)';
   const isDown = config.health === 'down';
   const hasBottleneck = bottlenecks.some((b) => b.nodeId === id);
-  const nodeMetric = metrics.componentMetrics?.[id];
   const isSimActive = simState === 'running' || simState === 'paused';
 
   const toggleHealth = (e: React.MouseEvent) => {
@@ -111,15 +122,15 @@ export const CustomComponentNode: React.FC<NodeProps> = ({ id, data, selected })
         borderLeftColor: categoryColor,
         borderLeftWidth: '3px',
       }}
-      onClick={() => selectNode(id)}
     >
       {/* Floating Action Toolbar on Canvas Selection */}
       {selected && (
-        <div className={styles.floatingToolbar} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.floatingToolbar}>
           <button
             className={styles.floatingBtn}
             onClick={handleDuplicate}
             title="Duplicate Component (Ctrl+D)"
+            aria-label={`Duplicate ${config.name}`}
           >
             <Copy size={11} />
           </button>
@@ -127,6 +138,7 @@ export const CustomComponentNode: React.FC<NodeProps> = ({ id, data, selected })
             className={styles.floatingBtn}
             onClick={toggleHealth}
             title={isDown ? 'Restore to healthy' : 'Inject fault (mark down)'}
+            aria-label={isDown ? `Restore ${config.name} to healthy` : `Mark ${config.name} down`}
           >
             <Power size={11} color={isDown ? 'var(--error)' : 'inherit'} />
           </button>
@@ -134,6 +146,7 @@ export const CustomComponentNode: React.FC<NodeProps> = ({ id, data, selected })
             className={styles.floatingBtn}
             onClick={handleOpenConfig}
             title="Configure in Properties Panel"
+            aria-label={`Configure ${config.name}`}
           >
             <Settings size={11} />
           </button>
@@ -141,6 +154,7 @@ export const CustomComponentNode: React.FC<NodeProps> = ({ id, data, selected })
             className={`${styles.floatingBtn} ${styles.floatingBtnDanger}`}
             onClick={handleDelete}
             title="Delete Component (Delete)"
+            aria-label={`Delete ${config.name}`}
           >
             <Trash2 size={11} />
           </button>
@@ -185,7 +199,9 @@ export const CustomComponentNode: React.FC<NodeProps> = ({ id, data, selected })
           <div
             className={`${styles.healthBadge} ${getHealthClass()}`}
             title={`Status: ${config.health}`}
+            aria-hidden="true"
           />
+          <span className={styles.srOnly}>Status: {config.health}</span>
         </div>
 
         {/* Live Telemetry Pill Bar during active simulation */}
@@ -229,6 +245,7 @@ export const CustomComponentNode: React.FC<NodeProps> = ({ id, data, selected })
               className={styles.actionBtn}
               onClick={handleOpenConfig}
               title="Configure properties"
+              aria-label={`Configure ${config.name}`}
             >
               <Settings size={11} />
             </button>
@@ -236,6 +253,7 @@ export const CustomComponentNode: React.FC<NodeProps> = ({ id, data, selected })
               className={styles.actionBtn}
               onClick={toggleHealth}
               title={isDown ? 'Restore to healthy' : 'Inject failure (mark down)'}
+              aria-label={isDown ? `Restore ${config.name}` : `Inject failure for ${config.name}`}
             >
               <Power size={11} color={isDown ? 'var(--error)' : 'var(--text-muted)'} />
             </button>
@@ -243,6 +261,7 @@ export const CustomComponentNode: React.FC<NodeProps> = ({ id, data, selected })
               className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
               onClick={handleDelete}
               title="Delete component"
+              aria-label={`Delete ${config.name}`}
             >
               <Trash2 size={11} />
             </button>

@@ -42,6 +42,7 @@ export const CanvasHud: React.FC = () => {
             addToast('Edge routing set to Smooth Bezier curves', 'info');
           }}
           title="Smooth Bezier edge curves"
+          aria-pressed={edgeRouting === 'bezier'}
         >
           <Spline size={13} />
           <span>Bezier</span>
@@ -54,6 +55,7 @@ export const CanvasHud: React.FC = () => {
             addToast('Edge routing set to Orthogonal Manhattan lines', 'info');
           }}
           title="Orthogonal Manhattan edges"
+          aria-pressed={edgeRouting === 'orthogonal'}
         >
           <GitCommit size={13} />
           <span>Orthogonal</span>
@@ -66,6 +68,7 @@ export const CanvasHud: React.FC = () => {
             addToast('Edge routing set to Straight vectors', 'info');
           }}
           title="Straight linear connections"
+          aria-pressed={edgeRouting === 'straight'}
         >
           <MoveRight size={13} />
           <span>Straight</span>
@@ -104,6 +107,8 @@ export const CanvasHud: React.FC = () => {
             addToast(`Snap to grid ${!snapToGrid ? 'Enabled' : 'Disabled'}`, 'info');
           }}
           title={`Snap to Grid: ${snapToGrid ? 'ON' : 'OFF'}`}
+          aria-pressed={snapToGrid}
+          aria-label="Snap nodes to grid"
         >
           <Grid size={14} />
         </button>
@@ -115,6 +120,8 @@ export const CanvasHud: React.FC = () => {
             addToast(`Canvas minimap ${!showMinimap ? 'Shown' : 'Hidden'}`, 'info');
           }}
           title={`Minimap: ${showMinimap ? 'ON' : 'OFF'}`}
+          aria-pressed={showMinimap}
+          aria-label="Show canvas minimap"
         >
           <Map size={14} />
         </button>

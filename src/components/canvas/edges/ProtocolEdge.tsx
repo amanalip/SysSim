@@ -151,7 +151,6 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
           }}
           className={styles.edgeLabelContainer}
-          onClick={() => selectEdge(id)}
           ref={dropdownRef}
         >
           <button
@@ -159,6 +158,7 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
             className={`${styles.protocolBadge} ${isCut ? styles.protocolBadgeCut : ''}`}
             onClick={(e) => {
               e.stopPropagation();
+              selectEdge(id);
               setOpenMenu(openMenu === 'protocol' ? null : 'protocol');
             }}
             aria-label={`Transport protocol: ${currentProtocol}. Click to change.`}
@@ -178,6 +178,7 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
             className={`${styles.purposeBadge} ${styles[`badge_${currentPurpose}`]}`}
             onClick={(e) => {
               e.stopPropagation();
+              selectEdge(id);
               setOpenMenu(openMenu === 'purpose' ? null : 'purpose');
             }}
             aria-label={`Edge purpose: ${currentPurpose}. Click to change.`}

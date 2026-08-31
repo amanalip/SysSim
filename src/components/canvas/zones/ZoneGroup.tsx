@@ -79,13 +79,14 @@ export const ZoneGroup: React.FC<ZoneGroupProps> = ({ zone, viewport }) => {
             }}
           />
         ) : (
-          <span
-            onDoubleClick={() => setIsEditing(true)}
-            title="Double-click to rename zone"
-            style={{ cursor: 'pointer' }}
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            title="Rename zone"
+            className={styles.zoneLabelButton}
           >
             {zone.label}
-          </span>
+          </button>
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

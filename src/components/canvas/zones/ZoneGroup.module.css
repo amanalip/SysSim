@@ -26,6 +26,16 @@
   border: 1px solid var(--border-subtle);
 }
 
+.zoneLabelButton {
+  appearance: none;
+  border: 0;
+  padding: 2px 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
 .zoneDeleteBtn {
   background: none;
   border: none;
