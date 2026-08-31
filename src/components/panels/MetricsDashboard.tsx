@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Activity,
   X,
@@ -21,13 +22,24 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { useStore } from '../../store/use-store';
-import { BottleneckPanel } from './BottleneckPanel';
-import { HealthRadarPanel } from './HealthRadarPanel';
-import { RequestTracePanel } from './RequestTracePanel';
-import { CostEstimatorPanel } from './CostEstimatorPanel';
 import { ModelNotice } from '../ui/ModelNotice';
+import { BottleneckPanel } from './BottleneckPanel';
 import { buildMetricsCsv } from '../../utils/metrics-export';
 import styles from './MetricsDashboard.module.css';
+
+const HealthRadarPanel = lazy(() =>
+  import('./HealthRadarPanel').then((module) => ({ default: module.HealthRadarPanel })),
+);
+const RequestTracePanel = lazy(() =>
+  import('./RequestTracePanel').then((module) => ({ default: module.RequestTracePanel })),
+);
+const CostEstimatorPanel = lazy(() =>
+  import('./CostEstimatorPanel').then((module) => ({ default: module.CostEstimatorPanel })),
+);
+
+const DeferredPanel: React.FC<React.PropsWithChildren> = ({ children }) => (
+  <Suspense fallback={<p role="status">Loading telemetry view…</p>}>{children}</Suspense>
+);
 
 export const MetricsDashboard: React.FC = () => {
   const {
@@ -37,7 +49,16 @@ export const MetricsDashboard: React.FC = () => {
     activeBottomTab,
     setActiveBottomTab,
     bottlenecks,
-  } = useStore();
+  } = useStore(
+    useShallow((state) => ({
+      metrics: state.metrics,
+      isBottomDrawerOpen: state.isBottomDrawerOpen,
+      setIsBottomDrawerOpen: state.setIsBottomDrawerOpen,
+      activeBottomTab: state.activeBottomTab,
+      setActiveBottomTab: state.setActiveBottomTab,
+      bottlenecks: state.bottlenecks,
+    })),
+  );
 
   const [viewMode, setViewMode] = useState<'charts' | 'table'>('charts');
 
@@ -582,9 +603,21 @@ export const MetricsDashboard: React.FC = () => {
           </>
         )}
 
-        {activeBottomTab === 'health' && <HealthRadarPanel />}
-        {activeBottomTab === 'trace' && <RequestTracePanel />}
-        {activeBottomTab === 'cost' && <CostEstimatorPanel />}
+        {activeBottomTab === 'health' && (
+          <DeferredPanel>
+            <HealthRadarPanel />
+          </DeferredPanel>
+        )}
+        {activeBottomTab === 'trace' && (
+          <DeferredPanel>
+            <RequestTracePanel />
+          </DeferredPanel>
+        )}
+        {activeBottomTab === 'cost' && (
+          <DeferredPanel>
+            <CostEstimatorPanel />
+          </DeferredPanel>
+        )}
       </div>
     </div>
   );

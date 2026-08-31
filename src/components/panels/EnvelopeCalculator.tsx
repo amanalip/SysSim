@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { ArrowUpRight, Download } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { CalculatorInputs } from '../../model/types';
@@ -8,6 +9,7 @@ import {
   CAPACITY_UNIT_CONVENTION,
 } from '../../analysis/capacity-calculator';
 import { ModelNotice } from '../ui/ModelNotice';
+import { formatCapacityNumber, formatCapacityRange } from '../../analysis/capacity-format';
 import styles from './EnvelopeCalculator.module.css';
 
 const NumericAssumptionField: React.FC<{
@@ -36,7 +38,14 @@ const NumericAssumptionField: React.FC<{
 );
 
 export const EnvelopeCalculator: React.FC = () => {
-  const { calculatorInputs, setCalculatorInputs, nodes, selectNode } = useStore();
+  const { calculatorInputs, setCalculatorInputs, nodes, selectNode } = useStore(
+    useShallow((state) => ({
+      calculatorInputs: state.calculatorInputs,
+      setCalculatorInputs: state.setCalculatorInputs,
+      nodes: state.nodes,
+      selectNode: state.selectNode,
+    })),
+  );
 
   const [qpsText, setQpsText] = React.useState(String(calculatorInputs.qps));
   const [payloadText, setPayloadText] = React.useState(String(calculatorInputs.payloadSizeKb));
@@ -408,7 +417,9 @@ export const EnvelopeCalculator: React.FC = () => {
           <div className={styles.outputCard}>
             <div className={styles.outputHeader}>
               <span className={styles.outputLabel}>Daily New Data</span>
-              <span className={styles.outputValue}>{outputs.dailyNewDataGb} GB/day</span>
+              <span className={styles.outputValue}>
+                {formatCapacityNumber(outputs.dailyNewDataGb)} GB/day
+              </span>
             </div>
             <span className={styles.formulaText}>{outputs.formulas.dailyStorage}</span>
           </div>
@@ -417,8 +428,7 @@ export const EnvelopeCalculator: React.FC = () => {
             <div className={styles.outputHeader}>
               <span className={styles.outputLabel}>Replicated Storage</span>
               <span className={styles.outputValue}>
-                {outputs.ranges.replicatedStorageTb.low}–{outputs.ranges.replicatedStorageTb.high}{' '}
-                TB
+                {formatCapacityRange(outputs.ranges.replicatedStorageTb, 'TB')}
               </span>
             </div>
             {dbNode && (
@@ -432,7 +442,7 @@ export const EnvelopeCalculator: React.FC = () => {
             <div className={styles.outputHeader}>
               <span className={styles.outputLabel}>App Servers Needed</span>
               <span className={styles.outputValue} style={{ color: 'var(--accent-primary)' }}>
-                {outputs.ranges.serversNeeded.low}–{outputs.ranges.serversNeeded.high} instances
+                {formatCapacityRange(outputs.ranges.serversNeeded, 'instances')}
               </span>
             </div>
             <span className={styles.formulaText}>{outputs.formulas.servers}</span>
@@ -447,7 +457,7 @@ export const EnvelopeCalculator: React.FC = () => {
             <div className={styles.outputHeader}>
               <span className={styles.outputLabel}>Recommended Cache RAM</span>
               <span className={styles.outputValue}>
-                {outputs.ranges.cacheMemoryGb.low}–{outputs.ranges.cacheMemoryGb.high} GB
+                {formatCapacityRange(outputs.ranges.cacheMemoryGb, 'GB')}
               </span>
             </div>
             <span className={styles.formulaText}>{outputs.formulas.cache}</span>
@@ -461,7 +471,9 @@ export const EnvelopeCalculator: React.FC = () => {
           <div className={styles.outputCard}>
             <div className={styles.outputHeader}>
               <span className={styles.outputLabel}>Inbound Bandwidth (Request Bodies)</span>
-              <span className={styles.outputValue}>{outputs.inboundBandwidthMbps} Mbps</span>
+              <span className={styles.outputValue}>
+                {formatCapacityNumber(outputs.inboundBandwidthMbps)} Mbps
+              </span>
             </div>
             <span className={styles.formulaText}>
               {outputs.writeQps} write + {outputs.readQps} read QPS request bodies
@@ -471,7 +483,9 @@ export const EnvelopeCalculator: React.FC = () => {
           <div className={styles.outputCard}>
             <div className={styles.outputHeader}>
               <span className={styles.outputLabel}>Outbound Bandwidth (Response Bodies)</span>
-              <span className={styles.outputValue}>{outputs.outboundBandwidthMbps} Mbps</span>
+              <span className={styles.outputValue}>
+                {formatCapacityNumber(outputs.outboundBandwidthMbps)} Mbps
+              </span>
             </div>
             <span className={styles.formulaText}>
               Read responses plus write acknowledgements; decimal Mbps
@@ -482,7 +496,7 @@ export const EnvelopeCalculator: React.FC = () => {
             <div className={styles.outputHeader}>
               <span className={styles.outputLabel}>Estimated DB Pool</span>
               <span className={styles.outputValue}>
-                {outputs.ranges.dbConnections.low}–{outputs.ranges.dbConnections.high} conns
+                {formatCapacityRange(outputs.ranges.dbConnections, 'conns')}
               </span>
             </div>
             <span className={styles.formulaText}>{outputs.formulas.dbConnections}</span>

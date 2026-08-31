@@ -1,4 +1,5 @@
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { X, RotateCcw, Trash2 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { ComponentIcon } from '../icons/ComponentIcon';
@@ -15,6 +16,7 @@ import {
   QueueOverflowPolicy,
 } from '../../model/types';
 import styles from './PropertiesPanel.module.css';
+import { SecurityServiceProperties } from './property-editors/SecurityServiceProperties';
 
 export const PropertiesPanel: React.FC = () => {
   const panelRef = React.useRef<HTMLDivElement>(null);
@@ -28,7 +30,19 @@ export const PropertiesPanel: React.FC = () => {
     setNodeHealthOverride,
     isPropertiesPanelOpen,
     setIsPropertiesPanelOpen,
-  } = useStore();
+  } = useStore(
+    useShallow((state) => ({
+      nodes: state.nodes,
+      edges: state.edges,
+      selectedNodeId: state.selectedNodeId,
+      selectNode: state.selectNode,
+      updateNodeConfig: state.updateNodeConfig,
+      removeNode: state.removeNode,
+      setNodeHealthOverride: state.setNodeHealthOverride,
+      isPropertiesPanelOpen: state.isPropertiesPanelOpen,
+      setIsPropertiesPanelOpen: state.setIsPropertiesPanelOpen,
+    })),
+  );
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
@@ -269,7 +283,7 @@ export const PropertiesPanel: React.FC = () => {
                       ? config.baseLatencyMs
                       : 'latencyMs' in config
                         ? config.latencyMs
-                        : (config as any).queryLatencyMs}{' '}
+                        : Number(config.queryLatencyMs)}{' '}
                   ms
                 </span>
               </div>
@@ -286,7 +300,7 @@ export const PropertiesPanel: React.FC = () => {
                         ? config.baseLatencyMs
                         : 'latencyMs' in config
                           ? config.latencyMs
-                          : (config as any).queryLatencyMs
+                          : Number(config.queryLatencyMs)
                   }
                   onChange={(e) => {
                     const val = parseInt(e.target.value, 10);
@@ -297,7 +311,7 @@ export const PropertiesPanel: React.FC = () => {
                     } else if ('latencyMs' in config) {
                       updateNodeConfig(config.id, { latencyMs: val });
                     } else {
-                      updateNodeConfig(config.id, { queryLatencyMs: val } as any);
+                      updateNodeConfig(config.id, { queryLatencyMs: val });
                     }
                   }}
                 />
@@ -988,7 +1002,7 @@ export const PropertiesPanel: React.FC = () => {
                 value={config.consistencyLevel}
                 onChange={(e) =>
                   updateNodeConfig(config.id, {
-                    consistencyLevel: e.target.value as any,
+                    consistencyLevel: e.target.value as typeof config.consistencyLevel,
                   })
                 }
               >
@@ -1347,180 +1361,8 @@ export const PropertiesPanel: React.FC = () => {
             </>
           )}
 
-          {/* Auth Service Token Type & TTL */}
-          {config.type === 'auth_service' && (
-            <>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Token Type</label>
-                <select
-                  className={styles.select}
-                  value={config.tokenType}
-                  onChange={(e) =>
-                    updateNodeConfig(config.id, {
-                      tokenType: e.target.value as any,
-                    })
-                  }
-                >
-                  <option value="JWT">JWT (JSON Web Token)</option>
-                  <option value="Paseto">Paseto (Platform-Agnostic Security Tokens)</option>
-                  <option value="Session">Opaque Session ID</option>
-                </select>
-              </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Validation Latency (ms)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  className={styles.input}
-                  value={config.validationLatencyMs}
-                  onChange={(event) =>
-                    updateNodeConfig(config.id, {
-                      validationLatencyMs: Math.max(0, Number(event.target.value) || 0),
-                    })
-                  }
-                />
-              </div>
-
-              <div className={styles.fieldGroup}>
-                <div className={styles.fieldLabel}>
-                  <span>Token TTL (Minutes)</span>
-                  <span className={styles.fieldValueBadge}>{config.ttlMinutes}m</span>
-                </div>
-                <input
-                  type="number"
-                  className={styles.input}
-                  value={config.ttlMinutes}
-                  onChange={(e) =>
-                    updateNodeConfig(config.id, {
-                      ttlMinutes: parseInt(e.target.value, 10) || 60,
-                    })
-                  }
-                />
-                <p className={styles.fieldHint}>
-                  TTL is retained as diagram metadata; request token age and expiry are not modeled.
-                </p>
-              </div>
-              {config.tokenType === 'Session' ? (
-                <>
-                  <div className={styles.fieldGroup}>
-                    <button
-                      type="button"
-                      className={`${styles.actionBtn} ${config.sessionCacheEnabled ? styles.coalescingActive : ''}`}
-                      aria-pressed={config.sessionCacheEnabled}
-                      onClick={() =>
-                        updateNodeConfig(config.id, {
-                          sessionCacheEnabled: !config.sessionCacheEnabled,
-                        })
-                      }
-                    >
-                      Session cache {config.sessionCacheEnabled ? 'ON' : 'OFF'}
-                    </button>
-                  </div>
-                  {config.sessionCacheEnabled ? (
-                    <>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>Session Cache Hit Rate (%)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          className={styles.input}
-                          value={config.sessionCacheHitRatePercent}
-                          onChange={(event) =>
-                            updateNodeConfig(config.id, {
-                              sessionCacheHitRatePercent: Math.min(
-                                100,
-                                Math.max(0, Number(event.target.value) || 0),
-                              ),
-                            })
-                          }
-                        />
-                      </div>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>Session Cache Latency (ms)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          className={styles.input}
-                          value={config.sessionCacheLatencyMs}
-                          onChange={(event) =>
-                            updateNodeConfig(config.id, {
-                              sessionCacheLatencyMs: Math.max(0, Number(event.target.value) || 0),
-                            })
-                          }
-                        />
-                      </div>
-                    </>
-                  ) : null}
-                </>
-              ) : null}
-            </>
-          )}
-
-          {/* Encryption Service Algorithm & Key Rotation */}
-          {config.type === 'encryption_service' && (
-            <>
-              <p className={styles.fieldHint}>
-                This component estimates processing latency only. It does not perform encryption,
-                inspect key material, or validate cryptographic security.
-              </p>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Cipher Algorithm</label>
-                <select
-                  className={styles.select}
-                  value={config.algorithm}
-                  onChange={(e) =>
-                    updateNodeConfig(config.id, {
-                      algorithm: e.target.value as any,
-                    })
-                  }
-                >
-                  <option value="AES-256-GCM">AES-256-GCM (Authenticated)</option>
-                  <option value="ChaCha20-Poly1305">ChaCha20-Poly1305 (Fast Stream)</option>
-                  <option value="RSA-4096">RSA-4096 (Asymmetric PKI)</option>
-                </select>
-              </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>AES Baseline Overhead (ms)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  className={styles.input}
-                  value={config.overheadLatencyMs}
-                  onChange={(event) =>
-                    updateNodeConfig(config.id, {
-                      overheadLatencyMs: Math.max(0, Number(event.target.value) || 0),
-                    })
-                  }
-                />
-              </div>
-
-              <div className={styles.fieldGroup}>
-                <div className={styles.fieldLabel}>
-                  <span>Key Rotation (Days)</span>
-                  <span className={styles.fieldValueBadge}>{config.keyRotationDays}d</span>
-                </div>
-                <input
-                  type="number"
-                  className={styles.input}
-                  value={config.keyRotationDays}
-                  onChange={(e) =>
-                    updateNodeConfig(config.id, {
-                      keyRotationDays: parseInt(e.target.value, 10) || 90,
-                    })
-                  }
-                />
-                <p className={styles.fieldHint}>
-                  Rotation is diagram metadata; no scheduled rotation event or security guarantee is
-                  simulated.
-                </p>
-              </div>
-            </>
+          {(config.type === 'auth_service' || config.type === 'encryption_service') && (
+            <SecurityServiceProperties config={config} update={updateNodeConfig} />
           )}
 
           {/* Serverless Function Configuration */}
