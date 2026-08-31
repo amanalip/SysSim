@@ -7,15 +7,31 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : 2,
-  reporter: 'list',
+  reporter: process.env.CI
+    ? [
+        ['line'],
+        ['html', { outputFolder: 'playwright-report', open: 'never' }],
+        ['junit', { outputFile: 'reports/e2e-results.xml' }],
+      ]
+    : 'list',
   use: {
     baseURL: 'http://localhost:5173/SysSim/',
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
     },
   ],
   webServer: {
