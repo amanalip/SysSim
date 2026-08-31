@@ -1,4 +1,4 @@
-import { Scenario, ScenarioCategory } from '../model/types';
+import { Scenario } from '../model/types';
 import { CORE_SCENARIOS } from './core';
 import { SOCIAL_SCENARIOS } from './social';
 import { STREAMING_SCENARIOS } from './streaming';
@@ -15,6 +15,7 @@ import { MAPS_SCENARIOS } from './maps';
 import { COMMUNICATION_SCENARIOS } from './communication';
 import { CONTENT_SCENARIOS } from './content';
 import { normalizeScenario } from './normalize';
+export { SCENARIO_CATEGORIES, loadScenarioCatalog } from './registry';
 export { SCENARIO_REVIEW_OWNERS } from './normalize';
 
 const RAW_SCENARIOS: Scenario[] = [
@@ -36,24 +37,6 @@ const RAW_SCENARIOS: Scenario[] = [
 ];
 
 export const ALL_SCENARIOS: Scenario[] = RAW_SCENARIOS.map(normalizeScenario);
-
-export const SCENARIO_CATEGORIES: ScenarioCategory[] = [
-  'Core / Classic',
-  'Social & Messaging',
-  'Streaming & Media',
-  'E-Commerce & Payments',
-  'Search & Discovery',
-  'Infrastructure & Platform',
-  'Data & Analytics',
-  'Auth & Security',
-  'IoT & Edge',
-  'Gaming',
-  'ML / AI Infrastructure',
-  'Collaboration',
-  'Maps & Geolocation',
-  'Communication',
-  'Content & Publishing',
-];
 
 export function getScenarioById(id: number): Scenario | undefined {
   return ALL_SCENARIOS.find((s) => s.id === id);

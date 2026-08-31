@@ -1,18 +1,23 @@
 import React, { useState, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Search, CheckCircle2, X, Trophy } from 'lucide-react';
-import { ALL_SCENARIOS, SCENARIO_CATEGORIES } from '../../scenarios';
 import { useStore } from '../../store/use-store';
-import { ScenarioCategory, ScenarioDifficulty } from '../../model/types';
+import { Scenario, ScenarioCategory, ScenarioDifficulty } from '../../model/types';
 import styles from './ScenarioPicker.module.css';
 
 interface ScenarioPickerProps {
+  scenarios: Scenario[];
+  categories: ScenarioCategory[];
   onSelectScenario: (id: number) => void;
 }
 
 type StatusFilter = 'All' | 'Solved' | 'Unsolved';
 
-export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario }) => {
+export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
+  scenarios,
+  categories,
+  onSelectScenario,
+}) => {
   const { currentScenario, completedScenarioIds } = useStore(
     useShallow((state) => ({
       currentScenario: state.currentScenario,
@@ -26,12 +31,12 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
 
   const normalizedQuery = searchTerm.trim().toLowerCase();
 
-  const totalScenarios = ALL_SCENARIOS.length;
+  const totalScenarios = scenarios.length;
   const solvedCount = completedScenarioIds.length;
   const progressPercent = Math.round((solvedCount / totalScenarios) * 100);
 
   const filteredScenarios = useMemo(() => {
-    return ALL_SCENARIOS.filter((s) => {
+    return scenarios.filter((s) => {
       const isCompleted = completedScenarioIds.includes(s.id);
       const matchesStatus =
         statusFilter === 'All' ||
@@ -46,11 +51,18 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
         s.category.toLowerCase().includes(normalizedQuery);
       return matchesStatus && matchesCategory && matchesDifficulty && matchesSearch;
     });
-  }, [normalizedQuery, selectedCategory, selectedDifficulty, statusFilter, completedScenarioIds]);
+  }, [
+    scenarios,
+    normalizedQuery,
+    selectedCategory,
+    selectedDifficulty,
+    statusFilter,
+    completedScenarioIds,
+  ]);
 
   return (
     <div className={styles.pickerContainer}>
-      {/* 101 Scenarios Progress Header */}
+      {/* Scenario progress summary */}
       <div className={styles.progressCard}>
         <div className={styles.progressHeader}>
           <div className={styles.progressTitle}>
@@ -62,9 +74,11 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
           </span>
         </div>
         <div className={styles.progressBarTrack}>
-          <div
+          <progress
             className={styles.progressBarFill}
-            style={{ width: `${Math.max(2, progressPercent)}%` }}
+            max={100}
+            value={progressPercent}
+            aria-label="Scenario mastery progress"
           />
         </div>
       </div>
@@ -85,14 +99,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
         />
         {searchTerm && (
           <button
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-muted)',
-              display: 'flex',
-              alignItems: 'center',
-            }}
+            className={styles.clearSearchButton}
             onClick={() => setSearchTerm('')}
             title="Clear search"
           >
@@ -115,7 +122,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
       </div>
 
       {/* Category & Difficulty Selectors */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+      <div className={styles.filterGrid}>
         <select
           aria-label="Filter scenarios by category"
           className={styles.categorySelect}
@@ -123,8 +130,8 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
           onChange={(e) => setSelectedCategory(e.target.value)}
         >
           <option value="All">All Categories</option>
-          {SCENARIO_CATEGORIES.map((cat: ScenarioCategory) => {
-            const count = ALL_SCENARIOS.filter(
+          {categories.map((cat: ScenarioCategory) => {
+            const count = scenarios.filter(
               (s) =>
                 s.category === cat &&
                 (selectedDifficulty === 'All' || s.difficulty === selectedDifficulty) &&
@@ -151,7 +158,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
         >
           <option value="All">All Difficulties</option>
           {(['Easy', 'Medium', 'Hard'] as ScenarioDifficulty[]).map((diff) => {
-            const count = ALL_SCENARIOS.filter(
+            const count = scenarios.filter(
               (s) =>
                 s.difficulty === diff &&
                 (selectedCategory === 'All' || s.category === selectedCategory) &&
@@ -174,16 +181,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
       {/* Scenario List */}
       <div className={styles.scenarioList}>
         {filteredScenarios.length === 0 ? (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '32px 16px',
-              color: 'var(--text-muted)',
-              fontSize: 12,
-            }}
-          >
-            No scenarios found matching your filter criteria
-          </div>
+          <div className={styles.emptyState}>No scenarios found matching your filter criteria</div>
         ) : (
           filteredScenarios.map((s) => {
             const isCompleted = completedScenarioIds.includes(s.id);
@@ -224,15 +222,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
                 <div className={styles.cardMeta}>
                   <span className={styles.categoryTag}>{s.category}</span>
                   {isCompleted && (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 2,
-                        color: 'var(--success)',
-                        fontWeight: 600,
-                      }}
-                    >
+                    <span className={styles.solvedStatus}>
                       <CheckCircle2 size={11} /> Solved
                     </span>
                   )}

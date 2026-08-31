@@ -46,10 +46,53 @@
 }
 
 .progressBarFill {
+  display: block;
+  width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, var(--warning) 0%, var(--success) 100%);
+  appearance: none;
+  border: 0;
   border-radius: var(--radius-full);
   transition: width 0.3s ease;
+}
+
+.progressBarFill::-webkit-progress-bar {
+  background: transparent;
+}
+
+.progressBarFill::-webkit-progress-value,
+.progressBarFill::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--warning) 0%, var(--success) 100%);
+  border-radius: var(--radius-full);
+}
+
+.clearSearchButton {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.emptyState {
+  padding: 32px 16px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.solvedStatus {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  color: var(--success);
+  font-weight: 600;
 }
 
 .searchBox {

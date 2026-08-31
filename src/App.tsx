@@ -18,8 +18,6 @@ import {
   simulationRuntime as simBridge,
 } from './engine/simulation-runtime';
 import { decodeStateFromUrlHash } from './utils/sharing';
-import { CORE_SCENARIOS } from './scenarios/core';
-import { normalizeScenario } from './scenarios/normalize';
 import styles from './App.module.css';
 import { startUiPerformanceMonitor } from './diagnostics/runtime-performance';
 
@@ -47,6 +45,7 @@ const ShortcutsModal = lazy(() =>
 export function App() {
   const {
     theme,
+    motionPreference,
     nodes,
     isChaosMode,
     setChaosMode,
@@ -64,6 +63,7 @@ export function App() {
   } = useStore(
     useShallow((state) => ({
       theme: state.theme,
+      motionPreference: state.motionPreference,
       nodes: state.nodes,
       isChaosMode: state.isChaosMode,
       setChaosMode: state.setChaosMode,
@@ -108,6 +108,10 @@ export function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-motion', motionPreference);
+  }, [motionPreference]);
+
   // Decode URL hash state on initial boot or load starter architecture
   useEffect(() => {
     if (bootstrappedRef.current) return;
@@ -128,11 +132,17 @@ export function App() {
       }
     }
 
-    // Load initial starter architecture if canvas is empty
+    // Load the starter category only when no shared architecture was supplied.
     if (nodes.length === 0) {
-      const starter = normalizeScenario(CORE_SCENARIOS[0]); // URL Shortener
-      loadScenario(starter);
-      loadReferenceDesign(starter.referenceDesign);
+      void Promise.all([import('./scenarios/core'), import('./scenarios/normalize')])
+        .then(([core, normalization]) => {
+          const starter = normalization.normalizeScenario(core.CORE_SCENARIOS[0]);
+          loadScenario(starter);
+          loadReferenceDesign(starter.referenceDesign);
+        })
+        .catch(() => {
+          addToast('Starter architecture could not be loaded', 'error');
+        });
     }
   }, [
     addToast,
@@ -156,6 +166,7 @@ export function App() {
   // Global keyboard shortcuts
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
       const target = e.target instanceof HTMLElement ? e.target : document.body;
       const isEditing =
         target.tagName === 'INPUT' ||
@@ -177,6 +188,13 @@ export function App() {
       }
 
       if (isEditing || !keyboardShortcutsEnabled) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) useStore.getState().redo();
+        else useStore.getState().undo();
+        return;
+      }
 
       if (e.code === 'Space') {
         e.preventDefault();
