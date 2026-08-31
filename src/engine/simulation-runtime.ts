@@ -1,6 +1,10 @@
 import { useStore } from '../store/use-store';
 import { SimulationBridge } from './sim-bridge';
-import { configureGraphMutationListener, configureSimulationResetListener, configureTrafficConfigListener } from './simulation-command-bus';
+import {
+  configureGraphMutationListener,
+  configureSimulationResetListener,
+  configureTrafficConfigListener,
+} from './simulation-command-bus';
 
 let bridge: SimulationBridge | null = null;
 
@@ -11,7 +15,12 @@ function createBridge(): SimulationBridge {
       return {
         graph: {
           nodes: state.nodes.map((node) => ({ id: node.id, config: node.data.config })),
-          edges: state.edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, data: edge.data })),
+          edges: state.edges.map((edge) => ({
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            data: edge.data,
+          })),
         },
         graphRevision: state.graphRevision,
         trafficConfig: state.trafficConfig,
@@ -58,7 +67,8 @@ export const simulationRuntime = {
   initialize: initializeSimulationRuntime,
   dispose: disposeSimulationRuntime,
   syncGraph: () => getBridge().syncGraph(),
-  syncConfig: (config: Parameters<SimulationBridge['syncConfig']>[0]) => getBridge().syncConfig(config),
+  syncConfig: (config: Parameters<SimulationBridge['syncConfig']>[0]) =>
+    getBridge().syncConfig(config),
   setSpeed: (speed: number) => getBridge().setSpeed(speed),
   start: () => getBridge().start(),
   pause: () => getBridge().pause(),

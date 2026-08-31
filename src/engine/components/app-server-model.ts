@@ -28,7 +28,9 @@ export class AppServerModel {
     private maxThroughputPerReplicaQps: number,
     private maxConnectionsPerReplica = 1,
     private degraded = false,
-  ) { this.reset(); }
+  ) {
+    this.reset();
+  }
 
   public process(arrivalTimeMs: number): AppServerServiceResult {
     this.pruneArrivals(arrivalTimeMs);
@@ -43,14 +45,16 @@ export class AppServerModel {
       }
     }
     const processingLatencyMs = this.effectiveProcessingLatencyMs;
-    const throughputIntervalMs = this.maxThroughputPerReplicaQps > 0
-      ? 1000 / this.maxThroughputPerReplicaQps
-      : Number.POSITIVE_INFINITY;
+    const throughputIntervalMs =
+      this.maxThroughputPerReplicaQps > 0
+        ? 1000 / this.maxThroughputPerReplicaQps
+        : Number.POSITIVE_INFINITY;
     const serviceStartMs = selectedStartMs;
     const queueLatencyMs = Math.max(0, serviceStartMs - arrivalTimeMs);
     if (queueLatencyMs > 0) this.scheduledServiceStartsMs.push(serviceStartMs);
     this.slotAvailableAtMs[selected] = serviceStartMs + processingLatencyMs;
-    this.replicaNextAdmissionAtMs[this.replicaForSlot(selected)] = serviceStartMs + throughputIntervalMs;
+    this.replicaNextAdmissionAtMs[this.replicaForSlot(selected)] =
+      serviceStartMs + throughputIntervalMs;
     return {
       processingLatencyMs,
       queueLatencyMs,
@@ -62,16 +66,24 @@ export class AppServerModel {
 
   public getMetrics(nowMs: number): AppServerMetrics {
     this.pruneArrivals(nowMs);
-    const activeConnections = this.slotAvailableAtMs.filter((availableAt) => availableAt > nowMs).length;
-    this.scheduledServiceStartsMs = this.scheduledServiceStartsMs.filter((startAt) => startAt > nowMs);
+    const activeConnections = this.slotAvailableAtMs.filter(
+      (availableAt) => availableAt > nowMs,
+    ).length;
+    this.scheduledServiceStartsMs = this.scheduledServiceStartsMs.filter(
+      (startAt) => startAt > nowMs,
+    );
     const queuedRequests = this.scheduledServiceStartsMs.length;
     const capacityQps = this.effectiveReplicaCount * Math.max(0, this.maxThroughputPerReplicaQps);
-    const loadUtilization = capacityQps > 0 ? (this.arrivalTimesMs.length / capacityQps) * 100 : 100;
+    const loadUtilization =
+      capacityQps > 0 ? (this.arrivalTimesMs.length / capacityQps) * 100 : 100;
     const connectionUtilization = (activeConnections / this.slotAvailableAtMs.length) * 100;
     return {
       activeConnections,
       queuedRequests,
-      cpuUtilizationPercent: Math.min(100, Math.round(Math.max(loadUtilization, connectionUtilization) * 10) / 10),
+      cpuUtilizationPercent: Math.min(
+        100,
+        Math.round(Math.max(loadUtilization, connectionUtilization) * 10) / 10,
+      ),
       capacityQps,
     };
   }
@@ -98,7 +110,12 @@ export class AppServerModel {
   }
 
   private get connectionSlotCount(): number {
-    const connections = Math.max(1, Math.floor(Number.isFinite(this.maxConnectionsPerReplica) ? this.maxConnectionsPerReplica : 1));
+    const connections = Math.max(
+      1,
+      Math.floor(
+        Number.isFinite(this.maxConnectionsPerReplica) ? this.maxConnectionsPerReplica : 1,
+      ),
+    );
     return this.effectiveReplicaCount * connections;
   }
 
@@ -108,10 +125,19 @@ export class AppServerModel {
 
   private candidateStart(slotIndex: number, arrivalTimeMs: number): number {
     const replica = this.replicaForSlot(slotIndex);
-    return Math.max(arrivalTimeMs, this.slotAvailableAtMs[slotIndex], this.replicaNextAdmissionAtMs[replica]);
+    return Math.max(
+      arrivalTimeMs,
+      this.slotAvailableAtMs[slotIndex],
+      this.replicaNextAdmissionAtMs[replica],
+    );
   }
 
   private get connectionsPerReplica(): number {
-    return Math.max(1, Math.floor(Number.isFinite(this.maxConnectionsPerReplica) ? this.maxConnectionsPerReplica : 1));
+    return Math.max(
+      1,
+      Math.floor(
+        Number.isFinite(this.maxConnectionsPerReplica) ? this.maxConnectionsPerReplica : 1,
+      ),
+    );
   }
 }

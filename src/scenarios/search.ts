@@ -17,17 +17,51 @@ export const SEARCH_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Construct an inverted index mapping terms to posting lists with term frequencies and positions.' },
-      { step: 2, hint: 'Partition the search index by document ID across thousands of search index shards.' },
-      { step: 3, hint: 'Use a multi-stage ranker: fast BM25 / TF-IDF retrieval on shards followed by heavy ML ranking at the root.' },
+      {
+        step: 1,
+        hint: 'Construct an inverted index mapping terms to posting lists with term frequencies and positions.',
+      },
+      {
+        step: 2,
+        hint: 'Partition the search index by document ID across thousands of search index shards.',
+      },
+      {
+        step: 3,
+        hint: 'Use a multi-stage ranker: fast BM25 / TF-IDF retrieval on shards followed by heavy ML ranking at the root.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Search User') } },
-        { id: 'gw', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('api_gateway', 'gw', 'Search Root / Aggregator') } },
-        { id: 'idx1', type: 'customComponent', position: { x: 520, y: 70 }, data: { config: createDefaultConfig('search_index', 'idx1', 'Inverted Index Shard 1') } },
-        { id: 'idx2', type: 'customComponent', position: { x: 520, y: 230 }, data: { config: createDefaultConfig('search_index', 'idx2', 'Inverted Index Shard 2') } },
-        { id: 'ranker', type: 'customComponent', position: { x: 780, y: 150 }, data: { config: createDefaultConfig('app_server', 'ranker', 'ML PageRank Model') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Search User') },
+        },
+        {
+          id: 'gw',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('api_gateway', 'gw', 'Search Root / Aggregator') },
+        },
+        {
+          id: 'idx1',
+          type: 'customComponent',
+          position: { x: 520, y: 70 },
+          data: { config: createDefaultConfig('search_index', 'idx1', 'Inverted Index Shard 1') },
+        },
+        {
+          id: 'idx2',
+          type: 'customComponent',
+          position: { x: 520, y: 230 },
+          data: { config: createDefaultConfig('search_index', 'idx2', 'Inverted Index Shard 2') },
+        },
+        {
+          id: 'ranker',
+          type: 'customComponent',
+          position: { x: 780, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'ranker', 'ML PageRank Model') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'gw', data: { protocol: 'HTTP' } },
@@ -39,11 +73,13 @@ export const SEARCH_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'Why partition the search index by Document ID instead of Term / Keyword?',
-        answer: 'Document partitioning allows local single-shard boolean query evaluation without network fanout between multiple keyword shards.',
+        answer:
+          'Document partitioning allows local single-shard boolean query evaluation without network fanout between multiple keyword shards.',
       },
       {
         question: 'How do you handle tail query latency across thousands of search nodes?',
-        answer: 'Google uses tied-request hedging: issue a backup request to a replica shard if no response is received within p95 latency.',
+        answer:
+          'Google uses tied-request hedging: issue a backup request to a replica shard if no response is received within p95 latency.',
       },
     ],
     sources: [
@@ -82,15 +118,41 @@ export const SEARCH_SCENARIOS: Scenario[] = [
     },
     hints: [
       { step: 1, hint: 'Store prefixes in a Trie (prefix tree) data structure in memory.' },
-      { step: 2, hint: 'Pre-calculate and store the top-5 highest frequency search phrases directly at each Trie node.' },
-      { step: 3, hint: 'Cache autocomplete results at the browser and edge CDN layers with 1-hour TTLs.' },
+      {
+        step: 2,
+        hint: 'Pre-calculate and store the top-5 highest frequency search phrases directly at each Trie node.',
+      },
+      {
+        step: 3,
+        hint: 'Cache autocomplete results at the browser and edge CDN layers with 1-hour TTLs.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'User Browser') } },
-        { id: 'cdn', type: 'customComponent', position: { x: 260, y: 70 }, data: { config: createDefaultConfig('cdn', 'cdn', 'Edge Autocomplete CDN') } },
-        { id: 'app', type: 'customComponent', position: { x: 260, y: 220 }, data: { config: createDefaultConfig('app_server', 'app', 'Autocomplete API') } },
-        { id: 'trieCache', type: 'customComponent', position: { x: 520, y: 150 }, data: { config: createDefaultConfig('redis_cache', 'trieCache', 'In-Memory Trie Store') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'User Browser') },
+        },
+        {
+          id: 'cdn',
+          type: 'customComponent',
+          position: { x: 260, y: 70 },
+          data: { config: createDefaultConfig('cdn', 'cdn', 'Edge Autocomplete CDN') },
+        },
+        {
+          id: 'app',
+          type: 'customComponent',
+          position: { x: 260, y: 220 },
+          data: { config: createDefaultConfig('app_server', 'app', 'Autocomplete API') },
+        },
+        {
+          id: 'trieCache',
+          type: 'customComponent',
+          position: { x: 520, y: 150 },
+          data: { config: createDefaultConfig('redis_cache', 'trieCache', 'In-Memory Trie Store') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'cdn', data: { protocol: 'HTTP' } },
@@ -100,12 +162,16 @@ export const SEARCH_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'Why precompute top suggestions at each Trie node instead of traversing down the subtree on query?',
-        answer: 'Traversing the whole subtree has O(K) complexity where K is all descendants; precomputing bounds lookup complexity to O(L) where L is prefix length.',
+        question:
+          'Why precompute top suggestions at each Trie node instead of traversing down the subtree on query?',
+        answer:
+          'Traversing the whole subtree has O(K) complexity where K is all descendants; precomputing bounds lookup complexity to O(L) where L is prefix length.',
       },
       {
-        question: 'How do you update autocomplete suggestions with trending topics without rebuilding the Trie on every keystroke?',
-        answer: 'Log searches asynchronously to Kafka and run a background worker to rebuild or merge updated Trie snapshots every 30-60 minutes.',
+        question:
+          'How do you update autocomplete suggestions with trending topics without rebuilding the Trie on every keystroke?',
+        answer:
+          'Log searches asynchronously to Kafka and run a background worker to rebuild or merge updated Trie snapshots every 30-60 minutes.',
       },
     ],
     sources: [
@@ -143,17 +209,53 @@ export const SEARCH_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.99,
     },
     hints: [
-      { step: 1, hint: 'Use vector embeddings and approximate nearest neighbors (ANN via Faiss / HNSW) for candidate generation.' },
-      { step: 2, hint: 'Retrieve top 500 candidates and rank them using deep neural network ranking models.' },
-      { step: 3, hint: 'Cache user feature vectors in an in-memory feature store for fast feature retrieval.' },
+      {
+        step: 1,
+        hint: 'Use vector embeddings and approximate nearest neighbors (ANN via Faiss / HNSW) for candidate generation.',
+      },
+      {
+        step: 2,
+        hint: 'Retrieve top 500 candidates and rank them using deep neural network ranking models.',
+      },
+      {
+        step: 3,
+        hint: 'Cache user feature vectors in an in-memory feature store for fast feature retrieval.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'App Client') } },
-        { id: 'recGw', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('app_server', 'recGw', 'Rec Coordinator') } },
-        { id: 'annIdx', type: 'customComponent', position: { x: 520, y: 70 }, data: { config: createDefaultConfig('search_index', 'annIdx', 'HNSW Vector Index') } },
-        { id: 'featureStore', type: 'customComponent', position: { x: 520, y: 220 }, data: { config: createDefaultConfig('redis_cache', 'featureStore', 'Online Feature Store') } },
-        { id: 'rankingModel', type: 'customComponent', position: { x: 780, y: 150 }, data: { config: createDefaultConfig('app_server', 'rankingModel', 'Deep Ranking Svc') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'App Client') },
+        },
+        {
+          id: 'recGw',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'recGw', 'Rec Coordinator') },
+        },
+        {
+          id: 'annIdx',
+          type: 'customComponent',
+          position: { x: 520, y: 70 },
+          data: { config: createDefaultConfig('search_index', 'annIdx', 'HNSW Vector Index') },
+        },
+        {
+          id: 'featureStore',
+          type: 'customComponent',
+          position: { x: 520, y: 220 },
+          data: {
+            config: createDefaultConfig('redis_cache', 'featureStore', 'Online Feature Store'),
+          },
+        },
+        {
+          id: 'rankingModel',
+          type: 'customComponent',
+          position: { x: 780, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'rankingModel', 'Deep Ranking Svc') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'recGw', data: { protocol: 'HTTP' } },
@@ -164,12 +266,15 @@ export const SEARCH_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'Why is a two-stage recommendation architecture necessary instead of running deep ranking across all items?',
-        answer: 'Running complex neural network inference across millions of catalog items is computationally impossible in 50ms; ANN quickly filters down to ~500 candidates.',
+        question:
+          'Why is a two-stage recommendation architecture necessary instead of running deep ranking across all items?',
+        answer:
+          'Running complex neural network inference across millions of catalog items is computationally impossible in 50ms; ANN quickly filters down to ~500 candidates.',
       },
       {
         question: 'How do you prevent recommending items the user has already consumed?',
-        answer: 'Pass candidate lists through a fast In-Memory Bloom filter or Redis set of user interaction history to filter out seen items.',
+        answer:
+          'Pass candidate lists through a fast In-Memory Bloom filter or Redis set of user interaction history to filter out seen items.',
       },
     ],
     sources: [
@@ -208,15 +313,41 @@ export const SEARCH_SCENARIOS: Scenario[] = [
     },
     hints: [
       { step: 1, hint: 'Index business coordinates using Geohashes or QuadTrees.' },
-      { step: 2, hint: 'Query target geohash prefix and 8 adjacent neighboring geohashes to handle boundary edge cases.' },
-      { step: 3, hint: 'Cache static business metadata in Redis and pre-compute high-density city zones.' },
+      {
+        step: 2,
+        hint: 'Query target geohash prefix and 8 adjacent neighboring geohashes to handle boundary edge cases.',
+      },
+      {
+        step: 3,
+        hint: 'Cache static business metadata in Redis and pre-compute high-density city zones.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Mobile App') } },
-        { id: 'app', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('app_server', 'app', 'Proximity Search API') } },
-        { id: 'geoIdx', type: 'customComponent', position: { x: 520, y: 80 }, data: { config: createDefaultConfig('search_index', 'geoIdx', 'Geohash Spatial Index') } },
-        { id: 'bizDb', type: 'customComponent', position: { x: 520, y: 220 }, data: { config: createDefaultConfig('sql_db', 'bizDb', 'Business Details DB') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Mobile App') },
+        },
+        {
+          id: 'app',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'app', 'Proximity Search API') },
+        },
+        {
+          id: 'geoIdx',
+          type: 'customComponent',
+          position: { x: 520, y: 80 },
+          data: { config: createDefaultConfig('search_index', 'geoIdx', 'Geohash Spatial Index') },
+        },
+        {
+          id: 'bizDb',
+          type: 'customComponent',
+          position: { x: 520, y: 220 },
+          data: { config: createDefaultConfig('sql_db', 'bizDb', 'Business Details DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'app', data: { protocol: 'HTTP' } },
@@ -226,12 +357,15 @@ export const SEARCH_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'Why is standard SQL `WHERE latitude BETWEEN x AND y` inefficient for spatial search?',
-        answer: 'Two independent 1D B-Tree indexes require expensive intersection scans; 2D space-filling curves (Geohash / QuadTree) colocate nearby coordinates in 1D index space.',
+        question:
+          'Why is standard SQL `WHERE latitude BETWEEN x AND y` inefficient for spatial search?',
+        answer:
+          'Two independent 1D B-Tree indexes require expensive intersection scans; 2D space-filling curves (Geohash / QuadTree) colocate nearby coordinates in 1D index space.',
       },
       {
         question: 'How do you handle boundary problems in Geohash partitioning?',
-        answer: 'Always query the target geohash plus all 8 surrounding neighbor cells in parallel and filter by precise Haversine distance.',
+        answer:
+          'Always query the target geohash plus all 8 surrounding neighbor cells in parallel and filter by precise Haversine distance.',
       },
     ],
     sources: [
@@ -269,17 +403,48 @@ export const SEARCH_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Model availability as individual date-room inventory records (room_id, date, status).' },
-      { step: 2, hint: 'Use relational database transactions with row-level locks or pessimistic locking during reservation checkout.' },
+      {
+        step: 1,
+        hint: 'Model availability as individual date-room inventory records (room_id, date, status).',
+      },
+      {
+        step: 2,
+        hint: 'Use relational database transactions with row-level locks or pessimistic locking during reservation checkout.',
+      },
       { step: 3, hint: 'Cache listing search results and date availability bitmaps in Redis.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Traveler App') } },
-        { id: 'gw', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('api_gateway', 'gw', 'Booking Gateway') } },
-        { id: 'searchSvc', type: 'customComponent', position: { x: 500, y: 70 }, data: { config: createDefaultConfig('app_server', 'searchSvc', 'Listing Search Svc') } },
-        { id: 'reserveSvc', type: 'customComponent', position: { x: 500, y: 220 }, data: { config: createDefaultConfig('app_server', 'reserveSvc', 'Reservation Svc') } },
-        { id: 'hotelDb', type: 'customComponent', position: { x: 740, y: 150 }, data: { config: createDefaultConfig('sql_db', 'hotelDb', 'Transactional Room DB') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Traveler App') },
+        },
+        {
+          id: 'gw',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('api_gateway', 'gw', 'Booking Gateway') },
+        },
+        {
+          id: 'searchSvc',
+          type: 'customComponent',
+          position: { x: 500, y: 70 },
+          data: { config: createDefaultConfig('app_server', 'searchSvc', 'Listing Search Svc') },
+        },
+        {
+          id: 'reserveSvc',
+          type: 'customComponent',
+          position: { x: 500, y: 220 },
+          data: { config: createDefaultConfig('app_server', 'reserveSvc', 'Reservation Svc') },
+        },
+        {
+          id: 'hotelDb',
+          type: 'customComponent',
+          position: { x: 740, y: 150 },
+          data: { config: createDefaultConfig('sql_db', 'hotelDb', 'Transactional Room DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'gw', data: { protocol: 'HTTP' } },
@@ -291,11 +456,14 @@ export const SEARCH_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'How do you prevent race condition double-bookings across the same date range?',
-        answer: 'Execute SQL transactional range reservation with unique composite key constraints (room_id, date) or SELECT ... FOR UPDATE pessimistic locks.',
+        answer:
+          'Execute SQL transactional range reservation with unique composite key constraints (room_id, date) or SELECT ... FOR UPDATE pessimistic locks.',
       },
       {
-        question: 'How do you scale high search queries for popular tourist destinations without database overload?',
-        answer: 'Maintain daily room availability bitmasks in Redis; check if (search_dates & room_availability_mask) === 0 before querying database details.',
+        question:
+          'How do you scale high search queries for popular tourist destinations without database overload?',
+        answer:
+          'Maintain daily room availability bitmasks in Redis; check if (search_dates & room_availability_mask) === 0 before querying database details.',
       },
     ],
     sources: [
@@ -334,16 +502,47 @@ export const SEARCH_SCENARIOS: Scenario[] = [
     },
     hints: [
       { step: 1, hint: 'Index job postings in Elasticsearch with structured facet aggregations.' },
-      { step: 2, hint: 'Store saved candidate search alert filters in a percolation index to match newly posted jobs instantly.' },
-      { step: 3, hint: 'Emit application events to Kafka to update applicant counts and recruiter dashboards.' },
+      {
+        step: 2,
+        hint: 'Store saved candidate search alert filters in a percolation index to match newly posted jobs instantly.',
+      },
+      {
+        step: 3,
+        hint: 'Emit application events to Kafka to update applicant counts and recruiter dashboards.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Job Seeker') } },
-        { id: 'gw', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('api_gateway', 'gw', 'Jobs Gateway') } },
-        { id: 'jobSvc', type: 'customComponent', position: { x: 500, y: 150 }, data: { config: createDefaultConfig('app_server', 'jobSvc', 'Job Posting Service') } },
-        { id: 'es', type: 'customComponent', position: { x: 740, y: 80 }, data: { config: createDefaultConfig('search_index', 'es', 'Elasticsearch Cluster') } },
-        { id: 'jobDb', type: 'customComponent', position: { x: 740, y: 220 }, data: { config: createDefaultConfig('sql_db', 'jobDb', 'Job Applications DB') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Job Seeker') },
+        },
+        {
+          id: 'gw',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('api_gateway', 'gw', 'Jobs Gateway') },
+        },
+        {
+          id: 'jobSvc',
+          type: 'customComponent',
+          position: { x: 500, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'jobSvc', 'Job Posting Service') },
+        },
+        {
+          id: 'es',
+          type: 'customComponent',
+          position: { x: 740, y: 80 },
+          data: { config: createDefaultConfig('search_index', 'es', 'Elasticsearch Cluster') },
+        },
+        {
+          id: 'jobDb',
+          type: 'customComponent',
+          position: { x: 740, y: 220 },
+          data: { config: createDefaultConfig('sql_db', 'jobDb', 'Job Applications DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'gw', data: { protocol: 'HTTP' } },
@@ -355,11 +554,13 @@ export const SEARCH_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'What is Elasticsearch Percolate Query and how does it power job alerts?',
-        answer: 'Percolation indexes queries instead of documents; when a new job posting arrives, percolation returns all registered candidate search alerts matching that job in real time.',
+        answer:
+          'Percolation indexes queries instead of documents; when a new job posting arrives, percolation returns all registered candidate search alerts matching that job in real time.',
       },
       {
         question: 'How do you handle multi-attribute faceted aggregation under high read traffic?',
-        answer: 'Utilize Elasticsearch doc_values column-oriented caches combined with edge caching of popular category combinations.',
+        answer:
+          'Utilize Elasticsearch doc_values column-oriented caches combined with edge caching of popular category combinations.',
       },
     ],
     sources: [
@@ -370,7 +571,7 @@ export const SEARCH_SCENARIOS: Scenario[] = [
       },
       {
         title: 'Elasticsearch: The Definitive Guide',
-        authorOrOrg: 'Clinton Gormley, Zachary Tong (O\'Reilly)',
+        authorOrOrg: "Clinton Gormley, Zachary Tong (O'Reilly)",
         url: 'https://www.elastic.co/guide/',
       },
     ],
@@ -397,16 +598,47 @@ export const SEARCH_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Colocate all active ad campaigns and budget pacing states in local RAM across ad server nodes.' },
-      { step: 2, hint: 'Execute campaign filtering, auction ranking (e.g. eCPM = bid * predicted_CTR), and budget deduction in memory.' },
-      { step: 3, hint: 'Log impression, click, and conversion events asynchronously to Kafka for billing aggregation.' },
+      {
+        step: 1,
+        hint: 'Colocate all active ad campaigns and budget pacing states in local RAM across ad server nodes.',
+      },
+      {
+        step: 2,
+        hint: 'Execute campaign filtering, auction ranking (e.g. eCPM = bid * predicted_CTR), and budget deduction in memory.',
+      },
+      {
+        step: 3,
+        hint: 'Log impression, click, and conversion events asynchronously to Kafka for billing aggregation.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Publisher Ad Tag') } },
-        { id: 'adServer', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'adServer', 'Ad Selection Engine') } },
-        { id: 'budgetStore', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'budgetStore', 'Real-time Budget Cache') } },
-        { id: 'clickMq', type: 'customComponent', position: { x: 540, y: 220 }, data: { config: createDefaultConfig('message_queue', 'clickMq', 'Billing Event Kafka') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Publisher Ad Tag') },
+        },
+        {
+          id: 'adServer',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'adServer', 'Ad Selection Engine') },
+        },
+        {
+          id: 'budgetStore',
+          type: 'customComponent',
+          position: { x: 540, y: 70 },
+          data: {
+            config: createDefaultConfig('redis_cache', 'budgetStore', 'Real-time Budget Cache'),
+          },
+        },
+        {
+          id: 'clickMq',
+          type: 'customComponent',
+          position: { x: 540, y: 220 },
+          data: { config: createDefaultConfig('message_queue', 'clickMq', 'Billing Event Kafka') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'adServer', data: { protocol: 'HTTP' } },
@@ -417,11 +649,14 @@ export const SEARCH_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'How do ad servers maintain sub-25ms SLA without hitting backend databases?',
-        answer: 'Ad metadata and targeted user segment indexes are held 100% in server memory; local machine RAM eliminates network round-trips.',
+        answer:
+          'Ad metadata and targeted user segment indexes are held 100% in server memory; local machine RAM eliminates network round-trips.',
       },
       {
-        question: 'How do you prevent budget overspending when an advertiser sets a $100 daily limit?',
-        answer: 'Use probabilistic budget pacing algorithms that gradually throttle impression serving rates as remaining budget approaches zero.',
+        question:
+          'How do you prevent budget overspending when an advertiser sets a $100 daily limit?',
+        answer:
+          'Use probabilistic budget pacing algorithms that gradually throttle impression serving rates as remaining budget approaches zero.',
       },
     ],
     sources: [
@@ -459,17 +694,61 @@ export const SEARCH_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Stream user interaction telemetry (watch duration, loops, skips) in real time to streaming feature extractors.' },
-      { step: 2, hint: 'Combine multi-task learning models (predicting like, share, finish rate) to generate ranked video candidate queues.' },
-      { step: 3, hint: 'Pre-cache and pre-fetch the next 3 video clips at the mobile player layer.' },
+      {
+        step: 1,
+        hint: 'Stream user interaction telemetry (watch duration, loops, skips) in real time to streaming feature extractors.',
+      },
+      {
+        step: 2,
+        hint: 'Combine multi-task learning models (predicting like, share, finish rate) to generate ranked video candidate queues.',
+      },
+      {
+        step: 3,
+        hint: 'Pre-cache and pre-fetch the next 3 video clips at the mobile player layer.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'TikTok App') } },
-        { id: 'feedApi', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('app_server', 'feedApi', 'ForYou Feed API') } },
-        { id: 'annVector', type: 'customComponent', position: { x: 500, y: 70 }, data: { config: createDefaultConfig('search_index', 'annVector', 'Video Embedding Index') } },
-        { id: 'realtimeFeedback', type: 'customComponent', position: { x: 500, y: 220 }, data: { config: createDefaultConfig('message_queue', 'realtimeFeedback', 'Watch Telemetry Kafka') } },
-        { id: 'recModel', type: 'customComponent', position: { x: 740, y: 150 }, data: { config: createDefaultConfig('app_server', 'recModel', 'Multi-Task Ranking GPU Fleet') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'TikTok App') },
+        },
+        {
+          id: 'feedApi',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'feedApi', 'ForYou Feed API') },
+        },
+        {
+          id: 'annVector',
+          type: 'customComponent',
+          position: { x: 500, y: 70 },
+          data: {
+            config: createDefaultConfig('search_index', 'annVector', 'Video Embedding Index'),
+          },
+        },
+        {
+          id: 'realtimeFeedback',
+          type: 'customComponent',
+          position: { x: 500, y: 220 },
+          data: {
+            config: createDefaultConfig(
+              'message_queue',
+              'realtimeFeedback',
+              'Watch Telemetry Kafka',
+            ),
+          },
+        },
+        {
+          id: 'recModel',
+          type: 'customComponent',
+          position: { x: 740, y: 150 },
+          data: {
+            config: createDefaultConfig('app_server', 'recModel', 'Multi-Task Ranking GPU Fleet'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'feedApi', data: { protocol: 'HTTP' } },
@@ -480,12 +759,16 @@ export const SEARCH_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'Why is watch-time completion rate more predictive than simple likes in short-form video?',
-        answer: 'Watch-time captures implicit behavioral signals on every video seamlessly without requiring explicit active user button taps.',
+        question:
+          'Why is watch-time completion rate more predictive than simple likes in short-form video?',
+        answer:
+          'Watch-time captures implicit behavioral signals on every video seamlessly without requiring explicit active user button taps.',
       },
       {
-        question: 'How do you prevent the recommendation algorithm from trapping users in narrow filter bubbles?',
-        answer: 'Inject exploration exploration bands (epsilon-greedy / bandit algorithms) introducing 5-10% diverse and trending cold-start content.',
+        question:
+          'How do you prevent the recommendation algorithm from trapping users in narrow filter bubbles?',
+        answer:
+          'Inject exploration exploration bands (epsilon-greedy / bandit algorithms) introducing 5-10% diverse and trending cold-start content.',
       },
     ],
     sources: [

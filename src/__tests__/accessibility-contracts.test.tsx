@@ -15,7 +15,9 @@ afterEach(cleanup);
 async function expectNoAutomatedViolations(container: HTMLElement) {
   // jsdom cannot compute canvas-backed color contrast; browser QA covers visual contrast separately.
   const result = await axe.run(container, { rules: { 'color-contrast': { enabled: false } } });
-  expect(result.violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) }))).toEqual([]);
+  expect(
+    result.violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) })),
+  ).toEqual([]);
 }
 
 describe('dialog keyboard and focus contracts', () => {
@@ -26,30 +28,37 @@ describe('dialog keyboard and focus contracts', () => {
     ['command palette', (onClose) => <CommandPalette isOpen onClose={onClose} />],
   ];
 
-  it.each(dialogs)('%s enters focus, traps Tab, closes with Escape, and restores focus', async (_name, renderDialog) => {
-    const close = vi.fn();
-    const trigger = document.createElement('button');
-    trigger.textContent = 'Open dialog';
-    document.body.append(trigger);
-    trigger.focus();
+  it.each(dialogs)(
+    '%s enters focus, traps Tab, closes with Escape, and restores focus',
+    async (_name, renderDialog) => {
+      const close = vi.fn();
+      const trigger = document.createElement('button');
+      trigger.textContent = 'Open dialog';
+      document.body.append(trigger);
+      trigger.focus();
 
-    const view = render(<>{renderDialog(close)}</>);
-    const dialog = screen.getByRole('dialog');
-    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+      const view = render(<>{renderDialog(close)}</>);
+      const dialog = screen.getByRole('dialog');
+      await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
 
-    const focusable = [...dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')];
-    const first = focusable[0];
-    const last = focusable.at(-1)!;
-    last.focus();
-    fireEvent.keyDown(document, { key: 'Tab' });
-    expect(document.activeElement).toBe(first);
+      const focusable = [
+        ...dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ];
+      const first = focusable[0];
+      const last = focusable.at(-1)!;
+      last.focus();
+      fireEvent.keyDown(document, { key: 'Tab' });
+      expect(document.activeElement).toBe(first);
 
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(close).toHaveBeenCalledOnce();
-    view.unmount();
-    expect(document.activeElement).toBe(trigger);
-    trigger.remove();
-  });
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(close).toHaveBeenCalledOnce();
+      view.unmount();
+      expect(document.activeElement).toBe(trigger);
+      trigger.remove();
+    },
+  );
 
   it('gives every dialog and icon-only close control an accessible name', () => {
     render(<ShortcutsModal isOpen onClose={() => undefined} />);

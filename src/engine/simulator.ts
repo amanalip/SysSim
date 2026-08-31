@@ -107,7 +107,10 @@ export class SysSimEngine {
   private capacityDroppedRequests = 0;
   private completedDroppedRequests = 0;
   private totalOffered = 0;
-  private loadBuckets = new Map<number, { offered: number; accepted: number; completed: number; dropped: number }>();
+  private loadBuckets = new Map<
+    number,
+    { offered: number; accepted: number; completed: number; dropped: number }
+  >();
   private nodeArrivalBuckets = new Map<string, { second: number; count: number }>();
   private effectiveHealth = new Map<string, AnyComponentConfig['health']>();
 
@@ -158,7 +161,10 @@ export class SysSimEngine {
   private pendingCacheFills = new Map<string, PendingCacheFill>();
   private dnsSelections = new Map<string, string>();
   private reverseProxyReservations = new Map<string, number>();
-  private cdnOriginMetrics = new Map<string, { fetches: number; latencyMs: number; egressKb: number }>();
+  private cdnOriginMetrics = new Map<
+    string,
+    { fetches: number; latencyMs: number; egressKb: number }
+  >();
   private wafMetrics = new Map<string, { blocked: number; infrastructureFailures: number }>();
 
   constructor(graph?: SimGraph, config?: TrafficConfig) {
@@ -170,7 +176,11 @@ export class SysSimEngine {
     const previousHealth = new Map(this.graph.nodes.map((node) => [node.id, node.config.health]));
     this.graph = graph;
     for (const node of graph.nodes) {
-      if (previousHealth.has(node.id) && previousHealth.get(node.id) !== 'healthy' && node.config.health === 'healthy') {
+      if (
+        previousHealth.has(node.id) &&
+        previousHealth.get(node.id) !== 'healthy' &&
+        node.config.health === 'healthy'
+      ) {
         this.eventQueue.schedule(this.elapsedSimulationMs, 'recovery', { nodeId: node.id });
       }
     }
@@ -198,15 +208,27 @@ export class SysSimEngine {
     this.effectiveHealth.clear();
 
     const validNodeIds = new Set(graph.nodes.map((n) => n.id));
-    const validLoadBalancerIds = new Set(graph.nodes.filter((n) => n.config.type === 'load_balancer').map((n) => n.id));
-    const validGatewayIds = new Set(graph.nodes.filter((n) => n.config.type === 'api_gateway').map((n) => n.id));
-    const validDnsIds = new Set(graph.nodes.filter((n) => n.config.type === 'dns').map((n) => n.id));
-    const validProxyIds = new Set(graph.nodes.filter((n) => n.config.type === 'reverse_proxy').map((n) => n.id));
-    for (const id of this.lbRouters.keys()) if (!validLoadBalancerIds.has(id)) this.lbRouters.delete(id);
-    for (const id of this.loadBalancerHealthModels.keys()) if (!validLoadBalancerIds.has(id)) this.loadBalancerHealthModels.delete(id);
-    for (const id of this.apiGatewayModels.keys()) if (!validGatewayIds.has(id)) this.apiGatewayModels.delete(id);
+    const validLoadBalancerIds = new Set(
+      graph.nodes.filter((n) => n.config.type === 'load_balancer').map((n) => n.id),
+    );
+    const validGatewayIds = new Set(
+      graph.nodes.filter((n) => n.config.type === 'api_gateway').map((n) => n.id),
+    );
+    const validDnsIds = new Set(
+      graph.nodes.filter((n) => n.config.type === 'dns').map((n) => n.id),
+    );
+    const validProxyIds = new Set(
+      graph.nodes.filter((n) => n.config.type === 'reverse_proxy').map((n) => n.id),
+    );
+    for (const id of this.lbRouters.keys())
+      if (!validLoadBalancerIds.has(id)) this.lbRouters.delete(id);
+    for (const id of this.loadBalancerHealthModels.keys())
+      if (!validLoadBalancerIds.has(id)) this.loadBalancerHealthModels.delete(id);
+    for (const id of this.apiGatewayModels.keys())
+      if (!validGatewayIds.has(id)) this.apiGatewayModels.delete(id);
     for (const id of this.dnsModels.keys()) if (!validDnsIds.has(id)) this.dnsModels.delete(id);
-    for (const id of this.reverseProxyModels.keys()) if (!validProxyIds.has(id)) this.reverseProxyModels.delete(id);
+    for (const id of this.reverseProxyModels.keys())
+      if (!validProxyIds.has(id)) this.reverseProxyModels.delete(id);
     for (const id of Object.keys(this.nodeStats)) {
       if (!validNodeIds.has(id)) {
         delete this.nodeStats[id];
@@ -234,10 +256,7 @@ export class SysSimEngine {
       if (n.config.type === 'load_balancer') {
         const outgoing = this.graph.edges
           .filter(
-            (e) =>
-              e.source === n.id &&
-              !e.data?.isCut &&
-              getEdgePurpose(e.data) === 'request',
+            (e) => e.source === n.id && !e.data?.isCut && getEdgePurpose(e.data) === 'request',
           )
           .map((e) => e.target);
         const existingRouter = this.lbRouters.get(n.id);
@@ -247,7 +266,11 @@ export class SysSimEngine {
         } else {
           this.lbRouters.set(
             n.id,
-            new LoadBalancerRouter(n.config.algorithm || 'round_robin', outgoing, n.config.targetWeights),
+            new LoadBalancerRouter(
+              n.config.algorithm || 'round_robin',
+              outgoing,
+              n.config.targetWeights,
+            ),
           );
         }
         if (!this.loadBalancerHealthModels.has(n.id)) {
@@ -258,7 +281,12 @@ export class SysSimEngine {
         if (existingGateway) existingGateway.updateConfig(n.config);
         else this.apiGatewayModels.set(n.id, new ApiGatewayModel(n.config));
       } else if (n.config.type === 'dns') {
-        const targets = this.graph.edges.filter((edge) => edge.source === n.id && getEdgePurpose(edge.data) === 'request' && !edge.data?.isCut).map((edge) => edge.target);
+        const targets = this.graph.edges
+          .filter(
+            (edge) =>
+              edge.source === n.id && getEdgePurpose(edge.data) === 'request' && !edge.data?.isCut,
+          )
+          .map((edge) => edge.target);
         const existingDns = this.dnsModels.get(n.id);
         if (existingDns) existingDns.update(n.config, targets);
         else this.dnsModels.set(n.id, new DnsModel(n.config, targets));
@@ -267,24 +295,41 @@ export class SysSimEngine {
         if (existingProxy) existingProxy.updateConfig(n.config);
         else this.reverseProxyModels.set(n.id, new ReverseProxyModel(n.config));
       } else if (n.config.type === 'app_server') {
-        this.appServerModels.set(n.id, new AppServerModel(
-          n.config.replicas,
-          n.config.processingLatencyMs,
-          Math.max(0, n.config.maxThroughputQps || 0),
-          n.config.maxConnections,
-          n.config.health === 'degraded',
-        ));
+        this.appServerModels.set(
+          n.id,
+          new AppServerModel(
+            n.config.replicas,
+            n.config.processingLatencyMs,
+            Math.max(0, n.config.maxThroughputQps || 0),
+            n.config.maxConnections,
+            n.config.health === 'degraded',
+          ),
+        );
       } else if (n.config.type === 'worker') {
-        this.workerModels.set(n.id, new WorkerModel(
-          n.config.replicas, n.config.concurrencyLimit, n.config.jobProcessingRatePerSec,
-          n.config.processingLatencyMs, n.config.retryLimit,
-        ));
+        this.workerModels.set(
+          n.id,
+          new WorkerModel(
+            n.config.replicas,
+            n.config.concurrencyLimit,
+            n.config.jobProcessingRatePerSec,
+            n.config.processingLatencyMs,
+            n.config.retryLimit,
+          ),
+        );
       } else if (n.config.type === 'serverless') {
-        this.serverlessModels.set(n.id, new ServerlessModel(
-          n.config.concurrencyLimit, n.config.timeoutMs, n.config.memoryMb,
-          n.config.coldStartLatencyMs, n.config.baseExecutionLatencyMs,
-          n.config.warmInstances, n.config.idleTimeoutSec, () => this.random(),
-        ));
+        this.serverlessModels.set(
+          n.id,
+          new ServerlessModel(
+            n.config.concurrencyLimit,
+            n.config.timeoutMs,
+            n.config.memoryMb,
+            n.config.coldStartLatencyMs,
+            n.config.baseExecutionLatencyMs,
+            n.config.warmInstances,
+            n.config.idleTimeoutSec,
+            () => this.random(),
+          ),
+        );
       } else if (
         n.config.type === 'cdn' ||
         n.config.type === 'redis_cache' ||
@@ -303,35 +348,45 @@ export class SysSimEngine {
               : 100;
         const entrySizeKb = isServerCache ? config.entrySizeKb || 1 : 1;
         const sizeLimit = Math.max(1, Math.floor((sizeMb * 1024) / entrySizeKb));
-        const defaultTtlSec = config.type === 'redis_cache'
-          ? 300
-          : config.type === 'local_cache'
-            ? 60
-            : config.type === 'cdn' || config.type === 'cdn_cache'
-              ? 3600
-              : 86400;
-        const defaultReadLatencyMs = config.type === 'redis_cache'
-          ? 2
-          : config.type === 'local_cache'
-            ? 0.5
-            : config.type === 'cdn'
-              ? Math.max(5, 80 / Math.sqrt(Math.max(1, config.edgeLocationsCount)))
-              : config.type === 'cdn_cache'
-                ? 8
-              : 0.2;
-        this.cacheModels.set(n.id, new CacheModel({
-          sizeLimit,
-          evictionPolicy: 'evictionPolicy' in config && config.evictionPolicy
-            ? config.evictionPolicy
-            : isServerCache ? 'LRU' : 'TTL',
-          ttlMs: Math.max(
-            1,
-            config.type === 'cdn' ? config.cacheTtlSec : Number(config.ttlSec) || defaultTtlSec,
-          ) * 1000,
-          readLatencyMs: 'readLatencyMs' in config && Number.isFinite(config.readLatencyMs)
-            ? config.readLatencyMs
-            : defaultReadLatencyMs,
-        }));
+        const defaultTtlSec =
+          config.type === 'redis_cache'
+            ? 300
+            : config.type === 'local_cache'
+              ? 60
+              : config.type === 'cdn' || config.type === 'cdn_cache'
+                ? 3600
+                : 86400;
+        const defaultReadLatencyMs =
+          config.type === 'redis_cache'
+            ? 2
+            : config.type === 'local_cache'
+              ? 0.5
+              : config.type === 'cdn'
+                ? Math.max(5, 80 / Math.sqrt(Math.max(1, config.edgeLocationsCount)))
+                : config.type === 'cdn_cache'
+                  ? 8
+                  : 0.2;
+        this.cacheModels.set(
+          n.id,
+          new CacheModel({
+            sizeLimit,
+            evictionPolicy:
+              'evictionPolicy' in config && config.evictionPolicy
+                ? config.evictionPolicy
+                : isServerCache
+                  ? 'LRU'
+                  : 'TTL',
+            ttlMs:
+              Math.max(
+                1,
+                config.type === 'cdn' ? config.cacheTtlSec : Number(config.ttlSec) || defaultTtlSec,
+              ) * 1000,
+            readLatencyMs:
+              'readLatencyMs' in config && Number.isFinite(config.readLatencyMs)
+                ? config.readLatencyMs
+                : defaultReadLatencyMs,
+          }),
+        );
       } else if (n.config.type === 'rate_limiter') {
         this.rateLimiters.set(
           n.id,
@@ -341,7 +396,7 @@ export class SysSimEngine {
             n.config.windowSizeSec || 1,
             n.config.burstCapacity,
             n.config.decisionLatencyMs,
-          )
+          ),
         );
       } else if (n.config.type === 'auth_service') {
         this.authServiceModels.set(n.id, new AuthServiceModel(n.config, () => this.random()));
@@ -365,7 +420,7 @@ export class SysSimEngine {
               failoverLatencyMs: n.config.failoverLatencyMs,
               shardCount: n.config.shardCount,
             },
-          )
+          ),
         );
       } else if (n.config.type === 'nosql_db') {
         this.noSqlModels.set(n.id, new NoSqlDatabaseModel(n.config));
@@ -507,7 +562,9 @@ export class SysSimEngine {
       default:
         qps = base;
     }
-    return Number.isFinite(qps) ? Math.min(SIMULATION_LIMITS.maxConfiguredQps, Math.max(0, qps)) : 0;
+    return Number.isFinite(qps)
+      ? Math.min(SIMULATION_LIMITS.maxConfiguredQps, Math.max(0, qps))
+      : 0;
   }
 
   public step(deltaMs: number): {
@@ -542,10 +599,16 @@ export class SysSimEngine {
     this.fractionalRequestAccumulator += (currentQps * scaledDelta) / 1000;
     const offeredArrivals = Math.floor(this.fractionalRequestAccumulator);
     this.fractionalRequestAccumulator -= offeredArrivals;
-    const requestsToGenerate = Math.min(offeredArrivals, SIMULATION_LIMITS.maxGeneratedArrivalsPerTick);
+    const requestsToGenerate = Math.min(
+      offeredArrivals,
+      SIMULATION_LIMITS.maxGeneratedArrivalsPerTick,
+    );
     this.totalOffered += offeredArrivals;
     this.recordLoad('offered', Math.max(stepStartMs, stepEndMs - 1), offeredArrivals);
-    this.recordCapacityDrop(Math.max(stepStartMs, stepEndMs - 1), offeredArrivals - requestsToGenerate);
+    this.recordCapacityDrop(
+      Math.max(stepStartMs, stepEndMs - 1),
+      offeredArrivals - requestsToGenerate,
+    );
 
     // Find origin client nodes (or any roots if no clients exist)
     const clientNodes = this.graph.nodes.filter((n) => n.config.type === 'client');
@@ -560,23 +623,20 @@ export class SysSimEngine {
           clientConfig?.requestKeyDistribution,
           clientConfig?.requestKeySpaceSize,
         );
-        const operationType = clientConfig?.operationType === 'mixed'
-          ? (this.random() * 100 < clientConfig.readPercentage ? 'read' : 'write')
-          : clientConfig?.operationType || 'read';
-        const arrivalTimeMs = stepStartMs +
-          ((i + 1) * scaledDelta) / (selectedSources.length + 1);
-        const req = createSimRequest(
-          source.id,
-          arrivalTimeMs,
-          requestKey,
-          this.requestSequence++,
-          {
-            payloadSizeKb: clientConfig?.requestPayloadKb || 0,
-            operationType,
-            simulationSeed: normalizeSeed(this.config.seed ?? 1),
-          },
-        );
-        if (!this.eventQueue.schedule(arrivalTimeMs, 'arrival', req)) this.recordCapacityDrop(arrivalTimeMs, 1);
+        const operationType =
+          clientConfig?.operationType === 'mixed'
+            ? this.random() * 100 < clientConfig.readPercentage
+              ? 'read'
+              : 'write'
+            : clientConfig?.operationType || 'read';
+        const arrivalTimeMs = stepStartMs + ((i + 1) * scaledDelta) / (selectedSources.length + 1);
+        const req = createSimRequest(source.id, arrivalTimeMs, requestKey, this.requestSequence++, {
+          payloadSizeKb: clientConfig?.requestPayloadKb || 0,
+          operationType,
+          simulationSeed: normalizeSeed(this.config.seed ?? 1),
+        });
+        if (!this.eventQueue.schedule(arrivalTimeMs, 'arrival', req))
+          this.recordCapacityDrop(arrivalTimeMs, 1);
       }
     }
 
@@ -586,14 +646,14 @@ export class SysSimEngine {
       this.handleEvent(event);
     });
     this.elapsedSimulationMs = stepEndMs;
-    this.activeRequests = [...this.inFlightRequests.values()].slice(-SIMULATION_LIMITS.maxRecentRequests);
+    this.activeRequests = [...this.inFlightRequests.values()].slice(
+      -SIMULATION_LIMITS.maxRecentRequests,
+    );
 
     // Record time-series metrics point periodically (every ~1s in sim time)
     const currentSecBucket = Math.floor(elapsedSec);
     const lastBucket =
-      this.timeSeries.length > 0
-        ? this.timeSeries[this.timeSeries.length - 1].timestampSec
-        : -1;
+      this.timeSeries.length > 0 ? this.timeSeries[this.timeSeries.length - 1].timestampSec : -1;
 
     if (currentSecBucket > lastBucket) {
       const snap = this.getMetricsSnapshot();
@@ -630,9 +690,15 @@ export class SysSimEngine {
     };
   }
 
-  public getRecentRequests(): SimRequest[] { return this.completedRequests.slice(-SIMULATION_LIMITS.maxRecentRequests); }
-  public getPendingEventCount(): number { return this.eventQueue.size(); }
-  public getPendingEventKinds(): SimulationEventKind[] { return this.eventQueue.kinds(); }
+  public getRecentRequests(): SimRequest[] {
+    return this.completedRequests.slice(-SIMULATION_LIMITS.maxRecentRequests);
+  }
+  public getPendingEventCount(): number {
+    return this.eventQueue.size();
+  }
+  public getPendingEventKinds(): SimulationEventKind[] {
+    return this.eventQueue.kinds();
+  }
 
   private recordLoad(
     kind: 'offered' | 'accepted' | 'completed' | 'dropped',
@@ -641,7 +707,12 @@ export class SysSimEngine {
   ): void {
     if (count <= 0) return;
     const second = Math.max(0, Math.floor(timeMs / 1000));
-    const bucket = this.loadBuckets.get(second) || { offered: 0, accepted: 0, completed: 0, dropped: 0 };
+    const bucket = this.loadBuckets.get(second) || {
+      offered: 0,
+      accepted: 0,
+      completed: 0,
+      dropped: 0,
+    };
     bucket[kind] += count;
     this.loadBuckets.set(second, bucket);
     for (const recordedSecond of this.loadBuckets.keys()) {
@@ -655,9 +726,16 @@ export class SysSimEngine {
     this.recordLoad('dropped', timeMs, count);
   }
 
-  private getCurrentLoadRates(): { offered: number; accepted: number; completed: number; dropped: number } {
+  private getCurrentLoadRates(): {
+    offered: number;
+    accepted: number;
+    completed: number;
+    dropped: number;
+  } {
     const latestSecond = Math.max(-1, ...this.loadBuckets.keys());
-    return this.loadBuckets.get(latestSecond) || { offered: 0, accepted: 0, completed: 0, dropped: 0 };
+    return (
+      this.loadBuckets.get(latestSecond) || { offered: 0, accepted: 0, completed: 0, dropped: 0 }
+    );
   }
 
   private handleEvent(event: SimulationEvent): void {
@@ -685,7 +763,11 @@ export class SysSimEngine {
     this.inFlightRequests.set(req.id, req);
     this.pendingResults.set(req.id, result);
     const completionKind = result.status === 'timeout' ? 'timeout' : 'request_completion';
-    const completion = this.eventQueue.schedule(req.timestamp + Math.max(0, result.latencyMs), completionKind, req);
+    const completion = this.eventQueue.schedule(
+      req.timestamp + Math.max(0, result.latencyMs),
+      completionKind,
+      req,
+    );
     if (!completion) {
       this.finalizeRequest(req, { ...result, success: false, status: 'dropped' });
       this.pendingResults.delete(req.id);
@@ -694,10 +776,22 @@ export class SysSimEngine {
     }
     for (let index = 0; index < req.path.length; index++) {
       const hop = req.path[index];
-      this.eventQueue.schedule(hop.exitTimeMs, 'node_service_completion', { requestId: req.id, nodeId: hop.nodeId });
+      this.eventQueue.schedule(hop.exitTimeMs, 'node_service_completion', {
+        requestId: req.id,
+        nodeId: hop.nodeId,
+      });
       const next = req.path[index + 1];
-      if (next && next.enterTimeMs >= hop.exitTimeMs) this.eventQueue.schedule(next.enterTimeMs, 'edge_transfer', { requestId: req.id, from: hop.nodeId, to: next.nodeId });
-      if (hop.viaEdgePurpose === 'fallback') this.eventQueue.schedule(hop.enterTimeMs, 'retry', { requestId: req.id, nodeId: hop.nodeId });
+      if (next && next.enterTimeMs >= hop.exitTimeMs)
+        this.eventQueue.schedule(next.enterTimeMs, 'edge_transfer', {
+          requestId: req.id,
+          from: hop.nodeId,
+          to: next.nodeId,
+        });
+      if (hop.viaEdgePurpose === 'fallback')
+        this.eventQueue.schedule(hop.enterTimeMs, 'retry', {
+          requestId: req.id,
+          nodeId: hop.nodeId,
+        });
     }
   }
 
@@ -727,9 +821,13 @@ export class SysSimEngine {
     req.path = result.hops;
     req.totalLatencyMs = result.latencyMs;
     const rawQueueWaitMs = result.hops.reduce((sum, hop) => sum + (hop.queueWaitMs || 0), 0);
-    const rawServiceTimeMs = result.hops.reduce((sum, hop) => sum + (hop.serviceTimeMs ?? hop.latencyMs), 0);
+    const rawServiceTimeMs = result.hops.reduce(
+      (sum, hop) => sum + (hop.serviceTimeMs ?? hop.latencyMs),
+      0,
+    );
     const nodeTimeMs = rawQueueWaitMs + rawServiceTimeMs;
-    const scale = nodeTimeMs > result.latencyMs && nodeTimeMs > 0 ? result.latencyMs / nodeTimeMs : 1;
+    const scale =
+      nodeTimeMs > result.latencyMs && nodeTimeMs > 0 ? result.latencyMs / nodeTimeMs : 1;
     req.queueWaitMs = rawQueueWaitMs * scale;
     req.serviceTimeMs = rawServiceTimeMs * scale;
     req.networkTimeMs = Math.max(0, result.latencyMs - req.queueWaitMs - req.serviceTimeMs);
@@ -795,19 +893,21 @@ export class SysSimEngine {
         success: false,
         status: 'error',
         latencyMs: 0,
-        hops: [{
-          nodeId: node.id,
-          nodeName: node.config.name,
-          nodeType: node.config.type,
-          enterTimeMs: startTimeMs,
-          exitTimeMs: startTimeMs,
-          latencyMs: 0,
-          status: 'error',
-          viaEdgePurpose,
-          info: visited.has(nodeId)
-            ? 'Traversal stopped: cycle detected (64-hop TTL)'
-            : 'Traversal stopped: 64-hop TTL exhausted',
-        }],
+        hops: [
+          {
+            nodeId: node.id,
+            nodeName: node.config.name,
+            nodeType: node.config.type,
+            enterTimeMs: startTimeMs,
+            exitTimeMs: startTimeMs,
+            latencyMs: 0,
+            status: 'error',
+            viaEdgePurpose,
+            info: visited.has(nodeId)
+              ? 'Traversal stopped: cycle detected (64-hop TTL)'
+              : 'Traversal stopped: 64-hop TTL exhausted',
+          },
+        ],
         cacheMiss: false,
         usedAsync: false,
       };
@@ -845,10 +945,7 @@ export class SysSimEngine {
     let usedAsync = false;
     let primaryFailure: TraversalResult | null = nodeResult.success ? null : nodeResult;
 
-    for (const edge of [
-      ...edgesByPurpose('replication'),
-      ...edgesByPurpose('observability'),
-    ]) {
+    for (const edge of [...edgesByPurpose('replication'), ...edgesByPurpose('observability')]) {
       this.traverseNode(
         edge.target,
         requestId,
@@ -928,7 +1025,9 @@ export class SysSimEngine {
         node.config.type === 'load_balancer'
           ? this.selectLoadBalancerEdge(node.id, requestKey, sourceNodeId, requestEdges)
           : node.config.type === 'dns'
-            ? requestEdges.filter((edge) => edge.target === this.dnsSelections.get(`${requestId}:${node.id}`))
+            ? requestEdges.filter(
+                (edge) => edge.target === this.dnsSelections.get(`${requestId}:${node.id}`),
+              )
             : requestEdges;
 
       if (selectedRequestEdges.length === 0) {
@@ -959,21 +1058,25 @@ export class SysSimEngine {
             );
           }
           if (node.config.type === 'reverse_proxy') {
-            this.reverseProxyModels.get(node.id)?.finish(
-              this.reverseProxyReservations.get(`${requestId}:${node.id}`),
-              this.currentRequestArrivalMs,
-              edgeLatency + child.latencyMs,
-            );
+            this.reverseProxyModels
+              .get(node.id)
+              ?.finish(
+                this.reverseProxyReservations.get(`${requestId}:${node.id}`),
+                this.currentRequestArrivalMs,
+                edgeLatency + child.latencyMs,
+              );
           }
           latencyMs += edgeLatency + child.latencyMs;
           hops.push(...child.hops);
           usedAsync ||= child.usedAsync;
           if (node.config.type === 'api_gateway') {
-            const completion = this.apiGatewayModels.get(node.id)?.finish(
-              this.currentRequestArrivalMs + latencyMs,
-              edgeLatency + child.latencyMs,
-              child.success,
-            );
+            const completion = this.apiGatewayModels
+              .get(node.id)
+              ?.finish(
+                this.currentRequestArrivalMs + latencyMs,
+                edgeLatency + child.latencyMs,
+                child.success,
+              );
             if (completion?.timedOut) {
               const stats = this.nodeStats[node.id];
               if (stats) {
@@ -1028,9 +1131,8 @@ export class SysSimEngine {
     }
 
     const needsFallback = nodeResult.cacheMiss || primaryFailure !== null;
-    const effectiveFallbackEdges = nodeResult.cacheMiss && fallbackEdges.length === 0
-      ? requestEdges
-      : fallbackEdges;
+    const effectiveFallbackEdges =
+      nodeResult.cacheMiss && fallbackEdges.length === 0 ? requestEdges : fallbackEdges;
     if (needsFallback && effectiveFallbackEdges.length > 0) {
       if (cacheNode && !nodeResult.success) {
         const stats = this.nodeStats[node.id];
@@ -1060,12 +1162,7 @@ export class SysSimEngine {
               cdnMetrics.latencyMs += edgeLatency + fallback.latencyMs;
               cdnMetrics.egressKb += this.currentRequestPayloadKb;
             }
-            this.scheduleCacheFill(
-              node,
-              requestKey,
-              sourceNodeId,
-              Math.max(1, fallback.latencyMs),
-            );
+            this.scheduleCacheFill(node, requestKey, sourceNodeId, Math.max(1, fallback.latencyMs));
           }
           return {
             success: true,
@@ -1145,7 +1242,11 @@ export class SysSimEngine {
     const previousBucket = this.nodeArrivalBuckets.get(node.id);
     const arrivalsThisSecond = previousBucket?.second === second ? previousBucket.count + 1 : 1;
     this.nodeArrivalBuckets.set(node.id, { second, count: arrivalsThisSecond });
-    const effectiveHealth = deriveHealthFromCapacity(config.health, arrivalsThisSecond, config.maxThroughputQps);
+    const effectiveHealth = deriveHealthFromCapacity(
+      config.health,
+      arrivalsThisSecond,
+      config.maxThroughputQps,
+    );
     this.effectiveHealth.set(node.id, effectiveHealth);
     const healthBehavior = getHealthBehavior(effectiveHealth);
 
@@ -1174,7 +1275,8 @@ export class SysSimEngine {
     };
 
     if (!healthBehavior.acceptsNewWork) {
-      if (config.type === 'serverless') this.serverlessModels.get(node.id)?.recordInvocationFailure();
+      if (config.type === 'serverless')
+        this.serverlessModels.get(node.id)?.recordInvocationFailure();
       if (config.type === 'firewall') this.getWafMetrics(node.id).infrastructureFailures++;
       return failure(
         'error',
@@ -1183,11 +1285,21 @@ export class SysSimEngine {
       );
     }
 
-    const effectiveFailureRate = Math.min(100, Math.max(0, config.failureRatePercent || 0) + healthBehavior.addedFailureRatePercent);
+    const effectiveFailureRate = Math.min(
+      100,
+      Math.max(0, config.failureRatePercent || 0) + healthBehavior.addedFailureRatePercent,
+    );
     if (effectiveFailureRate > 0 && this.random() * 100 < effectiveFailureRate) {
-      if (config.type === 'serverless') this.serverlessModels.get(node.id)?.recordInvocationFailure();
+      if (config.type === 'serverless')
+        this.serverlessModels.get(node.id)?.recordInvocationFailure();
       if (config.type === 'firewall') this.getWafMetrics(node.id).infrastructureFailures++;
-      return failure('error', 5, effectiveHealth === 'healthy' ? 'Simulated component fault' : `${effectiveHealth} health-state fault`);
+      return failure(
+        'error',
+        5,
+        effectiveHealth === 'healthy'
+          ? 'Simulated component fault'
+          : `${effectiveHealth} health-state fault`,
+      );
     }
 
     let hopLatency = 5;
@@ -1196,11 +1308,8 @@ export class SysSimEngine {
     let hopInfo: string | undefined;
 
     if (config.type === 'client') {
-      const protocolOverheadMs = config.connectionType === 'WebSocket'
-        ? 0.5
-        : config.connectionType === 'HTTP/3'
-          ? 1
-          : 2;
+      const protocolOverheadMs =
+        config.connectionType === 'WebSocket' ? 0.5 : config.connectionType === 'HTTP/3' ? 1 : 2;
       hopLatency = protocolOverheadMs + Math.max(0, config.requestPayloadKb) * 0.01;
       hopInfo = `${config.connectionType}; ${this.currentRequestOperation}; ${this.currentRequestPayloadKb} KB payload`;
     } else if (config.type === 'app_server') {
@@ -1211,17 +1320,24 @@ export class SysSimEngine {
         this.activeConnections[node.id] = service.activeConnections;
         stats.queueDepth = service.queuedRequests;
       }
-      hopInfo = service && service.queueLatencyMs > 0
-        ? `${service.processingLatencyMs}ms service + ${Math.round(service.queueLatencyMs * 10) / 10}ms connection queue${service.degraded ? '; degraded capacity' : ''}`
-        : `${service?.processingLatencyMs ?? config.processingLatencyMs}ms service; no connection queue${service?.degraded ? '; degraded capacity' : ''}`;
+      hopInfo =
+        service && service.queueLatencyMs > 0
+          ? `${service.processingLatencyMs}ms service + ${Math.round(service.queueLatencyMs * 10) / 10}ms connection queue${service.degraded ? '; degraded capacity' : ''}`
+          : `${service?.processingLatencyMs ?? config.processingLatencyMs}ms service; no connection queue${service?.degraded ? '; degraded capacity' : ''}`;
     } else if (config.type === 'worker') {
-      hopLatency = this.workerModels.get(node.id)?.getProcessingLatencyMs() ?? config.processingLatencyMs;
+      hopLatency =
+        this.workerModels.get(node.id)?.getProcessingLatencyMs() ?? config.processingLatencyMs;
       hopInfo = `${config.replicas} replica${config.replicas === 1 ? '' : 's'} × ${config.concurrencyLimit} concurrent; retry limit ${config.retryLimit}`;
     } else if (config.type === 'sql_db') {
       const dbModel = this.dbModels.get(node.id);
       const isWrite = this.currentRequestOperation === 'write';
-      const query = dbModel?.executeQuery(isWrite, config.shardingKey ? requestKey : 'unsharded', config.health);
-      if (query?.rejected) return failure('dropped', query.latencyMs, 'SQL connection queue full; query rejected');
+      const query = dbModel?.executeQuery(
+        isWrite,
+        config.shardingKey ? requestKey : 'unsharded',
+        config.health,
+      );
+      if (query?.rejected)
+        return failure('dropped', query.latencyMs, 'SQL connection queue full; query rejected');
       hopLatency = query?.latencyMs ?? config.baseLatencyMs;
       hopQueueWaitMs = query?.connectionWaitMs || 0;
       hopInfo = query
@@ -1235,7 +1351,9 @@ export class SysSimEngine {
       stats.queueDepth = dbModel?.getMetrics().queuedConnections || 0;
     } else if (config.type === 'nosql_db') {
       const isWrite = this.currentRequestOperation === 'write';
-      const result = this.noSqlModels.get(node.id)?.execute(isWrite, config.partitionKey ? requestKey : 'unpartitioned');
+      const result = this.noSqlModels
+        .get(node.id)
+        ?.execute(isWrite, config.partitionKey ? requestKey : 'unpartitioned');
       hopLatency = result?.latencyMs ?? config.baseLatencyMs;
       hopInfo = result
         ? `${isWrite ? 'Write' : 'Read'} partition ${result.partitionIndex + 1}/${config.partitionCount}; R=${result.readQuorum}, W=${result.writeQuorum}, N=${config.replicas}` +
@@ -1251,21 +1369,36 @@ export class SysSimEngine {
     } else if (config.type === 'search_index') {
       const isWrite = this.currentRequestOperation === 'write';
       const result = this.searchIndexModels.get(node.id)?.execute(isWrite, requestKey);
-      hopLatency = result?.latencyMs ?? (isWrite ? config.indexingLatencyMs : config.queryLatencyMs);
+      hopLatency =
+        result?.latencyMs ?? (isWrite ? config.indexingLatencyMs : config.queryLatencyMs);
       hopInfo = result
         ? `${result.operation === 'index' ? 'Index write' : 'Search query'} on shard ${result.shardIndex + 1}/${config.shards}; ${config.replicas} replica${config.replicas === 1 ? '' : 's'}`
-        : isWrite ? 'Index write' : 'Search query';
+        : isWrite
+          ? 'Index write'
+          : 'Search query';
     } else if (config.type === 'graph_db') {
       const result = this.graphDbModels.get(node.id)?.execute(this.currentRequestArrivalMs);
-      if (result && !result.accepted) return failure('dropped', result.latencyMs, `Graph query capacity exceeded (${result.effectiveCapacityQps}/s at depth ${result.actualDepth})`);
+      if (result && !result.accepted)
+        return failure(
+          'dropped',
+          result.latencyMs,
+          `Graph query capacity exceeded (${result.effectiveCapacityQps}/s at depth ${result.actualDepth})`,
+        );
       hopLatency = result?.latencyMs ?? config.queryLatencyMs;
       hopInfo = result
         ? `Traversal depth ${result.actualDepth}/${config.traversalDepthLimit}${result.limited ? ` (requested ${result.requestedDepth}; clamped)` : ''}; latency grows depth^1.35`
         : 'Graph traversal';
     } else if (config.type === 'timeseries_db') {
       const isWrite = this.currentRequestOperation === 'write';
-      const result = this.timeSeriesDbModels.get(node.id)?.execute(isWrite, this.currentRequestArrivalMs);
-      if (result && !result.accepted) return failure('dropped', result.latencyMs, `Time-series write throughput exceeded (${config.writeThroughputPerSec}/s)`);
+      const result = this.timeSeriesDbModels
+        .get(node.id)
+        ?.execute(isWrite, this.currentRequestArrivalMs);
+      if (result && !result.accepted)
+        return failure(
+          'dropped',
+          result.latencyMs,
+          `Time-series write throughput exceeded (${config.writeThroughputPerSec}/s)`,
+        );
       hopLatency = result?.latencyMs ?? config.queryLatencyMs;
       hopInfo = isWrite
         ? `Write admitted within ${config.writeThroughputPerSec}/s limit; ${config.retentionDays}-day retention`
@@ -1290,26 +1423,36 @@ export class SysSimEngine {
       if (cacheAccess.hit) {
         hopLatency = cacheAccess.latencyMs;
         hopStatus = 'hit';
-        hopInfo = config.type === 'cdn'
-          ? `CDN edge hit — ${Math.round(cacheAccess.latencyMs * 10) / 10}ms nearest-edge assumption; origin offloaded`
-          : 'Cache hit — served without origin';
+        hopInfo =
+          config.type === 'cdn'
+            ? `CDN edge hit — ${Math.round(cacheAccess.latencyMs * 10) / 10}ms nearest-edge assumption; origin offloaded`
+            : 'Cache hit — served without origin';
         stats.hits++;
       } else {
         const shieldLatencyMs = config.type === 'cdn' && config.originShielding ? 10 : 0;
         hopLatency = cacheAccess.latencyMs + shieldLatencyMs;
         hopStatus = 'miss';
-        hopInfo = config.type === 'cdn'
-          ? `CDN edge miss — ${Math.round(cacheAccess.latencyMs * 10) / 10}ms edge${shieldLatencyMs ? ` + ${shieldLatencyMs}ms origin shield` : ''}; fetching origin`
-          : 'Cache miss — forwarding to origin fallback';
+        hopInfo =
+          config.type === 'cdn'
+            ? `CDN edge miss — ${Math.round(cacheAccess.latencyMs * 10) / 10}ms edge${shieldLatencyMs ? ` + ${shieldLatencyMs}ms origin shield` : ''}; fetching origin`
+            : 'Cache miss — forwarding to origin fallback';
         stats.misses++;
       }
     } else if (config.type === 'rate_limiter') {
-      const decision = this.rateLimiters.get(node.id)?.evaluateRequest(this.currentRequestArrivalMs);
+      const decision = this.rateLimiters
+        .get(node.id)
+        ?.evaluateRequest(this.currentRequestArrivalMs);
       if (decision && !decision.allowed) {
-        return failure('rate_limited', decision.latencyMs, `Request rejected by ${config.algorithm.replaceAll('_', ' ')} after ${config.decisionLatencyMs}ms decision processing`);
+        return failure(
+          'rate_limited',
+          decision.latencyMs,
+          `Request rejected by ${config.algorithm.replaceAll('_', ' ')} after ${config.decisionLatencyMs}ms decision processing`,
+        );
       }
       hopLatency = decision?.latencyMs ?? config.decisionLatencyMs;
-      hopQueueWaitMs = decision?.queued ? Math.max(0, decision.latencyMs - config.decisionLatencyMs) : 0;
+      hopQueueWaitMs = decision?.queued
+        ? Math.max(0, decision.latencyMs - config.decisionLatencyMs)
+        : 0;
       hopInfo = `${config.algorithm.replaceAll('_', ' ')} admitted request${decision?.queued ? ` after ${Math.round((decision.latencyMs - config.decisionLatencyMs) * 10) / 10}ms smoothing queue` : ''}; burst/window capacity ${config.burstCapacity}`;
     } else if (config.type === 'api_gateway') {
       const admission = this.apiGatewayModels.get(node.id)?.begin(this.currentRequestArrivalMs);
@@ -1325,9 +1468,18 @@ export class SysSimEngine {
       hopLatency = admission?.latencyMs ?? 0;
       hopInfo = `${config.authMode === 'None' ? 'No authentication' : `${config.authMode} authentication`} overhead`;
     } else if (config.type === 'dns') {
-      const requestEdges = this.graph.edges.filter((edge) => edge.source === node.id && !edge.data?.isCut && getEdgePurpose(edge.data) === 'request');
-      const eligibleEdges = requestEdges.filter((edge) => this.graph.nodes.find((candidate) => candidate.id === edge.target)?.config.health !== 'down');
-      const edgeLatencies = Object.fromEntries(eligibleEdges.map((edge) => [edge.target, this.getEdgeLatency(edge)]));
+      const requestEdges = this.graph.edges.filter(
+        (edge) =>
+          edge.source === node.id && !edge.data?.isCut && getEdgePurpose(edge.data) === 'request',
+      );
+      const eligibleEdges = requestEdges.filter(
+        (edge) =>
+          this.graph.nodes.find((candidate) => candidate.id === edge.target)?.config.health !==
+          'down',
+      );
+      const edgeLatencies = Object.fromEntries(
+        eligibleEdges.map((edge) => [edge.target, this.getEdgeLatency(edge)]),
+      );
       const resolution = this.dnsModels.get(node.id)?.resolve(
         `${sourceNodeId}:${requestKey}`,
         sourceNodeId,
@@ -1335,7 +1487,12 @@ export class SysSimEngine {
         eligibleEdges.map((edge) => edge.target),
         edgeLatencies,
       );
-      if (!resolution?.targetId) return failure('error', resolution?.latencyMs ?? config.lookupLatencyMs, 'DNS resolution failed: no eligible address records');
+      if (!resolution?.targetId)
+        return failure(
+          'error',
+          resolution?.latencyMs ?? config.lookupLatencyMs,
+          'DNS resolution failed: no eligible address records',
+        );
       this.dnsSelections.set(`${requestId}:${node.id}`, resolution.targetId);
       hopLatency = resolution.latencyMs;
       hopInfo = resolution.cached
@@ -1346,12 +1503,23 @@ export class SysSimEngine {
       hopLatency = Math.max(0, config.inspectionLatencyMs) + ruleLatencyMs;
       if (this.random() * 100 < Math.min(100, Math.max(0, config.blockRatePercent))) {
         this.getWafMetrics(node.id).blocked++;
-        return failure('blocked', hopLatency, `Malicious request rejected by WAF after ${config.ruleCount} rule checks`);
+        return failure(
+          'blocked',
+          hopLatency,
+          `Malicious request rejected by WAF after ${config.ruleCount} rule checks`,
+        );
       }
       hopInfo = `WAF allowed request; ${config.inspectionLatencyMs}ms inspection + ${Math.round(ruleLatencyMs * 1000) / 1000}ms documented rule-scan cost`;
     } else if (config.type === 'reverse_proxy') {
-      const proxy = this.reverseProxyModels.get(node.id)?.begin(this.currentRequestArrivalMs, this.currentRequestPayloadKb);
-      if (proxy && !proxy.accepted) return failure('dropped', proxy.latencyMs, `Reverse proxy connection limit ${config.maxConnections} exhausted`);
+      const proxy = this.reverseProxyModels
+        .get(node.id)
+        ?.begin(this.currentRequestArrivalMs, this.currentRequestPayloadKb);
+      if (proxy && !proxy.accepted)
+        return failure(
+          'dropped',
+          proxy.latencyMs,
+          `Reverse proxy connection limit ${config.maxConnections} exhausted`,
+        );
       hopLatency = proxy?.latencyMs ?? 1;
       hopQueueWaitMs = proxy?.backpressureMs || 0;
       if (proxy) {
@@ -1360,15 +1528,12 @@ export class SysSimEngine {
       }
       hopInfo = `${config.enableCompression ? `Compressed payload to ${Math.round((proxy?.outputPayloadKb || 0) * 10) / 10} KB` : 'Compression disabled'}; ${config.bufferingEnabled ? `${config.bufferSizeKb} KB buffer` : 'streaming without buffer'}${proxy?.backpressureMs ? `; ${Math.round(proxy.backpressureMs * 10) / 10}ms backpressure` : ''}; cache rules are diagram-only`;
     } else if (this.isMessagingNode(node)) {
-      const enqueue = this.queueModels.get(node.id)?.enqueue(
-        requestId,
-        requestKey,
-        this.elapsedSimulationMs,
-        {
+      const enqueue = this.queueModels
+        .get(node.id)
+        ?.enqueue(requestId, requestKey, this.elapsedSimulationMs, {
           payloadSizeKb: this.currentRequestPayloadKb,
           operationType: this.currentRequestOperation,
-        },
-      );
+        });
       if (enqueue) {
         stats.queueDepth = enqueue.depth;
         if (!enqueue.accepted) return failure('dropped', 4, 'Queue capacity exceeded');
@@ -1381,33 +1546,45 @@ export class SysSimEngine {
     } else if (config.type === 'auth_service') {
       const validation = this.authServiceModels.get(node.id)?.validate();
       hopLatency = validation?.latencyMs ?? config.validationLatencyMs;
-      hopInfo = `${config.tokenType} validation${config.tokenType === 'Session' && config.sessionCacheEnabled ? validation?.cached ? '; session cache hit' : '; session cache miss' : ''}; ${config.ttlMinutes}m TTL is diagram-only (token age is not modeled)`;
+      hopInfo = `${config.tokenType} validation${config.tokenType === 'Session' && config.sessionCacheEnabled ? (validation?.cached ? '; session cache hit' : '; session cache miss') : ''}; ${config.ttlMinutes}m TTL is diagram-only (token age is not modeled)`;
     } else if (config.type === 'encryption_service') {
-      const encryption = this.encryptionServiceModels.get(node.id)?.process(this.currentRequestPayloadKb);
+      const encryption = this.encryptionServiceModels
+        .get(node.id)
+        ?.process(this.currentRequestPayloadKb);
       hopLatency = encryption?.latencyMs ?? config.overheadLatencyMs;
       hopInfo = `${config.algorithm} illustrative latency only for ${this.currentRequestPayloadKb} KB; no encryption or cryptographic security validation is performed; ${config.keyRotationDays}d key rotation is diagram-only`;
     } else if (config.type === 'serverless') {
       const invocation = this.serverlessModels.get(node.id)?.invoke(this.currentRequestArrivalMs);
       if (invocation) {
         if (invocation.throttled) {
-          return failure('rate_limited', invocation.totalLatencyMs, 'Invocation throttled: concurrency limit exhausted');
+          return failure(
+            'rate_limited',
+            invocation.totalLatencyMs,
+            'Invocation throttled: concurrency limit exhausted',
+          );
         }
         hopLatency = invocation.totalLatencyMs;
         hopQueueWaitMs = invocation.queueLatencyMs;
         this.activeConnections[node.id] = invocation.activeInvocations;
         stats.queueDepth = invocation.queuedInvocations;
         hopInfo = `${invocation.coldStart ? 'Cold' : 'Warm'} start (${invocation.coldStartProbabilityPercent}% cold probability); ${Math.round(invocation.executionLatencyMs * 10) / 10}ms memory-scaled execution${invocation.queueLatencyMs ? ` + ${Math.round(invocation.queueLatencyMs * 10) / 10}ms concurrency queue` : ''}`;
-        if (invocation.timedOut) return failure('timeout', hopLatency, `${hopInfo}; timed out at ${config.timeoutMs}ms`);
+        if (invocation.timedOut)
+          return failure('timeout', hopLatency, `${hopInfo}; timed out at ${config.timeoutMs}ms`);
       }
     }
 
-    hopLatency = this.sampleLatency(hopLatency, config.latencyDistribution || 'fixed', config.latencyJitterPercent ?? 10);
+    hopLatency = this.sampleLatency(
+      hopLatency,
+      config.latencyDistribution || 'fixed',
+      config.latencyJitterPercent ?? 10,
+    );
     if (effectiveHealth !== 'healthy') {
       hopLatency *= healthBehavior.latencyMultiplier;
       hopInfo = `${hopInfo || 'Processed request'}; ${effectiveHealth} health penalty (${healthBehavior.capacityMultiplier * 100}% capacity, ${healthBehavior.latencyMultiplier}× latency)`;
     }
     stats.latencies.push(hopLatency);
-    if (stats.latencies.length > SIMULATION_LIMITS.maxLatencySamplesPerNode) stats.latencies.shift();
+    if (stats.latencies.length > SIMULATION_LIMITS.maxLatencySamplesPerNode)
+      stats.latencies.shift();
     stats.successfulRequests++;
 
     return {
@@ -1446,23 +1623,32 @@ export class SysSimEngine {
     const healthModel = this.loadBalancerHealthModels.get(nodeId);
     const eligibleEdges = requestEdges.filter((edge) => {
       const target = this.graph.nodes.find((candidate) => candidate.id === edge.target);
-      return Boolean(target && healthModel?.isEligible(
-        edge.target,
-        target.config.health,
-        this.currentRequestArrivalMs,
-        loadBalancerConfig.healthCheckIntervalSec,
-        loadBalancerConfig.healthRecoveryDelaySec,
-      ));
+      return Boolean(
+        target &&
+        healthModel?.isEligible(
+          edge.target,
+          target.config.health,
+          this.currentRequestArrivalMs,
+          loadBalancerConfig.healthCheckIntervalSec,
+          loadBalancerConfig.healthRecoveryDelaySec,
+        ),
+      );
     });
     this.loadBalancerUnhealthyTargets.set(nodeId, requestEdges.length - eligibleEdges.length);
     const router = this.lbRouters.get(nodeId);
-    router?.updateTargets(eligibleEdges.map((edge) => edge.target), loadBalancerConfig.targetWeights);
+    router?.updateTargets(
+      eligibleEdges.map((edge) => edge.target),
+      loadBalancerConfig.targetWeights,
+    );
     const activeConnections = this.getLoadBalancerActiveConnections(
       nodeId,
       eligibleEdges.map((edge) => edge.target),
       this.currentRequestArrivalMs,
     );
-    this.activeConnections[nodeId] = Object.values(activeConnections).reduce((sum, value) => sum + value, 0);
+    this.activeConnections[nodeId] = Object.values(activeConnections).reduce(
+      (sum, value) => sum + value,
+      0,
+    );
     const target = router?.selectTarget({
       requestKey,
       clientKey: sourceNodeId,
@@ -1477,11 +1663,17 @@ export class SysSimEngine {
     return selected ? [selected] : [];
   }
 
-  private getLoadBalancerActiveConnections(loadBalancerId: string, targetIds: string[], nowMs: number): Record<string, number> {
+  private getLoadBalancerActiveConnections(
+    loadBalancerId: string,
+    targetIds: string[],
+    nowMs: number,
+  ): Record<string, number> {
     const result: Record<string, number> = {};
     for (const targetId of targetIds) {
       const connectionKey = `${loadBalancerId}:${targetId}`;
-      const activeEnds = (this.loadBalancerConnectionEnds.get(connectionKey) || []).filter((endAt) => endAt > nowMs);
+      const activeEnds = (this.loadBalancerConnectionEnds.get(connectionKey) || []).filter(
+        (endAt) => endAt > nowMs,
+      );
       this.loadBalancerConnectionEnds.set(connectionKey, activeEnds);
       result[targetId] = activeEnds.length;
     }
@@ -1495,13 +1687,20 @@ export class SysSimEngine {
     endAtMs: number,
   ): void {
     const connectionKey = `${loadBalancerId}:${targetId}`;
-    const activeEnds = (this.loadBalancerConnectionEnds.get(connectionKey) || []).filter((endAt) => endAt > startAtMs);
+    const activeEnds = (this.loadBalancerConnectionEnds.get(connectionKey) || []).filter(
+      (endAt) => endAt > startAtMs,
+    );
     activeEnds.push(Math.max(startAtMs, endAtMs));
     this.loadBalancerConnectionEnds.set(connectionKey, activeEnds);
     const loadBalancer = this.graph.nodes.find((node) => node.id === loadBalancerId);
     if (loadBalancer) {
       const targets = this.graph.edges
-        .filter((edge) => edge.source === loadBalancerId && getEdgePurpose(edge.data) === 'request' && !edge.data?.isCut)
+        .filter(
+          (edge) =>
+            edge.source === loadBalancerId &&
+            getEdgePurpose(edge.data) === 'request' &&
+            !edge.data?.isCut,
+        )
         .map((edge) => edge.target);
       this.activeConnections[loadBalancerId] = Object.values(
         this.getLoadBalancerActiveConnections(loadBalancerId, targets, startAtMs),
@@ -1509,11 +1708,7 @@ export class SysSimEngine {
     }
   }
 
-  private createRoutingFailure(
-    node: SimNode,
-    startTimeMs: number,
-    info: string,
-  ): TraversalResult {
+  private createRoutingFailure(node: SimNode, startTimeMs: number, info: string): TraversalResult {
     const stats = this.nodeStats[node.id];
     if (stats) stats.failedRequests++;
     return {
@@ -1548,7 +1743,9 @@ export class SysSimEngine {
   }
 
   private isCacheNode(node: SimNode): boolean {
-    return ['cdn', 'redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(node.config.type);
+    return ['cdn', 'redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(
+      node.config.type,
+    );
   }
 
   private isMessagingNode(node: SimNode): boolean {
@@ -1560,9 +1757,8 @@ export class SysSimEngine {
     const common = {
       kind: config.type as MessagingKind,
       producerAckLatencyMs: 'producerAckLatencyMs' in config ? config.producerAckLatencyMs : 4,
-      consumerProcessingLatencyMs: 'consumerProcessingLatencyMs' in config
-        ? config.consumerProcessingLatencyMs
-        : 10,
+      consumerProcessingLatencyMs:
+        'consumerProcessingLatencyMs' in config ? config.consumerProcessingLatencyMs : 10,
       deliveryGuarantee: ('deliveryGuarantee' in config
         ? config.deliveryGuarantee
         : 'at_least_once') as DeliveryGuarantee,
@@ -1681,9 +1877,8 @@ export class SysSimEngine {
             const worker = this.workerModels.get(target.id);
             const retryLimit = worker?.retryLimit ?? target.config.retryLimit;
             const broker = this.graph.nodes.find((candidate) => candidate.id === nodeId);
-            const brokerRetryLimit = broker && 'retryLimit' in broker.config
-              ? broker.config.retryLimit
-              : retryLimit;
+            const brokerRetryLimit =
+              broker && 'retryLimit' in broker.config ? broker.config.retryLimit : retryLimit;
             worker?.recordAttempt(
               result.success,
               !result.success && attempt.attempt <= Math.min(retryLimit, brokerRetryLimit),
@@ -1699,7 +1894,9 @@ export class SysSimEngine {
         .map((edge) => this.graph.nodes.find((candidate) => candidate.id === edge.target))
         .filter((target) => target?.config.type === 'worker');
       const queuedPerWorker = workers.length > 0 ? Math.ceil(model.getDepth() / workers.length) : 0;
-      workers.forEach((target) => target && this.workerModels.get(target.id)?.setQueuedWork(queuedPerWorker));
+      workers.forEach(
+        (target) => target && this.workerModels.get(target.id)?.setQueuedWork(queuedPerWorker),
+      );
     }
   }
 
@@ -1721,7 +1918,8 @@ export class SysSimEngine {
   }
 
   private getPendingCacheFillKey(node: SimNode, requestKey: string, sourceNodeId: string): string {
-    if (node.config.type === 'cdn' && node.config.originShielding) return `${node.id}:shield:${requestKey}`;
+    if (node.config.type === 'cdn' && node.config.originShielding)
+      return `${node.id}:shield:${requestKey}`;
     return `${node.id}:${this.getCacheKey(node, requestKey, sourceNodeId)}`;
   }
 
@@ -1776,10 +1974,7 @@ export class SysSimEngine {
       if (pending.readyAtMs > this.elapsedSimulationMs) continue;
       const node = this.graph.nodes.find((candidate) => candidate.id === pending.cacheNodeId);
       if (node?.config.health !== 'down') {
-        this.cacheModels.get(pending.cacheNodeId)?.put(
-          pending.cacheKey,
-          this.elapsedSimulationMs,
-        );
+        this.cacheModels.get(pending.cacheNodeId)?.put(pending.cacheKey, this.elapsedSimulationMs);
       }
       this.pendingCacheFills.delete(pendingKey);
     }
@@ -1789,7 +1984,11 @@ export class SysSimEngine {
     return this.randomGenerator.next();
   }
 
-  private sampleLatency(baseMs: number, distribution: NonNullable<AnyComponentConfig['latencyDistribution']>, jitterPercent: number): number {
+  private sampleLatency(
+    baseMs: number,
+    distribution: NonNullable<AnyComponentConfig['latencyDistribution']>,
+    jitterPercent: number,
+  ): number {
     const base = Math.max(0, baseMs);
     const jitter = Math.min(1, Math.max(0, jitterPercent / 100));
     if (distribution === 'fixed' || jitter === 0 || base === 0) return base;
@@ -1848,9 +2047,9 @@ export class SysSimEngine {
 
   private selectTrafficSources(sourceNodes: SimNode[], count: number): SimNode[] {
     if (sourceNodes.length <= 1) return Array.from({ length: count }, () => sourceNodes[0]);
-    const weights = sourceNodes.map((node) => node.config.type === 'client'
-      ? Math.max(0, node.config.requestRateQps)
-      : 1);
+    const weights = sourceNodes.map((node) =>
+      node.config.type === 'client' ? Math.max(0, node.config.requestRateQps) : 1,
+    );
     const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
     const effectiveWeights = totalWeight > 0 ? weights : weights.map(() => 1);
     const effectiveTotal = effectiveWeights.reduce((sum, weight) => sum + weight, 0);
@@ -1878,9 +2077,13 @@ export class SysSimEngine {
   }
 
   public getMetricsSnapshot(): OverallMetrics {
-    const successfulRequests = this.completedRequests.filter((request) => request.status === 'success');
+    const successfulRequests = this.completedRequests.filter(
+      (request) => request.status === 'success',
+    );
     const failedRequests = this.completedRequests.filter((request) => request.status !== 'success');
-    const latencies = successfulRequests.map((request) => request.totalLatencyMs).sort((a, b) => a - b);
+    const latencies = successfulRequests
+      .map((request) => request.totalLatencyMs)
+      .sort((a, b) => a - b);
     const failedLatencies = failedRequests.map((request) => request.totalLatencyMs);
     const average = (values: readonly number[]) =>
       values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
@@ -1942,19 +2145,21 @@ export class SysSimEngine {
       const nodeP95 = nearestRankQuantile(sortedNodeLat, 0.95);
 
       const nodeErrorRate =
-        stats.totalRequests > 0
-          ? (stats.failedRequests / stats.totalRequests) * 100
-          : 0;
+        stats.totalRequests > 0 ? (stats.failedRequests / stats.totalRequests) * 100 : 0;
 
       const totalCacheLookups = cacheHits + cacheMisses;
-      const nodeCacheRatio =
-        totalCacheLookups > 0 ? (cacheHits / totalCacheLookups) * 100 : 0;
+      const nodeCacheRatio = totalCacheLookups > 0 ? (cacheHits / totalCacheLookups) * 100 : 0;
 
-      const nodeQps = stats.totalRequests > 0 ? Math.round(stats.totalRequests / Math.max(1, this.elapsedSimulationMs / 1000)) : 0;
+      const nodeQps =
+        stats.totalRequests > 0
+          ? Math.round(stats.totalRequests / Math.max(1, this.elapsedSimulationMs / 1000))
+          : 0;
       const messagingMetrics = this.queueModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
       const appMetrics = this.appServerModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
       const workerMetrics = this.workerModels.get(n.id)?.getMetrics();
-      const serverlessMetrics = this.serverlessModels.get(n.id)?.getMetrics(this.elapsedSimulationMs);
+      const serverlessMetrics = this.serverlessModels
+        .get(n.id)
+        ?.getMetrics(this.elapsedSimulationMs);
       const loadBalancerMetrics = this.lbRouters.get(n.id)?.getMetrics();
       const apiGatewayMetrics = this.apiGatewayModels.get(n.id)?.getMetrics();
       const dnsMetrics = this.dnsModels.get(n.id)?.getMetrics();
@@ -1970,15 +2175,23 @@ export class SysSimEngine {
       const encryptionMetrics = this.encryptionServiceModels.get(n.id)?.getMetrics();
       const cdnMetrics = this.cdnOriginMetrics.get(n.id);
       const wafMetrics = this.wafMetrics.get(n.id);
-      const loadBalancerActiveConnections = n.config.type === 'load_balancer'
-        ? Object.values(this.getLoadBalancerActiveConnections(
-            n.id,
-            this.graph.edges
-              .filter((edge) => edge.source === n.id && getEdgePurpose(edge.data) === 'request' && !edge.data?.isCut)
-              .map((edge) => edge.target),
-            this.elapsedSimulationMs,
-          )).reduce((sum, value) => sum + value, 0)
-        : undefined;
+      const loadBalancerActiveConnections =
+        n.config.type === 'load_balancer'
+          ? Object.values(
+              this.getLoadBalancerActiveConnections(
+                n.id,
+                this.graph.edges
+                  .filter(
+                    (edge) =>
+                      edge.source === n.id &&
+                      getEdgePurpose(edge.data) === 'request' &&
+                      !edge.data?.isCut,
+                  )
+                  .map((edge) => edge.target),
+                this.elapsedSimulationMs,
+              ),
+            ).reduce((sum, value) => sum + value, 0)
+          : undefined;
       if (messagingMetrics) {
         totalProducerAccepted += messagingMetrics.producerAccepted;
         totalProducerRejected += messagingMetrics.producerRejected;
@@ -1999,10 +2212,28 @@ export class SysSimEngine {
         avgLatencyMs: Math.round(nodeAvgLat * 10) / 10,
         p95LatencyMs: Math.round(nodeP95 * 10) / 10,
         errorRatePercent: Math.round(nodeErrorRate * 10) / 10,
-        activeConnections: appMetrics?.activeConnections ?? workerMetrics?.busyWorkers ?? serverlessMetrics?.activeInvocations ?? proxyMetrics?.activeConnections ?? loadBalancerActiveConnections ?? (n.config.type === 'sql_db' ? this.dbModels.get(n.id)?.getActiveConnections() : undefined) ?? (this.activeConnections[n.id] || 0),
-        queueDepth: appMetrics?.queuedRequests ?? workerMetrics?.queuedWork ?? serverlessMetrics?.queuedInvocations ?? dbMetrics?.queuedConnections ?? stats.queueDepth,
+        activeConnections:
+          appMetrics?.activeConnections ??
+          workerMetrics?.busyWorkers ??
+          serverlessMetrics?.activeInvocations ??
+          proxyMetrics?.activeConnections ??
+          loadBalancerActiveConnections ??
+          (n.config.type === 'sql_db'
+            ? this.dbModels.get(n.id)?.getActiveConnections()
+            : undefined) ??
+          (this.activeConnections[n.id] || 0),
+        queueDepth:
+          appMetrics?.queuedRequests ??
+          workerMetrics?.queuedWork ??
+          serverlessMetrics?.queuedInvocations ??
+          dbMetrics?.queuedConnections ??
+          stats.queueDepth,
         cacheHitRatioPercent: Math.round(nodeCacheRatio * 10) / 10,
-        utilizationPercent: appMetrics?.cpuUtilizationPercent ?? workerMetrics?.utilizationPercent ?? serverlessMetrics?.utilizationPercent ?? capacityUtilizationPercent(n.config, nodeQps),
+        utilizationPercent:
+          appMetrics?.cpuUtilizationPercent ??
+          workerMetrics?.utilizationPercent ??
+          serverlessMetrics?.utilizationPercent ??
+          capacityUtilizationPercent(n.config, nodeQps),
         totalRequests: stats.totalRequests,
         successfulRequests: stats.successfulRequests,
         failedRequests: stats.failedRequests,
@@ -2040,7 +2271,10 @@ export class SysSimEngine {
         apiGatewayCircuitState: apiGatewayMetrics?.circuitState,
         cdnOriginOffloadedRequests: n.config.type === 'cdn' ? stats.hits : undefined,
         cdnOriginFetches: cdnMetrics?.fetches,
-        cdnOriginFetchLatencyMs: cdnMetrics && cdnMetrics.fetches > 0 ? Math.round((cdnMetrics.latencyMs / cdnMetrics.fetches) * 10) / 10 : undefined,
+        cdnOriginFetchLatencyMs:
+          cdnMetrics && cdnMetrics.fetches > 0
+            ? Math.round((cdnMetrics.latencyMs / cdnMetrics.fetches) * 10) / 10
+            : undefined,
         cdnOriginEgressKb: cdnMetrics?.egressKb,
         dnsCacheHits: dnsMetrics?.hits,
         dnsCacheMisses: dnsMetrics?.misses,
@@ -2048,31 +2282,52 @@ export class SysSimEngine {
         wafBlockedRequests: wafMetrics?.blocked,
         wafInfrastructureFailures: wafMetrics?.infrastructureFailures,
         reverseProxyRejectedConnections: proxyMetrics?.rejected,
-        reverseProxyCompressedKbSaved: proxyMetrics ? Math.round(proxyMetrics.compressedKbSaved * 10) / 10 : undefined,
-        reverseProxyBackpressureMs: proxyMetrics ? Math.round(proxyMetrics.backpressureMs * 10) / 10 : undefined,
+        reverseProxyCompressedKbSaved: proxyMetrics
+          ? Math.round(proxyMetrics.compressedKbSaved * 10) / 10
+          : undefined,
+        reverseProxyBackpressureMs: proxyMetrics
+          ? Math.round(proxyMetrics.backpressureMs * 10) / 10
+          : undefined,
         sqlReads: n.config.type === 'sql_db' ? dbMetrics?.reads : undefined,
         sqlWrites: n.config.type === 'sql_db' ? dbMetrics?.writes : undefined,
         sqlPrimaryQueries: n.config.type === 'sql_db' ? dbMetrics?.primaryQueries : undefined,
         sqlReplicaQueries: n.config.type === 'sql_db' ? dbMetrics?.replicaQueries : undefined,
         sqlConnectionWaits: n.config.type === 'sql_db' ? dbMetrics?.connectionWaits : undefined,
-        sqlConnectionRejections: n.config.type === 'sql_db' ? dbMetrics?.connectionRejections : undefined,
-        sqlConnectionWaitMs: n.config.type === 'sql_db' ? Math.round((dbMetrics?.connectionWaitMs || 0) * 10) / 10 : undefined,
+        sqlConnectionRejections:
+          n.config.type === 'sql_db' ? dbMetrics?.connectionRejections : undefined,
+        sqlConnectionWaitMs:
+          n.config.type === 'sql_db'
+            ? Math.round((dbMetrics?.connectionWaitMs || 0) * 10) / 10
+            : undefined,
         sqlReplicationLagMs: n.config.type === 'sql_db' ? dbMetrics?.replicationLagMs : undefined,
         sqlFailovers: n.config.type === 'sql_db' ? dbMetrics?.failovers : undefined,
-        sqlHotPartitionPercent: n.config.type === 'sql_db' ? Math.round((dbMetrics?.hotPartitionPercent || 0) * 10) / 10 : undefined,
+        sqlHotPartitionPercent:
+          n.config.type === 'sql_db'
+            ? Math.round((dbMetrics?.hotPartitionPercent || 0) * 10) / 10
+            : undefined,
         nosqlReads: noSqlMetrics?.reads,
         nosqlWrites: noSqlMetrics?.writes,
         nosqlReadQuorum: noSqlMetrics?.readQuorum,
         nosqlWriteQuorum: noSqlMetrics?.writeQuorum,
         nosqlReplicationLagMs: noSqlMetrics?.replicationLagMs,
-        nosqlHotPartitionPercent: noSqlMetrics ? Math.round(noSqlMetrics.hotPartitionPercent * 10) / 10 : undefined,
-        objectStorageRequestLatencyMs: objectStorageMetrics ? Math.round(objectStorageMetrics.requestLatencyMs * 10) / 10 : undefined,
-        objectStorageTransferLatencyMs: objectStorageMetrics ? Math.round(objectStorageMetrics.transferLatencyMs * 10) / 10 : undefined,
+        nosqlHotPartitionPercent: noSqlMetrics
+          ? Math.round(noSqlMetrics.hotPartitionPercent * 10) / 10
+          : undefined,
+        objectStorageRequestLatencyMs: objectStorageMetrics
+          ? Math.round(objectStorageMetrics.requestLatencyMs * 10) / 10
+          : undefined,
+        objectStorageTransferLatencyMs: objectStorageMetrics
+          ? Math.round(objectStorageMetrics.transferLatencyMs * 10) / 10
+          : undefined,
         objectStorageTransferredKb: objectStorageMetrics?.transferredKb,
         searchQueries: searchMetrics?.queries,
         searchIndexWrites: searchMetrics?.indexWrites,
-        searchShardImbalancePercent: searchMetrics ? Math.round(searchMetrics.shardImbalancePercent * 10) / 10 : undefined,
-        graphTraversalDepth: graphDbMetrics ? Math.round(graphDbMetrics.averageDepth * 10) / 10 : undefined,
+        searchShardImbalancePercent: searchMetrics
+          ? Math.round(searchMetrics.shardImbalancePercent * 10) / 10
+          : undefined,
+        graphTraversalDepth: graphDbMetrics
+          ? Math.round(graphDbMetrics.averageDepth * 10) / 10
+          : undefined,
         graphDepthLimitedQueries: graphDbMetrics?.depthLimitedQueries,
         graphEffectiveCapacityQps: graphDbMetrics?.effectiveCapacityQps,
         graphCapacityRejectedQueries: graphDbMetrics?.capacityRejectedQueries,
@@ -2081,16 +2336,24 @@ export class SysSimEngine {
         timeSeriesQueries: timeSeriesDbMetrics?.queries,
         timeSeriesRetentionDays: timeSeriesDbMetrics?.retentionDays,
         timeSeriesColdTierQueries: timeSeriesDbMetrics?.coldTierQueries,
-        timeSeriesColdTierLatencyFactor: timeSeriesDbMetrics ? Math.round(timeSeriesDbMetrics.coldTierLatencyFactor * 100) / 100 : undefined,
+        timeSeriesColdTierLatencyFactor: timeSeriesDbMetrics
+          ? Math.round(timeSeriesDbMetrics.coldTierLatencyFactor * 100) / 100
+          : undefined,
         rateLimiterAccepted: rateLimiterMetrics?.accepted,
         rateLimiterRejected: rateLimiterMetrics?.rejected,
         rateLimiterQueued: rateLimiterMetrics?.queued,
-        rateLimiterDecisionLatencyMs: rateLimiterMetrics ? Math.round(rateLimiterMetrics.averageDecisionLatencyMs * 10) / 10 : undefined,
+        rateLimiterDecisionLatencyMs: rateLimiterMetrics
+          ? Math.round(rateLimiterMetrics.averageDecisionLatencyMs * 10) / 10
+          : undefined,
         authCacheHits: authMetrics?.cacheHits,
         authCacheMisses: authMetrics?.cacheMisses,
-        authValidationLatencyMs: authMetrics ? Math.round(authMetrics.averageValidationLatencyMs * 10) / 10 : undefined,
+        authValidationLatencyMs: authMetrics
+          ? Math.round(authMetrics.averageValidationLatencyMs * 10) / 10
+          : undefined,
         encryptionOperations: encryptionMetrics?.operations,
-        encryptionLatencyMs: encryptionMetrics ? Math.round(encryptionMetrics.averageLatencyMs * 10) / 10 : undefined,
+        encryptionLatencyMs: encryptionMetrics
+          ? Math.round(encryptionMetrics.averageLatencyMs * 10) / 10
+          : undefined,
         encryptedPayloadKb: encryptionMetrics?.payloadKb,
       };
 
@@ -2104,11 +2367,9 @@ export class SysSimEngine {
       }
     });
 
-    const overallErrorRate =
-      this.totalSent > 0 ? (this.totalFailed / this.totalSent) * 100 : 0;
+    const overallErrorRate = this.totalSent > 0 ? (this.totalFailed / this.totalSent) * 100 : 0;
     const totalLookups = totalHits + totalMisses;
-    const overallCacheHit =
-      totalLookups > 0 ? (totalHits / totalLookups) * 100 : 0;
+    const overallCacheHit = totalLookups > 0 ? (totalHits / totalLookups) * 100 : 0;
 
     const loadRates = this.getCurrentLoadRates();
     const completedRequests = this.totalSuccess + this.totalFailed;

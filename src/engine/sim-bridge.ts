@@ -100,7 +100,10 @@ export class SimulationBridge {
     }
     if (message.type === 'GRAPH_ACK') {
       this.acknowledgedGraphRevision = message.payload.graphRevision;
-      if (this.pendingStart && this.acknowledgedGraphRevision === this.getSnapshot().graphRevision) {
+      if (
+        this.pendingStart &&
+        this.acknowledgedGraphRevision === this.getSnapshot().graphRevision
+      ) {
         this.pendingStart = false;
         this.post({ type: 'START' });
       }
@@ -111,12 +114,15 @@ export class SimulationBridge {
     }
   }
 
-  private post(command: WorkerCommand): void { this.worker?.postMessage(command); }
+  private post(command: WorkerCommand): void {
+    this.worker?.postMessage(command);
+  }
 
   public syncGraph(): void {
     this.ensureInitialized();
     const snapshot = this.getSnapshot();
-    if (this.worker && this.workerReady) this.post(createGraphUpdateMessage(snapshot.graph, snapshot.graphRevision));
+    if (this.worker && this.workerReady)
+      this.post(createGraphUpdateMessage(snapshot.graph, snapshot.graphRevision));
     if (this.fallbackEngine) this.fallbackEngine.setGraph(snapshot.graph);
   }
 
@@ -140,7 +146,8 @@ export class SimulationBridge {
     this.setSpeed(snapshot.speedMultiplier);
     this.events.onStateChange('running');
     if (this.worker) {
-      if (!this.workerReady || this.acknowledgedGraphRevision !== snapshot.graphRevision) this.pendingStart = true;
+      if (!this.workerReady || this.acknowledgedGraphRevision !== snapshot.graphRevision)
+        this.pendingStart = true;
       else this.post({ type: 'START' });
     } else if (this.fallbackEngine) {
       this.fallbackEngine.start();
@@ -190,7 +197,9 @@ export class SimulationBridge {
     this.clearFallbackTimer();
   }
 
-  public getMode(): SimulationRuntimeMode { return this.mode; }
+  public getMode(): SimulationRuntimeMode {
+    return this.mode;
+  }
 
   public dispose(): void {
     this.clearFallbackTimer();
@@ -206,7 +215,9 @@ export class SimulationBridge {
     this.initialized = false;
   }
 
-  private ensureInitialized(): void { if (!this.initialized) this.initialize(); }
+  private ensureInitialized(): void {
+    if (!this.initialized) this.initialize();
+  }
 
   private activateFallback(): void {
     const shouldRun = this.getSnapshot().simState === 'running' || this.pendingStart;
@@ -245,7 +256,11 @@ export class SimulationBridge {
     this.fallbackTimer = null;
   }
 
-  private publishFallbackTick(result: { metrics: OverallMetrics; activeRequests: SimRequest[]; recentRequests: SimRequest[] }): void {
+  private publishFallbackTick(result: {
+    metrics: OverallMetrics;
+    activeRequests: SimRequest[];
+    recentRequests: SimRequest[];
+  }): void {
     this.events.onTick({ ...result, graphRevision: this.getSnapshot().graphRevision });
   }
 }

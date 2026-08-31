@@ -22,7 +22,9 @@ export class LoadBalancerRouter {
     private algorithm: LoadBalancerAlgorithm,
     private targets: string[] = [],
     weights: Record<string, number> = {},
-  ) { this.updateTargets(targets, weights); }
+  ) {
+    this.updateTargets(targets, weights);
+  }
 
   public updateAlgorithm(algorithm: LoadBalancerAlgorithm): void {
     if (algorithm === this.algorithm) return;
@@ -33,7 +35,9 @@ export class LoadBalancerRouter {
   }
 
   public updateTargets(targets: string[], weights: Record<string, number> = this.weights): void {
-    const changed = targets.length !== this.targets.length || targets.some((target, index) => target !== this.targets[index]);
+    const changed =
+      targets.length !== this.targets.length ||
+      targets.some((target, index) => target !== this.targets[index]);
     this.targets = [...targets];
     this.weights = { ...weights };
     for (const target of this.targets) this.routeCounts[target] ??= 0;
@@ -54,9 +58,14 @@ export class LoadBalancerRouter {
     legacyActiveConnections: Record<string, number> = {},
   ): string | null {
     if (this.targets.length === 0) return null;
-    const context = typeof selection === 'string'
-      ? { requestKey: selection, clientKey: selection, activeConnections: legacyActiveConnections }
-      : selection;
+    const context =
+      typeof selection === 'string'
+        ? {
+            requestKey: selection,
+            clientKey: selection,
+            activeConnections: legacyActiveConnections,
+          }
+        : selection;
     if (context.stickySession) {
       const stickyTarget = this.stickyTargets.get(context.clientKey);
       if (stickyTarget && this.targets.includes(stickyTarget)) {
@@ -66,19 +75,26 @@ export class LoadBalancerRouter {
     }
     let target: string | null;
     switch (this.algorithm) {
-      case 'round_robin': target = this.selectRoundRobin(this.targets); break;
+      case 'round_robin':
+        target = this.selectRoundRobin(this.targets);
+        break;
       case 'least_connections': {
         const activeConnections = context.activeConnections || {};
         const minimum = Math.min(...this.targets.map((target) => activeConnections[target] || 0));
-        target = this.selectRoundRobin(this.targets.filter((target) => (activeConnections[target] || 0) === minimum));
+        target = this.selectRoundRobin(
+          this.targets.filter((target) => (activeConnections[target] || 0) === minimum),
+        );
         break;
       }
       case 'consistent_hashing':
-        target = this.ring?.getNode(context.requestKey) || null; break;
+        target = this.ring?.getNode(context.requestKey) || null;
+        break;
       case 'weighted':
-        target = this.selectSmoothWeightedTarget(); break;
+        target = this.selectSmoothWeightedTarget();
+        break;
       case 'ip_hash':
-        target = this.targets[this.stableHash(context.clientKey) % this.targets.length]; break;
+        target = this.targets[this.stableHash(context.clientKey) % this.targets.length];
+        break;
       default:
         target = this.targets[0];
     }
@@ -89,14 +105,23 @@ export class LoadBalancerRouter {
     return target;
   }
 
-  public recordUnavailableTargetFailure(): void { this.unavailableTargetFailures++; }
+  public recordUnavailableTargetFailure(): void {
+    this.unavailableTargetFailures++;
+  }
 
   public getMetrics(): { unavailableTargetFailures: number; distributionSkewPercent: number } {
     const counts = Object.values(this.routeCounts);
-    if (counts.length < 2) return { unavailableTargetFailures: this.unavailableTargetFailures, distributionSkewPercent: 0 };
+    if (counts.length < 2)
+      return {
+        unavailableTargetFailures: this.unavailableTargetFailures,
+        distributionSkewPercent: 0,
+      };
     const average = counts.reduce((sum, count) => sum + count, 0) / counts.length;
     const skew = average > 0 ? ((Math.max(...counts) - Math.min(...counts)) / average) * 100 : 0;
-    return { unavailableTargetFailures: this.unavailableTargetFailures, distributionSkewPercent: Math.round(skew * 10) / 10 };
+    return {
+      unavailableTargetFailures: this.unavailableTargetFailures,
+      distributionSkewPercent: Math.round(skew * 10) / 10,
+    };
   }
 
   public reset(): void {
@@ -107,7 +132,9 @@ export class LoadBalancerRouter {
     this.unavailableTargetFailures = 0;
   }
 
-  private recordRoute(target: string): void { this.routeCounts[target] = (this.routeCounts[target] || 0) + 1; }
+  private recordRoute(target: string): void {
+    this.routeCounts[target] = (this.routeCounts[target] || 0) + 1;
+  }
 
   private selectRoundRobin(candidates: string[]): string {
     const target = candidates[this.rrIndex % candidates.length];
@@ -124,7 +151,10 @@ export class LoadBalancerRouter {
       totalWeight += weight;
       const current = (this.currentWeights[target] || 0) + weight;
       this.currentWeights[target] = current;
-      if (current > selectedWeight) { selected = target; selectedWeight = current; }
+      if (current > selectedWeight) {
+        selected = target;
+        selectedWeight = current;
+      }
     }
     this.currentWeights[selected] -= totalWeight;
     return selected;

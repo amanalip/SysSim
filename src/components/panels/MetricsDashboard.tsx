@@ -63,7 +63,9 @@ export const MetricsDashboard: React.FC = () => {
           <div className={styles.miniStatItem}>
             <Zap size={11} color="var(--accent-primary)" />
             <span className={styles.miniStatLabel}>Completed QPS:</span>
-            <span className={styles.miniStatVal}>{metrics.completedThroughputQps ?? metrics.currentQps}</span>
+            <span className={styles.miniStatVal}>
+              {metrics.completedThroughputQps ?? metrics.currentQps}
+            </span>
           </div>
 
           <div className={styles.miniStatItem}>
@@ -77,13 +79,17 @@ export const MetricsDashboard: React.FC = () => {
           <div className={styles.miniStatItem}>
             <Clock size={11} color="var(--warning)" />
             <span className={styles.miniStatLabel}>p99:</span>
-            <span className={styles.miniStatVal}>{successPercent === null ? '--' : `${metrics.p99LatencyMs}ms`}</span>
+            <span className={styles.miniStatVal}>
+              {successPercent === null ? '--' : `${metrics.p99LatencyMs}ms`}
+            </span>
           </div>
 
           {bottlenecks.length > 0 && (
             <div className={styles.miniBottleneckPill}>
               <AlertTriangle size={11} color="#ffffff" />
-              <span>{bottlenecks.length} Bottleneck{bottlenecks.length > 1 ? 's' : ''}</span>
+              <span>
+                {bottlenecks.length} Bottleneck{bottlenecks.length > 1 ? 's' : ''}
+              </span>
             </div>
           )}
         </div>
@@ -102,9 +108,7 @@ export const MetricsDashboard: React.FC = () => {
       return;
     }
 
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      buildMetricsCsv(metrics.timeSeries);
+    const csvContent = 'data:text/csv;charset=utf-8,' + buildMetricsCsv(metrics.timeSeries);
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -220,23 +224,35 @@ export const MetricsDashboard: React.FC = () => {
             <div className={styles.summaryCardsGrid}>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Lifetime Offered / Accepted</span>
-                <span className={styles.summaryValue}>{(metrics.totalRequestsOffered || 0).toLocaleString()} / {(metrics.totalRequestsAccepted ?? metrics.totalRequestsSent).toLocaleString()}</span>
+                <span className={styles.summaryValue}>
+                  {(metrics.totalRequestsOffered || 0).toLocaleString()} /{' '}
+                  {(metrics.totalRequestsAccepted ?? metrics.totalRequestsSent).toLocaleString()}
+                </span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Lifetime Completed / Dropped</span>
-                <span className={styles.summaryValue}>{(metrics.totalRequestsCompleted || 0).toLocaleString()} / {(metrics.totalRequestsDropped || 0).toLocaleString()}</span>
+                <span className={styles.summaryValue}>
+                  {(metrics.totalRequestsCompleted || 0).toLocaleString()} /{' '}
+                  {(metrics.totalRequestsDropped || 0).toLocaleString()}
+                </span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Recent Successful p50</span>
-                <span className={styles.summaryValue}>{metrics.totalRequestsSuccess > 0 ? `${metrics.p50LatencyMs}ms` : '--'}</span>
+                <span className={styles.summaryValue}>
+                  {metrics.totalRequestsSuccess > 0 ? `${metrics.p50LatencyMs}ms` : '--'}
+                </span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Recent Successful p95</span>
-                <span className={styles.summaryValue}>{metrics.totalRequestsSuccess > 0 ? `${metrics.p95LatencyMs}ms` : '--'}</span>
+                <span className={styles.summaryValue}>
+                  {metrics.totalRequestsSuccess > 0 ? `${metrics.p95LatencyMs}ms` : '--'}
+                </span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Recent Successful p99</span>
-                <span className={styles.summaryValue}>{metrics.totalRequestsSuccess > 0 ? `${metrics.p99LatencyMs}ms` : '--'}</span>
+                <span className={styles.summaryValue}>
+                  {metrics.totalRequestsSuccess > 0 ? `${metrics.p99LatencyMs}ms` : '--'}
+                </span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Error Rate</span>
@@ -244,9 +260,7 @@ export const MetricsDashboard: React.FC = () => {
                   className={styles.summaryValue}
                   style={{
                     color:
-                      metrics.overallErrorRatePercent > 0
-                        ? 'var(--error)'
-                        : 'var(--text-primary)',
+                      metrics.overallErrorRatePercent > 0 ? 'var(--error)' : 'var(--text-primary)',
                   }}
                 >
                   {metrics.overallErrorRatePercent}%
@@ -260,32 +274,46 @@ export const MetricsDashboard: React.FC = () => {
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Latest Offered / Accepted QPS</span>
-                <span className={styles.summaryValue}>{metrics.offeredLoadQps || 0} / {metrics.acceptedLoadQps || 0}</span>
+                <span className={styles.summaryValue}>
+                  {metrics.offeredLoadQps || 0} / {metrics.acceptedLoadQps || 0}
+                </span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Latest Completed / Dropped QPS</span>
-                <span className={styles.summaryValue}>{metrics.completedThroughputQps || 0} / {metrics.droppedLoadQps || 0}</span>
+                <span className={styles.summaryValue}>
+                  {metrics.completedThroughputQps || 0} / {metrics.droppedLoadQps || 0}
+                </span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Recent Success / Failure Avg</span>
-                <span className={styles.summaryValue}>{metrics.successfulAvgLatencyMs || 0}ms / {metrics.failedAvgLatencyMs || 0}ms</span>
+                <span className={styles.summaryValue}>
+                  {metrics.successfulAvgLatencyMs || 0}ms / {metrics.failedAvgLatencyMs || 0}ms
+                </span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Queue / Service / Network Avg</span>
-                <span className={styles.summaryValue}>{metrics.avgQueueWaitMs || 0} / {metrics.avgServiceTimeMs || 0} / {metrics.avgNetworkTimeMs || 0}ms</span>
+                <span className={styles.summaryValue}>
+                  {metrics.avgQueueWaitMs || 0} / {metrics.avgServiceTimeMs || 0} /{' '}
+                  {metrics.avgNetworkTimeMs || 0}ms
+                </span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Producer Accepted</span>
-                <span className={styles.summaryValue}>{(metrics.totalProducerAccepted || 0).toLocaleString()}</span>
+                <span className={styles.summaryValue}>
+                  {(metrics.totalProducerAccepted || 0).toLocaleString()}
+                </span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Consumer Succeeded</span>
-                <span className={styles.summaryValue}>{(metrics.totalConsumerSucceeded || 0).toLocaleString()}</span>
+                <span className={styles.summaryValue}>
+                  {(metrics.totalConsumerSucceeded || 0).toLocaleString()}
+                </span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryLabel}>Retries / Dropped</span>
                 <span className={styles.summaryValue}>
-                  {(metrics.totalMessageRetries || 0).toLocaleString()} / {(metrics.totalMessagesDropped || 0).toLocaleString()}
+                  {(metrics.totalMessageRetries || 0).toLocaleString()} /{' '}
+                  {(metrics.totalMessagesDropped || 0).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -300,12 +328,12 @@ export const MetricsDashboard: React.FC = () => {
                     <AreaChart data={metrics.timeSeries}>
                       <defs>
                         <linearGradient id="p50Grad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#58a6ff" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#58a6ff" stopOpacity={0.0}/>
+                          <stop offset="5%" stopColor="#58a6ff" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#58a6ff" stopOpacity={0.0} />
                         </linearGradient>
                         <linearGradient id="p99Grad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#f85149" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#f85149" stopOpacity={0.0}/>
+                          <stop offset="5%" stopColor="#f85149" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#f85149" stopOpacity={0.0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
@@ -354,12 +382,12 @@ export const MetricsDashboard: React.FC = () => {
                     <AreaChart data={metrics.timeSeries}>
                       <defs>
                         <linearGradient id="qpsGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3fb950" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#3fb950" stopOpacity={0.0}/>
+                          <stop offset="5%" stopColor="#3fb950" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#3fb950" stopOpacity={0.0} />
                         </linearGradient>
                         <linearGradient id="errGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#f85149" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#f85149" stopOpacity={0.0}/>
+                          <stop offset="5%" stopColor="#f85149" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#f85149" stopOpacity={0.0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
@@ -416,7 +444,14 @@ export const MetricsDashboard: React.FC = () => {
                   <tbody>
                     {compList.length === 0 ? (
                       <tr>
-                        <td colSpan={12} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                        <td
+                          colSpan={12}
+                          style={{
+                            textAlign: 'center',
+                            padding: '24px',
+                            color: 'var(--text-muted)',
+                          }}
+                        >
                           No component telemetry recorded yet. Start simulation to observe metrics.
                         </td>
                       </tr>
@@ -435,8 +470,8 @@ export const MetricsDashboard: React.FC = () => {
                                   c.utilizationPercent > 85
                                     ? 'var(--error)'
                                     : c.utilizationPercent > 60
-                                    ? 'var(--warning)'
-                                    : 'var(--text-primary)',
+                                      ? 'var(--warning)'
+                                      : 'var(--text-primary)',
                                 fontWeight: c.utilizationPercent > 60 ? 700 : 400,
                               }}
                             >
@@ -447,13 +482,16 @@ export const MetricsDashboard: React.FC = () => {
                           <td style={{ fontFamily: 'var(--font-mono)' }}>{c.p95LatencyMs}ms</td>
                           <td
                             style={{
-                              color: c.errorRatePercent > 0 ? 'var(--error)' : 'var(--text-primary)',
+                              color:
+                                c.errorRatePercent > 0 ? 'var(--error)' : 'var(--text-primary)',
                               fontFamily: 'var(--font-mono)',
                             }}
                           >
                             {c.errorRatePercent}%
                           </td>
-                          <td style={{ fontFamily: 'var(--font-mono)' }}>{c.totalRequests.toLocaleString()}</td>
+                          <td style={{ fontFamily: 'var(--font-mono)' }}>
+                            {c.totalRequests.toLocaleString()}
+                          </td>
                           <td
                             style={{
                               color: c.failedRequests > 0 ? 'var(--error)' : 'var(--text-muted)',
@@ -463,7 +501,8 @@ export const MetricsDashboard: React.FC = () => {
                             {c.failedRequests.toLocaleString()}
                           </td>
                           <td style={{ fontFamily: 'var(--font-mono)' }}>
-                            {c.cacheHits || 0}/{c.cacheMisses || 0}/{c.cacheBypasses || 0}/{c.cacheCoalescedRequests || 0}
+                            {c.cacheHits || 0}/{c.cacheMisses || 0}/{c.cacheBypasses || 0}/
+                            {c.cacheCoalescedRequests || 0}
                           </td>
                           <td style={{ fontFamily: 'var(--font-mono)' }}>
                             {c.producerAccepted === undefined
@@ -507,7 +546,7 @@ export const MetricsDashboard: React.FC = () => {
                                                               ? `session cache hit/miss ${c.authCacheHits || 0}/${c.authCacheMisses || 0} · validation ${c.authValidationLatencyMs || 0}ms`
                                                               : c.nodeType === 'encryption_service'
                                                                 ? `operations ${c.encryptionOperations || 0} · latency ${c.encryptionLatencyMs || 0}ms · payload ${Math.round(c.encryptedPayloadKb || 0)}KB`
-                                  : '—'}
+                                                                : '—'}
                           </td>
                         </tr>
                       ))

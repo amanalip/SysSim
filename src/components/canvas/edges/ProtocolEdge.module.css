@@ -2,14 +2,29 @@
   stroke: var(--accent-primary);
   stroke-width: 2;
   fill: none;
-  transition: stroke 0.2s ease, stroke-width 0.2s ease;
+  transition:
+    stroke 0.2s ease,
+    stroke-width 0.2s ease;
 }
 
-.purpose_fallback { stroke-dasharray: 8 4; }
-.purpose_async { stroke: #a855f7; stroke-dasharray: 3 4; }
-.purpose_fanout { stroke: #f59e0b; }
-.purpose_replication { stroke: #22c55e; stroke-dasharray: 10 3; }
-.purpose_observability { stroke: #94a3b8; stroke-dasharray: 2 5; }
+.purpose_fallback {
+  stroke-dasharray: 8 4;
+}
+.purpose_async {
+  stroke: #a855f7;
+  stroke-dasharray: 3 4;
+}
+.purpose_fanout {
+  stroke: #f59e0b;
+}
+.purpose_replication {
+  stroke: #22c55e;
+  stroke-dasharray: 10 3;
+}
+.purpose_observability {
+  stroke: #94a3b8;
+  stroke-dasharray: 2 5;
+}
 
 .edgePathSelected {
   stroke: #60a5fa !important;
@@ -54,12 +69,24 @@
   letter-spacing: 0.02em;
 }
 
-.badge_request { color: var(--accent-primary); }
-.badge_fallback { color: var(--warning); }
-.badge_async { color: #c084fc; }
-.badge_fanout { color: #f59e0b; }
-.badge_replication { color: #4ade80; }
-.badge_observability { color: var(--text-secondary); }
+.badge_request {
+  color: var(--accent-primary);
+}
+.badge_fallback {
+  color: var(--warning);
+}
+.badge_async {
+  color: #c084fc;
+}
+.badge_fanout {
+  color: #f59e0b;
+}
+.badge_replication {
+  color: #4ade80;
+}
+.badge_observability {
+  color: var(--text-secondary);
+}
 
 .protocolBadge:hover {
   background-color: var(--bg-tertiary);

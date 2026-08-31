@@ -71,7 +71,10 @@ describe('Desktop UX/UI Enhancements (Features 17 & 18)', () => {
 
     const trace = useStore.getState().activeRequests[0];
     expect(trace.path.length).toBe(3);
-    const slowestHop = trace.path.reduce((max, h) => (h.latencyMs > max.latencyMs ? h : max), trace.path[0]);
+    const slowestHop = trace.path.reduce(
+      (max, h) => (h.latencyMs > max.latencyMs ? h : max),
+      trace.path[0],
+    );
     expect(slowestHop.nodeName).toBe('Database');
     expect(slowestHop.latencyMs).toBe(80);
   });

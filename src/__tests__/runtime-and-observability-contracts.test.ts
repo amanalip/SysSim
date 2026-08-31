@@ -212,7 +212,9 @@ describe('Deep Audit Pass 9 Bug Fixes & Feature Tests (10+ Verifications)', () =
     const nodeA = useStore.getState().addNode('client', { x: 0, y: 0 });
     const nodeB = useStore.getState().addNode('app_server', { x: 100, y: 0 });
     useStore.getState().addEdge(nodeA, nodeB, 'gRPC');
-    useStore.getState().addZone('Private VPC Network', 'private', { x: 0, y: 0, width: 400, height: 300 });
+    useStore
+      .getState()
+      .addZone('Private VPC Network', 'private', { x: 0, y: 0, width: 400, height: 300 });
 
     expect(useStore.getState().nodes.length).toBe(2);
     expect(useStore.getState().edges.length).toBe(1);
@@ -237,11 +239,36 @@ describe('Deep Audit Pass 9 Bug Fixes & Feature Tests (10+ Verifications)', () =
 
   it('10. verifies detectBottlenecks detects synchronous chaining across 5 nodes', () => {
     const nodes = [
-      { id: '1', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: { id: '1', name: 'Gateway', type: 'api_gateway' } } },
-      { id: '2', type: 'customComponent', position: { x: 50, y: 0 }, data: { config: { id: '2', name: 'Auth', type: 'app_server' } } },
-      { id: '3', type: 'customComponent', position: { x: 100, y: 0 }, data: { config: { id: '3', name: 'Core', type: 'app_server' } } },
-      { id: '4', type: 'customComponent', position: { x: 150, y: 0 }, data: { config: { id: '4', name: 'Payment', type: 'app_server' } } },
-      { id: '5', type: 'customComponent', position: { x: 200, y: 0 }, data: { config: { id: '5', name: 'DB', type: 'sql_db' } } },
+      {
+        id: '1',
+        type: 'customComponent',
+        position: { x: 0, y: 0 },
+        data: { config: { id: '1', name: 'Gateway', type: 'api_gateway' } },
+      },
+      {
+        id: '2',
+        type: 'customComponent',
+        position: { x: 50, y: 0 },
+        data: { config: { id: '2', name: 'Auth', type: 'app_server' } },
+      },
+      {
+        id: '3',
+        type: 'customComponent',
+        position: { x: 100, y: 0 },
+        data: { config: { id: '3', name: 'Core', type: 'app_server' } },
+      },
+      {
+        id: '4',
+        type: 'customComponent',
+        position: { x: 150, y: 0 },
+        data: { config: { id: '4', name: 'Payment', type: 'app_server' } },
+      },
+      {
+        id: '5',
+        type: 'customComponent',
+        position: { x: 200, y: 0 },
+        data: { config: { id: '5', name: 'DB', type: 'sql_db' } },
+      },
     ] as unknown as CanvasNode[];
 
     const edges: CanvasEdge[] = [

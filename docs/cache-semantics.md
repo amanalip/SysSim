@@ -36,12 +36,12 @@ Redis and local-cache entry capacity is `floor(sizeMb × 1024 / entrySizeKb)`, w
 
 Every entry records insertion time, last access, frequency, and expiry. Expired entries miss at `expiresAt <= now`. When a full cache admits a new key:
 
-| Policy | Entry removed |
-| --- | --- |
-| `LRU` | Least recently accessed |
-| `LFU` | Lowest access count; insertion order breaks ties |
-| `FIFO` | Earliest inserted |
-| `TTL` | Entry expiring soonest |
+| Policy | Entry removed                                    |
+| ------ | ------------------------------------------------ |
+| `LRU`  | Least recently accessed                          |
+| `LFU`  | Lowest access count; insertion order breaks ties |
+| `FIFO` | Earliest inserted                                |
+| `TTL`  | Entry expiring soonest                           |
 
 Redis and local-cache reads use their configured `readLatencyMs` for hits and misses.
 

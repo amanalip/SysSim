@@ -17,16 +17,48 @@ export const AUTH_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Implement standard OAuth 2.0 Authorization Code Flow with PKCE for secure client credential exchange.' },
-      { step: 2, hint: 'Issue asymmetric RSA/ECDSA-signed JWT access tokens with RS256 and JSON Web Key Sets (JWKS).' },
+      {
+        step: 1,
+        hint: 'Implement standard OAuth 2.0 Authorization Code Flow with PKCE for secure client credential exchange.',
+      },
+      {
+        step: 2,
+        hint: 'Issue asymmetric RSA/ECDSA-signed JWT access tokens with RS256 and JSON Web Key Sets (JWKS).',
+      },
       { step: 3, hint: 'Maintain token revocation lists and active sessions in Redis.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'clientApp', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'clientApp', 'Mobile / Web App') } },
-        { id: 'authSvr', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'authSvr', 'OAuth Identity Server') } },
-        { id: 'sessionCache', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'sessionCache', 'Session & Revocation Cache') } },
-        { id: 'userDb', type: 'customComponent', position: { x: 540, y: 220 }, data: { config: createDefaultConfig('sql_db', 'userDb', 'User Credentials DB') } },
+        {
+          id: 'clientApp',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'clientApp', 'Mobile / Web App') },
+        },
+        {
+          id: 'authSvr',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'authSvr', 'OAuth Identity Server') },
+        },
+        {
+          id: 'sessionCache',
+          type: 'customComponent',
+          position: { x: 540, y: 70 },
+          data: {
+            config: createDefaultConfig(
+              'redis_cache',
+              'sessionCache',
+              'Session & Revocation Cache',
+            ),
+          },
+        },
+        {
+          id: 'userDb',
+          type: 'customComponent',
+          position: { x: 540, y: 220 },
+          data: { config: createDefaultConfig('sql_db', 'userDb', 'User Credentials DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'clientApp', target: 'authSvr', data: { protocol: 'HTTP' } },
@@ -36,12 +68,16 @@ export const AUTH_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'Why is PKCE (Proof Key for Code Exchange) mandatory even for confidential clients now?',
-        answer: 'PKCE binds the authorization code request to the token exchange via code_verifier and code_challenge, preventing authorization code interception attacks.',
+        question:
+          'Why is PKCE (Proof Key for Code Exchange) mandatory even for confidential clients now?',
+        answer:
+          'PKCE binds the authorization code request to the token exchange via code_verifier and code_challenge, preventing authorization code interception attacks.',
       },
       {
-        question: 'How do downstream microservices verify JWT signatures without calling the auth server?',
-        answer: 'Microservices cache the identity server\'s public keys fetched from /.well-known/jwks.json and verify JWT signatures locally in nanoseconds.',
+        question:
+          'How do downstream microservices verify JWT signatures without calling the auth server?',
+        answer:
+          "Microservices cache the identity server's public keys fetched from /.well-known/jwks.json and verify JWT signatures locally in nanoseconds.",
       },
     ],
     sources: [
@@ -79,16 +115,46 @@ export const AUTH_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Model permissions as relation tuples: object#relation@user (e.g., doc:123#viewer@user:bob).' },
-      { step: 2, hint: 'Deploy multi-level in-memory graph caches with Zookies (consistency tokens) to prevent stale ACL reads.' },
+      {
+        step: 1,
+        hint: 'Model permissions as relation tuples: object#relation@user (e.g., doc:123#viewer@user:bob).',
+      },
+      {
+        step: 2,
+        hint: 'Deploy multi-level in-memory graph caches with Zookies (consistency tokens) to prevent stale ACL reads.',
+      },
       { step: 3, hint: 'Store canonical relation tuples in distributed Spanner / CockroachDB.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'clientSvc', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('app_server', 'clientSvc', 'Caller Microservice') } },
-        { id: 'aclEngine', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'aclEngine', 'Zanzibar ACL Evaluator') } },
-        { id: 'tupleCache', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'tupleCache', 'Relation Tuple Cache') } },
-        { id: 'spanner', type: 'customComponent', position: { x: 540, y: 220 }, data: { config: createDefaultConfig('nosql_db', 'spanner', 'Spanner Distributed DB') } },
+        {
+          id: 'clientSvc',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'clientSvc', 'Caller Microservice') },
+        },
+        {
+          id: 'aclEngine',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: {
+            config: createDefaultConfig('app_server', 'aclEngine', 'Zanzibar ACL Evaluator'),
+          },
+        },
+        {
+          id: 'tupleCache',
+          type: 'customComponent',
+          position: { x: 540, y: 70 },
+          data: {
+            config: createDefaultConfig('redis_cache', 'tupleCache', 'Relation Tuple Cache'),
+          },
+        },
+        {
+          id: 'spanner',
+          type: 'customComponent',
+          position: { x: 540, y: 220 },
+          data: { config: createDefaultConfig('nosql_db', 'spanner', 'Spanner Distributed DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'clientSvc', target: 'aclEngine', data: { protocol: 'gRPC' } },
@@ -99,11 +165,13 @@ export const AUTH_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'What is the "New Enemy Problem" in distributed authorization systems?',
-        answer: 'When a user removes permissions on a shared resource, a concurrent read with stale cache might grant access to the revoked user; Zanzibar uses Zookies with snapshot read timestamps to solve this.',
+        answer:
+          'When a user removes permissions on a shared resource, a concurrent read with stale cache might grant access to the revoked user; Zanzibar uses Zookies with snapshot read timestamps to solve this.',
       },
       {
         question: 'How does Zanzibar evaluate nested group memberships efficiently?',
-        answer: 'It parallelizes relation graph traversal, caching intermediate sub-graph expansion results across concurrent check requests.',
+        answer:
+          'It parallelizes relation graph traversal, caching intermediate sub-graph expansion results across concurrent check requests.',
       },
     ],
     sources: [
@@ -142,15 +210,43 @@ export const AUTH_SCENARIOS: Scenario[] = [
     },
     hints: [
       { step: 1, hint: 'Store salted SHA-256 hashes of API keys rather than plaintext keys.' },
-      { step: 2, hint: 'Cache active API key metadata, scopes, and tier quotas in local memory / Redis.' },
-      { step: 3, hint: 'Stream usage metering metrics asynchronously to Kafka for monthly billing calculations.' },
+      {
+        step: 2,
+        hint: 'Cache active API key metadata, scopes, and tier quotas in local memory / Redis.',
+      },
+      {
+        step: 3,
+        hint: 'Stream usage metering metrics asynchronously to Kafka for monthly billing calculations.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Developer API Client') } },
-        { id: 'gw', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('api_gateway', 'gw', 'API Gateway Auth Hook') } },
-        { id: 'keyCache', type: 'customComponent', position: { x: 500, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'keyCache', 'Hashed Key RAM Cache') } },
-        { id: 'meteringMq', type: 'customComponent', position: { x: 500, y: 220 }, data: { config: createDefaultConfig('message_queue', 'meteringMq', 'Metering Events Kafka') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Developer API Client') },
+        },
+        {
+          id: 'gw',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('api_gateway', 'gw', 'API Gateway Auth Hook') },
+        },
+        {
+          id: 'keyCache',
+          type: 'customComponent',
+          position: { x: 500, y: 70 },
+          data: { config: createDefaultConfig('redis_cache', 'keyCache', 'Hashed Key RAM Cache') },
+        },
+        {
+          id: 'meteringMq',
+          type: 'customComponent',
+          position: { x: 500, y: 220 },
+          data: {
+            config: createDefaultConfig('message_queue', 'meteringMq', 'Metering Events Kafka'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'gw', data: { protocol: 'HTTP' } },
@@ -161,11 +257,13 @@ export const AUTH_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'Why should API keys use human-readable prefixes (e.g. sk_live_...)?',
-        answer: 'Prefixes allow automated secret scanning bots (GitHub Secret Scanning) to detect leaked keys instantly and allow gateways to identify environment/account routing before hashing.',
+        answer:
+          'Prefixes allow automated secret scanning bots (GitHub Secret Scanning) to detect leaked keys instantly and allow gateways to identify environment/account routing before hashing.',
       },
       {
         question: 'How do you support zero-downtime key rotation?',
-        answer: 'Support dual-key verification where both old and new keys remain valid simultaneously during a configurable 30-day grace period.',
+        answer:
+          'Support dual-key verification where both old and new keys remain valid simultaneously during a configurable 30-day grace period.',
       },
     ],
     sources: [
@@ -203,16 +301,51 @@ export const AUTH_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Use BGP Anycast to announce IP prefixes across hundreds of globally distributed edge data centers, dispersing attack volume.' },
-      { step: 2, hint: 'Employ eBPF / XDP (eXpress Data Path) kernel packet filters to drop malicious packets at wire speed before kernel socket allocation.' },
-      { step: 3, hint: 'Deploy SYN cookies to handle TCP SYN floods without consuming server connection memory.' },
+      {
+        step: 1,
+        hint: 'Use BGP Anycast to announce IP prefixes across hundreds of globally distributed edge data centers, dispersing attack volume.',
+      },
+      {
+        step: 2,
+        hint: 'Employ eBPF / XDP (eXpress Data Path) kernel packet filters to drop malicious packets at wire speed before kernel socket allocation.',
+      },
+      {
+        step: 3,
+        hint: 'Deploy SYN cookies to handle TCP SYN floods without consuming server connection memory.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'botnet', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'botnet', 'Attack Traffic / Users') } },
-        { id: 'anycastEdge', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('load_balancer', 'anycastEdge', 'Anycast Edge BGP Router') } },
-        { id: 'xdpFilter', type: 'customComponent', position: { x: 540, y: 150 }, data: { config: createDefaultConfig('firewall', 'xdpFilter', 'XDP / eBPF Packet Filter') } },
-        { id: 'cleanOrigin', type: 'customComponent', position: { x: 800, y: 150 }, data: { config: createDefaultConfig('app_server', 'cleanOrigin', 'Protected Customer Origin') } },
+        {
+          id: 'botnet',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'botnet', 'Attack Traffic / Users') },
+        },
+        {
+          id: 'anycastEdge',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: {
+            config: createDefaultConfig('load_balancer', 'anycastEdge', 'Anycast Edge BGP Router'),
+          },
+        },
+        {
+          id: 'xdpFilter',
+          type: 'customComponent',
+          position: { x: 540, y: 150 },
+          data: {
+            config: createDefaultConfig('firewall', 'xdpFilter', 'XDP / eBPF Packet Filter'),
+          },
+        },
+        {
+          id: 'cleanOrigin',
+          type: 'customComponent',
+          position: { x: 800, y: 150 },
+          data: {
+            config: createDefaultConfig('app_server', 'cleanOrigin', 'Protected Customer Origin'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'botnet', target: 'anycastEdge', data: { protocol: 'TCP' } },
@@ -222,12 +355,15 @@ export const AUTH_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'Why is XDP (eXpress Data Path) exponentially faster than iptables for DDoS mitigation?',
-        answer: 'XDP runs eBPF bytecode directly inside the network interface card driver before the Linux network stack allocates an sk_buff data structure, dropping packets in nanoseconds.',
+        question:
+          'Why is XDP (eXpress Data Path) exponentially faster than iptables for DDoS mitigation?',
+        answer:
+          'XDP runs eBPF bytecode directly inside the network interface card driver before the Linux network stack allocates an sk_buff data structure, dropping packets in nanoseconds.',
       },
       {
         question: 'How do SYN cookies mitigate SYN flood attacks?',
-        answer: 'The server encodes connection state into the initial TCP sequence number without allocating memory for half-open connections; memory is allocated only when final ACK is returned.',
+        answer:
+          'The server encodes connection state into the initial TCP sequence number without allocating memory for half-open connections; memory is allocated only when final ACK is returned.',
       },
     ],
     sources: [
@@ -265,16 +401,53 @@ export const AUTH_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Deploy an Identity-Aware Proxy (IAP) terminating external traffic before reaching private enterprise networks.' },
-      { step: 2, hint: 'Enforce mutual TLS (mTLS) with client certificates bound to managed device hardware chips (TPM / Secure Enclave).' },
-      { step: 3, hint: 'Evaluate dynamic policy rules (device patch level, location, user role) on every single request.' },
+      {
+        step: 1,
+        hint: 'Deploy an Identity-Aware Proxy (IAP) terminating external traffic before reaching private enterprise networks.',
+      },
+      {
+        step: 2,
+        hint: 'Enforce mutual TLS (mTLS) with client certificates bound to managed device hardware chips (TPM / Secure Enclave).',
+      },
+      {
+        step: 3,
+        hint: 'Evaluate dynamic policy rules (device patch level, location, user role) on every single request.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'employee', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'employee', 'Employee Laptop / Device') } },
-        { id: 'iap', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('api_gateway', 'iap', 'Identity-Aware Proxy (IAP)') } },
-        { id: 'contextEngine', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('app_server', 'contextEngine', 'Context Engine & Device DB') } },
-        { id: 'internalApp', type: 'customComponent', position: { x: 540, y: 220 }, data: { config: createDefaultConfig('app_server', 'internalApp', 'Internal Enterprise App') } },
+        {
+          id: 'employee',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'employee', 'Employee Laptop / Device') },
+        },
+        {
+          id: 'iap',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('api_gateway', 'iap', 'Identity-Aware Proxy (IAP)') },
+        },
+        {
+          id: 'contextEngine',
+          type: 'customComponent',
+          position: { x: 540, y: 70 },
+          data: {
+            config: createDefaultConfig(
+              'app_server',
+              'contextEngine',
+              'Context Engine & Device DB',
+            ),
+          },
+        },
+        {
+          id: 'internalApp',
+          type: 'customComponent',
+          position: { x: 540, y: 220 },
+          data: {
+            config: createDefaultConfig('app_server', 'internalApp', 'Internal Enterprise App'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'employee', target: 'iap', data: { protocol: 'HTTP' } },
@@ -284,12 +457,15 @@ export const AUTH_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'What is the fundamental paradigm shift of BeyondCorp versus perimeter-based security?',
-        answer: 'Perimeter security assumes anything inside the corporate network is trusted; Zero Trust assumes the internal network is hostile and verifies every single request explicitly regardless of network location.',
+        question:
+          'What is the fundamental paradigm shift of BeyondCorp versus perimeter-based security?',
+        answer:
+          'Perimeter security assumes anything inside the corporate network is trusted; Zero Trust assumes the internal network is hostile and verifies every single request explicitly regardless of network location.',
       },
       {
         question: 'How is device identity validated tamper-proofly?',
-        answer: 'Cryptographic client certificates are generated inside hardware Trusted Platform Modules (TPM) and validated via mTLS handshake at the proxy.',
+        answer:
+          'Cryptographic client certificates are generated inside hardware Trusted Platform Modules (TPM) and validated via mTLS handshake at the proxy.',
       },
     ],
     sources: [

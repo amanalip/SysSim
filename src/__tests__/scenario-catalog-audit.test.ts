@@ -20,6 +20,14 @@ describe('scenario catalog audit', () => {
     broken[1].sources[0].supports = '';
     broken[1].referenceDesign.edges[0].data.protocol = 'SMTP' as never;
     const paths = auditScenarioCatalog(broken).map((issue) => issue.path);
-    expect(paths).toEqual(expect.arrayContaining(['id', 'slug', 'sources[0].url', 'sources[0].supports', 'referenceDesign.edges[0].protocol']));
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        'id',
+        'slug',
+        'sources[0].url',
+        'sources[0].supports',
+        'referenceDesign.edges[0].protocol',
+      ]),
+    );
   });
 });

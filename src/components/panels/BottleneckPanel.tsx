@@ -25,7 +25,8 @@ export const BottleneckPanel: React.FC = () => {
           <CheckCircle2 size={24} color="var(--success)" />
           <span className={styles.emptyTitle}>No Bottlenecks Detected</span>
           <span style={{ fontSize: 11 }}>
-            No issue matched the current baseline rules; this is not a production-readiness guarantee.
+            No issue matched the current baseline rules; this is not a production-readiness
+            guarantee.
           </span>
         </div>
       </div>
@@ -45,26 +46,20 @@ export const BottleneckPanel: React.FC = () => {
           <div
             key={issue.id}
             className={`${styles.issueCard} ${
-              issue.severity === 'critical'
-                ? styles.issueCardCritical
-                : styles.issueCardWarning
+              issue.severity === 'critical' ? styles.issueCardCritical : styles.issueCardWarning
             }`}
           >
             <div className={styles.issueHeader}>
               <div className={styles.titleArea}>
                 <AlertTriangle
                   size={14}
-                  color={
-                    issue.severity === 'critical' ? 'var(--error)' : 'var(--warning)'
-                  }
+                  color={issue.severity === 'critical' ? 'var(--error)' : 'var(--warning)'}
                 />
                 <span>{issue.title}</span>
               </div>
               <span
                 className={`${styles.severityBadge} ${
-                  issue.severity === 'critical'
-                    ? styles.badgeCritical
-                    : styles.badgeWarning
+                  issue.severity === 'critical' ? styles.badgeCritical : styles.badgeWarning
                 }`}
               >
                 {issue.severity}
@@ -73,7 +68,8 @@ export const BottleneckPanel: React.FC = () => {
 
             <div className={styles.issueDesc}>{issue.description}</div>
             <div className={styles.issueDesc}>
-              Impact {issue.impactScore || 0}/100 · {issue.confidence || 'low'} confidence · {issue.affectedTrafficPercent || 0}% estimated traffic
+              Impact {issue.impactScore || 0}/100 · {issue.confidence || 'low'} confidence ·{' '}
+              {issue.affectedTrafficPercent || 0}% estimated traffic
             </div>
 
             <div className={styles.fixArea}>
@@ -86,7 +82,9 @@ export const BottleneckPanel: React.FC = () => {
               onClick={() => {
                 selectNode(issue.nodeId);
                 useStore.getState().setIsPropertiesPanelOpen(true);
-                useStore.getState().addToast(`Inspecting ${issue.nodeName} in Properties Panel`, 'info');
+                useStore
+                  .getState()
+                  .addToast(`Inspecting ${issue.nodeName} in Properties Panel`, 'info');
               }}
             >
               <span>Inspect {issue.nodeName}</span>

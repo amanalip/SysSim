@@ -34,7 +34,7 @@ describe('Deep Audit Pass 8 Bug Fixes & Feature Tests (10+ Verifications)', () =
 
   it('4. verifies combined category and difficulty scenario filtering', () => {
     const matched = ALL_SCENARIOS.filter(
-      (s) => s.category === 'Core / Classic' && s.difficulty === 'Easy'
+      (s) => s.category === 'Core / Classic' && s.difficulty === 'Easy',
     );
     expect(matched.length).toBeGreaterThan(0);
     matched.forEach((s) => {
@@ -44,26 +44,39 @@ describe('Deep Audit Pass 8 Bug Fixes & Feature Tests (10+ Verifications)', () =
   });
 
   it('5. verifies scenario search query matches case-insensitive titles', () => {
-    const results = ALL_SCENARIOS.filter((s) =>
-      s.title.toLowerCase().includes('rate limiter')
-    );
+    const results = ALL_SCENARIOS.filter((s) => s.title.toLowerCase().includes('rate limiter'));
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].title.toLowerCase()).toContain('rate limiter');
   });
 
   it('6. verifies Chat Messaging preset calculations in EnvelopeCalculator', () => {
-    const output = calculateCapacity({ ...useStore.getState().calculatorInputs, qps: 20000, payloadSizeKb: 4, readWriteRatio: 2 });
+    const output = calculateCapacity({
+      ...useStore.getState().calculatorInputs,
+      qps: 20000,
+      payloadSizeKb: 4,
+      readWriteRatio: 2,
+    });
     expect(output.writeQps).toBeCloseTo(6666.67, 1);
     expect(output.dailyNewDataGb).toBeGreaterThan(0);
   });
 
   it('7. verifies Video Streaming media-heavy bandwidth calculations', () => {
-    const output = calculateCapacity({ ...useStore.getState().calculatorInputs, qps: 10000, payloadSizeKb: 500, readWriteRatio: 100, readResponsePayloadKb: 500 });
+    const output = calculateCapacity({
+      ...useStore.getState().calculatorInputs,
+      qps: 10000,
+      payloadSizeKb: 500,
+      readWriteRatio: 100,
+      readResponsePayloadKb: 500,
+    });
     expect(output.outboundBandwidthMbps).toBeGreaterThan(39000);
   });
 
   it('8. verifies E-Commerce standard architecture preset settings', () => {
-    const output = calculateCapacity({ ...useStore.getState().calculatorInputs, qps: 15000, serverCapacityQps: 1000 });
+    const output = calculateCapacity({
+      ...useStore.getState().calculatorInputs,
+      qps: 15000,
+      serverCapacityQps: 1000,
+    });
     expect(output.estimatedServersNeeded).toBe(30);
   });
 

@@ -8,7 +8,7 @@ export class QueueModel {
   constructor(
     maxDepth: number = 50000,
     private consumerRatePerSec: number = 2000,
-    private partitions: number = 8
+    private partitions: number = 8,
   ) {
     this.model = new MessagingModel({
       kind: 'message_queue',
@@ -31,17 +31,26 @@ export class QueueModel {
   }
 
   public enqueue(): { accepted: boolean; depth: number } {
-    const result = this.model.enqueue(`legacy-${this.nowMs}-${this.model.getDepth()}`, 'legacy', this.nowMs);
+    const result = this.model.enqueue(
+      `legacy-${this.nowMs}-${this.model.getDepth()}`,
+      'legacy',
+      this.nowMs,
+    );
     return { accepted: result.accepted, depth: result.depth };
   }
 
   public drain(deltaMs: number): void {
     this.nowMs += deltaMs;
-    this.model.drain(deltaMs, this.nowMs, {
-      replicas: 1,
-      concurrencyLimit: this.partitions,
-      processingRatePerSec: this.consumerRatePerSec,
-    }, () => true);
+    this.model.drain(
+      deltaMs,
+      this.nowMs,
+      {
+        replicas: 1,
+        concurrencyLimit: this.partitions,
+        processingRatePerSec: this.consumerRatePerSec,
+      },
+      () => true,
+    );
   }
 
   public getDepth(): number {

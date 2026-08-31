@@ -8,7 +8,13 @@ describe('Bugs Batch 1: Snapshot Manager & Scenario Interview Stepper', () => {
     useStore.setState({
       nodes: [],
       edges: [],
-      trafficConfig: { baseQps: 100, pattern: 'steady', burstMultiplier: 3, rampDurationSec: 30, spikeFrequencySec: 10 },
+      trafficConfig: {
+        baseQps: 100,
+        pattern: 'steady',
+        burstMultiplier: 3,
+        rampDurationSec: 30,
+        spikeFrequencySec: 10,
+      },
       simState: 'idle',
     });
   });

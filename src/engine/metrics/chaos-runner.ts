@@ -24,7 +24,8 @@ class ChaosRunner {
       const nextHealth = currentHealth === 'down' ? 'healthy' : 'down';
 
       if (nextHealth === 'down') {
-        if (!this.originalHealth.has(randomNode.id)) this.originalHealth.set(randomNode.id, currentHealth);
+        if (!this.originalHealth.has(randomNode.id))
+          this.originalHealth.set(randomNode.id, currentHealth);
       } else {
         const original = this.originalHealth.get(randomNode.id) || 'healthy';
         this.originalHealth.delete(randomNode.id);
@@ -33,10 +34,12 @@ class ChaosRunner {
       }
 
       useStore.getState().setNodeHealthOverride(randomNode.id, nextHealth, 'chaos');
-      useStore.getState().addToast(
-        `Chaos Monkey: Marked ${randomNode.data.config.name} as ${nextHealth.toUpperCase()}`,
-        nextHealth === 'down' ? 'error' : 'success'
-      );
+      useStore
+        .getState()
+        .addToast(
+          `Chaos Monkey: Marked ${randomNode.data.config.name} as ${nextHealth.toUpperCase()}`,
+          nextHealth === 'down' ? 'error' : 'success',
+        );
     }, intervalSec * 1000);
   }
 

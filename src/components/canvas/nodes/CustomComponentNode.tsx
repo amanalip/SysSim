@@ -1,6 +1,16 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Power, Settings, Trash2, AlertTriangle, Zap, Clock, Activity, Link2, Copy } from 'lucide-react';
+import {
+  Power,
+  Settings,
+  Trash2,
+  AlertTriangle,
+  Zap,
+  Clock,
+  Activity,
+  Link2,
+  Copy,
+} from 'lucide-react';
 import { AnyComponentConfig } from '../../../model/types';
 import { categoryColors } from '../../../theme';
 import { ComponentIcon } from '../../icons/ComponentIcon';
@@ -11,14 +21,19 @@ interface NodeData {
   config: AnyComponentConfig;
 }
 
-export const CustomComponentNode: React.FC<NodeProps> = ({
-  id,
-  data,
-  selected,
-}) => {
+export const CustomComponentNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const nodeData = data as unknown as NodeData;
   const config = nodeData.config;
-  const { selectNode, removeNode, duplicateNode, setNodeHealthOverride, bottlenecks, metrics, simState, addToast } = useStore();
+  const {
+    selectNode,
+    removeNode,
+    duplicateNode,
+    setNodeHealthOverride,
+    bottlenecks,
+    metrics,
+    simState,
+    addToast,
+  } = useStore();
 
   const categoryColor = categoryColors[config.category]?.main || 'var(--accent-primary)';
   const isDown = config.health === 'down';
@@ -132,16 +147,9 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
         </div>
       )}
 
-      <Handle
-        type="target"
-        position={Position.Left}
-        className={styles.customHandle}
-      />
+      <Handle type="target" position={Position.Left} className={styles.customHandle} />
 
-      <div
-        className={styles.categoryStripe}
-        style={{ backgroundColor: categoryColor }}
-      />
+      <div className={styles.categoryStripe} style={{ backgroundColor: categoryColor }} />
 
       {hasBottleneck && (
         <div
@@ -196,8 +204,8 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
                 nodeMetric.utilizationPercent > 85
                   ? styles.utilCritical
                   : nodeMetric.utilizationPercent > 60
-                  ? styles.utilWarning
-                  : styles.utilNormal
+                    ? styles.utilWarning
+                    : styles.utilNormal
               }`}
               title="Capacity Utilization"
             >
@@ -242,11 +250,7 @@ export const CustomComponentNode: React.FC<NodeProps> = ({
         </div>
       </div>
 
-      <Handle
-        type="source"
-        position={Position.Right}
-        className={styles.customHandle}
-      />
+      <Handle type="source" position={Position.Right} className={styles.customHandle} />
     </div>
   );
 };

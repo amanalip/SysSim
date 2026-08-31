@@ -20,7 +20,11 @@ export class LoadBalancerHealthModel {
     const healthy = actualHealth !== 'down';
     let state = this.states.get(targetId);
     if (!state) {
-      state = { eligible: healthy, lastCheckMs: nowMs, healthySinceMs: healthy ? nowMs : undefined };
+      state = {
+        eligible: healthy,
+        lastCheckMs: nowMs,
+        healthySinceMs: healthy ? nowMs : undefined,
+      };
       this.states.set(targetId, state);
       return state.eligible;
     }
@@ -38,5 +42,7 @@ export class LoadBalancerHealthModel {
     return state.eligible;
   }
 
-  public reset(): void { this.states.clear(); }
+  public reset(): void {
+    this.states.clear();
+  }
 }

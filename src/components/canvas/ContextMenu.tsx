@@ -1,13 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  Settings,
-  Copy,
-  Power,
-  Trash2,
-  Plus,
-  Layers,
-  LayoutGrid,
-} from 'lucide-react';
+import { Settings, Copy, Power, Trash2, Plus, Layers, LayoutGrid } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { ComponentType, ZoneData } from '../../model/types';
 import styles from './ContextMenu.module.css';
@@ -27,21 +19,10 @@ interface ContextMenuProps {
   onAutoLayout: () => void;
 }
 
-export const ContextMenu: React.FC<ContextMenuProps> = ({
-  menuState,
-  onClose,
-  onAutoLayout,
-}) => {
+export const ContextMenu: React.FC<ContextMenuProps> = ({ menuState, onClose, onAutoLayout }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const {
-    nodes,
-    addNode,
-    duplicateNode,
-    selectNode,
-    removeNode,
-    setNodeHealthOverride,
-    addZone,
-  } = useStore();
+  const { nodes, addNode, duplicateNode, selectNode, removeNode, setNodeHealthOverride, addZone } =
+    useStore();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -64,9 +45,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
   if (!menuState.isOpen) return null;
 
-  const targetNode = menuState.nodeId
-    ? nodes.find((n) => n.id === menuState.nodeId)
-    : null;
+  const targetNode = menuState.nodeId ? nodes.find((n) => n.id === menuState.nodeId) : null;
 
   const handleAddQuickComponent = (type: ComponentType) => {
     addNode(type, { x: menuState.flowX, y: menuState.flowY });
@@ -92,8 +71,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
   const handleToggleHealth = () => {
     if (targetNode) {
-      const nextHealth =
-        targetNode.data.config.health === 'down' ? 'healthy' : 'down';
+      const nextHealth = targetNode.data.config.health === 'down' ? 'healthy' : 'down';
       setNodeHealthOverride(targetNode.id, nextHealth);
     }
     onClose();
@@ -115,15 +93,17 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   };
 
   // Clamping coordinates inside viewport
-  const safeX = typeof window !== 'undefined' ? Math.max(10, Math.min(menuState.x, window.innerWidth - 220)) : menuState.x;
-  const safeY = typeof window !== 'undefined' ? Math.max(10, Math.min(menuState.y, window.innerHeight - 340)) : menuState.y;
+  const safeX =
+    typeof window !== 'undefined'
+      ? Math.max(10, Math.min(menuState.x, window.innerWidth - 220))
+      : menuState.x;
+  const safeY =
+    typeof window !== 'undefined'
+      ? Math.max(10, Math.min(menuState.y, window.innerHeight - 340))
+      : menuState.y;
 
   return (
-    <div
-      ref={menuRef}
-      className={styles.contextMenu}
-      style={{ top: safeY, left: safeX }}
-    >
+    <div ref={menuRef} className={styles.contextMenu} style={{ top: safeY, left: safeX }}>
       {targetNode ? (
         <>
           <div className={styles.menuHeader}>{targetNode.data.config.name}</div>
@@ -138,16 +118,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           <button className={styles.menuItem} onClick={handleToggleHealth}>
             <Power size={13} />
             <span>
-              {targetNode.data.config.health === 'down'
-                ? 'Mark Healthy'
-                : 'Inject Failure (Down)'}
+              {targetNode.data.config.health === 'down' ? 'Mark Healthy' : 'Inject Failure (Down)'}
             </span>
           </button>
           <div className={styles.menuDivider} />
-          <button
-            className={`${styles.menuItem} ${styles.menuItemDanger}`}
-            onClick={handleDelete}
-          >
+          <button className={`${styles.menuItem} ${styles.menuItemDanger}`} onClick={handleDelete}>
             <Trash2 size={13} />
             <span>Delete</span>
           </button>
@@ -155,10 +130,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       ) : (
         <>
           <div className={styles.menuHeader}>Add Component</div>
-          <button
-            className={styles.menuItem}
-            onClick={() => handleAddQuickComponent('client')}
-          >
+          <button className={styles.menuItem} onClick={() => handleAddQuickComponent('client')}>
             <Plus size={13} />
             <span>Client</span>
           </button>
@@ -169,17 +141,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             <Plus size={13} />
             <span>Load Balancer</span>
           </button>
-          <button
-            className={styles.menuItem}
-            onClick={() => handleAddQuickComponent('app_server')}
-          >
+          <button className={styles.menuItem} onClick={() => handleAddQuickComponent('app_server')}>
             <Plus size={13} />
             <span>App Server</span>
           </button>
-          <button
-            className={styles.menuItem}
-            onClick={() => handleAddQuickComponent('sql_db')}
-          >
+          <button className={styles.menuItem} onClick={() => handleAddQuickComponent('sql_db')}>
             <Plus size={13} />
             <span>SQL Database</span>
           </button>
@@ -207,10 +173,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             <Layers size={13} />
             <span>Private Zone</span>
           </button>
-          <button
-            className={styles.menuItem}
-            onClick={() => handleAddZone('data', 'Data Tier')}
-          >
+          <button className={styles.menuItem} onClick={() => handleAddZone('data', 'Data Tier')}>
             <Layers size={13} />
             <span>Data Tier</span>
           </button>

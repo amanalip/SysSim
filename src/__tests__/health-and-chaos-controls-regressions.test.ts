@@ -9,7 +9,13 @@ describe('Bugs Batch 2: Properties Panel Health Sync & Chaos Drills', () => {
     useStore.setState({
       nodes: [],
       edges: [],
-      trafficConfig: { baseQps: 100, pattern: 'steady', burstMultiplier: 3, rampDurationSec: 30, spikeFrequencySec: 10 },
+      trafficConfig: {
+        baseQps: 100,
+        pattern: 'steady',
+        burstMultiplier: 3,
+        rampDurationSec: 30,
+        spikeFrequencySec: 10,
+      },
       nodeHealthOverrides: {},
     });
   });

@@ -80,10 +80,7 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpenMenu(null);
       }
     };
@@ -123,7 +120,10 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
     e.preventDefault();
     e.stopPropagation();
     toggleCutEdge(id);
-    addToast(isCut ? 'Restored network connection' : 'Cut network connection', isCut ? 'success' : 'warning');
+    addToast(
+      isCut ? 'Restored network connection' : 'Cut network connection',
+      isCut ? 'success' : 'warning',
+    );
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -163,7 +163,11 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
             }}
             aria-label={`Transport protocol: ${currentProtocol}. Click to change.`}
             aria-expanded={openMenu === 'protocol'}
-            title={isCut ? 'Connection is CUT (Click to change protocol)' : 'Click to change transport protocol'}
+            title={
+              isCut
+                ? 'Connection is CUT (Click to change protocol)'
+                : 'Click to change transport protocol'
+            }
           >
             <span>{isCut ? `[CUT] ${currentProtocol}` : currentProtocol}</span>
             <ChevronDown size={10} />
@@ -193,11 +197,7 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
             <Scissors size={10} />
           </button>
 
-          <button
-            className={styles.edgeDeleteBtn}
-            onClick={handleDelete}
-            title="Delete connection"
-          >
+          <button className={styles.edgeDeleteBtn} onClick={handleDelete} title="Delete connection">
             <X size={10} />
           </button>
 
@@ -218,11 +218,16 @@ export const ProtocolEdge: React.FC<EdgeProps> = ({
           )}
 
           {openMenu === 'purpose' && (
-            <div className={`${styles.protocolSelect} ${styles.purposeSelect}`} role="menu" aria-label="Edge purpose options">
+            <div
+              className={`${styles.protocolSelect} ${styles.purposeSelect}`}
+              role="menu"
+              aria-label="Edge purpose options"
+            >
               {EDGE_PURPOSES.map((purpose) => {
-                const validation = sourceType && targetType
-                  ? validateEdgePurpose(sourceType, targetType, currentProtocol, purpose)
-                  : { valid: purpose === 'request', reason: 'Missing endpoint metadata' };
+                const validation =
+                  sourceType && targetType
+                    ? validateEdgePurpose(sourceType, targetType, currentProtocol, purpose)
+                    : { valid: purpose === 'request', reason: 'Missing endpoint metadata' };
                 return (
                   <button
                     key={purpose}

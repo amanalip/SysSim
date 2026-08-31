@@ -74,18 +74,18 @@ npm run preview
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-| --- | --- |
-| `Space` | Start / Pause simulation |
-| `Ctrl + Z` / `Cmd + Z` | Undo canvas action |
-| `Ctrl + Shift + Z` | Redo canvas action |
-| `Ctrl + D` / `Cmd + D` | Duplicate selected component |
-| `Ctrl + A` / `Cmd + A` | Select all components |
-| `Delete` / `Backspace` | Delete selected component or edge |
-| `L` | Auto layout (topological rank) |
-| `C` | Toggle Chaos Monkey failure injection |
-| `M` | Toggle real-time metrics drawer |
-| `?` | Show keyboard shortcuts modal |
+| Key                    | Action                                |
+| ---------------------- | ------------------------------------- |
+| `Space`                | Start / Pause simulation              |
+| `Ctrl + Z` / `Cmd + Z` | Undo canvas action                    |
+| `Ctrl + Shift + Z`     | Redo canvas action                    |
+| `Ctrl + D` / `Cmd + D` | Duplicate selected component          |
+| `Ctrl + A` / `Cmd + A` | Select all components                 |
+| `Delete` / `Backspace` | Delete selected component or edge     |
+| `L`                    | Auto layout (topological rank)        |
+| `C`                    | Toggle Chaos Monkey failure injection |
+| `M`                    | Toggle real-time metrics drawer       |
+| `?`                    | Show keyboard shortcuts modal         |
 
 ---
 

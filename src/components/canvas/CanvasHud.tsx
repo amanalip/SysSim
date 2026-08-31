@@ -75,10 +75,20 @@ export const CanvasHud: React.FC = () => {
       <div className={styles.divider} />
 
       <div className={styles.toolsGroup}>
-        <button className={styles.iconBtn} onClick={undo} disabled={!canUndo} title="Undo graph change">
+        <button
+          className={styles.iconBtn}
+          onClick={undo}
+          disabled={!canUndo}
+          title="Undo graph change"
+        >
           <Undo2 size={14} />
         </button>
-        <button className={styles.iconBtn} onClick={redo} disabled={!canRedo} title="Redo graph change">
+        <button
+          className={styles.iconBtn}
+          onClick={redo}
+          disabled={!canRedo}
+          title="Redo graph change"
+        >
           <Redo2 size={14} />
         </button>
       </div>

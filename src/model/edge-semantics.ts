@@ -61,44 +61,72 @@ export function validateEdgePurpose(
   }
 
   if (purpose === 'request' && CACHE_COMPONENTS.has(sourceType)) {
-    return { valid: false, reason: 'Cache origin paths must use fallback so hits terminate before origin access.' };
+    return {
+      valid: false,
+      reason: 'Cache origin paths must use fallback so hits terminate before origin access.',
+    };
   }
 
-  if (purpose === 'async' && !(
-    MESSAGE_COMPONENTS.has(sourceType) ||
-    MESSAGE_COMPONENTS.has(targetType) ||
-    protocol === 'pub/sub' ||
-    protocol === 'MQTT'
-  )) {
-    return { valid: false, reason: 'Async edges require a messaging endpoint or pub/sub transport.' };
+  if (
+    purpose === 'async' &&
+    !(
+      MESSAGE_COMPONENTS.has(sourceType) ||
+      MESSAGE_COMPONENTS.has(targetType) ||
+      protocol === 'pub/sub' ||
+      protocol === 'MQTT'
+    )
+  ) {
+    return {
+      valid: false,
+      reason: 'Async edges require a messaging endpoint or pub/sub transport.',
+    };
   }
 
-  if (purpose === 'fanout' && !(
-    FANOUT_COMPONENTS.has(sourceType) ||
-    sourceType === 'app_server' ||
-    sourceType === 'api_gateway'
-  )) {
-    return { valid: false, reason: 'Fanout must originate from pub/sub, an event bus, app server, or API gateway.' };
+  if (
+    purpose === 'fanout' &&
+    !(
+      FANOUT_COMPONENTS.has(sourceType) ||
+      sourceType === 'app_server' ||
+      sourceType === 'api_gateway'
+    )
+  ) {
+    return {
+      valid: false,
+      reason: 'Fanout must originate from pub/sub, an event bus, app server, or API gateway.',
+    };
   }
 
-  if (purpose === 'fallback' && !(
-    CACHE_COMPONENTS.has(sourceType) ||
-    sourceType === 'app_server' ||
-    sourceType === 'serverless' ||
-    sourceType === 'api_gateway' ||
-    sourceType === 'reverse_proxy'
-  )) {
-    return { valid: false, reason: 'Fallback must originate from a cache or request-processing component.' };
+  if (
+    purpose === 'fallback' &&
+    !(
+      CACHE_COMPONENTS.has(sourceType) ||
+      sourceType === 'app_server' ||
+      sourceType === 'serverless' ||
+      sourceType === 'api_gateway' ||
+      sourceType === 'reverse_proxy'
+    )
+  ) {
+    return {
+      valid: false,
+      reason: 'Fallback must originate from a cache or request-processing component.',
+    };
   }
 
-  if (purpose === 'replication' && !(
-    STATEFUL_COMPONENTS.has(sourceType) && STATEFUL_COMPONENTS.has(targetType)
-  )) {
-    return { valid: false, reason: 'Replication edges require stateful storage or cache endpoints.' };
+  if (
+    purpose === 'replication' &&
+    !(STATEFUL_COMPONENTS.has(sourceType) && STATEFUL_COMPONENTS.has(targetType))
+  ) {
+    return {
+      valid: false,
+      reason: 'Replication edges require stateful storage or cache endpoints.',
+    };
   }
 
   if (purpose === 'observability' && !OBSERVABILITY_TARGETS.has(targetType)) {
-    return { valid: false, reason: 'Observability edges must target telemetry-capable storage or messaging.' };
+    return {
+      valid: false,
+      reason: 'Observability edges must target telemetry-capable storage or messaging.',
+    };
   }
 
   return { valid: true };

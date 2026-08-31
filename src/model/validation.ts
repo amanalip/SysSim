@@ -20,7 +20,8 @@ export const CONNECTION_RULES: Record<ComponentType, ConnectionRule> = {
       'browser_cache',
     ],
     defaultProtocol: 'HTTP',
-    description: 'Clients typically connect to edge gateways, DNS, load balancers, CDNs, or firewalls.',
+    description:
+      'Clients typically connect to edge gateways, DNS, load balancers, CDNs, or firewalls.',
   },
   dns: {
     allowedTargets: ['cdn', 'load_balancer', 'api_gateway', 'reverse_proxy', 'firewall', 'client'],
@@ -28,7 +29,14 @@ export const CONNECTION_RULES: Record<ComponentType, ConnectionRule> = {
     description: 'DNS resolves traffic to CDNs, load balancers, or gateways.',
   },
   firewall: {
-    allowedTargets: ['load_balancer', 'api_gateway', 'reverse_proxy', 'cdn', 'rate_limiter', 'app_server'],
+    allowedTargets: [
+      'load_balancer',
+      'api_gateway',
+      'reverse_proxy',
+      'cdn',
+      'rate_limiter',
+      'app_server',
+    ],
     defaultProtocol: 'HTTP',
     description: 'Firewalls forward filtered traffic to load balancers, API gateways, or proxies.',
   },
@@ -38,7 +46,14 @@ export const CONNECTION_RULES: Record<ComponentType, ConnectionRule> = {
     description: 'Rate limiters sit before API gateways or backend servers.',
   },
   cdn: {
-    allowedTargets: ['load_balancer', 'api_gateway', 'object_storage', 'reverse_proxy', 'app_server', 'cdn_cache'],
+    allowedTargets: [
+      'load_balancer',
+      'api_gateway',
+      'object_storage',
+      'reverse_proxy',
+      'app_server',
+      'cdn_cache',
+    ],
     defaultProtocol: 'HTTP',
     description: 'CDNs route cache misses to origin servers or object storage.',
   },
@@ -209,7 +224,7 @@ export interface ValidationResult {
 
 export function validateConnection(
   sourceType: ComponentType,
-  targetType: ComponentType
+  targetType: ComponentType,
 ): ValidationResult {
   const rule = CONNECTION_RULES[sourceType];
   if (!rule) {

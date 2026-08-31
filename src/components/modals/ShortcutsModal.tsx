@@ -32,13 +32,26 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
-      <div ref={dialogRef} className={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" tabIndex={-1} onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={dialogRef}
+        className={styles.modalContent}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcuts-title"
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className={styles.modalHeader}>
           <div id="shortcuts-title" className={styles.modalTitle}>
             <Keyboard size={16} color="var(--accent-primary)" />
             <span>Keyboard Shortcuts</span>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Close keyboard shortcuts" title="Close shortcuts (Escape)">
+          <button
+            className={styles.closeBtn}
+            onClick={onClose}
+            aria-label="Close keyboard shortcuts"
+            title="Close shortcuts (Escape)"
+          >
             <X size={15} />
           </button>
         </div>

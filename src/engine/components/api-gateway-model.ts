@@ -42,7 +42,11 @@ export class ApiGatewayModel {
     }
   }
 
-  public begin(nowMs: number): { allowed: boolean; reason?: 'throttled' | 'open_circuit'; latencyMs: number } {
+  public begin(nowMs: number): {
+    allowed: boolean;
+    reason?: 'throttled' | 'open_circuit';
+    latencyMs: number;
+  } {
     if (this.config.circuitBreakerEnabled && this.circuitState === 'open') {
       if (nowMs - this.openedAtMs >= 10_000) this.circuitState = 'half_open';
       else {
@@ -57,12 +61,19 @@ export class ApiGatewayModel {
     return { allowed: true, latencyMs: AUTH_OVERHEAD_MS[this.config.authMode] };
   }
 
-  public finish(nowMs: number, downstreamLatencyMs: number, success: boolean): { timedOut: boolean } {
+  public finish(
+    nowMs: number,
+    downstreamLatencyMs: number,
+    success: boolean,
+  ): { timedOut: boolean } {
     const timedOut = downstreamLatencyMs > Math.max(1, this.config.timeoutMs);
     if (timedOut) this.timeouts++;
     if (timedOut || !success) {
       this.consecutiveFailures++;
-      if (this.config.circuitBreakerEnabled && (this.circuitState === 'half_open' || this.consecutiveFailures >= 3)) {
+      if (
+        this.config.circuitBreakerEnabled &&
+        (this.circuitState === 'half_open' || this.consecutiveFailures >= 3)
+      ) {
         this.circuitState = 'open';
         this.openedAtMs = nowMs;
       }

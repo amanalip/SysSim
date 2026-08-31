@@ -1,10 +1,5 @@
 export type ComponentCategory =
-  | 'compute'
-  | 'networking'
-  | 'storage'
-  | 'caching'
-  | 'messaging'
-  | 'security';
+  'compute' | 'networking' | 'storage' | 'caching' | 'messaging' | 'security';
 
 export type ComponentType =
   // Compute
@@ -46,25 +41,13 @@ export type NodeHealthStatus = 'healthy' | 'degraded' | 'down' | 'overloaded';
 export type EdgeProtocol = 'HTTP' | 'gRPC' | 'WebSocket' | 'TCP' | 'UDP' | 'pub/sub' | 'MQTT';
 
 export type EdgePurpose =
-  | 'request'
-  | 'fallback'
-  | 'async'
-  | 'fanout'
-  | 'replication'
-  | 'observability';
+  'request' | 'fallback' | 'async' | 'fanout' | 'replication' | 'observability';
 
 export type LoadBalancerAlgorithm =
-  | 'round_robin'
-  | 'least_connections'
-  | 'consistent_hashing'
-  | 'weighted'
-  | 'ip_hash';
+  'round_robin' | 'least_connections' | 'consistent_hashing' | 'weighted' | 'ip_hash';
 
 export type RateLimiterAlgorithm =
-  | 'token_bucket'
-  | 'sliding_window'
-  | 'fixed_window'
-  | 'leaky_bucket';
+  'token_bucket' | 'sliding_window' | 'fixed_window' | 'leaky_bucket';
 
 export type CacheEvictionPolicy = 'LRU' | 'LFU' | 'TTL' | 'FIFO';
 

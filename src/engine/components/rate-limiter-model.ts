@@ -37,24 +37,41 @@ export class RateLimiterModel {
 
     if (this.algorithm === 'token_bucket') {
       const elapsedMs = Math.max(0, nowMs - this.lastUpdateMs);
-      this.tokens = Math.min(Math.max(0, this.burstCapacity), this.tokens + (elapsedMs / 1000) * limit);
+      this.tokens = Math.min(
+        Math.max(0, this.burstCapacity),
+        this.tokens + (elapsedMs / 1000) * limit,
+      );
       this.lastUpdateMs = nowMs;
       if (this.tokens >= 1) {
         this.tokens -= 1;
         decision = { allowed: true, latencyMs: this.decisionLatencyMs, queued: false };
       } else {
-        decision = { allowed: false, latencyMs: this.decisionLatencyMs, queued: false, reason: 'burst_exhausted' };
+        decision = {
+          allowed: false,
+          latencyMs: this.decisionLatencyMs,
+          queued: false,
+          reason: 'burst_exhausted',
+        };
       }
     } else if (this.algorithm === 'leaky_bucket') {
       const elapsedMs = Math.max(0, nowMs - this.lastUpdateMs);
       this.leakyQueueDepth = Math.max(0, this.leakyQueueDepth - (elapsedMs / 1000) * limit);
       this.lastUpdateMs = nowMs;
       if (this.leakyQueueDepth + 1 > Math.max(0, this.burstCapacity)) {
-        decision = { allowed: false, latencyMs: this.decisionLatencyMs, queued: false, reason: 'queue_full' };
+        decision = {
+          allowed: false,
+          latencyMs: this.decisionLatencyMs,
+          queued: false,
+          reason: 'queue_full',
+        };
       } else {
         const queueDelayMs = limit > 0 ? (this.leakyQueueDepth / limit) * 1000 : 0;
         this.leakyQueueDepth += 1;
-        decision = { allowed: true, latencyMs: this.decisionLatencyMs + queueDelayMs, queued: queueDelayMs > 0 };
+        decision = {
+          allowed: true,
+          latencyMs: this.decisionLatencyMs + queueDelayMs,
+          queued: queueDelayMs > 0,
+        };
       }
     } else if (this.algorithm === 'fixed_window') {
       const windowIndex = Math.floor(nowMs / windowMs);
@@ -67,27 +84,42 @@ export class RateLimiterModel {
         this.fixedWindowCount++;
         decision = { allowed: true, latencyMs: this.decisionLatencyMs, queued: false };
       } else {
-        decision = { allowed: false, latencyMs: this.decisionLatencyMs, queued: false, reason: 'window_exhausted' };
+        decision = {
+          allowed: false,
+          latencyMs: this.decisionLatencyMs,
+          queued: false,
+          reason: 'window_exhausted',
+        };
       }
     } else {
       const threshold = nowMs - windowMs;
-      this.slidingWindowTimestamps = this.slidingWindowTimestamps.filter((timestamp) => timestamp > threshold);
+      this.slidingWindowTimestamps = this.slidingWindowTimestamps.filter(
+        (timestamp) => timestamp > threshold,
+      );
       const capacity = Math.max(0, Math.floor(limit * this.windowSizeSec));
       if (this.slidingWindowTimestamps.length < capacity) {
         this.slidingWindowTimestamps.push(nowMs);
         decision = { allowed: true, latencyMs: this.decisionLatencyMs, queued: false };
       } else {
-        decision = { allowed: false, latencyMs: this.decisionLatencyMs, queued: false, reason: 'window_exhausted' };
+        decision = {
+          allowed: false,
+          latencyMs: this.decisionLatencyMs,
+          queued: false,
+          reason: 'window_exhausted',
+        };
       }
     }
 
-    if (decision.allowed) this.accepted++; else this.rejected++;
+    if (decision.allowed) this.accepted++;
+    else this.rejected++;
     if (decision.queued) this.queued++;
     this.decisionLatencyTotalMs += decision.latencyMs;
     return decision;
   }
 
-  public allowRequest(nowMs: number = 0): boolean { return this.evaluateRequest(nowMs).allowed; }
+  public allowRequest(nowMs: number = 0): boolean {
+    return this.evaluateRequest(nowMs).allowed;
+  }
 
   public getMetrics() {
     const decisions = this.accepted + this.rejected;

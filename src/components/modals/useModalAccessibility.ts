@@ -20,11 +20,13 @@ export function useModalAccessibility(
   onCloseRef.current = onClose;
   useEffect(() => {
     if (!isOpen) return;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusInitial = () => {
-      const target = initialFocusRef?.current
-        ?? dialogRef.current?.querySelector<HTMLElement>(focusableSelector)
-        ?? dialogRef.current;
+      const target =
+        initialFocusRef?.current ??
+        dialogRef.current?.querySelector<HTMLElement>(focusableSelector) ??
+        dialogRef.current;
       target?.focus();
     };
     const frame = requestAnimationFrame(focusInitial);
@@ -35,8 +37,9 @@ export function useModalAccessibility(
         return;
       }
       if (event.key !== 'Tab' || !dialogRef.current) return;
-      const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>(focusableSelector)]
-        .filter((element) => !element.hidden && element.getAttribute('aria-hidden') !== 'true');
+      const focusable = [
+        ...dialogRef.current.querySelectorAll<HTMLElement>(focusableSelector),
+      ].filter((element) => !element.hidden && element.getAttribute('aria-hidden') !== 'true');
       if (!focusable.length) {
         event.preventDefault();
         dialogRef.current.focus();

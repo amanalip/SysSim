@@ -23,18 +23,25 @@ export class WorkerModel {
     public readonly retryLimit: number,
   ) {}
 
-  public beginStep(): void { this.busyWorkers = 0; this.queuedWork = 0; }
+  public beginStep(): void {
+    this.busyWorkers = 0;
+    this.queuedWork = 0;
+  }
 
   public recordAttempt(success: boolean, willRetry: boolean): void {
     this.busyWorkers = Math.min(this.capacity, this.busyWorkers + 1);
-    if (success) this.jobsSucceeded++; else this.jobsFailed++;
+    if (success) this.jobsSucceeded++;
+    else this.jobsFailed++;
     if (willRetry) this.retriesScheduled++;
   }
 
-  public setQueuedWork(value: number): void { this.queuedWork = Math.max(0, Math.floor(value)); }
+  public setQueuedWork(value: number): void {
+    this.queuedWork = Math.max(0, Math.floor(value));
+  }
 
   public getProcessingLatencyMs(): number {
-    const rateLatency = this.processingRatePerSec > 0 ? 1000 / this.processingRatePerSec : Number.POSITIVE_INFINITY;
+    const rateLatency =
+      this.processingRatePerSec > 0 ? 1000 / this.processingRatePerSec : Number.POSITIVE_INFINITY;
     return Math.max(0, this.configuredProcessingLatencyMs, rateLatency);
   }
 
@@ -51,11 +58,17 @@ export class WorkerModel {
   }
 
   public reset(): void {
-    this.busyWorkers = 0; this.queuedWork = 0; this.jobsSucceeded = 0;
-    this.jobsFailed = 0; this.retriesScheduled = 0;
+    this.busyWorkers = 0;
+    this.queuedWork = 0;
+    this.jobsSucceeded = 0;
+    this.jobsFailed = 0;
+    this.retriesScheduled = 0;
   }
 
   private get capacity(): number {
-    return Math.max(1, Math.floor(this.replicas || 1)) * Math.max(1, Math.floor(this.concurrencyLimit || 1));
+    return (
+      Math.max(1, Math.floor(this.replicas || 1)) *
+      Math.max(1, Math.floor(this.concurrencyLimit || 1))
+    );
   }
 }

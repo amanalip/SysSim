@@ -7,7 +7,11 @@ import { createDefaultConfig } from '../model/component-defaults';
 import { CURRENT_CANVAS_VERSION, migrateCanvasState } from '../model/canvas-migrations';
 import { validateEdgePurpose } from '../model/edge-semantics';
 import { AppServerConfig, SimRequest } from '../model/types';
-import { decodeStateFromUrlHash, encodeStateToUrlHash, serializeCanvasState } from '../utils/sharing';
+import {
+  decodeStateFromUrlHash,
+  encodeStateToUrlHash,
+  serializeCanvasState,
+} from '../utils/sharing';
 import { useStore } from '../store/use-store';
 import { SnapshotManagerModal } from '../components/modals/SnapshotManagerModal';
 
@@ -22,8 +26,14 @@ const app = (id: string, failureRatePercent = 0) => ({
 
 const run = (graph: SimGraph, source: string, key = 'resource:1') => {
   const engine = new SysSimEngine(graph, {
-    pattern: 'steady', baseQps: 1, burstMultiplier: 1, rampDurationSec: 1,
-    spikeFrequencySec: 1, seed: 42, requestKeyDistribution: 'uniform', requestKeySpaceSize: 10,
+    pattern: 'steady',
+    baseQps: 1,
+    burstMultiplier: 1,
+    rampDurationSec: 1,
+    spikeFrequencySec: 1,
+    seed: 42,
+    requestKeyDistribution: 'uniform',
+    requestKeySpaceSize: 10,
   });
   const request = createSimRequest(source, 0, key, 1);
   (engine as unknown as { processRequest: (value: SimRequest) => void }).processRequest(request);
@@ -36,13 +46,25 @@ describe('edge-purpose completion', () => {
     expect(validateEdgePurpose('client', 'app_server', 'HTTP', 'async').valid).toBe(false);
     expect(validateEdgePurpose('redis_cache', 'sql_db', 'TCP', 'request').valid).toBe(false);
     expect(validateEdgePurpose('sql_db', 'object_storage', 'TCP', 'replication').valid).toBe(true);
-    expect(validateEdgePurpose('app_server', 'timeseries_db', 'HTTP', 'observability').valid).toBe(true);
+    expect(validateEdgePurpose('app_server', 'timeseries_db', 'HTTP', 'observability').valid).toBe(
+      true,
+    );
   });
 
   it('migrates legacy edges once and preserves explicit purpose through serialization', () => {
     const nodes = [
-      { id: 'cache', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: createDefaultConfig('redis_cache', 'cache') } },
-      { id: 'db', type: 'customComponent', position: { x: 100, y: 0 }, data: { config: createDefaultConfig('sql_db', 'db') } },
+      {
+        id: 'cache',
+        type: 'customComponent',
+        position: { x: 0, y: 0 },
+        data: { config: createDefaultConfig('redis_cache', 'cache') },
+      },
+      {
+        id: 'db',
+        type: 'customComponent',
+        position: { x: 100, y: 0 },
+        data: { config: createDefaultConfig('sql_db', 'db') },
+      },
     ];
     const legacy = migrateCanvasState({
       nodes,
@@ -51,7 +73,11 @@ describe('edge-purpose completion', () => {
     expect(legacy.version).toBe(CURRENT_CANVAS_VERSION);
     expect(legacy.edges[0].data.purpose).toBe('fallback');
 
-    useStore.setState({ nodes: nodes as any, edges: [{ ...legacy.edges[0], type: 'protocolEdge' }] as any, zones: [] });
+    useStore.setState({
+      nodes: nodes as any,
+      edges: [{ ...legacy.edges[0], type: 'protocolEdge' }] as any,
+      zones: [],
+    });
     expect(serializeCanvasState().edges[0].data.purpose).toBe('fallback');
     expect(decodeStateFromUrlHash(encodeStateToUrlHash())?.edges[0].data.purpose).toBe('fallback');
   });
@@ -66,7 +92,14 @@ describe('edge-purpose completion', () => {
     delete legacyQueue.overflowPolicy;
     const migrated = migrateCanvasState({
       version: 2,
-      nodes: [{ id: 'queue', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: legacyQueue } }],
+      nodes: [
+        {
+          id: 'queue',
+          type: 'customComponent',
+          position: { x: 0, y: 0 },
+          data: { config: legacyQueue },
+        },
+      ],
       edges: [],
     });
     const config = migrated.nodes[0].data.config as any;
@@ -88,7 +121,14 @@ describe('edge-purpose completion', () => {
     delete legacyClient.requestKeySpaceSize;
     const migrated = migrateCanvasState({
       version: 3,
-      nodes: [{ id: 'client', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: legacyClient } }],
+      nodes: [
+        {
+          id: 'client',
+          type: 'customComponent',
+          position: { x: 0, y: 0 },
+          data: { config: legacyClient },
+        },
+      ],
       edges: [],
     });
     expect(migrated.version).toBe(CURRENT_CANVAS_VERSION);
@@ -111,27 +151,57 @@ describe('edge-purpose completion', () => {
     const migrated = migrateCanvasState({
       version: 4,
       nodes: [
-        { id: 'worker', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: worker } },
-        { id: 'function', type: 'customComponent', position: { x: 100, y: 0 }, data: { config: serverless } },
+        {
+          id: 'worker',
+          type: 'customComponent',
+          position: { x: 0, y: 0 },
+          data: { config: worker },
+        },
+        {
+          id: 'function',
+          type: 'customComponent',
+          position: { x: 100, y: 0 },
+          data: { config: serverless },
+        },
       ],
       edges: [],
     });
     expect(migrated.version).toBe(CURRENT_CANVAS_VERSION);
     expect(migrated.nodes[0].data.config).toMatchObject({ processingLatencyMs: 20 });
     expect(migrated.nodes[1].data.config).toMatchObject({
-      baseExecutionLatencyMs: 25, warmInstances: 0, idleTimeoutSec: 300,
+      baseExecutionLatencyMs: 25,
+      warmInstances: 0,
+      idleTimeoutSec: 300,
     });
   });
 
   it('preserves purpose in locally saved snapshot slots', () => {
     localStorage.removeItem('syssim_architecture_snapshots');
     const nodes = [
-      { id: 'app', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: createDefaultConfig('app_server', 'app') } },
-      { id: 'queue', type: 'customComponent', position: { x: 100, y: 0 }, data: { config: createDefaultConfig('message_queue', 'queue') } },
+      {
+        id: 'app',
+        type: 'customComponent',
+        position: { x: 0, y: 0 },
+        data: { config: createDefaultConfig('app_server', 'app') },
+      },
+      {
+        id: 'queue',
+        type: 'customComponent',
+        position: { x: 100, y: 0 },
+        data: { config: createDefaultConfig('message_queue', 'queue') },
+      },
     ];
     useStore.setState({
       nodes: nodes as any,
-      edges: [{ id: 'edge', source: 'app', target: 'queue', type: 'protocolEdge', data: { protocol: 'pub/sub', purpose: 'async' } }],
+      edges: [
+        {
+          id: 'edge',
+          source: 'app',
+          target: 'queue',
+          type: 'protocolEdge',
+          data: { protocol: 'pub/sub', purpose: 'async' },
+        },
+      ],
       zones: [],
     });
     render(React.createElement(SnapshotManagerModal, { isOpen: true, onClose: () => undefined }));
@@ -156,17 +226,38 @@ describe('edge-purpose completion', () => {
 
   it('produces identical route counts and failures for the same seed', () => {
     const graph: SimGraph = {
-      nodes: [app('source'), app('a', 35), app('b', 35), { id: 'db', config: createDefaultConfig('sql_db', 'db') }],
+      nodes: [
+        app('source'),
+        app('a', 35),
+        app('b', 35),
+        { id: 'db', config: createDefaultConfig('sql_db', 'db') },
+      ],
       edges: [
         { id: 'a', source: 'source', target: 'a', data: { protocol: 'HTTP', purpose: 'fanout' } },
         { id: 'b', source: 'source', target: 'b', data: { protocol: 'HTTP', purpose: 'fanout' } },
         { id: 'db', source: 'a', target: 'db', data: { protocol: 'TCP', purpose: 'request' } },
       ],
     };
-    const first = new SysSimEngine(graph, { pattern: 'steady', baseQps: 20, burstMultiplier: 1, rampDurationSec: 1, spikeFrequencySec: 1, seed: 77 });
-    const second = new SysSimEngine(graph, { pattern: 'steady', baseQps: 20, burstMultiplier: 1, rampDurationSec: 1, spikeFrequencySec: 1, seed: 77 });
-    first.start(); second.start();
-    first.step(1000); second.step(1000);
+    const first = new SysSimEngine(graph, {
+      pattern: 'steady',
+      baseQps: 20,
+      burstMultiplier: 1,
+      rampDurationSec: 1,
+      spikeFrequencySec: 1,
+      seed: 77,
+    });
+    const second = new SysSimEngine(graph, {
+      pattern: 'steady',
+      baseQps: 20,
+      burstMultiplier: 1,
+      rampDurationSec: 1,
+      spikeFrequencySec: 1,
+      seed: 77,
+    });
+    first.start();
+    second.start();
+    first.step(1000);
+    second.step(1000);
     expect(first.getMetricsSnapshot()).toEqual(second.getMetricsSnapshot());
   });
 

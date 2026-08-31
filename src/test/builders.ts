@@ -53,7 +53,9 @@ export function trafficFixture(overrides: Partial<TrafficConfig> = {}): TrafficC
   };
 }
 
-export function linearGraphFixture(types: ComponentType[] = ['client', 'app_server', 'sql_db']): SimGraph {
+export function linearGraphFixture(
+  types: ComponentType[] = ['client', 'app_server', 'sql_db'],
+): SimGraph {
   const nodes = types.map((type, index) => ({
     id: `node-${index}-${type}`,
     config: componentFixture(type, `node-${index}-${type}`),

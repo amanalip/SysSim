@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ALL_SCENARIOS, SCENARIO_CATEGORIES, getScenarioById, getScenarioBySlug } from '../scenarios';
+import {
+  ALL_SCENARIOS,
+  SCENARIO_CATEGORIES,
+  getScenarioById,
+  getScenarioBySlug,
+} from '../scenarios';
 import { useStore } from '../store/use-store';
 
 describe('Scenarios Framework & Bundled Library Tests (Milestones 14 to 17)', () => {

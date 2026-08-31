@@ -33,25 +33,38 @@ export class NoSqlDatabaseModel {
   }
 
   public execute(isWrite: boolean, requestKey: string) {
-    if (isWrite) this.writes++; else this.reads++;
+    if (isWrite) this.writes++;
+    else this.reads++;
     const replicas = Math.max(1, this.config.replicas);
     const majority = Math.floor(replicas / 2) + 1;
     const consistency = this.config.consistencyLevel;
-    const readQuorum = consistency === 'strong' || consistency === 'bounded_staleness' ? majority : 1;
+    const readQuorum =
+      consistency === 'strong' || consistency === 'bounded_staleness' ? majority : 1;
     const writeQuorum = consistency === 'eventual' ? 1 : majority;
-    const latencyFactor = consistency === 'strong' ? 1.5 : consistency === 'bounded_staleness' ? 1.25 : consistency === 'session' ? 1.1 : 1;
+    const latencyFactor =
+      consistency === 'strong'
+        ? 1.5
+        : consistency === 'bounded_staleness'
+          ? 1.25
+          : consistency === 'session'
+            ? 1.1
+            : 1;
     const quorum = isWrite ? writeQuorum : readQuorum;
     const partitionIndex = hashKey(requestKey) % this.partitionHits.length;
     this.partitionHits[partitionIndex]++;
-    const visibleLagMs = isWrite || consistency === 'strong'
-      ? 0
-      : consistency === 'bounded_staleness'
-        ? this.config.replicationLagMs / 2
-        : consistency === 'session'
-          ? this.config.replicationLagMs / 4
-          : this.config.replicationLagMs;
+    const visibleLagMs =
+      isWrite || consistency === 'strong'
+        ? 0
+        : consistency === 'bounded_staleness'
+          ? this.config.replicationLagMs / 2
+          : consistency === 'session'
+            ? this.config.replicationLagMs / 4
+            : this.config.replicationLagMs;
     return {
-      latencyMs: Math.max(1, Math.round(this.config.baseLatencyMs * latencyFactor * (1 + (quorum - 1) * 0.15))),
+      latencyMs: Math.max(
+        1,
+        Math.round(this.config.baseLatencyMs * latencyFactor * (1 + (quorum - 1) * 0.15)),
+      ),
       readQuorum,
       writeQuorum,
       visibleLagMs,
@@ -61,24 +74,33 @@ export class NoSqlDatabaseModel {
 
   public getMetrics() {
     const majority = Math.floor(Math.max(1, this.config.replicas) / 2) + 1;
-    const visibleLag = this.config.consistencyLevel === 'strong'
-      ? 0
-      : this.config.consistencyLevel === 'bounded_staleness'
-        ? this.config.replicationLagMs / 2
-        : this.config.consistencyLevel === 'session'
-          ? this.config.replicationLagMs / 4
-          : this.config.replicationLagMs;
+    const visibleLag =
+      this.config.consistencyLevel === 'strong'
+        ? 0
+        : this.config.consistencyLevel === 'bounded_staleness'
+          ? this.config.replicationLagMs / 2
+          : this.config.consistencyLevel === 'session'
+            ? this.config.replicationLagMs / 4
+            : this.config.replicationLagMs;
     return {
       reads: this.reads,
       writes: this.writes,
-      readQuorum: this.config.consistencyLevel === 'strong' || this.config.consistencyLevel === 'bounded_staleness' ? majority : 1,
+      readQuorum:
+        this.config.consistencyLevel === 'strong' ||
+        this.config.consistencyLevel === 'bounded_staleness'
+          ? majority
+          : 1,
       writeQuorum: this.config.consistencyLevel === 'eventual' ? 1 : majority,
       replicationLagMs: visibleLag,
       hotPartitionPercent: imbalancePercent(this.partitionHits),
     };
   }
 
-  public reset() { this.reads = 0; this.writes = 0; this.partitionHits.fill(0); }
+  public reset() {
+    this.reads = 0;
+    this.writes = 0;
+    this.partitionHits.fill(0);
+  }
 }
 
 export class ObjectStorageModel {
@@ -90,11 +112,17 @@ export class ObjectStorageModel {
   constructor(private config: ObjectStorageConfig) {}
 
   public execute(payloadSizeKb: number) {
-    const classFactor = this.config.storageClass === 'Glacier' ? 20 : this.config.storageClass === 'Infrequent' ? 1.5 : 1;
+    const classFactor =
+      this.config.storageClass === 'Glacier'
+        ? 20
+        : this.config.storageClass === 'Infrequent'
+          ? 1.5
+          : 1;
     const requestLatencyMs = Math.max(0, this.config.latencyMs) * classFactor;
-    const transferLatencyMs = this.config.throughputMbPerSec > 0
-      ? (Math.max(0, payloadSizeKb) / 1024 / this.config.throughputMbPerSec) * 1000
-      : 0;
+    const transferLatencyMs =
+      this.config.throughputMbPerSec > 0
+        ? (Math.max(0, payloadSizeKb) / 1024 / this.config.throughputMbPerSec) * 1000
+        : 0;
     this.requests++;
     this.requestLatencyMs += requestLatencyMs;
     this.transferLatencyMs += transferLatencyMs;
@@ -110,7 +138,12 @@ export class ObjectStorageModel {
     };
   }
 
-  public reset() { this.requests = 0; this.requestLatencyMs = 0; this.transferLatencyMs = 0; this.transferredKb = 0; }
+  public reset() {
+    this.requests = 0;
+    this.requestLatencyMs = 0;
+    this.transferLatencyMs = 0;
+    this.transferredKb = 0;
+  }
 }
 
 export class SearchIndexModel {
@@ -127,18 +160,34 @@ export class SearchIndexModel {
     this.shardHits[shardIndex]++;
     if (isWrite) {
       this.indexWrites++;
-      return { latencyMs: this.config.indexingLatencyMs * (1 + Math.max(0, this.config.replicas) * 0.12), shardIndex, operation: 'index' as const };
+      return {
+        latencyMs: this.config.indexingLatencyMs * (1 + Math.max(0, this.config.replicas) * 0.12),
+        shardIndex,
+        operation: 'index' as const,
+      };
     }
     this.queries++;
     return {
-      latencyMs: this.config.queryLatencyMs * (1 + Math.log2(Math.max(1, this.config.shards)) * 0.08) / Math.sqrt(Math.max(1, this.config.replicas + 1)),
+      latencyMs:
+        (this.config.queryLatencyMs * (1 + Math.log2(Math.max(1, this.config.shards)) * 0.08)) /
+        Math.sqrt(Math.max(1, this.config.replicas + 1)),
       shardIndex,
       operation: 'query' as const,
     };
   }
 
-  public getMetrics() { return { queries: this.queries, indexWrites: this.indexWrites, shardImbalancePercent: imbalancePercent(this.shardHits) }; }
-  public reset() { this.queries = 0; this.indexWrites = 0; this.shardHits.fill(0); }
+  public getMetrics() {
+    return {
+      queries: this.queries,
+      indexWrites: this.indexWrites,
+      shardImbalancePercent: imbalancePercent(this.shardHits),
+    };
+  }
+  public reset() {
+    this.queries = 0;
+    this.indexWrites = 0;
+    this.shardHits.fill(0);
+  }
 }
 
 export class GraphDatabaseModel {
@@ -156,18 +205,38 @@ export class GraphDatabaseModel {
     const actualDepth = Math.min(requestedDepth, Math.max(1, this.config.traversalDepthLimit));
     const limited = requestedDepth > actualDepth;
     const depthCost = Math.pow(actualDepth, 1.35);
-    const effectiveCapacityQps = Math.max(1, Math.floor((this.config.maxThroughputQps || 1) / depthCost));
+    const effectiveCapacityQps = Math.max(
+      1,
+      Math.floor((this.config.maxThroughputQps || 1) / depthCost),
+    );
     const nextBucket = Math.floor(elapsedMs / 1000);
-    if (nextBucket !== this.bucket) { this.bucket = nextBucket; this.bucketQueries = 0; }
+    if (nextBucket !== this.bucket) {
+      this.bucket = nextBucket;
+      this.bucketQueries = 0;
+    }
     if (this.bucketQueries >= effectiveCapacityQps) {
       this.capacityRejectedQueries++;
-      return { accepted: false, latencyMs: 1, actualDepth, requestedDepth, limited, effectiveCapacityQps };
+      return {
+        accepted: false,
+        latencyMs: 1,
+        actualDepth,
+        requestedDepth,
+        limited,
+        effectiveCapacityQps,
+      };
     }
     this.bucketQueries++;
     this.queries++;
     this.depthTotal += actualDepth;
     if (limited) this.depthLimitedQueries++;
-    return { accepted: true, latencyMs: this.config.queryLatencyMs * depthCost, actualDepth, requestedDepth, limited, effectiveCapacityQps };
+    return {
+      accepted: true,
+      latencyMs: this.config.queryLatencyMs * depthCost,
+      actualDepth,
+      requestedDepth,
+      limited,
+      effectiveCapacityQps,
+    };
   }
 
   public getMetrics() {
@@ -175,11 +244,24 @@ export class GraphDatabaseModel {
     return {
       averageDepth,
       depthLimitedQueries: this.depthLimitedQueries,
-      effectiveCapacityQps: Math.max(1, Math.floor((this.config.maxThroughputQps || 1) / Math.pow(Math.max(1, averageDepth || this.config.traversalDepth), 1.35))),
+      effectiveCapacityQps: Math.max(
+        1,
+        Math.floor(
+          (this.config.maxThroughputQps || 1) /
+            Math.pow(Math.max(1, averageDepth || this.config.traversalDepth), 1.35),
+        ),
+      ),
       capacityRejectedQueries: this.capacityRejectedQueries,
     };
   }
-  public reset() { this.queries = 0; this.depthLimitedQueries = 0; this.depthTotal = 0; this.capacityRejectedQueries = 0; this.bucket = -1; this.bucketQueries = 0; }
+  public reset() {
+    this.queries = 0;
+    this.depthLimitedQueries = 0;
+    this.depthTotal = 0;
+    this.capacityRejectedQueries = 0;
+    this.bucket = -1;
+    this.bucketQueries = 0;
+  }
 }
 
 export class TimeSeriesDatabaseModel {
@@ -196,12 +278,16 @@ export class TimeSeriesDatabaseModel {
   public execute(isWrite: boolean, elapsedMs: number) {
     if (!isWrite) {
       this.queries++;
-      const retentionScanFactor = Math.max(1, Math.sqrt(Math.max(1, this.config.retentionDays) / 30));
+      const retentionScanFactor = Math.max(
+        1,
+        Math.sqrt(Math.max(1, this.config.retentionDays) / 30),
+      );
       const coldDays = this.config.coldTierEnabled
         ? Math.max(0, this.config.retentionDays - Math.max(1, this.config.coldTierAfterDays))
         : 0;
       const coldFraction = coldDays / Math.max(1, this.config.retentionDays);
-      const coldTierFactor = 1 + coldFraction * (Math.max(1, this.config.coldTierLatencyMultiplier) - 1);
+      const coldTierFactor =
+        1 + coldFraction * (Math.max(1, this.config.coldTierLatencyMultiplier) - 1);
       if (coldDays > 0) {
         this.coldTierQueries++;
         this.coldTierLatencyFactorTotal += coldTierFactor;
@@ -215,14 +301,29 @@ export class TimeSeriesDatabaseModel {
       };
     }
     const nextBucket = Math.floor(elapsedMs / 1000);
-    if (nextBucket !== this.bucket) { this.bucket = nextBucket; this.bucketWrites = 0; }
+    if (nextBucket !== this.bucket) {
+      this.bucket = nextBucket;
+      this.bucketWrites = 0;
+    }
     if (this.bucketWrites >= Math.max(0, this.config.writeThroughputPerSec)) {
       this.rejectedWrites++;
-      return { accepted: false, latencyMs: 1, retentionScanFactor: 1, coldTierFactor: 1, coldTier: false };
+      return {
+        accepted: false,
+        latencyMs: 1,
+        retentionScanFactor: 1,
+        coldTierFactor: 1,
+        coldTier: false,
+      };
     }
     this.bucketWrites++;
     this.acceptedWrites++;
-    return { accepted: true, latencyMs: Math.max(1, this.config.queryLatencyMs * 0.25), retentionScanFactor: 1, coldTierFactor: 1, coldTier: false };
+    return {
+      accepted: true,
+      latencyMs: Math.max(1, this.config.queryLatencyMs * 0.25),
+      retentionScanFactor: 1,
+      coldTierFactor: 1,
+      coldTier: false,
+    };
   }
 
   public getMetrics() {
@@ -232,8 +333,18 @@ export class TimeSeriesDatabaseModel {
       queries: this.queries,
       retentionDays: this.config.retentionDays,
       coldTierQueries: this.coldTierQueries,
-      coldTierLatencyFactor: this.coldTierQueries ? this.coldTierLatencyFactorTotal / this.coldTierQueries : 1,
+      coldTierLatencyFactor: this.coldTierQueries
+        ? this.coldTierLatencyFactorTotal / this.coldTierQueries
+        : 1,
     };
   }
-  public reset() { this.bucket = -1; this.bucketWrites = 0; this.acceptedWrites = 0; this.rejectedWrites = 0; this.queries = 0; this.coldTierQueries = 0; this.coldTierLatencyFactorTotal = 0; }
+  public reset() {
+    this.bucket = -1;
+    this.bucketWrites = 0;
+    this.acceptedWrites = 0;
+    this.rejectedWrites = 0;
+    this.queries = 0;
+    this.coldTierQueries = 0;
+    this.coldTierLatencyFactorTotal = 0;
+  }
 }

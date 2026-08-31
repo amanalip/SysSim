@@ -3,7 +3,11 @@ import { useStore } from '../store/use-store';
 import { calculateCapacity } from '../analysis/capacity-calculator';
 import { SysSimEngine } from '../engine/simulator';
 import { chaosRunner } from '../engine/metrics/chaos-runner';
-import { serializeCanvasState, decodeStateFromUrlHash, encodeStateToUrlHash } from '../utils/sharing';
+import {
+  serializeCanvasState,
+  decodeStateFromUrlHash,
+  encodeStateToUrlHash,
+} from '../utils/sharing';
 import { createDefaultConfig } from '../model/component-defaults';
 
 describe('Quality Improvements & Bug Fixes Test Suite (10+ Verifications)', () => {
@@ -13,10 +17,22 @@ describe('Quality Improvements & Bug Fixes Test Suite (10+ Verifications)', () =
   });
 
   it('1. distributes requests across multiple outgoing edges on non-LB nodes (fanout routing)', () => {
-    const clientNode = { id: 'client_1', config: createDefaultConfig('client', 'client_1', 'Client') };
-    const gwNode = { id: 'gw_1', config: createDefaultConfig('api_gateway', 'gw_1', 'API Gateway') };
-    const srvA = { id: 'srv_a', config: createDefaultConfig('app_server', 'srv_a', 'App Server A') };
-    const srvB = { id: 'srv_b', config: createDefaultConfig('app_server', 'srv_b', 'App Server B') };
+    const clientNode = {
+      id: 'client_1',
+      config: createDefaultConfig('client', 'client_1', 'Client'),
+    };
+    const gwNode = {
+      id: 'gw_1',
+      config: createDefaultConfig('api_gateway', 'gw_1', 'API Gateway'),
+    };
+    const srvA = {
+      id: 'srv_a',
+      config: createDefaultConfig('app_server', 'srv_a', 'App Server A'),
+    };
+    const srvB = {
+      id: 'srv_b',
+      config: createDefaultConfig('app_server', 'srv_b', 'App Server B'),
+    };
 
     const engine = new SysSimEngine({
       nodes: [clientNode, gwNode, srvA, srvB],
@@ -44,15 +60,19 @@ describe('Quality Improvements & Bug Fixes Test Suite (10+ Verifications)', () =
   });
 
   it('2. generates 502 Bad Gateway error hop when a load balancer has 0 reachable targets', () => {
-    const clientNode = { id: 'client_1', config: createDefaultConfig('client', 'client_1', 'Client') };
-    const lbNode = { id: 'lb_1', config: createDefaultConfig('load_balancer', 'lb_1', 'Load Balancer') };
+    const clientNode = {
+      id: 'client_1',
+      config: createDefaultConfig('client', 'client_1', 'Client'),
+    };
+    const lbNode = {
+      id: 'lb_1',
+      config: createDefaultConfig('load_balancer', 'lb_1', 'Load Balancer'),
+    };
 
     // LB has no outgoing edges
     const engine = new SysSimEngine({
       nodes: [clientNode, lbNode],
-      edges: [
-        { id: 'e1', source: 'client_1', target: 'lb_1', data: { protocol: 'HTTP' } },
-      ],
+      edges: [{ id: 'e1', source: 'client_1', target: 'lb_1', data: { protocol: 'HTTP' } }],
     });
 
     engine.start();
@@ -66,7 +86,9 @@ describe('Quality Improvements & Bug Fixes Test Suite (10+ Verifications)', () =
   });
 
   it('3. duplicates nodes while cloning custom configuration properties accurately', () => {
-    const originalId = useStore.getState().addNode('app_server', { x: 100, y: 100 }, 'Production Server');
+    const originalId = useStore
+      .getState()
+      .addNode('app_server', { x: 100, y: 100 }, 'Production Server');
     useStore.getState().updateNodeConfig(originalId, {
       replicas: 8,
       processingLatencyMs: 45,
@@ -158,11 +180,15 @@ describe('Quality Improvements & Bug Fixes Test Suite (10+ Verifications)', () =
     const srvNodeId = useStore.getState().addNode('app_server', { x: 100, y: 100 }, 'Test Server');
     useStore.getState().setNodeHealthOverride(srvNodeId, 'down');
 
-    expect(useStore.getState().nodes.find((n) => n.id === srvNodeId)?.data.config.health).toBe('down');
+    expect(useStore.getState().nodes.find((n) => n.id === srvNodeId)?.data.config.health).toBe(
+      'down',
+    );
 
     // Trigger restoreAll
     chaosRunner.restoreAll();
-    expect(useStore.getState().nodes.find((n) => n.id === srvNodeId)?.data.config.health).toBe('down');
+    expect(useStore.getState().nodes.find((n) => n.id === srvNodeId)?.data.config.health).toBe(
+      'down',
+    );
   });
 
   it('9. handles high simulation speeds (10x) without dropping frame calculation accuracy', () => {

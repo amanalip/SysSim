@@ -16,10 +16,34 @@ export interface HealthBehavior {
  * completes under the state it saw at admission; new work observes the new state.
  */
 export const HEALTH_BEHAVIORS: Record<NodeHealthStatus, HealthBehavior> = {
-  healthy: { status: 'healthy', acceptsNewWork: true, capacityMultiplier: 1, latencyMultiplier: 1, addedFailureRatePercent: 0 },
-  degraded: { status: 'degraded', acceptsNewWork: true, capacityMultiplier: 0.7, latencyMultiplier: 1.5, addedFailureRatePercent: 5 },
-  overloaded: { status: 'overloaded', acceptsNewWork: true, capacityMultiplier: 0.5, latencyMultiplier: 2, addedFailureRatePercent: 10 },
-  down: { status: 'down', acceptsNewWork: false, capacityMultiplier: 0, latencyMultiplier: 1, addedFailureRatePercent: 100 },
+  healthy: {
+    status: 'healthy',
+    acceptsNewWork: true,
+    capacityMultiplier: 1,
+    latencyMultiplier: 1,
+    addedFailureRatePercent: 0,
+  },
+  degraded: {
+    status: 'degraded',
+    acceptsNewWork: true,
+    capacityMultiplier: 0.7,
+    latencyMultiplier: 1.5,
+    addedFailureRatePercent: 5,
+  },
+  overloaded: {
+    status: 'overloaded',
+    acceptsNewWork: true,
+    capacityMultiplier: 0.5,
+    latencyMultiplier: 2,
+    addedFailureRatePercent: 10,
+  },
+  down: {
+    status: 'down',
+    acceptsNewWork: false,
+    capacityMultiplier: 0,
+    latencyMultiplier: 1,
+    addedFailureRatePercent: 100,
+  },
 };
 
 export function deriveHealthFromCapacity(

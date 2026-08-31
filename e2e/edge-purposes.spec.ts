@@ -36,17 +36,24 @@ for (const testCase of cases) {
           data: { config: createDefaultConfig(testCase.targetType, 'target', 'Target') },
         },
       ],
-      edges: [{
-        id: 'edge',
-        source: 'source',
-        target: 'target',
-        data: { protocol: testCase.purpose === 'async' ? 'pub/sub' : 'HTTP', purpose: testCase.purpose },
-      }],
+      edges: [
+        {
+          id: 'edge',
+          source: 'source',
+          target: 'target',
+          data: {
+            protocol: testCase.purpose === 'async' ? 'pub/sub' : 'HTTP',
+            purpose: testCase.purpose,
+          },
+        },
+      ],
     };
     const hash = LZString.compressToEncodedURIComponent(JSON.stringify(state));
     await page.goto(`/#data=${hash}`);
 
-    await expect(page.getByRole('button', { name: new RegExp(`Edge purpose: ${testCase.purpose}`) })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: new RegExp(`Edge purpose: ${testCase.purpose}`) }),
+    ).toBeVisible();
     await page.getByRole('button', { name: /^Simulate$/ }).click();
     await expect(page.getByRole('button', { name: /^Pause$/ })).toBeVisible();
     expect(pageErrors).toEqual([]);

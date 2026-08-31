@@ -1,8 +1,4 @@
-import {
-  AnyComponentConfig,
-  ComponentCategory,
-  ComponentType,
-} from './types';
+import { AnyComponentConfig, ComponentCategory, ComponentType } from './types';
 
 export interface ComponentMetadata {
   type: ComponentType;
@@ -601,7 +597,7 @@ export const COMPONENT_METADATA_LIST: ComponentMetadata[] = [
 ];
 
 export const COMPONENT_METADATA_MAP = new Map<ComponentType, ComponentMetadata>(
-  COMPONENT_METADATA_LIST.map((meta) => [meta.type, meta])
+  COMPONENT_METADATA_LIST.map((meta) => [meta.type, meta]),
 );
 
 export function getComponentMetadata(type: ComponentType): ComponentMetadata {
@@ -612,7 +608,11 @@ export function getComponentMetadata(type: ComponentType): ComponentMetadata {
   return meta;
 }
 
-export function createDefaultConfig(type: ComponentType, id: string, name?: string): AnyComponentConfig {
+export function createDefaultConfig(
+  type: ComponentType,
+  id: string,
+  name?: string,
+): AnyComponentConfig {
   const meta = getComponentMetadata(type);
   return {
     latencyDistribution: 'fixed',

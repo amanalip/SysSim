@@ -57,8 +57,23 @@ describe('Deep Audit Pass 4 Bug Fixes & Feature Tests (10+ Verifications)', () =
     };
 
     const clientConfig = createDefaultConfig('client', 'client', 'Client');
-    const client: CanvasNode = { id: 'client', type: 'customComponent', position: { x: -100, y: 0 }, data: { config: clientConfig } };
-    const issues = detectBottlenecks([client, loneDb], [{ id: 'client-db', source: 'client', target: 'db_master', data: { protocol: 'HTTP', purpose: 'request' } }]);
+    const client: CanvasNode = {
+      id: 'client',
+      type: 'customComponent',
+      position: { x: -100, y: 0 },
+      data: { config: clientConfig },
+    };
+    const issues = detectBottlenecks(
+      [client, loneDb],
+      [
+        {
+          id: 'client-db',
+          source: 'client',
+          target: 'db_master',
+          data: { protocol: 'HTTP', purpose: 'request' },
+        },
+      ],
+    );
     const spof = issues.find((i) => i.type === 'spof');
     expect(spof).toBeDefined();
     expect(spof?.nodeId).toBe('db_master');

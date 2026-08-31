@@ -1,9 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, ChevronDown, ChevronRight, Plus, X, Layers, Sparkles } from 'lucide-react';
-import {
-  COMPONENT_METADATA_LIST,
-  ComponentMetadata,
-} from '../../model/component-defaults';
+import { COMPONENT_METADATA_LIST, ComponentMetadata } from '../../model/component-defaults';
 import { ComponentCategory, ComponentType } from '../../model/types';
 import { categoryColors } from '../../theme';
 import { ComponentIcon } from '../icons/ComponentIcon';
@@ -39,7 +36,7 @@ export const ComponentPalette: React.FC = () => {
       (c) =>
         c.name.toLowerCase().includes(query) ||
         c.description.toLowerCase().includes(query) ||
-        c.category.toLowerCase().includes(query)
+        c.category.toLowerCase().includes(query),
     );
   }, [search]);
 
@@ -50,7 +47,7 @@ export const ComponentPalette: React.FC = () => {
       (b) =>
         b.name.toLowerCase().includes(query) ||
         b.description.toLowerCase().includes(query) ||
-        b.category.toLowerCase().includes(query)
+        b.category.toLowerCase().includes(query),
     );
   }, [search]);
 
@@ -202,14 +199,9 @@ export const ComponentPalette: React.FC = () => {
               aria-expanded={!isCollapsed}
             >
               <div className={styles.categoryTitle}>
-                <span
-                  className={styles.categoryDot}
-                  style={{ backgroundColor: categoryColor }}
-                />
+                <span className={styles.categoryDot} style={{ backgroundColor: categoryColor }} />
                 <span>{label}</span>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                  ({items.length})
-                </span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>({items.length})</span>
               </div>
               {isCollapsed ? (
                 <ChevronRight size={14} color="var(--text-muted)" />

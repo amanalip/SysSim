@@ -3,7 +3,7 @@ import { CanvasEdge, CanvasNode, ZoneData } from '../store/use-store';
 export function computeAutoLayout(
   nodes: CanvasNode[],
   edges: CanvasEdge[],
-  zones: ZoneData[] = []
+  zones: ZoneData[] = [],
 ): CanvasNode[] {
   if (nodes.length === 0) return [];
 
@@ -15,7 +15,7 @@ export function computeAutoLayout(
         node.position.x >= z.x &&
         node.position.x <= z.x + z.width &&
         node.position.y >= z.y &&
-        node.position.y <= z.y + z.height
+        node.position.y <= z.y + z.height,
     );
     if (containingZone) {
       nodeZoneMap[node.id] = containingZone;

@@ -1,18 +1,47 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SimulationBridge, SimulationBridgeEvents, SimulationBridgeSnapshot } from '../engine/sim-bridge';
+import {
+  SimulationBridge,
+  SimulationBridgeEvents,
+  SimulationBridgeSnapshot,
+} from '../engine/sim-bridge';
 import { isWorkerCommand, isWorkerResponse, WorkerCommand } from '../engine/worker-protocol';
 
 function fixture() {
   let snapshot: SimulationBridgeSnapshot = {
-    graph: { nodes: [], edges: [] }, graphRevision: 4,
-    trafficConfig: { pattern: 'steady', baseQps: 10, burstMultiplier: 2, rampDurationSec: 10, spikeFrequencySec: 10 },
-    speedMultiplier: 1, simState: 'idle',
+    graph: { nodes: [], edges: [] },
+    graphRevision: 4,
+    trafficConfig: {
+      pattern: 'steady',
+      baseQps: 10,
+      burstMultiplier: 2,
+      rampDurationSec: 10,
+      spikeFrequencySec: 10,
+    },
+    speedMultiplier: 1,
+    simState: 'idle',
   };
-  const events: SimulationBridgeEvents = { onTick: vi.fn(), onStateChange: vi.fn(), onModeChange: vi.fn(), onReset: vi.fn() };
+  const events: SimulationBridgeEvents = {
+    onTick: vi.fn(),
+    onStateChange: vi.fn(),
+    onModeChange: vi.fn(),
+    onReset: vi.fn(),
+  };
   const posted: WorkerCommand[] = [];
-  const worker = { onmessage: null as ((event: MessageEvent) => void) | null, onerror: null as ((event: ErrorEvent) => void) | null,
-    postMessage: vi.fn((message: WorkerCommand) => posted.push(message)), terminate: vi.fn() };
-  return { getSnapshot: () => snapshot, setSnapshot: (value: Partial<SimulationBridgeSnapshot>) => { snapshot = { ...snapshot, ...value }; }, events, posted, worker };
+  const worker = {
+    onmessage: null as ((event: MessageEvent) => void) | null,
+    onerror: null as ((event: ErrorEvent) => void) | null,
+    postMessage: vi.fn((message: WorkerCommand) => posted.push(message)),
+    terminate: vi.fn(),
+  };
+  return {
+    getSnapshot: () => snapshot,
+    setSnapshot: (value: Partial<SimulationBridgeSnapshot>) => {
+      snapshot = { ...snapshot, ...value };
+    },
+    events,
+    posted,
+    worker,
+  };
 }
 
 describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', () => {
@@ -22,7 +51,9 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
     expect(isWorkerCommand({ type: 'SET_SPEED', payload: 2 })).toBe(true);
     expect(isWorkerCommand({ type: 'SET_SPEED', payload: Infinity })).toBe(false);
     expect(isWorkerResponse({ type: 'GRAPH_ACK', payload: { graphRevision: 1 } })).toBe(true);
-    expect(isWorkerResponse({ type: 'TICK_UPDATE', payload: { graphRevision: 'old' } })).toBe(false);
+    expect(isWorkerResponse({ type: 'TICK_UPDATE', payload: { graphRevision: 'old' } })).toBe(
+      false,
+    );
   });
 
   it('waits for worker readiness and the current graph acknowledgement before start', () => {
@@ -33,9 +64,13 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
     f.worker.onmessage?.({ data: { type: 'WORKER_READY' } } as MessageEvent);
     expect(f.posted.some((message) => message.type === 'INIT_OR_UPDATE_GRAPH')).toBe(true);
     expect(f.posted).not.toContainEqual({ type: 'START' });
-    f.worker.onmessage?.({ data: { type: 'GRAPH_ACK', payload: { graphRevision: 3 } } } as MessageEvent);
+    f.worker.onmessage?.({
+      data: { type: 'GRAPH_ACK', payload: { graphRevision: 3 } },
+    } as MessageEvent);
     expect(f.posted).not.toContainEqual({ type: 'START' });
-    f.worker.onmessage?.({ data: { type: 'GRAPH_ACK', payload: { graphRevision: 4 } } } as MessageEvent);
+    f.worker.onmessage?.({
+      data: { type: 'GRAPH_ACK', payload: { graphRevision: 4 } },
+    } as MessageEvent);
     expect(f.posted).toContainEqual({ type: 'START' });
   });
 
@@ -43,7 +78,12 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
     const f = fixture();
     const bridge = new SimulationBridge(f.getSnapshot, f.events, { workerFactory: () => f.worker });
     bridge.initialize();
-    f.worker.onmessage?.({ data: { type: 'TICK_UPDATE', payload: { graphRevision: 2, metrics: {}, activeRequests: [], recentRequests: [] } } } as MessageEvent);
+    f.worker.onmessage?.({
+      data: {
+        type: 'TICK_UPDATE',
+        payload: { graphRevision: 2, metrics: {}, activeRequests: [], recentRequests: [] },
+      },
+    } as MessageEvent);
     f.worker.onmessage?.({ data: { type: 'TICK_UPDATE', payload: null } } as MessageEvent);
     expect(f.events.onTick).not.toHaveBeenCalled();
   });
@@ -52,9 +92,18 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
     const f = fixture();
     f.setSnapshot({ simState: 'running' });
     const timers: Array<() => void> = [];
-    const setIntervalFn = vi.fn((callback: TimerHandler) => { timers.push(callback as () => void); return timers.length as unknown as ReturnType<typeof setInterval>; });
+    const setIntervalFn = vi.fn((callback: TimerHandler) => {
+      timers.push(callback as () => void);
+      return timers.length as unknown as ReturnType<typeof setInterval>;
+    });
     const clearIntervalFn = vi.fn();
-    const bridge = new SimulationBridge(f.getSnapshot, f.events, { workerFactory: () => { throw new Error('blocked'); }, setIntervalFn: setIntervalFn as unknown as typeof setInterval, clearIntervalFn });
+    const bridge = new SimulationBridge(f.getSnapshot, f.events, {
+      workerFactory: () => {
+        throw new Error('blocked');
+      },
+      setIntervalFn: setIntervalFn as unknown as typeof setInterval,
+      clearIntervalFn,
+    });
     bridge.initialize();
     expect(bridge.getMode()).toBe('fallback');
     expect(f.events.onReset).not.toHaveBeenCalled();
@@ -71,7 +120,11 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
     f.setSnapshot({ simState: 'running' });
     const setIntervalFn = vi.fn(() => 1 as unknown as ReturnType<typeof setInterval>);
     const clearIntervalFn = vi.fn();
-    const bridge = new SimulationBridge(f.getSnapshot, f.events, { workerFactory: () => f.worker, setIntervalFn: setIntervalFn as unknown as typeof setInterval, clearIntervalFn });
+    const bridge = new SimulationBridge(f.getSnapshot, f.events, {
+      workerFactory: () => f.worker,
+      setIntervalFn: setIntervalFn as unknown as typeof setInterval,
+      clearIntervalFn,
+    });
     bridge.initialize();
     f.worker.onerror?.({} as ErrorEvent);
     expect(f.worker.terminate).toHaveBeenCalledTimes(1);
@@ -81,9 +134,14 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
   });
 
   it('each bridge owns isolated lifecycle state', () => {
-    const first = fixture(); const second = fixture();
-    const a = new SimulationBridge(first.getSnapshot, first.events, { workerFactory: () => first.worker });
-    const b = new SimulationBridge(second.getSnapshot, second.events, { workerFactory: () => second.worker });
+    const first = fixture();
+    const second = fixture();
+    const a = new SimulationBridge(first.getSnapshot, first.events, {
+      workerFactory: () => first.worker,
+    });
+    const b = new SimulationBridge(second.getSnapshot, second.events, {
+      workerFactory: () => second.worker,
+    });
     a.initialize();
     expect(first.worker.terminate).not.toHaveBeenCalled();
     expect(second.worker.postMessage).not.toHaveBeenCalled();

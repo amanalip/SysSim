@@ -74,7 +74,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         category: 'Actions',
         title: isRunning ? 'Pause Simulation' : 'Start Simulation',
         shortcut: 'Space',
-        icon: isRunning ? <Pause size={14} color="var(--warning)" /> : <Play size={14} color="var(--success)" />,
+        icon: isRunning ? (
+          <Pause size={14} color="var(--warning)" />
+        ) : (
+          <Play size={14} color="var(--success)" />
+        ),
         action: () => {
           if (isRunning) simBridge.pause();
           else if (simState === 'paused') simBridge.resume();
@@ -157,13 +161,29 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     }));
 
     return [...actionCommands, ...componentCommands, ...scenarioCommands];
-  }, [simState, isChaosMode, setChaosMode, theme, setTheme, autoLayout, clearCanvas, addNode, loadScenario, addToast, nodes.length]);
+  }, [
+    simState,
+    isChaosMode,
+    setChaosMode,
+    theme,
+    setTheme,
+    autoLayout,
+    clearCanvas,
+    addNode,
+    loadScenario,
+    addToast,
+    nodes.length,
+  ]);
 
   const filteredCommands = useMemo(() => {
     if (!query.trim()) return allCommands.slice(0, 30);
     const q = query.toLowerCase();
     return allCommands
-      .filter((cmd) => cmd.title.toLowerCase().includes(q) || (cmd.subtitle && cmd.subtitle.toLowerCase().includes(q)))
+      .filter(
+        (cmd) =>
+          cmd.title.toLowerCase().includes(q) ||
+          (cmd.subtitle && cmd.subtitle.toLowerCase().includes(q)),
+      )
       .slice(0, 30);
   }, [allCommands, query]);
 
@@ -181,7 +201,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       setSelectedIndex((prev) => (prev + 1) % Math.max(1, filteredCommands.length));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + filteredCommands.length) % Math.max(1, filteredCommands.length));
+      setSelectedIndex(
+        (prev) => (prev - 1 + filteredCommands.length) % Math.max(1, filteredCommands.length),
+      );
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const cmd = filteredCommands[selectedIndex];
@@ -196,7 +218,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div ref={dialogRef} className={styles.modal} role="dialog" aria-modal="true" aria-label="Command palette" tabIndex={-1} onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={dialogRef}
+        className={styles.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className={styles.searchBar}>
           <Search size={16} color="var(--text-muted)" />
           <input
@@ -241,9 +271,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         </div>
 
         <div className={styles.footerHints}>
-          <span>Use <b>↑↓</b> to navigate</span>
-          <span><b>Enter</b> to select</span>
-          <span><b>ESC</b> to close</span>
+          <span>
+            Use <b>↑↓</b> to navigate
+          </span>
+          <span>
+            <b>Enter</b> to select
+          </span>
+          <span>
+            <b>ESC</b> to close
+          </span>
         </div>
       </div>
     </div>

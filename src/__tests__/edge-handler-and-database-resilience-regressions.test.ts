@@ -16,8 +16,18 @@ describe('Deep Fixes Batch 4: Protocol Edge Handler Integrity & High-Throughput 
         } as any,
       },
     };
-    const clientNode: CanvasNode = { id: 'client', type: 'customComponent', position: { x: 0, y: 200 }, data: { config: createDefaultConfig('client', 'client', 'Client') } };
-    const route: CanvasEdge = { id: 'client-db', source: 'client', target: 'sql_1', data: { protocol: 'HTTP', purpose: 'request' } };
+    const clientNode: CanvasNode = {
+      id: 'client',
+      type: 'customComponent',
+      position: { x: 0, y: 200 },
+      data: { config: createDefaultConfig('client', 'client', 'Client') },
+    };
+    const route: CanvasEdge = {
+      id: 'client-db',
+      source: 'client',
+      target: 'sql_1',
+      data: { protocol: 'HTTP', purpose: 'request' },
+    };
 
     // Low load: warning severity
     const lowLoadIssues = detectBottlenecks([clientNode, dbNode], [route], {

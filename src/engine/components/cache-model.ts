@@ -31,14 +31,15 @@ export class CacheModel {
     legacyEvictionPolicy: CacheEvictionPolicy = 'LRU',
     _legacyHitRatio: number = 100,
   ) {
-    const normalizedOptions: CacheModelOptions = typeof options === 'number'
-      ? {
-          sizeLimit: options,
-          evictionPolicy: legacyEvictionPolicy,
-          ttlMs: Number.MAX_SAFE_INTEGER,
-          readLatencyMs: 2,
-        }
-      : options;
+    const normalizedOptions: CacheModelOptions =
+      typeof options === 'number'
+        ? {
+            sizeLimit: options,
+            evictionPolicy: legacyEvictionPolicy,
+            ttlMs: Number.MAX_SAFE_INTEGER,
+            readLatencyMs: 2,
+          }
+        : options;
     this.options = {
       ...normalizedOptions,
       sizeLimit: Math.max(1, Math.floor(normalizedOptions.sizeLimit)),
@@ -97,13 +98,14 @@ export class CacheModel {
     let targetScore = Infinity;
 
     for (const [key, entry] of this.cache) {
-      const score = this.options.evictionPolicy === 'LFU'
-        ? entry.frequency
-        : this.options.evictionPolicy === 'FIFO'
-          ? entry.insertedAt
-          : this.options.evictionPolicy === 'TTL'
-            ? entry.expiresAt
-            : entry.lastAccessed;
+      const score =
+        this.options.evictionPolicy === 'LFU'
+          ? entry.frequency
+          : this.options.evictionPolicy === 'FIFO'
+            ? entry.insertedAt
+            : this.options.evictionPolicy === 'TTL'
+              ? entry.expiresAt
+              : entry.lastAccessed;
       if (score < targetScore) {
         targetKey = key;
         targetScore = score;

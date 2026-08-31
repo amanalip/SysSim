@@ -37,10 +37,7 @@ export const ToastContainer: React.FC = () => {
   return (
     <div className={styles.toastContainer}>
       {toasts.map((toast) => (
-        <div
-          key={toast.id}
-          className={`${styles.toastItem} ${getToastClass(toast.type)}`}
-        >
+        <div key={toast.id} className={`${styles.toastItem} ${getToastClass(toast.type)}`}>
           <div className={styles.toastLeft}>
             {getToastIcon(toast.type)}
             <span>{toast.message}</span>

@@ -17,18 +17,56 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Separate microservices for Product Catalog, Shopping Cart, Order Checkout, and Inventory.' },
+      {
+        step: 1,
+        hint: 'Separate microservices for Product Catalog, Shopping Cart, Order Checkout, and Inventory.',
+      },
       { step: 2, hint: 'Use Elasticsearch / OpenSearch for product search and faceted filtering.' },
-      { step: 3, hint: 'Coordinate order checkout across services using the Saga Orchestrator pattern with compensating transactions.' },
+      {
+        step: 3,
+        hint: 'Coordinate order checkout across services using the Saga Orchestrator pattern with compensating transactions.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Shopper') } },
-        { id: 'gw', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('api_gateway', 'gw', 'Commerce Gateway') } },
-        { id: 'orderSvc', type: 'customComponent', position: { x: 500, y: 70 }, data: { config: createDefaultConfig('app_server', 'orderSvc', 'Order Orchestrator') } },
-        { id: 'catalogSvc', type: 'customComponent', position: { x: 500, y: 220 }, data: { config: createDefaultConfig('app_server', 'catalogSvc', 'Catalog Service') } },
-        { id: 'orderDb', type: 'customComponent', position: { x: 740, y: 70 }, data: { config: createDefaultConfig('sql_db', 'orderDb', 'Order DB (PostgreSQL)') } },
-        { id: 'searchIdx', type: 'customComponent', position: { x: 740, y: 220 }, data: { config: createDefaultConfig('search_index', 'searchIdx', 'Elasticsearch Catalog') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Shopper') },
+        },
+        {
+          id: 'gw',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('api_gateway', 'gw', 'Commerce Gateway') },
+        },
+        {
+          id: 'orderSvc',
+          type: 'customComponent',
+          position: { x: 500, y: 70 },
+          data: { config: createDefaultConfig('app_server', 'orderSvc', 'Order Orchestrator') },
+        },
+        {
+          id: 'catalogSvc',
+          type: 'customComponent',
+          position: { x: 500, y: 220 },
+          data: { config: createDefaultConfig('app_server', 'catalogSvc', 'Catalog Service') },
+        },
+        {
+          id: 'orderDb',
+          type: 'customComponent',
+          position: { x: 740, y: 70 },
+          data: { config: createDefaultConfig('sql_db', 'orderDb', 'Order DB (PostgreSQL)') },
+        },
+        {
+          id: 'searchIdx',
+          type: 'customComponent',
+          position: { x: 740, y: 220 },
+          data: {
+            config: createDefaultConfig('search_index', 'searchIdx', 'Elasticsearch Catalog'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'gw', data: { protocol: 'HTTP' } },
@@ -41,11 +79,14 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'Why avoid 2-Phase Commit (2PC) in modern distributed microservices?',
-        answer: '2PC is a blocking protocol that reduces system throughput and availability if any participating node fails or stalls; Saga pattern with compensation transactions is preferred.',
+        answer:
+          '2PC is a blocking protocol that reduces system throughput and availability if any participating node fails or stalls; Saga pattern with compensation transactions is preferred.',
       },
       {
-        question: 'How do you handle flash promotions without locking the whole inventory database?',
-        answer: 'Pre-allocate inventory quotas in Redis and use atomic DECR with Lua scripts to validate stock before persisting orders.',
+        question:
+          'How do you handle flash promotions without locking the whole inventory database?',
+        answer:
+          'Pre-allocate inventory quotas in Redis and use atomic DECR with Lua scripts to validate stock before persisting orders.',
       },
     ],
     sources: [
@@ -83,17 +124,51 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Enforce strict idempotency keys stored in an ACID database or distributed lock before processing charges.' },
-      { step: 2, hint: 'Implement double-entry accounting ledgers where every transaction has matching Debit and Credit entries.' },
-      { step: 3, hint: 'Run daily background reconciliation jobs against bank settlement statements.' },
+      {
+        step: 1,
+        hint: 'Enforce strict idempotency keys stored in an ACID database or distributed lock before processing charges.',
+      },
+      {
+        step: 2,
+        hint: 'Implement double-entry accounting ledgers where every transaction has matching Debit and Credit entries.',
+      },
+      {
+        step: 3,
+        hint: 'Run daily background reconciliation jobs against bank settlement statements.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Merchant Client') } },
-        { id: 'gw', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('api_gateway', 'gw', 'Payment API Gateway') } },
-        { id: 'paySvc', type: 'customComponent', position: { x: 500, y: 150 }, data: { config: createDefaultConfig('app_server', 'paySvc', 'Payment Processing Svc') } },
-        { id: 'ledgerDb', type: 'customComponent', position: { x: 740, y: 80 }, data: { config: createDefaultConfig('sql_db', 'ledgerDb', 'Double-Entry Ledger DB') } },
-        { id: 'bankConn', type: 'customComponent', position: { x: 740, y: 220 }, data: { config: createDefaultConfig('app_server', 'bankConn', 'Card Network Connector') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Merchant Client') },
+        },
+        {
+          id: 'gw',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('api_gateway', 'gw', 'Payment API Gateway') },
+        },
+        {
+          id: 'paySvc',
+          type: 'customComponent',
+          position: { x: 500, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'paySvc', 'Payment Processing Svc') },
+        },
+        {
+          id: 'ledgerDb',
+          type: 'customComponent',
+          position: { x: 740, y: 80 },
+          data: { config: createDefaultConfig('sql_db', 'ledgerDb', 'Double-Entry Ledger DB') },
+        },
+        {
+          id: 'bankConn',
+          type: 'customComponent',
+          position: { x: 740, y: 220 },
+          data: { config: createDefaultConfig('app_server', 'bankConn', 'Card Network Connector') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'gw', data: { protocol: 'HTTP' } },
@@ -104,12 +179,15 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'How do you guarantee a customer is never double-charged during network timeout retries?',
-        answer: 'Require client to provide a unique UUID Idempotency-Key; the payment server checks this key in a transactional database table and returns the existing result if already processed.',
+        question:
+          'How do you guarantee a customer is never double-charged during network timeout retries?',
+        answer:
+          'Require client to provide a unique UUID Idempotency-Key; the payment server checks this key in a transactional database table and returns the existing result if already processed.',
       },
       {
         question: 'Why is double-entry ledger bookkeeping mandatory in financial architectures?',
-        answer: 'Double-entry ensures total debits equal total credits across all accounts, guaranteeing mathematical invariance and catching ledger balance discrepancies immediately.',
+        answer:
+          'Double-entry ensures total debits equal total credits across all accounts, guaranteeing mathematical invariance and catching ledger balance discrepancies immediately.',
       },
     ],
     sources: [
@@ -147,17 +225,55 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.99,
     },
     hints: [
-      { step: 1, hint: 'Place an edge Virtual Waiting Room / Queue before the checkout gateway to throttle concurrency.' },
-      { step: 2, hint: 'Store seat inventory in Redis and execute atomic reservation scripts using Redis Lua scripts.' },
-      { step: 3, hint: 'Release reserved seats automatically after 10 minutes if payment is not completed.' },
+      {
+        step: 1,
+        hint: 'Place an edge Virtual Waiting Room / Queue before the checkout gateway to throttle concurrency.',
+      },
+      {
+        step: 2,
+        hint: 'Store seat inventory in Redis and execute atomic reservation scripts using Redis Lua scripts.',
+      },
+      {
+        step: 3,
+        hint: 'Release reserved seats automatically after 10 minutes if payment is not completed.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Shopper') } },
-        { id: 'waitingRoom', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('rate_limiter', 'waitingRoom', 'Virtual Waiting Room') } },
-        { id: 'bookSvc', type: 'customComponent', position: { x: 500, y: 150 }, data: { config: createDefaultConfig('app_server', 'bookSvc', 'Booking Service') } },
-        { id: 'seatCache', type: 'customComponent', position: { x: 740, y: 80 }, data: { config: createDefaultConfig('redis_cache', 'seatCache', 'Atomic Seat Inventory') } },
-        { id: 'bookDb', type: 'customComponent', position: { x: 740, y: 220 }, data: { config: createDefaultConfig('sql_db', 'bookDb', 'Confirmed Bookings DB') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Shopper') },
+        },
+        {
+          id: 'waitingRoom',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: {
+            config: createDefaultConfig('rate_limiter', 'waitingRoom', 'Virtual Waiting Room'),
+          },
+        },
+        {
+          id: 'bookSvc',
+          type: 'customComponent',
+          position: { x: 500, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'bookSvc', 'Booking Service') },
+        },
+        {
+          id: 'seatCache',
+          type: 'customComponent',
+          position: { x: 740, y: 80 },
+          data: {
+            config: createDefaultConfig('redis_cache', 'seatCache', 'Atomic Seat Inventory'),
+          },
+        },
+        {
+          id: 'bookDb',
+          type: 'customComponent',
+          position: { x: 740, y: 220 },
+          data: { config: createDefaultConfig('sql_db', 'bookDb', 'Confirmed Bookings DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'waitingRoom', data: { protocol: 'HTTP' } },
@@ -169,11 +285,13 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'How do Lua scripts in Redis prevent seat overselling under extreme concurrency?',
-        answer: 'Redis executes Lua scripts single-threadedly and atomically; it checks remaining seat count and decrements it within a single atomic step without race conditions.',
+        answer:
+          'Redis executes Lua scripts single-threadedly and atomically; it checks remaining seat count and decrements it within a single atomic step without race conditions.',
       },
       {
         question: 'How does the Virtual Waiting Room control downstream pressure?',
-        answer: 'Users are assigned a queue position; the waiting room only admits N users per second into checkout according to database processing capacity.',
+        answer:
+          'Users are assigned a queue position; the waiting room only admits N users per second into checkout according to database processing capacity.',
       },
     ],
     sources: [
@@ -211,17 +329,53 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Index geospatial coordinates using Uber H3 hexagonal spatial indexes or Google S2 cells.' },
-      { step: 2, hint: 'Store live driver locations in In-Memory spatial datastores (Redis GEO / Ringpop) with short TTLs.' },
-      { step: 3, hint: 'Calculate surge pricing factors per hexagon cell based on live supply vs demand ratios.' },
+      {
+        step: 1,
+        hint: 'Index geospatial coordinates using Uber H3 hexagonal spatial indexes or Google S2 cells.',
+      },
+      {
+        step: 2,
+        hint: 'Store live driver locations in In-Memory spatial datastores (Redis GEO / Ringpop) with short TTLs.',
+      },
+      {
+        step: 3,
+        hint: 'Calculate surge pricing factors per hexagon cell based on live supply vs demand ratios.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'driver', type: 'customComponent', position: { x: 50, y: 70 }, data: { config: createDefaultConfig('client', 'driver', 'Driver GPS App') } },
-        { id: 'rider', type: 'customComponent', position: { x: 50, y: 220 }, data: { config: createDefaultConfig('client', 'rider', 'Rider App') } },
-        { id: 'locGw', type: 'customComponent', position: { x: 280, y: 70 }, data: { config: createDefaultConfig('app_server', 'locGw', 'Location Ingest Gateway') } },
-        { id: 'dispatchSvc', type: 'customComponent', position: { x: 280, y: 220 }, data: { config: createDefaultConfig('app_server', 'dispatchSvc', 'Dispatch Matching Engine') } },
-        { id: 'geoStore', type: 'customComponent', position: { x: 540, y: 150 }, data: { config: createDefaultConfig('redis_cache', 'geoStore', 'H3 Spatial Hex Store') } },
+        {
+          id: 'driver',
+          type: 'customComponent',
+          position: { x: 50, y: 70 },
+          data: { config: createDefaultConfig('client', 'driver', 'Driver GPS App') },
+        },
+        {
+          id: 'rider',
+          type: 'customComponent',
+          position: { x: 50, y: 220 },
+          data: { config: createDefaultConfig('client', 'rider', 'Rider App') },
+        },
+        {
+          id: 'locGw',
+          type: 'customComponent',
+          position: { x: 280, y: 70 },
+          data: { config: createDefaultConfig('app_server', 'locGw', 'Location Ingest Gateway') },
+        },
+        {
+          id: 'dispatchSvc',
+          type: 'customComponent',
+          position: { x: 280, y: 220 },
+          data: {
+            config: createDefaultConfig('app_server', 'dispatchSvc', 'Dispatch Matching Engine'),
+          },
+        },
+        {
+          id: 'geoStore',
+          type: 'customComponent',
+          position: { x: 540, y: 150 },
+          data: { config: createDefaultConfig('redis_cache', 'geoStore', 'H3 Spatial Hex Store') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'driver', target: 'locGw', data: { protocol: 'gRPC' } },
@@ -233,11 +387,13 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'Why choose Uber H3 hexagonal cells over square geohash grids?',
-        answer: 'Hexagons have identical distance to all 6 neighboring cells, eliminating edge-distortion anomalies present in rectangular grids.',
+        answer:
+          'Hexagons have identical distance to all 6 neighboring cells, eliminating edge-distortion anomalies present in rectangular grids.',
       },
       {
         question: 'Why discard driver GPS update history from the hot dispatch path?',
-        answer: 'Dispatch only requires the latest instantaneous location; historical trajectory points can be shipped asynchronously to an analytics data lake via Kafka.',
+        answer:
+          'Dispatch only requires the latest instantaneous location; historical trajectory points can be shipped asynchronously to an analytics data lake via Kafka.',
       },
     ],
     sources: [
@@ -275,17 +431,51 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.99,
     },
     hints: [
-      { step: 1, hint: 'Model order state transitions with an event-driven state machine (Placed, Accepted, Cooking, Picked Up, Delivered).' },
-      { step: 2, hint: 'Use asynchronous message queues to orchestrate notifications between merchant and courier fleets.' },
-      { step: 3, hint: 'Predict ETAs using machine learning models feeding on historical cooking and travel times.' },
+      {
+        step: 1,
+        hint: 'Model order state transitions with an event-driven state machine (Placed, Accepted, Cooking, Picked Up, Delivered).',
+      },
+      {
+        step: 2,
+        hint: 'Use asynchronous message queues to orchestrate notifications between merchant and courier fleets.',
+      },
+      {
+        step: 3,
+        hint: 'Predict ETAs using machine learning models feeding on historical cooking and travel times.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Consumer App') } },
-        { id: 'gw', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('api_gateway', 'gw', 'Order Gateway') } },
-        { id: 'stateEngine', type: 'customComponent', position: { x: 500, y: 150 }, data: { config: createDefaultConfig('app_server', 'stateEngine', 'Order State Machine') } },
-        { id: 'eventBus', type: 'customComponent', position: { x: 740, y: 150 }, data: { config: createDefaultConfig('message_queue', 'eventBus', 'Kafka Order Events') } },
-        { id: 'orderDb', type: 'customComponent', position: { x: 500, y: 280 }, data: { config: createDefaultConfig('sql_db', 'orderDb', 'Order & Menu DB') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Consumer App') },
+        },
+        {
+          id: 'gw',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('api_gateway', 'gw', 'Order Gateway') },
+        },
+        {
+          id: 'stateEngine',
+          type: 'customComponent',
+          position: { x: 500, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'stateEngine', 'Order State Machine') },
+        },
+        {
+          id: 'eventBus',
+          type: 'customComponent',
+          position: { x: 740, y: 150 },
+          data: { config: createDefaultConfig('message_queue', 'eventBus', 'Kafka Order Events') },
+        },
+        {
+          id: 'orderDb',
+          type: 'customComponent',
+          position: { x: 500, y: 280 },
+          data: { config: createDefaultConfig('sql_db', 'orderDb', 'Order & Menu DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'gw', data: { protocol: 'HTTP' } },
@@ -296,12 +486,15 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'How do you prevent courier dispatch before restaurant confirms order preparation?',
-        answer: 'Hold the courier dispatch event in a delayed queue or trigger dispatch conditionally when restaurant marks prep completion or predicted prep threshold is reached.',
+        question:
+          'How do you prevent courier dispatch before restaurant confirms order preparation?',
+        answer:
+          'Hold the courier dispatch event in a delayed queue or trigger dispatch conditionally when restaurant marks prep completion or predicted prep threshold is reached.',
       },
       {
         question: 'How do you handle menu updates without breaking in-flight customer carts?',
-        answer: 'Cart items store immutable item snapshots and price versions at checkout time rather than mutating active catalog records.',
+        answer:
+          'Cart items store immutable item snapshots and price versions at checkout time rather than mutating active catalog records.',
       },
     ],
     sources: [
@@ -339,17 +532,51 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Coordinate auction bids for a specific item using a distributed lock or partition bids by item ID.' },
-      { step: 2, hint: 'Broadcast updated top bids immediately to all active watchers over WebSockets.' },
-      { step: 3, hint: 'Schedule auction closing deadlines using a reliable distributed task scheduler.' },
+      {
+        step: 1,
+        hint: 'Coordinate auction bids for a specific item using a distributed lock or partition bids by item ID.',
+      },
+      {
+        step: 2,
+        hint: 'Broadcast updated top bids immediately to all active watchers over WebSockets.',
+      },
+      {
+        step: 3,
+        hint: 'Schedule auction closing deadlines using a reliable distributed task scheduler.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'bidder', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'bidder', 'Bidding Client') } },
-        { id: 'wsGw', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('app_server', 'wsGw', 'Bid WebSocket Gateway') } },
-        { id: 'bidSvc', type: 'customComponent', position: { x: 500, y: 150 }, data: { config: createDefaultConfig('app_server', 'bidSvc', 'Auction Coordinator') } },
-        { id: 'bidCache', type: 'customComponent', position: { x: 740, y: 80 }, data: { config: createDefaultConfig('redis_cache', 'bidCache', 'Current Highest Bid') } },
-        { id: 'bidDb', type: 'customComponent', position: { x: 740, y: 220 }, data: { config: createDefaultConfig('sql_db', 'bidDb', 'Bid History Ledger') } },
+        {
+          id: 'bidder',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'bidder', 'Bidding Client') },
+        },
+        {
+          id: 'wsGw',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'wsGw', 'Bid WebSocket Gateway') },
+        },
+        {
+          id: 'bidSvc',
+          type: 'customComponent',
+          position: { x: 500, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'bidSvc', 'Auction Coordinator') },
+        },
+        {
+          id: 'bidCache',
+          type: 'customComponent',
+          position: { x: 740, y: 80 },
+          data: { config: createDefaultConfig('redis_cache', 'bidCache', 'Current Highest Bid') },
+        },
+        {
+          id: 'bidDb',
+          type: 'customComponent',
+          position: { x: 740, y: 220 },
+          data: { config: createDefaultConfig('sql_db', 'bidDb', 'Bid History Ledger') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'bidder', target: 'wsGw', data: { protocol: 'WebSocket' } },
@@ -360,12 +587,15 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'How do you handle two identical high bids submitted in the exact same millisecond?',
-        answer: 'Serialize bids per auction through a single partition thread or Redis Lua lock so the first accepted transaction wins and subsequent bids are evaluated against the updated price.',
+        question:
+          'How do you handle two identical high bids submitted in the exact same millisecond?',
+        answer:
+          'Serialize bids per auction through a single partition thread or Redis Lua lock so the first accepted transaction wins and subsequent bids are evaluated against the updated price.',
       },
       {
         question: 'What is proxy bidding and where is it calculated?',
-        answer: 'The system automatically increases the current bid by the minimum increment on behalf of a bidder up to their secret maximum ceiling.',
+        answer:
+          'The system automatically increases the current bid by the minimum increment on behalf of a bidder up to their secret maximum ceiling.',
       },
     ],
     sources: [
@@ -376,7 +606,7 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
       },
       {
         title: 'High Performance MySQL: Real-time Bidding Patterns',
-        authorOrOrg: 'Silvia Botros (O\'Reilly)',
+        authorOrOrg: "Silvia Botros (O'Reilly)",
         url: 'https://www.oreilly.com',
       },
     ],
@@ -403,16 +633,44 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.99,
     },
     hints: [
-      { step: 1, hint: 'Cache active promotion rules and validation logic in fast In-Memory stores.' },
+      {
+        step: 1,
+        hint: 'Cache active promotion rules and validation logic in fast In-Memory stores.',
+      },
       { step: 2, hint: 'Track promo redemption counts atomically in Redis (INCRBY / Lua).' },
-      { step: 3, hint: 'Apply rate limiting per user/device fingerprint to prevent promo code brute-forcing.' },
+      {
+        step: 3,
+        hint: 'Apply rate limiting per user/device fingerprint to prevent promo code brute-forcing.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Checkout Client') } },
-        { id: 'promoApi', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'promoApi', 'Promo Rule Evaluator') } },
-        { id: 'ruleCache', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'ruleCache', 'Active Promo Rules') } },
-        { id: 'quotaStore', type: 'customComponent', position: { x: 540, y: 220 }, data: { config: createDefaultConfig('redis_cache', 'quotaStore', 'Atomic Redemption Counter') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Checkout Client') },
+        },
+        {
+          id: 'promoApi',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'promoApi', 'Promo Rule Evaluator') },
+        },
+        {
+          id: 'ruleCache',
+          type: 'customComponent',
+          position: { x: 540, y: 70 },
+          data: { config: createDefaultConfig('redis_cache', 'ruleCache', 'Active Promo Rules') },
+        },
+        {
+          id: 'quotaStore',
+          type: 'customComponent',
+          position: { x: 540, y: 220 },
+          data: {
+            config: createDefaultConfig('redis_cache', 'quotaStore', 'Atomic Redemption Counter'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'promoApi', data: { protocol: 'HTTP' } },
@@ -422,12 +680,15 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'How do you prevent exceeding a 10,000 global coupon limit when 50,000 users click apply at the same second?',
-        answer: 'Execute atomic Redis decrement against initial stock counter; only successful non-negative decrements proceed to checkout application.',
+        question:
+          'How do you prevent exceeding a 10,000 global coupon limit when 50,000 users click apply at the same second?',
+        answer:
+          'Execute atomic Redis decrement against initial stock counter; only successful non-negative decrements proceed to checkout application.',
       },
       {
         question: 'What happens if a user applies a coupon but abandons the cart?',
-        answer: 'Hold reservations with short TTLs or only decrement the official quota when order payment confirmation is received.',
+        answer:
+          'Hold reservations with short TTLs or only decrement the official quota when order payment confirmation is received.',
       },
     ],
     sources: [
@@ -465,16 +726,42 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Partition inventory records by SKU and Warehouse ID in distributed databases.' },
+      {
+        step: 1,
+        hint: 'Partition inventory records by SKU and Warehouse ID in distributed databases.',
+      },
       { step: 2, hint: 'Maintain real-time available-to-promise (ATP) inventory levels in Redis.' },
-      { step: 3, hint: 'Publish stock depletion events to an asynchronous bus for warehouse reorder triggers.' },
+      {
+        step: 3,
+        hint: 'Publish stock depletion events to an asynchronous bus for warehouse reorder triggers.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Order Svc / Warehouse') } },
-        { id: 'invApi', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'invApi', 'Inventory Service') } },
-        { id: 'invCache', type: 'customComponent', position: { x: 520, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'invCache', 'Real-time Stock Cache') } },
-        { id: 'invDb', type: 'customComponent', position: { x: 520, y: 230 }, data: { config: createDefaultConfig('sql_db', 'invDb', 'Inventory Relational DB') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Order Svc / Warehouse') },
+        },
+        {
+          id: 'invApi',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'invApi', 'Inventory Service') },
+        },
+        {
+          id: 'invCache',
+          type: 'customComponent',
+          position: { x: 520, y: 70 },
+          data: { config: createDefaultConfig('redis_cache', 'invCache', 'Real-time Stock Cache') },
+        },
+        {
+          id: 'invDb',
+          type: 'customComponent',
+          position: { x: 520, y: 230 },
+          data: { config: createDefaultConfig('sql_db', 'invDb', 'Inventory Relational DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'invApi', data: { protocol: 'gRPC' } },
@@ -484,12 +771,16 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'How do you handle multi-item orders where items reside in different regional warehouses?',
-        answer: 'The inventory service runs order splitting logic, selecting fulfillment centers that minimize shipment count and total delivery transit time.',
+        question:
+          'How do you handle multi-item orders where items reside in different regional warehouses?',
+        answer:
+          'The inventory service runs order splitting logic, selecting fulfillment centers that minimize shipment count and total delivery transit time.',
       },
       {
-        question: 'How do you avoid negative stock when multiple threads update inventory simultaneously?',
-        answer: 'Use database conditional updates (UPDATE inventory SET stock = stock - 1 WHERE sku = ? AND stock >= 1) or atomic Redis Lua scripts.',
+        question:
+          'How do you avoid negative stock when multiple threads update inventory simultaneously?',
+        answer:
+          'Use database conditional updates (UPDATE inventory SET stock = stock - 1 WHERE sku = ? AND stock >= 1) or atomic Redis Lua scripts.',
       },
     ],
     sources: [
@@ -527,16 +818,39 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.99,
     },
     hints: [
-      { step: 1, hint: 'Store active shopping carts in Redis / DynamoDB indexed by Session UUID or User ID.' },
+      {
+        step: 1,
+        hint: 'Store active shopping carts in Redis / DynamoDB indexed by Session UUID or User ID.',
+      },
       { step: 2, hint: 'Merge guest cart items into user cart upon user login.' },
       { step: 3, hint: 'Set 30-day TTLs on inactive carts with automatic expiration.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Shopper') } },
-        { id: 'cartApi', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'cartApi', 'Cart Service') } },
-        { id: 'cartCache', type: 'customComponent', position: { x: 540, y: 80 }, data: { config: createDefaultConfig('redis_cache', 'cartCache', 'Cart Redis Cache') } },
-        { id: 'cartDb', type: 'customComponent', position: { x: 540, y: 230 }, data: { config: createDefaultConfig('nosql_db', 'cartDb', 'Persistent Cart DB') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Shopper') },
+        },
+        {
+          id: 'cartApi',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'cartApi', 'Cart Service') },
+        },
+        {
+          id: 'cartCache',
+          type: 'customComponent',
+          position: { x: 540, y: 80 },
+          data: { config: createDefaultConfig('redis_cache', 'cartCache', 'Cart Redis Cache') },
+        },
+        {
+          id: 'cartDb',
+          type: 'customComponent',
+          position: { x: 540, y: 230 },
+          data: { config: createDefaultConfig('nosql_db', 'cartDb', 'Persistent Cart DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'cartApi', data: { protocol: 'HTTP' } },
@@ -546,12 +860,15 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'How do you handle cart merging when a guest user logs into an account with existing items?',
-        answer: 'Combine item quantities for matching SKUs and append unique items, triggering catalog price & stock revalidations.',
+        question:
+          'How do you handle cart merging when a guest user logs into an account with existing items?',
+        answer:
+          'Combine item quantities for matching SKUs and append unique items, triggering catalog price & stock revalidations.',
       },
       {
         question: 'Why choose NoSQL key-value stores over relational SQL for shopping carts?',
-        answer: 'Shopping carts represent transient document states naturally structured as key-value JSON, eliminating multi-table relational joins.',
+        answer:
+          'Shopping carts represent transient document states naturally structured as key-value JSON, eliminating multi-table relational joins.',
       },
     ],
     sources: [

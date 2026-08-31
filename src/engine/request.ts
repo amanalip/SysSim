@@ -15,9 +15,10 @@ export function createSimRequest(
   requestSequence?: number,
   inputs: RequestInputs = {},
 ): SimRequest {
-  const id = requestSequence === undefined
-    ? `req_manual_${fallbackRequestSequence++}`
-    : `req_${requestSequence}`;
+  const id =
+    requestSequence === undefined
+      ? `req_manual_${fallbackRequestSequence++}`
+      : `req_${requestSequence}`;
   return {
     id,
     timestamp: timestampMs,

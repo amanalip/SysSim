@@ -21,7 +21,9 @@ describe('Desktop UX/UI Enhancements (Features 1 to 10)', () => {
   it('Feature 1: Component metadata list has category assignments with valid category colors', () => {
     expect(COMPONENT_METADATA_LIST.length).toBeGreaterThan(10);
     COMPONENT_METADATA_LIST.forEach((comp) => {
-      expect(['compute', 'networking', 'storage', 'caching', 'messaging', 'security']).toContain(comp.category);
+      expect(['compute', 'networking', 'storage', 'caching', 'messaging', 'security']).toContain(
+        comp.category,
+      );
     });
   });
 
@@ -80,7 +82,9 @@ describe('Desktop UX/UI Enhancements (Features 1 to 10)', () => {
     expect(useStore.getState().completedScenarioIds).toContain(1);
     expect(useStore.getState().completedScenarioIds).toContain(2);
 
-    const progress = Math.round((useStore.getState().completedScenarioIds.length / ALL_SCENARIOS.length) * 100);
+    const progress = Math.round(
+      (useStore.getState().completedScenarioIds.length / ALL_SCENARIOS.length) * 100,
+    );
     expect(progress).toBe(2);
   });
 

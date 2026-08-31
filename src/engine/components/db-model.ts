@@ -62,13 +62,17 @@ export class DatabaseModel {
     requestKey: string = 'default',
     health: NodeHealthStatus = 'healthy',
   ): DatabaseQueryResult {
-    if (isWrite) this.writes++; else this.reads++;
+    if (isWrite) this.writes++;
+    else this.reads++;
     const isolation = this.options.isolationLevel || 'Read Committed';
-    const latencyFactor = isolation === 'Serializable' ? 1.4 : isolation === 'Repeatable Read' ? 1.15 : 1;
-    const capacityFactor = isolation === 'Serializable' ? 0.6 : isolation === 'Repeatable Read' ? 0.8 : 1;
+    const latencyFactor =
+      isolation === 'Serializable' ? 1.4 : isolation === 'Repeatable Read' ? 1.15 : 1;
+    const capacityFactor =
+      isolation === 'Serializable' ? 0.6 : isolation === 'Repeatable Read' ? 0.8 : 1;
     const effectiveConnections = Math.max(1, Math.floor(this.maxConnections * capacityFactor));
     const queueLimit = Math.max(0, this.options.connectionQueueLimit ?? this.maxConnections);
-    const failedOver = health === 'degraded' && Boolean(this.options.automaticFailover) && !this.failoverPerformed;
+    const failedOver =
+      health === 'degraded' && Boolean(this.options.automaticFailover) && !this.failoverPerformed;
     if (failedOver) {
       this.failovers++;
       this.failoverPerformed = true;
@@ -76,12 +80,13 @@ export class DatabaseModel {
 
     const useReplica = !isWrite && this.readReplicas > 0;
     const replicaIndex = useReplica ? this.readReplicaIndex++ % this.readReplicas : undefined;
-    if (useReplica) this.replicaQueries++; else this.primaryQueries++;
+    if (useReplica) this.replicaQueries++;
+    else this.primaryQueries++;
 
     const shardIndex = hashKey(requestKey) % this.shardHits.length;
     this.shardHits[shardIndex]++;
     const routing = {
-      role: useReplica ? 'read_replica' as const : 'primary' as const,
+      role: useReplica ? ('read_replica' as const) : ('primary' as const),
       replicaIndex,
       replicationLagMs: useReplica ? Math.max(0, this.options.replicationLagMs || 0) : 0,
       failedOver,
@@ -91,7 +96,13 @@ export class DatabaseModel {
     if (this.activeConnections >= effectiveConnections) {
       if (this.queuedConnections >= queueLimit) {
         this.connectionRejections++;
-        return { ...routing, latencyMs: 1, poolExhausted: true, rejected: true, connectionWaitMs: 0 };
+        return {
+          ...routing,
+          latencyMs: 1,
+          poolExhausted: true,
+          rejected: true,
+          connectionWaitMs: 0,
+        };
       }
       this.queuedConnections++;
       this.connectionWaits++;
@@ -109,7 +120,12 @@ export class DatabaseModel {
     this.activeConnections++;
     const replicaFactor = useReplica ? 1 / (1 + this.readReplicas * 0.3) : 1;
     const failoverLatency = failedOver ? Math.max(0, this.options.failoverLatencyMs || 0) : 0;
-    const latency = Math.max(2, this.baseLatencyMs * replicaFactor * latencyFactor + failoverLatency + (this.random() * 4 - 2));
+    const latency = Math.max(
+      2,
+      this.baseLatencyMs * replicaFactor * latencyFactor +
+        failoverLatency +
+        (this.random() * 4 - 2),
+    );
     return {
       ...routing,
       latencyMs: Math.round(latency),
@@ -120,12 +136,17 @@ export class DatabaseModel {
   }
 
   public drainConnections(deltaMs: number): void {
-    const releaseCount = Math.max(1, Math.round((this.activeConnections * deltaMs) / Math.max(10, this.baseLatencyMs)));
+    const releaseCount = Math.max(
+      1,
+      Math.round((this.activeConnections * deltaMs) / Math.max(10, this.baseLatencyMs)),
+    );
     this.activeConnections = Math.max(0, this.activeConnections - releaseCount);
     this.queuedConnections = Math.max(0, this.queuedConnections - releaseCount);
   }
 
-  public getActiveConnections(): number { return this.activeConnections; }
+  public getActiveConnections(): number {
+    return this.activeConnections;
+  }
 
   public getMetrics() {
     const total = this.shardHits.reduce((sum, count) => sum + count, 0);

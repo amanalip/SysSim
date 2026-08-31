@@ -1,5 +1,15 @@
 import React, { useRef, useState } from 'react';
-import { Flame, X, Database, Zap, Activity, Scissors, Clock, RotateCcw, AlertTriangle } from 'lucide-react';
+import {
+  Flame,
+  X,
+  Database,
+  Zap,
+  Activity,
+  Scissors,
+  Clock,
+  RotateCcw,
+  AlertTriangle,
+} from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { chaosDrills, ChaosDrillId, ChaosDrillRecord } from '../../engine/chaos-drills';
 import styles from './ChaosDrillModal.module.css';
@@ -22,7 +32,9 @@ interface Drill {
 export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClose }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalAccessibility(isOpen, onClose, dialogRef);
-  const [activeDrill, setActiveDrill] = useState<ChaosDrillRecord | null>(() => chaosDrills.getActiveRecords()[0] || null);
+  const [activeDrill, setActiveDrill] = useState<ChaosDrillRecord | null>(
+    () => chaosDrills.getActiveRecords()[0] || null,
+  );
   const [stampedeProtection, setStampedeProtection] = useState(false);
   const { addToast } = useStore();
 
@@ -39,7 +51,8 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
       id: 'db_outage',
       name: 'Primary Database Outage',
       category: 'Storage Resilience',
-      description: 'Exercises internal SQL replica failover or a separately connected database target; fails explicitly when neither exists.',
+      description:
+        'Exercises internal SQL replica failover or a separately connected database target; fails explicitly when neither exists.',
       icon: <Database size={16} color="var(--error)" />,
       execute: () => launch('db_outage'),
     },
@@ -55,7 +68,8 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
       id: 'flash_crowd',
       name: '5x Flash Crowd Surge',
       category: 'Traffic Spike',
-      description: 'Multiplies base QPS exactly once while preserving the selected traffic pattern for exact restoration.',
+      description:
+        'Multiplies base QPS exactly once while preserving the selected traffic pattern for exact restoration.',
       icon: <Activity size={16} color="var(--accent-primary)" />,
       execute: () => launch('flash_crowd'),
     },
@@ -63,7 +77,8 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
       id: 'ingress_partition',
       name: 'Ingress Network Partition',
       category: 'Network Partition',
-      description: 'Cuts a live request edge at the client or ingress tier, selected using component and edge semantics.',
+      description:
+        'Cuts a live request edge at the client or ingress tier, selected using component and edge semantics.',
       icon: <Scissors size={16} color="var(--error)" />,
       execute: () => launch('ingress_partition'),
     },
@@ -71,7 +86,8 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
       id: 'network_latency',
       name: 'High Network Latency (400ms)',
       category: 'Network Degradation',
-      description: 'Adds 400ms to active ingress request edges and restores their exact prior latency values.',
+      description:
+        'Adds 400ms to active ingress request edges and restores their exact prior latency values.',
       icon: <Clock size={16} color="var(--warning)" />,
       execute: () => launch('network_latency'),
     },
@@ -85,20 +101,34 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div ref={dialogRef} className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="chaos-drills-title" tabIndex={-1} onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={dialogRef}
+        className={styles.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="chaos-drills-title"
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className={styles.modalHeader}>
           <div className={styles.titleGroup}>
             <div className={styles.iconBadge}>
               <Flame size={16} color="var(--error)" />
             </div>
             <div>
-              <div id="chaos-drills-title" className={styles.modalTitle}>Chaos Engineering Drills</div>
+              <div id="chaos-drills-title" className={styles.modalTitle}>
+                Chaos Engineering Drills
+              </div>
               <div className={styles.modalSubtitle}>
                 Explore simplified failure states; results do not certify fault tolerance
               </div>
             </div>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Close chaos engineering drills">
+          <button
+            className={styles.closeBtn}
+            onClick={onClose}
+            aria-label="Close chaos engineering drills"
+          >
             <X size={15} />
           </button>
         </div>
@@ -116,7 +146,12 @@ export const ChaosDrillModal: React.FC<ChaosDrillModalProps> = ({ isOpen, onClos
 
         <div className={styles.drillList}>
           <label className={styles.protectionOption}>
-            <input type="checkbox" checked={stampedeProtection} onChange={(event) => setStampedeProtection(event.target.checked)} disabled={Boolean(activeDrill)} />
+            <input
+              type="checkbox"
+              checked={stampedeProtection}
+              onChange={(event) => setStampedeProtection(event.target.checked)}
+              disabled={Boolean(activeDrill)}
+            />
             Compare cache stampede with request coalescing protection
           </label>
           {drills.map((drill) => (

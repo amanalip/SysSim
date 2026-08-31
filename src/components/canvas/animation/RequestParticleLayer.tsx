@@ -89,7 +89,7 @@ export const RequestParticleLayer: React.FC = () => {
             ...p,
             progress: nextProg > 1 ? nextProg - 1 : nextProg,
           };
-        })
+        }),
       );
 
       animFrameRef.current = requestAnimationFrame(loop);

@@ -2,7 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { DollarSign, Server, Database, Zap, Radio, Globe } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { ModelNotice } from '../ui/ModelNotice';
-import { CloudProvider, estimateArchitectureCost, ILLUSTRATIVE_PRICING_CONTEXT } from '../../analysis/cost-estimator';
+import {
+  CloudProvider,
+  estimateArchitectureCost,
+  ILLUSTRATIVE_PRICING_CONTEXT,
+} from '../../analysis/cost-estimator';
 import styles from './CostEstimatorPanel.module.css';
 
 export const CostEstimatorPanel: React.FC = () => {
@@ -55,7 +59,8 @@ export const CostEstimatorPanel: React.FC = () => {
               <span className={styles.perMonth}> / month</span>
             </div>
             <div className={styles.subtitle}>
-              Est. ${Math.round(costBreakdown.totalMonthly / 730 * 100) / 100}/hr across {nodes.length} nodes at {Math.round(workloadQps).toLocaleString()} QPS
+              Est. ${Math.round((costBreakdown.totalMonthly / 730) * 100) / 100}/hr across{' '}
+              {nodes.length} nodes at {Math.round(workloadQps).toLocaleString()} QPS
             </div>
           </div>
         </div>

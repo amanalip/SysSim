@@ -1,13 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { configureGraphMutationListener } from '../engine/simulation-command-bus';
 import { createDefaultConfig } from '../model/component-defaults';
-import { exportSnapshotSlots, importSnapshotSlots, parseSnapshotSlots, persistSnapshotSlots } from '../model/snapshot-storage';
+import {
+  exportSnapshotSlots,
+  importSnapshotSlots,
+  parseSnapshotSlots,
+  persistSnapshotSlots,
+} from '../model/snapshot-storage';
 import { useStore } from '../store/use-store';
 
 describe('history and snapshot integrity tasks 237-253', () => {
   beforeEach(() => {
     configureGraphMutationListener(null);
-    useStore.setState({ nodes: [], edges: [], zones: [], historyPast: [], historyFuture: [], canUndo: false, canRedo: false, graphRevision: 0 });
+    useStore.setState({
+      nodes: [],
+      edges: [],
+      zones: [],
+      historyPast: [],
+      historyFuture: [],
+      canUndo: false,
+      canRedo: false,
+      graphRevision: 0,
+    });
   });
 
   it('records semantic actions, but not selection or movement frames', () => {
@@ -38,7 +52,10 @@ describe('history and snapshot integrity tasks 237-253', () => {
     expect(useStore.getState().zones[0]).toMatchObject({ width: 450, x: 40 });
     useStore.getState().undo();
     expect(useStore.getState().zones[0]).toMatchObject({ width: 300, x: 1 });
-    expect(useStore.getState().edges[0].data).toMatchObject({ protocol: 'gRPC', purpose: 'request' });
+    expect(useStore.getState().edges[0].data).toMatchObject({
+      protocol: 'gRPC',
+      purpose: 'request',
+    });
   });
 
   it('synchronizes undo and redo exactly once and exposes control availability', () => {
@@ -60,19 +77,50 @@ describe('history and snapshot integrity tasks 237-253', () => {
 
   it('marks malformed and invalid persisted slots as corrupt and migrates old slots', () => {
     expect(parseSnapshotSlots('{broken')[0].corrupted).toBe(true);
-    const old = [{ id: 1, name: 'old', timestamp: 1, nodeCount: 1, edgeCount: 0, schemaVersion: 1,
-      nodes: [{ id: 'client', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: createDefaultConfig('client', 'client') } }], edges: [] }];
+    const old = [
+      {
+        id: 1,
+        name: 'old',
+        timestamp: 1,
+        nodeCount: 1,
+        edgeCount: 0,
+        schemaVersion: 1,
+        nodes: [
+          {
+            id: 'client',
+            type: 'customComponent',
+            position: { x: 0, y: 0 },
+            data: { config: createDefaultConfig('client', 'client') },
+          },
+        ],
+        edges: [],
+      },
+    ];
     const parsed = parseSnapshotSlots(JSON.stringify(old));
-    expect(parsed[0]).toMatchObject({ schemaVersion: 10, restorationMode: 'architecture-and-traffic-reset-simulation' });
+    expect(parsed[0]).toMatchObject({
+      schemaVersion: 10,
+      restorationMode: 'architecture-and-traffic-reset-simulation',
+    });
     expect(parsed[0].corrupted).toBeFalsy();
-    const invalid = [{ ...old[0], nodes: [{ ...old[0].nodes[0], position: { x: Infinity, y: 0 } }] }];
+    const invalid = [
+      { ...old[0], nodes: [{ ...old[0].nodes[0], position: { x: Infinity, y: 0 } }] },
+    ];
     expect(parseSnapshotSlots(JSON.stringify(invalid))[0].corrupted).toBe(true);
   });
 
   it('surfaces quota failures and round-trips all slots through portable JSON', () => {
     const slots = parseSnapshotSlots(null);
     const quota = new DOMException('full', 'QuotaExceededError');
-    expect(() => persistSnapshotSlots({ setItem: () => { throw quota; } }, slots)).toThrow('full');
+    expect(() =>
+      persistSnapshotSlots(
+        {
+          setItem: () => {
+            throw quota;
+          },
+        },
+        slots,
+      ),
+    ).toThrow('full');
     const exported = exportSnapshotSlots(slots);
     expect(importSnapshotSlots(exported)).toHaveLength(5);
     expect(() => importSnapshotSlots('{bad')).toThrow(/valid JSON/);
@@ -80,6 +128,8 @@ describe('history and snapshot integrity tasks 237-253', () => {
 
   it('normalizes blank custom component names', () => {
     const id = useStore.getState().addNode('app_server', { x: 0, y: 0 }, '   ');
-    expect(useStore.getState().nodes.find((item) => item.id === id)?.data.config.name).toBe('App Server');
+    expect(useStore.getState().nodes.find((item) => item.id === id)?.data.config.name).toBe(
+      'App Server',
+    );
   });
 });

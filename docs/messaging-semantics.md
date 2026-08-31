@@ -25,12 +25,12 @@ Queue depth means pending **delivery copies**, not merely unique producer messag
 
 ## Component distinctions
 
-| Component | Delivery copies created per accepted producer message | Default ordering | Intended use |
-| --- | ---: | --- | --- |
-| Message queue | One per consumer group | Partition Key | Partitioned log/stream. Every group receives the message; members represented by connected workers share that group's partition work. |
-| Task queue | One | FIFO | Point-to-point work distribution to one logical consumer. |
-| Pub/Sub | `subscribersPerTopic` | None | One logical copy per configured subscriber. Copies are assigned across connected fanout targets. |
-| Event bus | `fanoutFactor` | None | One logical copy per configured route/fanout destination. |
+| Component     | Delivery copies created per accepted producer message | Default ordering | Intended use                                                                                                                          |
+| ------------- | ----------------------------------------------------: | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Message queue |                                One per consumer group | Partition Key    | Partitioned log/stream. Every group receives the message; members represented by connected workers share that group's partition work. |
+| Task queue    |                                                   One | FIFO             | Point-to-point work distribution to one logical consumer.                                                                             |
+| Pub/Sub       |                                 `subscribersPerTopic` | None             | One logical copy per configured subscriber. Copies are assigned across connected fanout targets.                                      |
+| Event bus     |                                        `fanoutFactor` | None             | One logical copy per configured route/fanout destination.                                                                             |
 
 When logical copies outnumber drawn downstream edges, copies are assigned round-robin across those edges. This represents multiple logical consumer instances without requiring a separate canvas node for every instance.
 
@@ -54,10 +54,10 @@ For multiple connected consumers, their rates and concurrency slots are summed. 
 
 ## Delivery guarantees
 
-| Guarantee | Modeled behavior |
-| --- | --- |
-| At most once | A failed attempt is not retried. It is moved to the configured DLQ when enabled, otherwise dropped. |
-| At least once | A failed attempt retries up to `retryLimit`; successful copies can be processed independently and the consumer must tolerate repeated attempts. |
+| Guarantee                | Modeled behavior                                                                                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| At most once             | A failed attempt is not retried. It is moved to the configured DLQ when enabled, otherwise dropped.                                                                                                                 |
+| At least once            | A failed attempt retries up to `retryLimit`; successful copies can be processed independently and the consumer must tolerate repeated attempts.                                                                     |
 | Exactly once (simulated) | Uses the same retry policy plus delivery-ID deduplication, so a repeated copy with an already completed delivery ID does not invoke the consumer again. This is a teaching abstraction, not a transaction protocol. |
 
 Retries use deterministic exponential backoff: `retryDelayMs × 2^(attempt - 1)`. With FIFO ordering, a delayed head retry blocks the entire queue. With partition-key ordering, it blocks only its partition. Once the configured retry limit is exhausted, the delivery moves to the in-memory dead-letter queue when enabled or is dropped otherwise.

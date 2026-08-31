@@ -58,7 +58,7 @@ describe('Desktop UX/UI Enhancements (Features 11 & 12)', () => {
         burstMultiplier: 3,
         rampDurationSec: 30,
         spikeFrequencySec: 10,
-      }
+      },
     );
 
     engine.start();
@@ -66,7 +66,7 @@ describe('Desktop UX/UI Enhancements (Features 11 & 12)', () => {
     const completed = (engine as any).completedRequests;
     expect(completed.length).toBeGreaterThan(0);
     const asyncReq = completed.find((r: any) =>
-      r.path.some((p: any) => p.nodeType === 'message_queue')
+      r.path.some((p: any) => p.nodeType === 'message_queue'),
     );
     expect(asyncReq).toBeDefined();
     expect(asyncReq.color).toBe('#a855f7');

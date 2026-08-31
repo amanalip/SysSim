@@ -77,7 +77,11 @@ describe('Post-Audit Verified Bug Fixes & Day/Night Mode Contrast', () => {
         type: 'custom',
         position: { x: 200, y: 200 },
         data: {
-          config: { id: 'imported_node_1', name: 'Imported App', type: 'app_server' } as AnyComponentConfig,
+          config: {
+            id: 'imported_node_1',
+            name: 'Imported App',
+            type: 'app_server',
+          } as AnyComponentConfig,
         },
       },
     ];
@@ -119,9 +123,18 @@ describe('Post-Audit Verified Bug Fixes & Day/Night Mode Contrast', () => {
   it('Simulator engine purges dead node statistics and resets cache models on reset', () => {
     const engine = new SysSimEngine({
       nodes: [
-        { id: 'node_1', config: { id: 'node_1', name: 'Node 1', type: 'app_server' } as AnyComponentConfig },
-        { id: 'node_2', config: { id: 'node_2', name: 'Node 2', type: 'sql_db' } as AnyComponentConfig },
-        { id: 'node_3', config: { id: 'node_3', name: 'Node 3', type: 'redis_cache' } as AnyComponentConfig },
+        {
+          id: 'node_1',
+          config: { id: 'node_1', name: 'Node 1', type: 'app_server' } as AnyComponentConfig,
+        },
+        {
+          id: 'node_2',
+          config: { id: 'node_2', name: 'Node 2', type: 'sql_db' } as AnyComponentConfig,
+        },
+        {
+          id: 'node_3',
+          config: { id: 'node_3', name: 'Node 3', type: 'redis_cache' } as AnyComponentConfig,
+        },
       ],
       edges: [],
     });
@@ -139,7 +152,10 @@ describe('Post-Audit Verified Bug Fixes & Day/Night Mode Contrast', () => {
     // Update graph with node_2 removed
     engine.setGraph({
       nodes: [
-        { id: 'node_1', config: { id: 'node_1', name: 'Node 1', type: 'app_server' } as AnyComponentConfig },
+        {
+          id: 'node_1',
+          config: { id: 'node_1', name: 'Node 1', type: 'app_server' } as AnyComponentConfig,
+        },
       ],
       edges: [],
     });

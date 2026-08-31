@@ -6,7 +6,9 @@ describe('Product contract labels', () => {
   it('labels modeled telemetry, analysis, traces, costs, and calculator results', async () => {
     render(<App />);
 
-    expect(await screen.findByText('Illustrative', undefined, { timeout: 10_000 })).toBeInTheDocument();
+    expect(
+      await screen.findByText('Illustrative', undefined, { timeout: 10_000 }),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByTitle('Click to open full Metrics & Telemetry Dashboard (M)'));
     expect(

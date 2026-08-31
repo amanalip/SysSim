@@ -36,8 +36,18 @@ const cacheGraph = (
     { id: 'origin', config: createDefaultConfig('sql_db', 'origin') },
   ],
   edges: [
-    { id: 'client-cache', source: 'client', target: 'cache', data: { protocol: 'HTTP', purpose: 'request' } },
-    { id: 'cache-origin', source: 'cache', target: 'origin', data: { protocol: 'TCP', purpose: 'fallback' } },
+    {
+      id: 'client-cache',
+      source: 'client',
+      target: 'cache',
+      data: { protocol: 'HTTP', purpose: 'request' },
+    },
+    {
+      id: 'cache-origin',
+      source: 'cache',
+      target: 'origin',
+      data: { protocol: 'TCP', purpose: 'fallback' },
+    },
   ],
 });
 
@@ -69,7 +79,11 @@ describe('cache resilience, observability, and calibration', () => {
     const metrics = engine.getMetricsSnapshot();
 
     expect(requests.every((request) => request.status === 'success')).toBe(true);
-    expect(requests.every((request) => request.path.map((hop) => hop.nodeId).join(',') === 'client,cache,origin')).toBe(true);
+    expect(
+      requests.every(
+        (request) => request.path.map((hop) => hop.nodeId).join(',') === 'client,cache,origin',
+      ),
+    ).toBe(true);
     expect(requests[0].path[1].info).toContain('bypassing to origin');
     expect(metrics.totalRequestsFailed).toBe(0);
     expect(metrics.totalCacheBypasses).toBe(20);
@@ -120,20 +134,22 @@ describe('cache resilience, observability, and calibration', () => {
     expect(metrics.componentMetrics.cache.cacheHitRatioPercent).toBe(50);
     expect(metrics.overallCacheHitRatioPercent).toBe(50);
 
-    const csv = buildMetricsCsv([{
-      timestampSec: 1,
-      p50LatencyMs: 2,
-      p95LatencyMs: 3,
-      p99LatencyMs: 4,
-      throughputQps: 5,
-      errorRatePercent: 0,
-      cacheHitRatioPercent: 50,
-      activeRequests: 0,
-      cacheHits: metrics.totalCacheHits,
-      cacheMisses: metrics.totalCacheMisses,
-      cacheBypasses: metrics.totalCacheBypasses,
-      cacheCoalescedRequests: metrics.totalCacheCoalescedRequests,
-    }]);
+    const csv = buildMetricsCsv([
+      {
+        timestampSec: 1,
+        p50LatencyMs: 2,
+        p95LatencyMs: 3,
+        p99LatencyMs: 4,
+        throughputQps: 5,
+        errorRatePercent: 0,
+        cacheHitRatioPercent: 50,
+        activeRequests: 0,
+        cacheHits: metrics.totalCacheHits,
+        cacheMisses: metrics.totalCacheMisses,
+        cacheBypasses: metrics.totalCacheBypasses,
+        cacheCoalescedRequests: metrics.totalCacheCoalescedRequests,
+      },
+    ]);
     expect(csv).toContain('CacheHits,CacheMisses,CacheBypasses,CacheCoalescedRequests');
     expect(csv.trim().endsWith(',1,1,0,0')).toBe(true);
   });

@@ -17,16 +17,42 @@ export const DATA_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.9,
     },
     hints: [
-      { step: 1, hint: 'Manage URL frontier queues with two-stage queueing: Priority queues for importance and Politeness queues per host.' },
-      { step: 2, hint: 'Use Bloom filters or Fingerprint hashes (SimHash) to eliminate duplicate URLs and near-duplicate content.' },
+      {
+        step: 1,
+        hint: 'Manage URL frontier queues with two-stage queueing: Priority queues for importance and Politeness queues per host.',
+      },
+      {
+        step: 2,
+        hint: 'Use Bloom filters or Fingerprint hashes (SimHash) to eliminate duplicate URLs and near-duplicate content.',
+      },
       { step: 3, hint: 'Persist raw HTML pages into Object Storage / Bigtable for indexing.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'crawler', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('worker', 'crawler', 'Crawler Fleet') } },
-        { id: 'frontier', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('message_queue', 'frontier', 'URL Frontier Queue') } },
-        { id: 'bloom', type: 'customComponent', position: { x: 520, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'bloom', 'Seen URL Bloom Filter') } },
-        { id: 'storage', type: 'customComponent', position: { x: 520, y: 220 }, data: { config: createDefaultConfig('object_storage', 'storage', 'Page Storage (S3)') } },
+        {
+          id: 'crawler',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('worker', 'crawler', 'Crawler Fleet') },
+        },
+        {
+          id: 'frontier',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('message_queue', 'frontier', 'URL Frontier Queue') },
+        },
+        {
+          id: 'bloom',
+          type: 'customComponent',
+          position: { x: 520, y: 70 },
+          data: { config: createDefaultConfig('redis_cache', 'bloom', 'Seen URL Bloom Filter') },
+        },
+        {
+          id: 'storage',
+          type: 'customComponent',
+          position: { x: 520, y: 220 },
+          data: { config: createDefaultConfig('object_storage', 'storage', 'Page Storage (S3)') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'frontier', target: 'crawler', data: { protocol: 'pub/sub' } },
@@ -37,11 +63,13 @@ export const DATA_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'How do you guarantee politeness without slowing down total crawler throughput?',
-        answer: 'Route URLs to separate per-host queues; worker threads pick from round-robin host queues with a mandatory delay between requests to the same hostname.',
+        answer:
+          'Route URLs to separate per-host queues; worker threads pick from round-robin host queues with a mandatory delay between requests to the same hostname.',
       },
       {
         question: 'How do you detect spider traps and infinite calendar loops?',
-        answer: 'Enforce maximum URL depth limits, path segment length limits, and content similarity checks via SimHash.',
+        answer:
+          'Enforce maximum URL depth limits, path segment length limits, and content similarity checks via SimHash.',
       },
     ],
     sources: [
@@ -80,15 +108,38 @@ export const DATA_SCENARIOS: Scenario[] = [
     },
     hints: [
       { step: 1, hint: 'Ingest events through a scalable edge Gateway directly into Kafka.' },
-      { step: 2, hint: 'Use a columnar database (ClickHouse / Apache Pinot / Snowflake) for sub-second OLAP queries across billions of rows.' },
+      {
+        step: 2,
+        hint: 'Use a columnar database (ClickHouse / Apache Pinot / Snowflake) for sub-second OLAP queries across billions of rows.',
+      },
       { step: 3, hint: 'Maintain pre-aggregated user identity resolution maps in Redis.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Web & Mobile SDK') } },
-        { id: 'gw', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('api_gateway', 'gw', 'Event Ingestion API') } },
-        { id: 'kafka', type: 'customComponent', position: { x: 500, y: 150 }, data: { config: createDefaultConfig('message_queue', 'kafka', 'Raw Event Kafka') } },
-        { id: 'olap', type: 'customComponent', position: { x: 740, y: 150 }, data: { config: createDefaultConfig('timeseries_db', 'olap', 'ClickHouse OLAP') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Web & Mobile SDK') },
+        },
+        {
+          id: 'gw',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('api_gateway', 'gw', 'Event Ingestion API') },
+        },
+        {
+          id: 'kafka',
+          type: 'customComponent',
+          position: { x: 500, y: 150 },
+          data: { config: createDefaultConfig('message_queue', 'kafka', 'Raw Event Kafka') },
+        },
+        {
+          id: 'olap',
+          type: 'customComponent',
+          position: { x: 740, y: 150 },
+          data: { config: createDefaultConfig('timeseries_db', 'olap', 'ClickHouse OLAP') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'gw', data: { protocol: 'HTTP' } },
@@ -98,12 +149,16 @@ export const DATA_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'Why are Columnar databases dramatically faster than Row-oriented databases for analytics funnels?',
-        answer: 'Funnels typically filter on only 3-5 columns across billions of rows; columnar storage reads only the requested columns from disk into memory, skipping 95% of irrelevant payload data.',
+        question:
+          'Why are Columnar databases dramatically faster than Row-oriented databases for analytics funnels?',
+        answer:
+          'Funnels typically filter on only 3-5 columns across billions of rows; columnar storage reads only the requested columns from disk into memory, skipping 95% of irrelevant payload data.',
       },
       {
-        question: 'How do you handle anonymous-to-identified user event merging (Identity Stitching)?',
-        answer: 'Maintain an alias lookup table in memory or key-value store, rewriting historical anonymous event IDs asynchronously during batch processing.',
+        question:
+          'How do you handle anonymous-to-identified user event merging (Identity Stitching)?',
+        answer:
+          'Maintain an alias lookup table in memory or key-value store, rewriting historical anonymous event IDs asynchronously during batch processing.',
       },
     ],
     sources: [
@@ -142,15 +197,41 @@ export const DATA_SCENARIOS: Scenario[] = [
     },
     hints: [
       { step: 1, hint: 'Use Redis Sorted Sets (ZSET) powered by SkipLists and Hash maps.' },
-      { step: 2, hint: 'Execute atomic ZADD score updates and ZREVRANGE top-K queries in O(log N).' },
-      { step: 3, hint: 'For extreme scales (100M+ users), partition users into tiered score buckets.' },
+      {
+        step: 2,
+        hint: 'Execute atomic ZADD score updates and ZREVRANGE top-K queries in O(log N).',
+      },
+      {
+        step: 3,
+        hint: 'For extreme scales (100M+ users), partition users into tiered score buckets.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Game Client') } },
-        { id: 'lbSvc', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'lbSvc', 'Leaderboard Service') } },
-        { id: 'zset', type: 'customComponent', position: { x: 540, y: 150 }, data: { config: createDefaultConfig('redis_cache', 'zset', 'Redis Sorted Set (ZSET)') } },
-        { id: 'persistDb', type: 'customComponent', position: { x: 540, y: 280 }, data: { config: createDefaultConfig('sql_db', 'persistDb', 'Score Archive DB') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Game Client') },
+        },
+        {
+          id: 'lbSvc',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'lbSvc', 'Leaderboard Service') },
+        },
+        {
+          id: 'zset',
+          type: 'customComponent',
+          position: { x: 540, y: 150 },
+          data: { config: createDefaultConfig('redis_cache', 'zset', 'Redis Sorted Set (ZSET)') },
+        },
+        {
+          id: 'persistDb',
+          type: 'customComponent',
+          position: { x: 540, y: 280 },
+          data: { config: createDefaultConfig('sql_db', 'persistDb', 'Score Archive DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'lbSvc', data: { protocol: 'HTTP' } },
@@ -160,12 +241,16 @@ export const DATA_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'Why does Redis Sorted Set use a SkipList instead of a balanced AVL or Red-Black tree?',
-        answer: 'SkipLists have similar O(log N) search and insert complexity but are much easier to implement concurrently, and range operations (ZRANGE) require simple pointer traversal.',
+        question:
+          'Why does Redis Sorted Set use a SkipList instead of a balanced AVL or Red-Black tree?',
+        answer:
+          'SkipLists have similar O(log N) search and insert complexity but are much easier to implement concurrently, and range operations (ZRANGE) require simple pointer traversal.',
       },
       {
-        question: 'How do you handle millions of users on a single leaderboard without running out of RAM?',
-        answer: 'Partition users into score range buckets (e.g. 0-1000, 1000-2000), or store only the top 10,000 active players in Redis and approximate lower percentiles.',
+        question:
+          'How do you handle millions of users on a single leaderboard without running out of RAM?',
+        answer:
+          'Partition users into score range buckets (e.g. 0-1000, 1000-2000), or store only the top 10,000 active players in Redis and approximate lower percentiles.',
       },
     ],
     sources: [
@@ -203,15 +288,38 @@ export const DATA_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Utilize the HyperLogLog (HLL) probabilistic cardinality estimation algorithm.' },
-      { step: 2, hint: 'Store 12KB HLL registers in Redis (PFADD / PFCOUNT) capable of estimating billions of unique users with ~0.81% error rate.' },
+      {
+        step: 1,
+        hint: 'Utilize the HyperLogLog (HLL) probabilistic cardinality estimation algorithm.',
+      },
+      {
+        step: 2,
+        hint: 'Store 12KB HLL registers in Redis (PFADD / PFCOUNT) capable of estimating billions of unique users with ~0.81% error rate.',
+      },
       { step: 3, hint: 'Merge daily HLL registers using PFMERGE for monthly unique rollups.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'Web Page Tag') } },
-        { id: 'counterApi', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'counterApi', 'Cardinality Service') } },
-        { id: 'hllStore', type: 'customComponent', position: { x: 540, y: 150 }, data: { config: createDefaultConfig('redis_cache', 'hllStore', 'Redis HyperLogLog (12KB/day)') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'Web Page Tag') },
+        },
+        {
+          id: 'counterApi',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'counterApi', 'Cardinality Service') },
+        },
+        {
+          id: 'hllStore',
+          type: 'customComponent',
+          position: { x: 540, y: 150 },
+          data: {
+            config: createDefaultConfig('redis_cache', 'hllStore', 'Redis HyperLogLog (12KB/day)'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'counterApi', data: { protocol: 'HTTP' } },
@@ -221,11 +329,13 @@ export const DATA_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'How does HyperLogLog count billions of items in only 12 kilobytes of memory?',
-        answer: 'HLL hashes items and records the maximum count of leading zeroes in binary hash representations across thousands of register buckets, inferring cardinality from mathematical probability.',
+        answer:
+          'HLL hashes items and records the maximum count of leading zeroes in binary hash representations across thousands of register buckets, inferring cardinality from mathematical probability.',
       },
       {
         question: 'Can HyperLogLog return the list of actual user IDs?',
-        answer: 'No, HyperLogLog is strictly a cardinality counter; recovering original elements requires exact Hash Sets or Bloom filters with higher memory footprints.',
+        answer:
+          'No, HyperLogLog is strictly a cardinality counter; recovering original elements requires exact Hash Sets or Bloom filters with higher memory footprints.',
       },
     ],
     sources: [
@@ -263,16 +373,49 @@ export const DATA_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Organize topics into append-only segmented commit logs partitioned across broker nodes.' },
-      { step: 2, hint: 'Utilize Linux OS page cache and OS sendfile() zero-copy system calls for network transfer.' },
-      { step: 3, hint: 'Replicate partition replicas using in-sync replica (ISR) quorum consensus.' },
+      {
+        step: 1,
+        hint: 'Organize topics into append-only segmented commit logs partitioned across broker nodes.',
+      },
+      {
+        step: 2,
+        hint: 'Utilize Linux OS page cache and OS sendfile() zero-copy system calls for network transfer.',
+      },
+      {
+        step: 3,
+        hint: 'Replicate partition replicas using in-sync replica (ISR) quorum consensus.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'producer', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('app_server', 'producer', 'Producer Apps') } },
-        { id: 'broker1', type: 'customComponent', position: { x: 280, y: 70 }, data: { config: createDefaultConfig('message_queue', 'broker1', 'Kafka Broker 1 (Leader)') } },
-        { id: 'broker2', type: 'customComponent', position: { x: 280, y: 220 }, data: { config: createDefaultConfig('message_queue', 'broker2', 'Kafka Broker 2 (Follower)') } },
-        { id: 'consumer', type: 'customComponent', position: { x: 540, y: 150 }, data: { config: createDefaultConfig('worker', 'consumer', 'Consumer Group') } },
+        {
+          id: 'producer',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'producer', 'Producer Apps') },
+        },
+        {
+          id: 'broker1',
+          type: 'customComponent',
+          position: { x: 280, y: 70 },
+          data: {
+            config: createDefaultConfig('message_queue', 'broker1', 'Kafka Broker 1 (Leader)'),
+          },
+        },
+        {
+          id: 'broker2',
+          type: 'customComponent',
+          position: { x: 280, y: 220 },
+          data: {
+            config: createDefaultConfig('message_queue', 'broker2', 'Kafka Broker 2 (Follower)'),
+          },
+        },
+        {
+          id: 'consumer',
+          type: 'customComponent',
+          position: { x: 540, y: 150 },
+          data: { config: createDefaultConfig('worker', 'consumer', 'Consumer Group') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'producer', target: 'broker1', data: { protocol: 'TCP' } },
@@ -283,11 +426,14 @@ export const DATA_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'Why is sequential disk I/O in Kafka as fast as random RAM access?',
-        answer: 'Modern operating systems prefetch sequential blocks heavily; linear disk append eliminates disk head seek latency, achieving saturation speeds of modern SSDs.',
+        answer:
+          'Modern operating systems prefetch sequential blocks heavily; linear disk append eliminates disk head seek latency, achieving saturation speeds of modern SSDs.',
       },
       {
-        question: 'How do Consumer Groups achieve parallel stream processing with ordered guarantees?',
-        answer: 'Each partition within a topic is consumed by exactly one consumer member within the consumer group, guaranteeing per-partition ordering with horizontal parallelism.',
+        question:
+          'How do Consumer Groups achieve parallel stream processing with ordered guarantees?',
+        answer:
+          'Each partition within a topic is consumed by exactly one consumer member within the consumer group, guaranteeing per-partition ordering with horizontal parallelism.',
       },
     ],
     sources: [
@@ -325,16 +471,55 @@ export const DATA_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Decouple compute worker clusters from immutable columnar storage (e.g. Parquet / ORC on S3/GCS).' },
-      { step: 2, hint: 'Implement a centralized cloud services layer managing query optimization, access control, and metadata transactions.' },
-      { step: 3, hint: 'Organize data into automatic micro-partitions with columnar min/max statistics for partition pruning.' },
+      {
+        step: 1,
+        hint: 'Decouple compute worker clusters from immutable columnar storage (e.g. Parquet / ORC on S3/GCS).',
+      },
+      {
+        step: 2,
+        hint: 'Implement a centralized cloud services layer managing query optimization, access control, and metadata transactions.',
+      },
+      {
+        step: 3,
+        hint: 'Organize data into automatic micro-partitions with columnar min/max statistics for partition pruning.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'biUser', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'biUser', 'SQL / BI Analyst') } },
-        { id: 'queryPlanner', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'queryPlanner', 'Coordinator & Optimizer') } },
-        { id: 'computeFleet', type: 'customComponent', position: { x: 540, y: 150 }, data: { config: createDefaultConfig('worker', 'computeFleet', 'Virtual Warehouse Fleet') } },
-        { id: 'storageLayer', type: 'customComponent', position: { x: 800, y: 150 }, data: { config: createDefaultConfig('object_storage', 'storageLayer', 'Columnar Object Storage (S3)') } },
+        {
+          id: 'biUser',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'biUser', 'SQL / BI Analyst') },
+        },
+        {
+          id: 'queryPlanner',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: {
+            config: createDefaultConfig('app_server', 'queryPlanner', 'Coordinator & Optimizer'),
+          },
+        },
+        {
+          id: 'computeFleet',
+          type: 'customComponent',
+          position: { x: 540, y: 150 },
+          data: {
+            config: createDefaultConfig('worker', 'computeFleet', 'Virtual Warehouse Fleet'),
+          },
+        },
+        {
+          id: 'storageLayer',
+          type: 'customComponent',
+          position: { x: 800, y: 150 },
+          data: {
+            config: createDefaultConfig(
+              'object_storage',
+              'storageLayer',
+              'Columnar Object Storage (S3)',
+            ),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'biUser', target: 'queryPlanner', data: { protocol: 'HTTP' } },
@@ -344,12 +529,16 @@ export const DATA_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'What is the architectural benefit of separating compute from storage in data warehousing?',
-        answer: 'Compute clusters can be scaled up or down instantaneously or paused when idle without moving multi-petabyte datasets.',
+        question:
+          'What is the architectural benefit of separating compute from storage in data warehousing?',
+        answer:
+          'Compute clusters can be scaled up or down instantaneously or paused when idle without moving multi-petabyte datasets.',
       },
       {
-        question: 'How does micro-partition pruning accelerate analytical queries without explicit indexing?',
-        answer: 'Metadata tracks min and max values for every column in each micro-partition; queries skip scanning partitions whose ranges do not overlap query WHERE clauses.',
+        question:
+          'How does micro-partition pruning accelerate analytical queries without explicit indexing?',
+        answer:
+          'Metadata tracks min and max values for every column in each micro-partition; queries skip scanning partitions whose ranges do not overlap query WHERE clauses.',
       },
     ],
     sources: [
@@ -387,16 +576,42 @@ export const DATA_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.95,
     },
     hints: [
-      { step: 1, hint: 'Orchestrate pipeline DAG workflows using Apache Airflow with retries and SLA monitoring.' },
-      { step: 2, hint: 'Execute distributed batch transformations with Apache Spark on Kubernetes.' },
+      {
+        step: 1,
+        hint: 'Orchestrate pipeline DAG workflows using Apache Airflow with retries and SLA monitoring.',
+      },
+      {
+        step: 2,
+        hint: 'Execute distributed batch transformations with Apache Spark on Kubernetes.',
+      },
       { step: 3, hint: 'Stage raw data in bronze/silver/gold data lake lakehouse tiers.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'rawSrc', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('nosql_db', 'rawSrc', 'Source Systems') } },
-        { id: 'airflow', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('app_server', 'airflow', 'Airflow Orchestrator') } },
-        { id: 'sparkCluster', type: 'customComponent', position: { x: 500, y: 150 }, data: { config: createDefaultConfig('worker', 'sparkCluster', 'Spark Compute Engine') } },
-        { id: 'dataLake', type: 'customComponent', position: { x: 740, y: 150 }, data: { config: createDefaultConfig('object_storage', 'dataLake', 'Delta Lake Storage') } },
+        {
+          id: 'rawSrc',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('nosql_db', 'rawSrc', 'Source Systems') },
+        },
+        {
+          id: 'airflow',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'airflow', 'Airflow Orchestrator') },
+        },
+        {
+          id: 'sparkCluster',
+          type: 'customComponent',
+          position: { x: 500, y: 150 },
+          data: { config: createDefaultConfig('worker', 'sparkCluster', 'Spark Compute Engine') },
+        },
+        {
+          id: 'dataLake',
+          type: 'customComponent',
+          position: { x: 740, y: 150 },
+          data: { config: createDefaultConfig('object_storage', 'dataLake', 'Delta Lake Storage') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'rawSrc', target: 'airflow', data: { protocol: 'TCP' } },
@@ -407,11 +622,14 @@ export const DATA_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'What is the difference between ETL and ELT in modern cloud architectures?',
-        answer: 'ETL transforms data before loading into storage; ELT loads raw data into cloud object storage first and uses distributed cloud compute to transform in-place.',
+        answer:
+          'ETL transforms data before loading into storage; ELT loads raw data into cloud object storage first and uses distributed cloud compute to transform in-place.',
       },
       {
-        question: 'How do you handle schema evolution in Delta Lake tables without corrupting downstream pipelines?',
-        answer: 'Delta Lake enforces schema validation during append/merge and supports explicit schema migration rules.',
+        question:
+          'How do you handle schema evolution in Delta Lake tables without corrupting downstream pipelines?',
+        answer:
+          'Delta Lake enforces schema validation during append/merge and supports explicit schema migration rules.',
       },
     ],
     sources: [
@@ -449,16 +667,47 @@ export const DATA_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Read raw binary transaction logs directly instead of running polling queries against production tables.' },
-      { step: 2, hint: 'Convert row changes into structured JSON/Avro change events with schema metadata.' },
-      { step: 3, hint: 'Stream change events into Kafka partitioned by primary key for downstream search index and cache invalidation.' },
+      {
+        step: 1,
+        hint: 'Read raw binary transaction logs directly instead of running polling queries against production tables.',
+      },
+      {
+        step: 2,
+        hint: 'Convert row changes into structured JSON/Avro change events with schema metadata.',
+      },
+      {
+        step: 3,
+        hint: 'Stream change events into Kafka partitioned by primary key for downstream search index and cache invalidation.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'masterDb', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('sql_db', 'masterDb', 'Primary MySQL / Postgres') } },
-        { id: 'debezium', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('worker', 'debezium', 'Debezium CDC Connector') } },
-        { id: 'kafka', type: 'customComponent', position: { x: 540, y: 150 }, data: { config: createDefaultConfig('message_queue', 'kafka', 'CDC Event Kafka Topic') } },
-        { id: 'searchSync', type: 'customComponent', position: { x: 800, y: 150 }, data: { config: createDefaultConfig('search_index', 'searchSync', 'Elasticsearch Sync Target') } },
+        {
+          id: 'masterDb',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('sql_db', 'masterDb', 'Primary MySQL / Postgres') },
+        },
+        {
+          id: 'debezium',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('worker', 'debezium', 'Debezium CDC Connector') },
+        },
+        {
+          id: 'kafka',
+          type: 'customComponent',
+          position: { x: 540, y: 150 },
+          data: { config: createDefaultConfig('message_queue', 'kafka', 'CDC Event Kafka Topic') },
+        },
+        {
+          id: 'searchSync',
+          type: 'customComponent',
+          position: { x: 800, y: 150 },
+          data: {
+            config: createDefaultConfig('search_index', 'searchSync', 'Elasticsearch Sync Target'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'masterDb', target: 'debezium', data: { protocol: 'TCP' } },
@@ -469,11 +718,13 @@ export const DATA_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'Why is log-based CDC far superior to timestamp-polling CDC?',
-        answer: 'Log-based CDC captures every intermediate insert, update, and hard delete with zero CPU overhead on query engines and true transaction commit order.',
+        answer:
+          'Log-based CDC captures every intermediate insert, update, and hard delete with zero CPU overhead on query engines and true transaction commit order.',
       },
       {
         question: 'How do you handle initial table snapshot bootstrapping before stream tailing?',
-        answer: 'Debezium takes a consistent read lock snapshot of existing rows while recording the starting log offset position, then seamlessly transitions to live log tailing.',
+        answer:
+          'Debezium takes a consistent read lock snapshot of existing rows while recording the starting log offset position, then seamlessly transitions to live log tailing.',
       },
     ],
     sources: [
@@ -512,15 +763,42 @@ export const DATA_SCENARIOS: Scenario[] = [
     },
     hints: [
       { step: 1, hint: 'Store raw data in Apache Parquet files on Cloud Object Storage.' },
-      { step: 2, hint: 'Track table state through hierarchical Iceberg metadata tree snapshots (Manifest Lists -> Manifest Files -> Data Files).' },
+      {
+        step: 2,
+        hint: 'Track table state through hierarchical Iceberg metadata tree snapshots (Manifest Lists -> Manifest Files -> Data Files).',
+      },
       { step: 3, hint: 'Commit updates via atomic catalog CAS (Compare-And-Swap) operations.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'queryEngine', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('app_server', 'queryEngine', 'Trino / Spark Query Engine') } },
-        { id: 'catalog', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'catalog', 'Iceberg REST Catalog') } },
-        { id: 'metaStore', type: 'customComponent', position: { x: 540, y: 80 }, data: { config: createDefaultConfig('sql_db', 'metaStore', 'Catalog Metadata DB') } },
-        { id: 's3Parquet', type: 'customComponent', position: { x: 540, y: 220 }, data: { config: createDefaultConfig('object_storage', 's3Parquet', 'Parquet Lake Storage') } },
+        {
+          id: 'queryEngine',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: {
+            config: createDefaultConfig('app_server', 'queryEngine', 'Trino / Spark Query Engine'),
+          },
+        },
+        {
+          id: 'catalog',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'catalog', 'Iceberg REST Catalog') },
+        },
+        {
+          id: 'metaStore',
+          type: 'customComponent',
+          position: { x: 540, y: 80 },
+          data: { config: createDefaultConfig('sql_db', 'metaStore', 'Catalog Metadata DB') },
+        },
+        {
+          id: 's3Parquet',
+          type: 'customComponent',
+          position: { x: 540, y: 220 },
+          data: {
+            config: createDefaultConfig('object_storage', 's3Parquet', 'Parquet Lake Storage'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'queryEngine', target: 'catalog', data: { protocol: 'HTTP' } },
@@ -530,12 +808,15 @@ export const DATA_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'How does Apache Iceberg support ACID transactions on top of eventually consistent object storage?',
-        answer: 'Writers create new immutable data files and manifest snapshots, committing the updated snapshot pointer atomically to the catalog via Compare-And-Swap (CAS).',
+        question:
+          'How does Apache Iceberg support ACID transactions on top of eventually consistent object storage?',
+        answer:
+          'Writers create new immutable data files and manifest snapshots, committing the updated snapshot pointer atomically to the catalog via Compare-And-Swap (CAS).',
       },
       {
         question: 'How do time-travel queries operate in Iceberg?',
-        answer: 'Queries specify a snapshot ID or timestamp; the query engine traverses that exact historical manifest tree, ignoring subsequent snapshot additions.',
+        answer:
+          'Queries specify a snapshot ID or timestamp; the query engine traverses that exact historical manifest tree, ignoring subsequent snapshot additions.',
       },
     ],
     sources: [
@@ -545,7 +826,8 @@ export const DATA_SCENARIOS: Scenario[] = [
         url: 'https://iceberg.apache.org',
       },
       {
-        title: 'Lakehouse: A New Generation of Open Platforms that Unify Data Warehousing and Advanced Analytics',
+        title:
+          'Lakehouse: A New Generation of Open Platforms that Unify Data Warehousing and Advanced Analytics',
         authorOrOrg: 'Armbrust et al. (CIDR 2021)',
         url: 'https://www.cidrdb.org',
       },
@@ -573,16 +855,44 @@ export const DATA_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.99,
     },
     hints: [
-      { step: 1, hint: 'Query time-series databases with downsampled rollups (5-minute, 1-hour) for wide time ranges.' },
-      { step: 2, hint: 'Push live metric updates to open browser dashboards via WebSockets / Server-Sent Events.' },
+      {
+        step: 1,
+        hint: 'Query time-series databases with downsampled rollups (5-minute, 1-hour) for wide time ranges.',
+      },
+      {
+        step: 2,
+        hint: 'Push live metric updates to open browser dashboards via WebSockets / Server-Sent Events.',
+      },
       { step: 3, hint: 'Cache identical panel query results in Redis for 10-30 seconds.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'browser', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'browser', 'Grafana Dashboard') } },
-        { id: 'grafanaBackend', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'grafanaBackend', 'Dashboard Backend') } },
-        { id: 'queryCache', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'queryCache', 'Query Result Cache') } },
-        { id: 'promDb', type: 'customComponent', position: { x: 540, y: 220 }, data: { config: createDefaultConfig('timeseries_db', 'promDb', 'Prometheus / Mimir') } },
+        {
+          id: 'browser',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'browser', 'Grafana Dashboard') },
+        },
+        {
+          id: 'grafanaBackend',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: {
+            config: createDefaultConfig('app_server', 'grafanaBackend', 'Dashboard Backend'),
+          },
+        },
+        {
+          id: 'queryCache',
+          type: 'customComponent',
+          position: { x: 540, y: 70 },
+          data: { config: createDefaultConfig('redis_cache', 'queryCache', 'Query Result Cache') },
+        },
+        {
+          id: 'promDb',
+          type: 'customComponent',
+          position: { x: 540, y: 220 },
+          data: { config: createDefaultConfig('timeseries_db', 'promDb', 'Prometheus / Mimir') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'browser', target: 'grafanaBackend', data: { protocol: 'HTTP' } },
@@ -592,12 +902,15 @@ export const DATA_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'How do you avoid overloading the time-series database when 100 engineers open the same dashboard simultaneously?',
-        answer: 'Cache backend query responses keyed by query fingerprint and rounded time windows in Redis, collapsing duplicate queries.',
+        question:
+          'How do you avoid overloading the time-series database when 100 engineers open the same dashboard simultaneously?',
+        answer:
+          'Cache backend query responses keyed by query fingerprint and rounded time windows in Redis, collapsing duplicate queries.',
       },
       {
         question: 'Why is downsampling mandatory for year-long metric visualisations?',
-        answer: 'Rendering 1 year of 1-second raw metrics requires sending 31 million data points to the browser; downsampling into 1-hour p50/p95/max averages reduces payload size to 8,760 points.',
+        answer:
+          'Rendering 1 year of 1-second raw metrics requires sending 31 million data points to the browser; downsampling into 1-hour p50/p95/max averages reduces payload size to 8,760 points.',
       },
     ],
     sources: [

@@ -1,7 +1,10 @@
 import { DNSConfig } from '../../model/types';
 import { LoadBalancerRouter } from '../routing/load-balancer';
 
-interface DnsRecord { targetId: string; expiresAtMs: number }
+interface DnsRecord {
+  targetId: string;
+  expiresAtMs: number;
+}
 
 export class DnsModel {
   private cache = new Map<string, DnsRecord>();
@@ -10,7 +13,10 @@ export class DnsModel {
   private misses = 0;
   private failures = 0;
 
-  constructor(private config: DNSConfig, targets: string[] = []) {
+  constructor(
+    private config: DNSConfig,
+    targets: string[] = [],
+  ) {
     this.router = new LoadBalancerRouter('weighted', targets, config.targetWeights);
   }
 
@@ -37,7 +43,9 @@ export class DnsModel {
     if (eligibleTargets.length > 0) {
       if (this.config.routingPolicy === 'simple') targetId = eligibleTargets[0];
       else if (this.config.routingPolicy === 'latency_based') {
-        targetId = [...eligibleTargets].sort((a, b) => (edgeLatencies[a] ?? 4) - (edgeLatencies[b] ?? 4))[0];
+        targetId = [...eligibleTargets].sort(
+          (a, b) => (edgeLatencies[a] ?? 4) - (edgeLatencies[b] ?? 4),
+        )[0];
       } else if (this.config.routingPolicy === 'geolocation') {
         targetId = eligibleTargets[this.stableHash(clientKey) % eligibleTargets.length];
       } else {
@@ -46,16 +54,31 @@ export class DnsModel {
       }
     }
     if (!targetId) this.failures++;
-    else this.cache.set(cacheKey, { targetId, expiresAtMs: nowMs + Math.max(1, this.config.ttlSec) * 1000 });
+    else
+      this.cache.set(cacheKey, {
+        targetId,
+        expiresAtMs: nowMs + Math.max(1, this.config.ttlSec) * 1000,
+      });
     return { targetId, latencyMs: Math.max(0, this.config.lookupLatencyMs), cached: false };
   }
 
-  public getMetrics() { return { hits: this.hits, misses: this.misses, failures: this.failures }; }
-  public reset(): void { this.cache.clear(); this.hits = 0; this.misses = 0; this.failures = 0; this.router.reset(); }
+  public getMetrics() {
+    return { hits: this.hits, misses: this.misses, failures: this.failures };
+  }
+  public reset(): void {
+    this.cache.clear();
+    this.hits = 0;
+    this.misses = 0;
+    this.failures = 0;
+    this.router.reset();
+  }
 
   private stableHash(value: string): number {
     let hash = 2166136261;
-    for (let i = 0; i < value.length; i++) { hash ^= value.charCodeAt(i); hash = Math.imul(hash, 16777619); }
+    for (let i = 0; i < value.length; i++) {
+      hash ^= value.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
     return hash >>> 0;
   }
 }

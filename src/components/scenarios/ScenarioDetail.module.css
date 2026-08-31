@@ -103,7 +103,9 @@
   line-height: 1.4;
 }
 
-.comparisonBox { border-left-color: var(--accent-primary); }
+.comparisonBox {
+  border-left-color: var(--accent-primary);
+}
 
 .notesInput {
   min-height: 88px;

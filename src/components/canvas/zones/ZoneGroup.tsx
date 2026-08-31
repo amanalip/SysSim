@@ -54,10 +54,7 @@ export const ZoneGroup: React.FC<ZoneGroupProps> = ({ zone, viewport }) => {
         borderColor: borderColorMap[zone.category],
       }}
     >
-      <div
-        className={styles.zoneHeader}
-        style={{ color: textColorMap[zone.category] }}
-      >
+      <div className={styles.zoneHeader} style={{ color: textColorMap[zone.category] }}>
         {isEditing ? (
           <input
             type="text"

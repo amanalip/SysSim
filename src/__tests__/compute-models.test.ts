@@ -11,18 +11,33 @@ describe('worker execution semantics', () => {
     worker.setQueuedWork(7);
     expect(worker.getProcessingLatencyMs()).toBe(40);
     expect(worker.getMetrics()).toMatchObject({
-      busyWorkers: 6, queuedWork: 7, jobsSucceeded: 5, jobsFailed: 3,
-      retriesScheduled: 1, utilizationPercent: 100,
+      busyWorkers: 6,
+      queuedWork: 7,
+      jobsSucceeded: 5,
+      jobsFailed: 3,
+      retriesScheduled: 1,
+      utilizationPercent: 100,
     });
   });
 
   it('enforces the lower broker/worker retry limit', () => {
     const queue = new MessagingModel({
-      kind: 'task_queue', maxDepth: 10, partitions: 1, consumerGroups: 1,
-      subscribersPerTopic: 1, fanoutFactor: 1, throughputPerPartitionPerSec: 100,
-      producerAckLatencyMs: 1, consumerProcessingLatencyMs: 1,
-      deliveryGuarantee: 'at_least_once', orderingGuarantee: 'FIFO', retryLimit: 5,
-      retryDelayMs: 0, deadLetterQueue: true, retentionMs: 10000, overflowPolicy: 'reject_newest',
+      kind: 'task_queue',
+      maxDepth: 10,
+      partitions: 1,
+      consumerGroups: 1,
+      subscribersPerTopic: 1,
+      fanoutFactor: 1,
+      throughputPerPartitionPerSec: 100,
+      producerAckLatencyMs: 1,
+      consumerProcessingLatencyMs: 1,
+      deliveryGuarantee: 'at_least_once',
+      orderingGuarantee: 'FIFO',
+      retryLimit: 5,
+      retryDelayMs: 0,
+      deadLetterQueue: true,
+      retentionMs: 10000,
+      overflowPolicy: 'reject_newest',
     });
     queue.enqueue('job', 'key', 0);
     const capacity = { replicas: 1, concurrencyLimit: 10, processingRatePerSec: 100 };
@@ -39,13 +54,22 @@ describe('serverless execution semantics', () => {
     const second = model.invoke(0);
     expect(first).toMatchObject({ coldStart: false, queueLatencyMs: 0, executionLatencyMs: 50 });
     expect(second).toMatchObject({ throttled: true, queueLatencyMs: 0, totalLatencyMs: 1 });
-    expect(model.getMetrics(0)).toMatchObject({ activeInvocations: 1, warmStarts: 1, throttles: 1, utilizationPercent: 100 });
+    expect(model.getMetrics(0)).toMatchObject({
+      activeInvocations: 1,
+      warmStarts: 1,
+      throttles: 1,
+      utilizationPercent: 100,
+    });
   });
 
   it('models cold probability over idle time, memory scaling, and timeout', () => {
     const cold = new ServerlessModel(2, 1000, 2048, 100, 80, 0, 10, () => 0.99);
     const first = cold.invoke(0);
-    expect(first).toMatchObject({ coldStart: true, coldStartProbabilityPercent: 100, executionLatencyMs: 40 });
+    expect(first).toMatchObject({
+      coldStart: true,
+      coldStartProbabilityPercent: 100,
+      executionLatencyMs: 40,
+    });
     const warm = cold.invoke(1000);
     expect(warm.coldStartProbabilityPercent).toBe(0);
 

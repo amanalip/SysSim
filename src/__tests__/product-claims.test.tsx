@@ -36,7 +36,9 @@ describe('User-facing product claims', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', {
-        name: new RegExp(`Run Scenario Simulation \\(${ALL_SCENARIOS[0].trafficPreset.baseQps.toLocaleString()} QPS`),
+        name: new RegExp(
+          `Run Scenario Simulation \\(${ALL_SCENARIOS[0].trafficPreset.baseQps.toLocaleString()} QPS`,
+        ),
       }),
     ).toBeInTheDocument();
     expect(screen.queryByText('5. Load Test & Verify SLA')).not.toBeInTheDocument();

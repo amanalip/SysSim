@@ -8,13 +8,23 @@ import { useStore } from '../store/use-store';
 
 describe('graph revision and live routing tasks 211-215', () => {
   beforeEach(() => {
-    useStore.setState({ nodes: [], edges: [], zones: [], graphRevision: 0, historyPast: [], historyFuture: [] });
+    useStore.setState({
+      nodes: [],
+      edges: [],
+      zones: [],
+      graphRevision: 0,
+      historyPast: [],
+      historyFuture: [],
+    });
     vi.restoreAllMocks();
     configureGraphMutationListener(null);
   });
 
   it('tags graph messages and rejects results from every stale revision', () => {
-    const graph = { nodes: [{ id: 'client', config: createDefaultConfig('client', 'client') }], edges: [] };
+    const graph = {
+      nodes: [{ id: 'client', config: createDefaultConfig('client', 'client') }],
+      edges: [],
+    };
     expect(createGraphUpdateMessage(graph, 7)).toEqual({
       type: 'INIT_OR_UPDATE_GRAPH',
       payload: { graph, graphRevision: 7 },
@@ -32,7 +42,17 @@ describe('graph revision and live routing tasks 211-215', () => {
     const before = createSimRequest('client', 0, 'before', 1);
     engine.processRequest(before);
     expect(before.path.map((hop) => hop.nodeId)).toEqual(['client']);
-    engine.setGraph({ nodes: [client, app], edges: [{ id: 'route', source: 'client', target: 'app', data: { protocol: 'HTTP', purpose: 'request' } }] });
+    engine.setGraph({
+      nodes: [client, app],
+      edges: [
+        {
+          id: 'route',
+          source: 'client',
+          target: 'app',
+          data: { protocol: 'HTTP', purpose: 'request' },
+        },
+      ],
+    });
     const after = createSimRequest('client', 1, 'after', 2);
     engine.processRequest(after);
     expect(after.path.map((hop) => hop.nodeId)).toEqual(['client', 'app']);

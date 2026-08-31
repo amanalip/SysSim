@@ -31,10 +31,8 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
         statusFilter === 'All' ||
         (statusFilter === 'Solved' && isCompleted) ||
         (statusFilter === 'Unsolved' && !isCompleted);
-      const matchesCategory =
-        selectedCategory === 'All' || s.category === selectedCategory;
-      const matchesDifficulty =
-        selectedDifficulty === 'All' || s.difficulty === selectedDifficulty;
+      const matchesCategory = selectedCategory === 'All' || s.category === selectedCategory;
+      const matchesDifficulty = selectedDifficulty === 'All' || s.difficulty === selectedDifficulty;
       const matchesSearch =
         normalizedQuery === '' ||
         s.title.toLowerCase().includes(normalizedQuery) ||
@@ -81,7 +79,14 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
         />
         {searchTerm && (
           <button
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+            }}
             onClick={() => setSearchTerm('')}
             title="Clear search"
           >
@@ -122,7 +127,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
                   (statusFilter === 'Unsolved' && !completedScenarioIds.includes(s.id))) &&
                 (normalizedQuery === '' ||
                   s.title.toLowerCase().includes(normalizedQuery) ||
-                  s.problemStatement.toLowerCase().includes(normalizedQuery))
+                  s.problemStatement.toLowerCase().includes(normalizedQuery)),
             ).length;
             return (
               <option key={cat} value={cat}>
@@ -149,7 +154,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
                   (statusFilter === 'Unsolved' && !completedScenarioIds.includes(s.id))) &&
                 (normalizedQuery === '' ||
                   s.title.toLowerCase().includes(normalizedQuery) ||
-                  s.problemStatement.toLowerCase().includes(normalizedQuery))
+                  s.problemStatement.toLowerCase().includes(normalizedQuery)),
             ).length;
             return (
               <option key={diff} value={diff}>
@@ -163,7 +168,14 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
       {/* Scenario List */}
       <div className={styles.scenarioList}>
         {filteredScenarios.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-muted)', fontSize: 12 }}>
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '32px 16px',
+              color: 'var(--text-muted)',
+              fontSize: 12,
+            }}
+          >
             No scenarios found matching your filter criteria
           </div>
         ) : (
@@ -174,9 +186,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
             return (
               <div
                 key={s.id}
-                className={`${styles.scenarioCard} ${
-                  isSelected ? styles.scenarioCardActive : ''
-                }`}
+                className={`${styles.scenarioCard} ${isSelected ? styles.scenarioCardActive : ''}`}
                 tabIndex={0}
                 role="button"
                 onKeyDown={(e) => {
@@ -197,8 +207,8 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
                       s.difficulty === 'Easy'
                         ? styles.diffEasy
                         : s.difficulty === 'Medium'
-                        ? styles.diffMedium
-                        : styles.diffHard
+                          ? styles.diffMedium
+                          : styles.diffHard
                     }`}
                   >
                     {s.difficulty}
@@ -208,7 +218,15 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
                 <div className={styles.cardMeta}>
                   <span className={styles.categoryTag}>{s.category}</span>
                   {isCompleted && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--success)', fontWeight: 600 }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        color: 'var(--success)',
+                        fontWeight: 600,
+                      }}
+                    >
                       <CheckCircle2 size={11} /> Solved
                     </span>
                   )}

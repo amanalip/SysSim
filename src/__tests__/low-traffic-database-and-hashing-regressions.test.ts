@@ -7,11 +7,19 @@ import { createDefaultConfig } from '../model/component-defaults';
 describe('Bugs Batch 6: Low QPS Fractional Generation, DB Tick Connection Release, Consistent Hash Ring Sentinel', () => {
   it('Bug 13: Low QPS configuration does not overgenerate requests per tick', () => {
     const engine = new SysSimEngine();
-    const clientNode = { id: 'client_1', config: createDefaultConfig('client', 'client_1', 'Client') };
-    const appNode = { id: 'app_1', config: createDefaultConfig('app_server', 'app_1', 'App Server') };
+    const clientNode = {
+      id: 'client_1',
+      config: createDefaultConfig('client', 'client_1', 'Client'),
+    };
+    const appNode = {
+      id: 'app_1',
+      config: createDefaultConfig('app_server', 'app_1', 'App Server'),
+    };
     const graph: SimGraph = {
       nodes: [clientNode, appNode],
-      edges: [{ id: 'e1', source: 'client_1', target: 'app_1', data: { protocol: 'HTTP', isCut: false } }],
+      edges: [
+        { id: 'e1', source: 'client_1', target: 'app_1', data: { protocol: 'HTTP', isCut: false } },
+      ],
     };
 
     engine.setGraph(graph);

@@ -89,11 +89,36 @@ describe('Deep Audit Bug Fixes & Feature Tests (10+ Verifications)', () => {
 
   it('5. verifies BottleneckDetector recognizes pubsub and event_bus as async queue layers', () => {
     const nodes: CanvasNode[] = [
-      { id: 'c1', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: createDefaultConfig('client', 'c1', 'Client') } },
-      { id: 'gw', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: createDefaultConfig('api_gateway', 'gw', 'Gateway') } },
-      { id: 's1', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: createDefaultConfig('app_server', 's1', 'Server') } },
-      { id: 'ps', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: createDefaultConfig('pubsub', 'ps', 'PubSub Broker') } },
-      { id: 'w1', type: 'customComponent', position: { x: 0, y: 0 }, data: { config: createDefaultConfig('worker', 'w1', 'Worker') } },
+      {
+        id: 'c1',
+        type: 'customComponent',
+        position: { x: 0, y: 0 },
+        data: { config: createDefaultConfig('client', 'c1', 'Client') },
+      },
+      {
+        id: 'gw',
+        type: 'customComponent',
+        position: { x: 0, y: 0 },
+        data: { config: createDefaultConfig('api_gateway', 'gw', 'Gateway') },
+      },
+      {
+        id: 's1',
+        type: 'customComponent',
+        position: { x: 0, y: 0 },
+        data: { config: createDefaultConfig('app_server', 's1', 'Server') },
+      },
+      {
+        id: 'ps',
+        type: 'customComponent',
+        position: { x: 0, y: 0 },
+        data: { config: createDefaultConfig('pubsub', 'ps', 'PubSub Broker') },
+      },
+      {
+        id: 'w1',
+        type: 'customComponent',
+        position: { x: 0, y: 0 },
+        data: { config: createDefaultConfig('worker', 'w1', 'Worker') },
+      },
     ];
 
     const edges: CanvasEdge[] = [

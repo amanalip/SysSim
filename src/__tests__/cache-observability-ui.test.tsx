@@ -59,12 +59,14 @@ describe('cache observability UI', () => {
           data: { config: createDefaultConfig('redis_cache', 'cache') },
         },
       ],
-      edges: [{
-        id: 'client-cache',
-        source: 'client',
-        target: 'cache',
-        data: { protocol: 'HTTP', purpose: 'request' },
-      }],
+      edges: [
+        {
+          id: 'client-cache',
+          source: 'client',
+          target: 'cache',
+          data: { protocol: 'HTTP', purpose: 'request' },
+        },
+      ],
     });
   });
 

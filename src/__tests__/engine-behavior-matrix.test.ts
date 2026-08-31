@@ -5,8 +5,20 @@ import { SysSimEngine, SimGraph } from '../engine/simulator';
 
 const topologyBoundaryCases: Array<[string, SimGraph]> = [
   ['disconnected', { nodes: [], edges: [] }],
-  ['dangling edge', { nodes: [], edges: [{ id: 'e', source: 'missing-a', target: 'missing-b', data: { protocol: 'HTTP' } }] }],
-  ['self-loop', { nodes: [{ id: 'client', config: COMPONENT_METADATA_LIST[0].defaultConfig('client') }], edges: [{ id: 'e', source: 'client', target: 'client', data: { protocol: 'HTTP' } }] }],
+  [
+    'dangling edge',
+    {
+      nodes: [],
+      edges: [{ id: 'e', source: 'missing-a', target: 'missing-b', data: { protocol: 'HTTP' } }],
+    },
+  ],
+  [
+    'self-loop',
+    {
+      nodes: [{ id: 'client', config: COMPONENT_METADATA_LIST[0].defaultConfig('client') }],
+      edges: [{ id: 'e', source: 'client', target: 'client', data: { protocol: 'HTTP' } }],
+    },
+  ],
 ];
 
 describe('engine public behavior matrix', () => {
@@ -14,7 +26,9 @@ describe('engine public behavior matrix', () => {
     'initializes and resets the %s component model with its complete default config',
     (type) => {
       const engine = seededEngineFixture(undefined, { baseQps: 1 });
-      const config = COMPONENT_METADATA_LIST.find((item) => item.type === type)!.defaultConfig(`node-${type}`);
+      const config = COMPONENT_METADATA_LIST.find((item) => item.type === type)!.defaultConfig(
+        `node-${type}`,
+      );
       const graph: SimGraph = { nodes: [{ id: config.id, config }], edges: [] };
 
       expect(() => engine.setGraph(graph)).not.toThrow();
@@ -38,11 +52,17 @@ describe('engine public behavior matrix', () => {
   });
 
   it('uses the most recent custom schedule entry and preserves fractional QPS', () => {
-    const engine = new SysSimEngine(undefined, trafficFixture({
-      pattern: 'custom',
-      baseQps: 0.5,
-      customSchedule: [{ timeSec: 0, qps: 0.5 }, { timeSec: 10, qps: 50_000 }],
-    }));
+    const engine = new SysSimEngine(
+      undefined,
+      trafficFixture({
+        pattern: 'custom',
+        baseQps: 0.5,
+        customSchedule: [
+          { timeSec: 0, qps: 0.5 },
+          { timeSec: 10, qps: 50_000 },
+        ],
+      }),
+    );
     expect(engine.getCurrentQps(9.999)).toBe(0.5);
     expect(engine.getCurrentQps(10)).toBe(50_000);
   });
@@ -71,8 +91,18 @@ describe('engine public behavior matrix', () => {
     const graph: SimGraph = {
       nodes,
       edges: [
-        ...nodes.slice(1).map((node, index) => ({ id: `edge-${index}`, source: nodes[index].id, target: node.id, data: { protocol: 'HTTP' as const } })),
-        { id: 'cycle', source: nodes.at(-1)!.id, target: nodes[0].id, data: { protocol: 'HTTP' as const } },
+        ...nodes.slice(1).map((node, index) => ({
+          id: `edge-${index}`,
+          source: nodes[index].id,
+          target: node.id,
+          data: { protocol: 'HTTP' as const },
+        })),
+        {
+          id: 'cycle',
+          source: nodes.at(-1)!.id,
+          target: nodes[0].id,
+          data: { protocol: 'HTTP' as const },
+        },
       ],
     };
     const engine = new SysSimEngine(graph, trafficFixture({ baseQps: 1 }));

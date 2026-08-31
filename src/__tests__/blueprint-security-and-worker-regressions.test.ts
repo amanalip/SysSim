@@ -15,14 +15,28 @@ describe('Bugs Batch 9: Blueprint Node Types, Security/Serverless Execution, Wor
 
   it('Bug 22: Auth service validation latency and serverless execution are evaluated in engine', () => {
     const engine = new SysSimEngine();
-    const clientNode = { id: 'client_1', config: createDefaultConfig('client', 'client_1', 'Client') };
-    const authNode = { id: 'auth_1', config: createDefaultConfig('auth_service', 'auth_1', 'JWT Auth') };
-    const serverlessNode = { id: 'func_1', config: createDefaultConfig('serverless', 'func_1', 'Lambda') };
+    const clientNode = {
+      id: 'client_1',
+      config: createDefaultConfig('client', 'client_1', 'Client'),
+    };
+    const authNode = {
+      id: 'auth_1',
+      config: createDefaultConfig('auth_service', 'auth_1', 'JWT Auth'),
+    };
+    const serverlessNode = {
+      id: 'func_1',
+      config: createDefaultConfig('serverless', 'func_1', 'Lambda'),
+    };
 
     const graph: SimGraph = {
       nodes: [clientNode, authNode, serverlessNode],
       edges: [
-        { id: 'e1', source: 'client_1', target: 'auth_1', data: { protocol: 'HTTP', isCut: false } },
+        {
+          id: 'e1',
+          source: 'client_1',
+          target: 'auth_1',
+          data: { protocol: 'HTTP', isCut: false },
+        },
         { id: 'e2', source: 'auth_1', target: 'func_1', data: { protocol: 'gRPC', isCut: false } },
       ],
     };

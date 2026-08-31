@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Circle, ChevronRight, Award, Target, Cpu, ShieldCheck, Play } from 'lucide-react';
+import {
+  CheckCircle2,
+  Circle,
+  ChevronRight,
+  Award,
+  Target,
+  Cpu,
+  ShieldCheck,
+  Play,
+} from 'lucide-react';
 import { Scenario } from '../../model/types';
 import { useStore } from '../../store/use-store';
 import { simulationRuntime as simBridge } from '../../engine/simulation-runtime';
@@ -18,7 +27,8 @@ interface StepItem {
 }
 
 export const ScenarioInterviewStepper: React.FC<ScenarioInterviewStepperProps> = ({ scenario }) => {
-  const { setTrafficConfig, scenarioProgress, updateScenarioProgress, recordScenarioAttempt } = useStore();
+  const { setTrafficConfig, scenarioProgress, updateScenarioProgress, recordScenarioAttempt } =
+    useStore();
   const completedSteps = scenarioProgress[scenario.id]?.completedSteps ?? [];
   const [activeStep, setActiveStep] = useState(1);
 
@@ -83,7 +93,9 @@ export const ScenarioInterviewStepper: React.FC<ScenarioInterviewStepperProps> =
 
   const toggleStepCompleted = (stepId: number) => {
     if (completedSteps.includes(stepId)) {
-      updateScenarioProgress(scenario.id, { completedSteps: completedSteps.filter((id) => id !== stepId) });
+      updateScenarioProgress(scenario.id, {
+        completedSteps: completedSteps.filter((id) => id !== stepId),
+      });
     } else {
       updateScenarioProgress(scenario.id, { completedSteps: [...completedSteps, stepId].sort() });
       useStore.getState().addToast(`Completed Step ${stepId}!`, 'success');
@@ -183,8 +195,12 @@ export const ScenarioInterviewStepper: React.FC<ScenarioInterviewStepperProps> =
                     >
                       <Play size={12} />
                       <span>
-                        Run Scenario Simulation ({scenario.trafficPreset.baseQps.toLocaleString()} QPS
-                        {scenario.trafficPreset.baseQps !== scenario.constraints.targetQps ? ' scaled model' : ''})
+                        Run Scenario Simulation ({scenario.trafficPreset.baseQps.toLocaleString()}{' '}
+                        QPS
+                        {scenario.trafficPreset.baseQps !== scenario.constraints.targetQps
+                          ? ' scaled model'
+                          : ''}
+                        )
                       </span>
                     </button>
                   )}

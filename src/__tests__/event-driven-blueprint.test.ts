@@ -9,10 +9,25 @@ describe('event-driven blueprint semantics', () => {
     vi.spyOn(Date, 'now').mockReturnValue(1234);
     const blueprint = ARCHITECTURE_BLUEPRINTS.find((entry) => entry.id === 'event_driven_pipeline');
     const graph = blueprint!.create(0, 0);
-    const engine = new SysSimEngine({
-      nodes: graph.nodes.map((node) => ({ id: node.id, config: node.data.config })),
-      edges: graph.edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, data: edge.data! })),
-    }, { pattern: 'steady', baseQps: 0, burstMultiplier: 1, rampDurationSec: 1, spikeFrequencySec: 1, seed: 7 });
+    const engine = new SysSimEngine(
+      {
+        nodes: graph.nodes.map((node) => ({ id: node.id, config: node.data.config })),
+        edges: graph.edges.map((edge) => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          data: edge.data!,
+        })),
+      },
+      {
+        pattern: 'steady',
+        baseQps: 0,
+        burstMultiplier: 1,
+        rampDurationSec: 1,
+        spikeFrequencySec: 1,
+        seed: 7,
+      },
+    );
 
     const request = createSimRequest('gw_1234', 0, 'order:1', 1);
     (engine as unknown as { processRequest: (value: SimRequest) => void }).processRequest(request);
@@ -27,7 +42,10 @@ describe('event-driven blueprint semantics', () => {
       consumerSucceeded: 2,
       queueDepth: 0,
     });
-    expect(metrics.componentMetrics.w1_1234.totalRequests + metrics.componentMetrics.w2_1234.totalRequests).toBe(2);
+    expect(
+      metrics.componentMetrics.w1_1234.totalRequests +
+        metrics.componentMetrics.w2_1234.totalRequests,
+    ).toBe(2);
     vi.restoreAllMocks();
   });
 });

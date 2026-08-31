@@ -17,17 +17,59 @@ export const MAPS_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Serve pre-rendered Vector Map Tiles (Protobuf / Mapbox MVT) from a global edge CDN.' },
-      { step: 2, hint: 'Preprocess road network graphs using Contraction Hierarchies (CH) or Customisable Contraction Hierarchies (CCH) for instant Dijkstra/A* routing.' },
-      { step: 3, hint: 'Incorporate live traffic speeds onto road graph edge weights dynamically.' },
+      {
+        step: 1,
+        hint: 'Serve pre-rendered Vector Map Tiles (Protobuf / Mapbox MVT) from a global edge CDN.',
+      },
+      {
+        step: 2,
+        hint: 'Preprocess road network graphs using Contraction Hierarchies (CH) or Customisable Contraction Hierarchies (CCH) for instant Dijkstra/A* routing.',
+      },
+      {
+        step: 3,
+        hint: 'Incorporate live traffic speeds onto road graph edge weights dynamically.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'driver', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'driver', 'Navigation App') } },
-        { id: 'tileCdn', type: 'customComponent', position: { x: 280, y: 70 }, data: { config: createDefaultConfig('cdn', 'tileCdn', 'Vector Map Tile CDN') } },
-        { id: 'routeApi', type: 'customComponent', position: { x: 280, y: 230 }, data: { config: createDefaultConfig('app_server', 'routeApi', 'Routing Engine (Contraction Hierarchies)') } },
-        { id: 'tileS3', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('object_storage', 'tileS3', 'Vector Tiles S3') } },
-        { id: 'trafficFeed', type: 'customComponent', position: { x: 540, y: 230 }, data: { config: createDefaultConfig('redis_cache', 'trafficFeed', 'Live Traffic Speed Graph') } },
+        {
+          id: 'driver',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'driver', 'Navigation App') },
+        },
+        {
+          id: 'tileCdn',
+          type: 'customComponent',
+          position: { x: 280, y: 70 },
+          data: { config: createDefaultConfig('cdn', 'tileCdn', 'Vector Map Tile CDN') },
+        },
+        {
+          id: 'routeApi',
+          type: 'customComponent',
+          position: { x: 280, y: 230 },
+          data: {
+            config: createDefaultConfig(
+              'app_server',
+              'routeApi',
+              'Routing Engine (Contraction Hierarchies)',
+            ),
+          },
+        },
+        {
+          id: 'tileS3',
+          type: 'customComponent',
+          position: { x: 540, y: 70 },
+          data: { config: createDefaultConfig('object_storage', 'tileS3', 'Vector Tiles S3') },
+        },
+        {
+          id: 'trafficFeed',
+          type: 'customComponent',
+          position: { x: 540, y: 230 },
+          data: {
+            config: createDefaultConfig('redis_cache', 'trafficFeed', 'Live Traffic Speed Graph'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'driver', target: 'tileCdn', data: { protocol: 'HTTP' } },
@@ -39,11 +81,13 @@ export const MAPS_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'Why is raw Dijkstra algorithm too slow for global road network routing?',
-        answer: 'Raw Dijkstra visits millions of road nodes on a continental route (takes several seconds); Contraction Hierarchies precompute shortcut edges, reducing query search space by 99.9% to sub-10ms.',
+        answer:
+          'Raw Dijkstra visits millions of road nodes on a continental route (takes several seconds); Contraction Hierarchies precompute shortcut edges, reducing query search space by 99.9% to sub-10ms.',
       },
       {
         question: 'How do vector tiles differ from legacy raster image tiles?',
-        answer: 'Vector tiles contain raw geographic geometry and layer metadata, allowing client GPUs to style, tilt, rotate, and zoom smoothly without downloading new images for every zoom level.',
+        answer:
+          'Vector tiles contain raw geographic geometry and layer metadata, allowing client GPUs to style, tilt, rotate, and zoom smoothly without downloading new images for every zoom level.',
       },
     ],
     sources: [
@@ -81,16 +125,46 @@ export const MAPS_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.99,
     },
     hints: [
-      { step: 1, hint: 'Store instantaneous user location coordinates in an In-Memory spatial store (Redis GEO).' },
-      { step: 2, hint: 'Push live location movements to authorized circle members over persistent WebSockets.' },
+      {
+        step: 1,
+        hint: 'Store instantaneous user location coordinates in an In-Memory spatial store (Redis GEO).',
+      },
+      {
+        step: 2,
+        hint: 'Push live location movements to authorized circle members over persistent WebSockets.',
+      },
       { step: 3, hint: 'Evaluate home/school geofence entry triggers on location updates.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'userA', type: 'customComponent', position: { x: 50, y: 70 }, data: { config: createDefaultConfig('client', 'userA', 'Mobile Client A') } },
-        { id: 'userB', type: 'customComponent', position: { x: 50, y: 230 }, data: { config: createDefaultConfig('client', 'userB', 'Family Member B') } },
-        { id: 'locGw', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'locGw', 'Location WebSocket Gateway') } },
-        { id: 'geoStore', type: 'customComponent', position: { x: 540, y: 150 }, data: { config: createDefaultConfig('redis_cache', 'geoStore', 'Live Coordinates Redis GEO') } },
+        {
+          id: 'userA',
+          type: 'customComponent',
+          position: { x: 50, y: 70 },
+          data: { config: createDefaultConfig('client', 'userA', 'Mobile Client A') },
+        },
+        {
+          id: 'userB',
+          type: 'customComponent',
+          position: { x: 50, y: 230 },
+          data: { config: createDefaultConfig('client', 'userB', 'Family Member B') },
+        },
+        {
+          id: 'locGw',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: {
+            config: createDefaultConfig('app_server', 'locGw', 'Location WebSocket Gateway'),
+          },
+        },
+        {
+          id: 'geoStore',
+          type: 'customComponent',
+          position: { x: 540, y: 150 },
+          data: {
+            config: createDefaultConfig('redis_cache', 'geoStore', 'Live Coordinates Redis GEO'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'userA', target: 'locGw', data: { protocol: 'WebSocket' } },
@@ -100,12 +174,15 @@ export const MAPS_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'How do mobile apps optimize device battery while maintaining continuous location sharing?',
-        answer: 'Apps utilize native OS Geofencing and Significant Motion APIs (cellular tower / Wi-Fi changes), activating high-accuracy GPS only when actual physical motion is detected.',
+        question:
+          'How do mobile apps optimize device battery while maintaining continuous location sharing?',
+        answer:
+          'Apps utilize native OS Geofencing and Significant Motion APIs (cellular tower / Wi-Fi changes), activating high-accuracy GPS only when actual physical motion is detected.',
       },
       {
         question: 'How is location privacy enforced between family members?',
-        answer: 'Access control evaluates active sharing permissions in cache before broadcasting location coordinate packets to requesting WebSocket clients.',
+        answer:
+          'Access control evaluates active sharing permissions in cache before broadcasting location coordinate packets to requesting WebSocket clients.',
       },
     ],
     sources: [
@@ -143,16 +220,51 @@ export const MAPS_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.99,
     },
     hints: [
-      { step: 1, hint: 'Index polygonal geofences using Spatial R-Trees or Uber H3 cells in memory.' },
-      { step: 2, hint: 'Quickly filter bounding box overlaps before executing precise ray-casting point-in-polygon checks.' },
-      { step: 3, hint: 'Emit geofence transition events to Kafka for downstream webhook dispatch.' },
+      {
+        step: 1,
+        hint: 'Index polygonal geofences using Spatial R-Trees or Uber H3 cells in memory.',
+      },
+      {
+        step: 2,
+        hint: 'Quickly filter bounding box overlaps before executing precise ray-casting point-in-polygon checks.',
+      },
+      {
+        step: 3,
+        hint: 'Emit geofence transition events to Kafka for downstream webhook dispatch.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'movingAsset', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'movingAsset', 'GPS Ping Stream') } },
-        { id: 'fenceEngine', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'fenceEngine', 'R-Tree Geofence Evaluator') } },
-        { id: 'polygonStore', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'polygonStore', 'Active Polygon Index') } },
-        { id: 'webhookMq', type: 'customComponent', position: { x: 540, y: 220 }, data: { config: createDefaultConfig('message_queue', 'webhookMq', 'Triggered Event Kafka') } },
+        {
+          id: 'movingAsset',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'movingAsset', 'GPS Ping Stream') },
+        },
+        {
+          id: 'fenceEngine',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: {
+            config: createDefaultConfig('app_server', 'fenceEngine', 'R-Tree Geofence Evaluator'),
+          },
+        },
+        {
+          id: 'polygonStore',
+          type: 'customComponent',
+          position: { x: 540, y: 70 },
+          data: {
+            config: createDefaultConfig('redis_cache', 'polygonStore', 'Active Polygon Index'),
+          },
+        },
+        {
+          id: 'webhookMq',
+          type: 'customComponent',
+          position: { x: 540, y: 220 },
+          data: {
+            config: createDefaultConfig('message_queue', 'webhookMq', 'Triggered Event Kafka'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'movingAsset', target: 'fenceEngine', data: { protocol: 'HTTP' } },
@@ -163,11 +275,14 @@ export const MAPS_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'Why use R-Tree index rather than checking all polygons on every GPS ping?',
-        answer: 'An R-Tree groups spatial bounding boxes hierarchically; checking intersection reduces candidate polygons from 1,000,000 to ~2-3 in O(log N) time.',
+        answer:
+          'An R-Tree groups spatial bounding boxes hierarchically; checking intersection reduces candidate polygons from 1,000,000 to ~2-3 in O(log N) time.',
       },
       {
-        question: 'How do you prevent duplicate trigger events when a device lingers on a fence boundary?',
-        answer: 'Implement stateful hysteresis thresholds: require the asset to move at least 20 meters outside the boundary before resetting the exit trigger.',
+        question:
+          'How do you prevent duplicate trigger events when a device lingers on a fence boundary?',
+        answer:
+          'Implement stateful hysteresis thresholds: require the asset to move at least 20 meters outside the boundary before resetting the exit trigger.',
       },
     ],
     sources: [
@@ -205,16 +320,39 @@ export const MAPS_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.99,
     },
     hints: [
-      { step: 1, hint: 'Store branch locations with spatial coordinates in PostgreSQL with PostGIS extensions.' },
+      {
+        step: 1,
+        hint: 'Store branch locations with spatial coordinates in PostgreSQL with PostGIS extensions.',
+      },
       { step: 2, hint: 'Cache nearest store lists for popular postal codes in Redis.' },
       { step: 3, hint: 'Precompute driving distances from common city center centroids.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'shopper', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'shopper', 'Shopper App') } },
-        { id: 'storeApi', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'storeApi', 'Store Locator API') } },
-        { id: 'geoCache', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'geoCache', 'Postal Code Cache') } },
-        { id: 'postgisDb', type: 'customComponent', position: { x: 540, y: 220 }, data: { config: createDefaultConfig('sql_db', 'postgisDb', 'PostGIS Spatial DB') } },
+        {
+          id: 'shopper',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'shopper', 'Shopper App') },
+        },
+        {
+          id: 'storeApi',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'storeApi', 'Store Locator API') },
+        },
+        {
+          id: 'geoCache',
+          type: 'customComponent',
+          position: { x: 540, y: 70 },
+          data: { config: createDefaultConfig('redis_cache', 'geoCache', 'Postal Code Cache') },
+        },
+        {
+          id: 'postgisDb',
+          type: 'customComponent',
+          position: { x: 540, y: 220 },
+          data: { config: createDefaultConfig('sql_db', 'postgisDb', 'PostGIS Spatial DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'shopper', target: 'storeApi', data: { protocol: 'HTTP' } },
@@ -224,12 +362,15 @@ export const MAPS_SCENARIOS: Scenario[] = [
     },
     discussionPoints: [
       {
-        question: 'What is the advantage of PostGIS ST_DWithin query over calculating Haversine formulas in application code?',
-        answer: 'ST_DWithin leverages spatial GIST indexes in PostgreSQL, scanning only matching spatial index blocks directly in the database engine.',
+        question:
+          'What is the advantage of PostGIS ST_DWithin query over calculating Haversine formulas in application code?',
+        answer:
+          'ST_DWithin leverages spatial GIST indexes in PostgreSQL, scanning only matching spatial index blocks directly in the database engine.',
       },
       {
         question: 'How do you handle store temporary holiday hours updates efficiently?',
-        answer: 'Maintain date-override records in the relational schema and invalidate the postal code cache key on update.',
+        answer:
+          'Maintain date-override records in the relational schema and invalidate the postal code cache key on update.',
       },
     ],
     sources: [

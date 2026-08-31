@@ -20,11 +20,20 @@ import { validateConnection } from '../model/validation';
 import { inferEdgePurpose, validateEdgePurpose } from '../model/edge-semantics';
 import { migrateCanvasState } from '../model/canvas-migrations';
 import { computeAutoLayout } from '../layout/auto-layout';
-import { notifyGraphMutation, notifySimulationReset, notifyTrafficConfigChange } from '../engine/simulation-command-bus';
+import {
+  notifyGraphMutation,
+  notifySimulationReset,
+  notifyTrafficConfigChange,
+} from '../engine/simulation-command-bus';
 import { ThemeMode } from '../theme';
 import { HealthStateSource } from '../engine/health-state';
 import { validateArchitectureState } from '../model/architecture-schema';
-import { createScenarioProgress, readScenarioProgress, ScenarioProgress, writeScenarioProgress } from '../scenarios/progress';
+import {
+  createScenarioProgress,
+  readScenarioProgress,
+  ScenarioProgress,
+  writeScenarioProgress,
+} from '../scenarios/progress';
 export type { ZoneData };
 
 export interface CanvasNode {
@@ -101,20 +110,33 @@ export interface SysSimState {
   setEdges: (edges: CanvasEdge[] | ((prev: CanvasEdge[]) => CanvasEdge[])) => void;
   removeGraphItems: (nodeIds: string[], edgeIds: string[]) => void;
   setZones: (zones: ZoneData[] | ((prev: ZoneData[]) => ZoneData[])) => void;
-  addNode: (type: AnyComponentConfig['type'], position: { x: number; y: number }, customName?: string) => string;
+  addNode: (
+    type: AnyComponentConfig['type'],
+    position: { x: number; y: number },
+    customName?: string,
+  ) => string;
   duplicateNode: (nodeId: string) => string | null;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   updateNodeConfig: (id: string, partialConfig: Partial<AnyComponentConfig>) => void;
   updateNodeConfigs: (updates: Record<string, Partial<AnyComponentConfig>>) => void;
   removeNode: (id: string) => void;
-  addEdge: (source: string, target: string, protocol?: EdgeProtocol, purpose?: EdgePurpose) => boolean;
+  addEdge: (
+    source: string,
+    target: string,
+    protocol?: EdgeProtocol,
+    purpose?: EdgePurpose,
+  ) => boolean;
   updateEdgeProtocol: (edgeId: string, protocol: EdgeProtocol) => void;
   updateEdgePurpose: (edgeId: string, purpose: EdgePurpose) => void;
   toggleCutEdge: (edgeId: string) => void;
   removeEdge: (edgeId: string) => void;
   selectNode: (nodeId: string | null) => void;
   selectEdge: (edgeId: string | null) => void;
-  addZone: (label: string, category: ZoneData['category'], bounds: { x: number; y: number; width: number; height: number }) => void;
+  addZone: (
+    label: string,
+    category: ZoneData['category'],
+    bounds: { x: number; y: number; width: number; height: number },
+  ) => void;
   removeZone: (zoneId: string) => void;
   updateZone: (zoneId: string, partial: Partial<ZoneData>) => void;
   autoLayout: () => void;
@@ -148,7 +170,11 @@ export interface SysSimState {
   updateMetrics: (metrics: Partial<OverallMetrics>) => void;
   setBottlenecks: (bottlenecks: BottleneckIssue[]) => void;
   setChaosMode: (enabled: boolean, intervalSec?: number) => void;
-  setNodeHealthOverride: (nodeId: string, health: NodeHealthStatus, source?: HealthStateSource) => void;
+  setNodeHealthOverride: (
+    nodeId: string,
+    health: NodeHealthStatus,
+    source?: HealthStateSource,
+  ) => void;
   resetSimulation: () => void;
 
   // Scenario State
@@ -174,7 +200,10 @@ export interface SysSimState {
   toggleReferenceOverlay: () => void;
   setSideBySideMode: (enabled: boolean) => void;
   markScenarioCompleted: (scenarioId: number) => void;
-  updateScenarioProgress: (scenarioId: number, progress: Partial<Omit<ScenarioProgress, 'scenarioId'>>) => void;
+  updateScenarioProgress: (
+    scenarioId: number,
+    progress: Partial<Omit<ScenarioProgress, 'scenarioId'>>,
+  ) => void;
   recordScenarioAttempt: (scenarioId: number) => void;
   setScenarioSearchQuery: (query: string) => void;
   setScenarioDifficultyFilter: (diff: 'All' | 'Easy' | 'Medium' | 'Hard') => void;
@@ -329,17 +358,31 @@ export const useStore = create<SysSimState>((set, get) => ({
     const edgesToRemove = new Set(edgeIds);
     if (nodesToRemove.size === 0 && edgesToRemove.size === 0) return;
     const current = get();
-    const hasTarget = current.nodes.some((node) => nodesToRemove.has(node.id)) ||
+    const hasTarget =
+      current.nodes.some((node) => nodesToRemove.has(node.id)) ||
       current.edges.some((edge) => edgesToRemove.has(edge.id));
     if (!hasTarget) return;
     get().pushHistory();
     set((state) => ({
       nodes: state.nodes.filter((node) => !nodesToRemove.has(node.id)),
-      edges: state.edges.filter((edge) =>
-        !edgesToRemove.has(edge.id) && !nodesToRemove.has(edge.source) && !nodesToRemove.has(edge.target)),
-      selectedNodeId: state.selectedNodeId && nodesToRemove.has(state.selectedNodeId) ? null : state.selectedNodeId,
-      selectedEdgeId: state.selectedEdgeId && edgesToRemove.has(state.selectedEdgeId) ? null : state.selectedEdgeId,
-      isPropertiesPanelOpen: state.selectedNodeId && nodesToRemove.has(state.selectedNodeId) ? false : state.isPropertiesPanelOpen,
+      edges: state.edges.filter(
+        (edge) =>
+          !edgesToRemove.has(edge.id) &&
+          !nodesToRemove.has(edge.source) &&
+          !nodesToRemove.has(edge.target),
+      ),
+      selectedNodeId:
+        state.selectedNodeId && nodesToRemove.has(state.selectedNodeId)
+          ? null
+          : state.selectedNodeId,
+      selectedEdgeId:
+        state.selectedEdgeId && edgesToRemove.has(state.selectedEdgeId)
+          ? null
+          : state.selectedEdgeId,
+      isPropertiesPanelOpen:
+        state.selectedNodeId && nodesToRemove.has(state.selectedNodeId)
+          ? false
+          : state.isPropertiesPanelOpen,
       graphRevision: state.graphRevision + 1,
     }));
     notifyGraphMutation();
@@ -423,7 +466,7 @@ export const useStore = create<SysSimState>((set, get) => ({
             },
           };
         }
-          return node;
+        return node;
       }),
       graphRevision: state.graphRevision + 1,
     }));
@@ -433,9 +476,17 @@ export const useStore = create<SysSimState>((set, get) => ({
   updateNodeConfigs: (updates) => {
     if (Object.keys(updates).length === 0) return;
     set((state) => ({
-      nodes: state.nodes.map((node) => updates[node.id]
-        ? { ...node, data: { ...node.data, config: { ...node.data.config, ...updates[node.id] } as AnyComponentConfig } }
-        : node),
+      nodes: state.nodes.map((node) =>
+        updates[node.id]
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                config: { ...node.data.config, ...updates[node.id] } as AnyComponentConfig,
+              },
+            }
+          : node,
+      ),
       graphRevision: state.graphRevision + 1,
     }));
     notifyGraphMutation();
@@ -458,7 +509,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     const existing = get().edges.find(
       (e) =>
         (e.source === source && e.target === target) ||
-        (e.source === target && e.target === source)
+        (e.source === target && e.target === source),
     );
     if (existing) return false;
 
@@ -470,7 +521,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     if (sourceNode && targetNode) {
       const validation = validateConnection(
         sourceNode.data.config.type,
-        targetNode.data.config.type
+        targetNode.data.config.type,
       );
       if (!validation.valid && validation.message) {
         get().addToast(validation.message, 'warning');
@@ -529,14 +580,17 @@ export const useStore = create<SysSimState>((set, get) => ({
         edge.data.purpose || 'request',
       );
       if (!validation.valid) {
-        get().addToast(validation.reason || 'Protocol is incompatible with this edge purpose', 'error');
+        get().addToast(
+          validation.reason || 'Protocol is incompatible with this edge purpose',
+          'error',
+        );
         return;
       }
     }
     get().pushHistory();
     set((state) => ({
       edges: state.edges.map((e) =>
-        e.id === edgeId ? { ...e, data: { ...e.data, protocol } } : e
+        e.id === edgeId ? { ...e, data: { ...e.data, protocol } } : e,
       ),
       graphRevision: state.graphRevision + 1,
     }));
@@ -561,9 +615,7 @@ export const useStore = create<SysSimState>((set, get) => ({
     }
     get().pushHistory();
     set((state) => ({
-      edges: state.edges.map((e) =>
-        e.id === edgeId ? { ...e, data: { ...e.data, purpose } } : e
-      ),
+      edges: state.edges.map((e) => (e.id === edgeId ? { ...e, data: { ...e.data, purpose } } : e)),
       graphRevision: state.graphRevision + 1,
     }));
     notifyGraphMutation();
@@ -582,7 +634,7 @@ export const useStore = create<SysSimState>((set, get) => ({
                 protocol: e.data?.protocol || 'HTTP',
               },
             }
-          : e
+          : e,
       ),
       graphRevision: state.graphRevision + 1,
     }));
@@ -784,19 +836,15 @@ export const useStore = create<SysSimState>((set, get) => ({
   },
   setActiveRequests: (activeRequests) => set({ activeRequests }),
   setRecentRequests: (recentRequests) => set({ recentRequests }),
-  updateMetrics: (partial) =>
-    set((state) => ({ metrics: { ...state.metrics, ...partial } })),
+  updateMetrics: (partial) => set((state) => ({ metrics: { ...state.metrics, ...partial } })),
   setBottlenecks: (bottlenecks) => set({ bottlenecks }),
-  setChaosMode: (isChaosMode, chaosIntervalSec = 15) =>
-    set({ isChaosMode, chaosIntervalSec }),
+  setChaosMode: (isChaosMode, chaosIntervalSec = 15) => set({ isChaosMode, chaosIntervalSec }),
   setNodeHealthOverride: (nodeId, health, source = 'manual') => {
     set((state) => ({
       nodeHealthOverrides: { ...state.nodeHealthOverrides, [nodeId]: health },
       nodeHealthSources: { ...state.nodeHealthSources, [nodeId]: source },
       nodes: state.nodes.map((n) =>
-        n.id === nodeId
-          ? { ...n, data: { ...n.data, config: { ...n.data.config, health } } }
-          : n
+        n.id === nodeId ? { ...n, data: { ...n.data, config: { ...n.data.config, health } } } : n,
       ),
       graphRevision: state.graphRevision + 1,
     }));
@@ -823,7 +871,10 @@ export const useStore = create<SysSimState>((set, get) => ({
         const stored = localStorage.getItem('syssim_completed_scenarios');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) return [...new Set(parsed.filter((id) => Number.isInteger(id) && id > 0 && id <= 10_000))];
+          if (Array.isArray(parsed))
+            return [
+              ...new Set(parsed.filter((id) => Number.isInteger(id) && id > 0 && id <= 10_000)),
+            ];
         }
       }
     } catch {
@@ -841,8 +892,13 @@ export const useStore = create<SysSimState>((set, get) => ({
   scenarioCategoryFilter: 'All',
 
   setCurrentScenario: (currentScenario) => {
-    set({ currentScenario, activeScenario: currentScenario, activeScenarioId: currentScenario?.id ?? null });
-    if (currentScenario) get().updateScenarioProgress(currentScenario.id, { completionIntent: 'in-progress' });
+    set({
+      currentScenario,
+      activeScenario: currentScenario,
+      activeScenarioId: currentScenario?.id ?? null,
+    });
+    if (currentScenario)
+      get().updateScenarioProgress(currentScenario.id, { completionIntent: 'in-progress' });
   },
 
   loadScenario: (scenario) => {
@@ -856,7 +912,10 @@ export const useStore = create<SysSimState>((set, get) => ({
     });
     notifyTrafficConfigChange(scenario.trafficPreset);
     get().recordScenarioAttempt(scenario.id);
-    get().updateScenarioProgress(scenario.id, { mode: 'challenge', completionIntent: 'in-progress' });
+    get().updateScenarioProgress(scenario.id, {
+      mode: 'challenge',
+      completionIntent: 'in-progress',
+    });
   },
 
   loadReferenceDesign: (refDesign) => {
@@ -926,13 +985,20 @@ export const useStore = create<SysSimState>((set, get) => ({
     const existing = get().scenarioProgress[scenarioId] || createScenarioProgress(scenarioId);
     const next = { ...existing, ...partial, scenarioId, updatedAt: Date.now() };
     const scenarioProgress = { ...get().scenarioProgress, [scenarioId]: next };
-    try { writeScenarioProgress(scenarioProgress); } catch { /* storage is optional */ }
+    try {
+      writeScenarioProgress(scenarioProgress);
+    } catch {
+      /* storage is optional */
+    }
     set({ scenarioProgress });
   },
 
   recordScenarioAttempt: (scenarioId) => {
     const existing = get().scenarioProgress[scenarioId] || createScenarioProgress(scenarioId);
-    get().updateScenarioProgress(scenarioId, { attempts: existing.attempts + 1, completionIntent: 'in-progress' });
+    get().updateScenarioProgress(scenarioId, {
+      attempts: existing.attempts + 1,
+      completionIntent: 'in-progress',
+    });
   },
 
   setScenarioSearchQuery: (scenarioSearchQuery) => set({ scenarioSearchQuery }),

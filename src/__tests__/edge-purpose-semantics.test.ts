@@ -159,7 +159,9 @@ describe('Explicit edge-purpose semantics', () => {
     };
     const healthyPrimary = execute(healthyGraph, 'source');
     expect(healthyPrimary.request.path.map((hop) => hop.nodeId)).toEqual(['source', 'primary']);
-    expect(healthyPrimary.engine.getMetricsSnapshot().componentMetrics.backup.totalRequests).toBe(0);
+    expect(healthyPrimary.engine.getMetricsSnapshot().componentMetrics.backup.totalRequests).toBe(
+      0,
+    );
 
     const cache: SimNode = {
       id: 'cache',
@@ -187,7 +189,10 @@ describe('Explicit edge-purpose semantics', () => {
     const graph: SimGraph = {
       nodes: [appNode('source', 10), queue, appNode('worker', 100, 'down')],
       edges: [
-        { ...edge('enqueue', 'source', 'queue', 'async'), data: { protocol: 'HTTP', purpose: 'async', latencyMs: 2 } },
+        {
+          ...edge('enqueue', 'source', 'queue', 'async'),
+          data: { protocol: 'HTTP', purpose: 'async', latencyMs: 2 },
+        },
         edge('consume', 'queue', 'worker', 'request'),
       ],
     };

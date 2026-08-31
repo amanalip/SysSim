@@ -17,17 +17,53 @@ export const COMMUNICATION_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.99,
     },
     hints: [
-      { step: 1, hint: 'Queue outbound emails into partitioned Kafka topics separated by tenant priority.' },
-      { step: 2, hint: 'Distribute sending across dedicated warm outbound IP pools with MX DNS lookups and SMTP connection pooling.' },
-      { step: 3, hint: 'Process asynchronous bounce and complaint webhooks to update suppression lists in real time.' },
+      {
+        step: 1,
+        hint: 'Queue outbound emails into partitioned Kafka topics separated by tenant priority.',
+      },
+      {
+        step: 2,
+        hint: 'Distribute sending across dedicated warm outbound IP pools with MX DNS lookups and SMTP connection pooling.',
+      },
+      {
+        step: 3,
+        hint: 'Process asynchronous bounce and complaint webhooks to update suppression lists in real time.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'appClient', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('app_server', 'appClient', 'Customer Backend') } },
-        { id: 'emailGw', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('api_gateway', 'emailGw', 'Email Ingestion API') } },
-        { id: 'mailMq', type: 'customComponent', position: { x: 500, y: 150 }, data: { config: createDefaultConfig('message_queue', 'mailMq', 'Outbound Mail Queue') } },
-        { id: 'smtpPool', type: 'customComponent', position: { x: 740, y: 80 }, data: { config: createDefaultConfig('worker', 'smtpPool', 'MTA SMTP Worker Pool') } },
-        { id: 'suppressionStore', type: 'customComponent', position: { x: 740, y: 220 }, data: { config: createDefaultConfig('redis_cache', 'suppressionStore', 'Bounce Suppression DB') } },
+        {
+          id: 'appClient',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'appClient', 'Customer Backend') },
+        },
+        {
+          id: 'emailGw',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('api_gateway', 'emailGw', 'Email Ingestion API') },
+        },
+        {
+          id: 'mailMq',
+          type: 'customComponent',
+          position: { x: 500, y: 150 },
+          data: { config: createDefaultConfig('message_queue', 'mailMq', 'Outbound Mail Queue') },
+        },
+        {
+          id: 'smtpPool',
+          type: 'customComponent',
+          position: { x: 740, y: 80 },
+          data: { config: createDefaultConfig('worker', 'smtpPool', 'MTA SMTP Worker Pool') },
+        },
+        {
+          id: 'suppressionStore',
+          type: 'customComponent',
+          position: { x: 740, y: 220 },
+          data: {
+            config: createDefaultConfig('redis_cache', 'suppressionStore', 'Bounce Suppression DB'),
+          },
+        },
       ],
       edges: [
         { id: 'e1', source: 'appClient', target: 'emailGw', data: { protocol: 'HTTP' } },
@@ -39,11 +75,13 @@ export const COMMUNICATION_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'Why is IP warmup essential when sending email at scale?',
-        answer: 'Major inbox providers (Gmail, Microsoft) block sudden high traffic from new IP addresses as spam; warmup gradually increases daily volume over 30 days to build domain reputation.',
+        answer:
+          'Major inbox providers (Gmail, Microsoft) block sudden high traffic from new IP addresses as spam; warmup gradually increases daily volume over 30 days to build domain reputation.',
       },
       {
         question: 'How do you handle temporary SMTP greylisting / 4xx soft bounces?',
-        answer: 'Place the message into an exponential backoff delayed retry queue, attempting delivery after 5, 15, and 60 minutes before marking as hard bounce.',
+        answer:
+          'Place the message into an exponential backoff delayed retry queue, attempting delivery after 5, 15, and 60 minutes before marking as hard bounce.',
       },
     ],
     sources: [
@@ -81,16 +119,42 @@ export const COMMUNICATION_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Maintain persistent HTTP/2 connections to Apple APNs and Google FCM servers.' },
+      {
+        step: 1,
+        hint: 'Maintain persistent HTTP/2 connections to Apple APNs and Google FCM servers.',
+      },
       { step: 2, hint: 'Batch multiple device tokens into single multi-recipient HTTP/2 frames.' },
-      { step: 3, hint: 'Cleanse expired device registration tokens automatically from return streams.' },
+      {
+        step: 3,
+        hint: 'Cleanse expired device registration tokens automatically from return streams.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'eventSrc', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('app_server', 'eventSrc', 'App Microservices') } },
-        { id: 'pushRouter', type: 'customComponent', position: { x: 280, y: 150 }, data: { config: createDefaultConfig('app_server', 'pushRouter', 'Push Router Gateway') } },
-        { id: 'apnsWorker', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('worker', 'apnsWorker', 'APNs HTTP/2 Pool') } },
-        { id: 'fcmWorker', type: 'customComponent', position: { x: 540, y: 220 }, data: { config: createDefaultConfig('worker', 'fcmWorker', 'FCM Gateway Pool') } },
+        {
+          id: 'eventSrc',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'eventSrc', 'App Microservices') },
+        },
+        {
+          id: 'pushRouter',
+          type: 'customComponent',
+          position: { x: 280, y: 150 },
+          data: { config: createDefaultConfig('app_server', 'pushRouter', 'Push Router Gateway') },
+        },
+        {
+          id: 'apnsWorker',
+          type: 'customComponent',
+          position: { x: 540, y: 70 },
+          data: { config: createDefaultConfig('worker', 'apnsWorker', 'APNs HTTP/2 Pool') },
+        },
+        {
+          id: 'fcmWorker',
+          type: 'customComponent',
+          position: { x: 540, y: 220 },
+          data: { config: createDefaultConfig('worker', 'fcmWorker', 'FCM Gateway Pool') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'eventSrc', target: 'pushRouter', data: { protocol: 'HTTP' } },
@@ -101,11 +165,13 @@ export const COMMUNICATION_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'Why is persistent HTTP/2 connection pooling critical for APNs throughput?',
-        answer: 'APNs uses HTTP/2 multiplexing; opening a new TLS connection per push notification throttles throughput to a few hundred pushes/sec, whereas multiplexing over pooled sockets achieves 50,000+ pushes/sec.',
+        answer:
+          'APNs uses HTTP/2 multiplexing; opening a new TLS connection per push notification throttles throughput to a few hundred pushes/sec, whereas multiplexing over pooled sockets achieves 50,000+ pushes/sec.',
       },
       {
         question: 'How do you handle user timezones during global push notification campaigns?',
-        answer: 'Queue notifications partitioned by UTC offset hour buckets; workers trigger dispatch according to recipient local target time.',
+        answer:
+          'Queue notifications partitioned by UTC offset hour buckets; workers trigger dispatch according to recipient local target time.',
       },
     ],
     sources: [
@@ -143,16 +209,47 @@ export const COMMUNICATION_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.99,
     },
     hints: [
-      { step: 1, hint: 'Maintain persistent Short Message Peer-to-Peer (SMPP) sessions to global telecom operators.' },
-      { step: 2, hint: 'Execute dynamic least-cost routing (LCR) with carrier failover on route degradation.' },
-      { step: 3, hint: 'Track async delivery receipts (DLR) and charge account balances via idempotency keys.' },
+      {
+        step: 1,
+        hint: 'Maintain persistent Short Message Peer-to-Peer (SMPP) sessions to global telecom operators.',
+      },
+      {
+        step: 2,
+        hint: 'Execute dynamic least-cost routing (LCR) with carrier failover on route degradation.',
+      },
+      {
+        step: 3,
+        hint: 'Track async delivery receipts (DLR) and charge account balances via idempotency keys.',
+      },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'c1', type: 'customComponent', position: { x: 50, y: 150 }, data: { config: createDefaultConfig('client', 'c1', 'API Client') } },
-        { id: 'smsApi', type: 'customComponent', position: { x: 260, y: 150 }, data: { config: createDefaultConfig('api_gateway', 'smsApi', 'SMS API Gateway') } },
-        { id: 'router', type: 'customComponent', position: { x: 500, y: 150 }, data: { config: createDefaultConfig('app_server', 'router', 'Least-Cost Route Evaluator') } },
-        { id: 'smppWorker', type: 'customComponent', position: { x: 740, y: 150 }, data: { config: createDefaultConfig('worker', 'smppWorker', 'SMPP Telco Connector') } },
+        {
+          id: 'c1',
+          type: 'customComponent',
+          position: { x: 50, y: 150 },
+          data: { config: createDefaultConfig('client', 'c1', 'API Client') },
+        },
+        {
+          id: 'smsApi',
+          type: 'customComponent',
+          position: { x: 260, y: 150 },
+          data: { config: createDefaultConfig('api_gateway', 'smsApi', 'SMS API Gateway') },
+        },
+        {
+          id: 'router',
+          type: 'customComponent',
+          position: { x: 500, y: 150 },
+          data: {
+            config: createDefaultConfig('app_server', 'router', 'Least-Cost Route Evaluator'),
+          },
+        },
+        {
+          id: 'smppWorker',
+          type: 'customComponent',
+          position: { x: 740, y: 150 },
+          data: { config: createDefaultConfig('worker', 'smppWorker', 'SMPP Telco Connector') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'c1', target: 'smsApi', data: { protocol: 'HTTP' } },
@@ -163,11 +260,13 @@ export const COMMUNICATION_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'What is SMPP (Short Message Peer-to-Peer) protocol?',
-        answer: 'SMPP is a binary telecommunications protocol operating over TCP designed specifically for high-speed SMS exchange between applications and Short Message Service Centers (SMSC).',
+        answer:
+          'SMPP is a binary telecommunications protocol operating over TCP designed specifically for high-speed SMS exchange between applications and Short Message Service Centers (SMSC).',
       },
       {
         question: 'How do you prevent SMS toll fraud and pumping attacks?',
-        answer: 'Enforce velocity rate limiters per IP, country destination prefix restrictions, and phone number risk scoring before dispatch.',
+        answer:
+          'Enforce velocity rate limiters per IP, country destination prefix restrictions, and phone number risk scoring before dispatch.',
       },
     ],
     sources: [
@@ -205,17 +304,50 @@ export const COMMUNICATION_SCENARIOS: Scenario[] = [
       availabilitySlaPercent: 99.999,
     },
     hints: [
-      { step: 1, hint: 'Handle SIP call signaling (INVITE, BYE, ACK) via Kamailio / OpenSIPS proxy clusters.' },
-      { step: 2, hint: 'Route bidirectional RTP audio streams through edge media relays (FreeSWITCH / Asterisk / RTPProxy).' },
+      {
+        step: 1,
+        hint: 'Handle SIP call signaling (INVITE, BYE, ACK) via Kamailio / OpenSIPS proxy clusters.',
+      },
+      {
+        step: 2,
+        hint: 'Route bidirectional RTP audio streams through edge media relays (FreeSWITCH / Asterisk / RTPProxy).',
+      },
       { step: 3, hint: 'Utilize STUN/TURN servers to traverse Symmetric NAT firewalls.' },
     ],
     referenceDesign: {
       nodes: [
-        { id: 'caller', type: 'customComponent', position: { x: 50, y: 70 }, data: { config: createDefaultConfig('client', 'caller', 'VoIP Phone / Client') } },
-        { id: 'callee', type: 'customComponent', position: { x: 50, y: 230 }, data: { config: createDefaultConfig('client', 'callee', 'Recipient Phone') } },
-        { id: 'sipProxy', type: 'customComponent', position: { x: 280, y: 70 }, data: { config: createDefaultConfig('app_server', 'sipProxy', 'Kamailio SIP Proxy') } },
-        { id: 'mediaRelay', type: 'customComponent', position: { x: 280, y: 230 }, data: { config: createDefaultConfig('app_server', 'mediaRelay', 'RTP Media Relay (FreeSWITCH)') } },
-        { id: 'locStore', type: 'customComponent', position: { x: 540, y: 70 }, data: { config: createDefaultConfig('redis_cache', 'locStore', 'SIP User Location DB') } },
+        {
+          id: 'caller',
+          type: 'customComponent',
+          position: { x: 50, y: 70 },
+          data: { config: createDefaultConfig('client', 'caller', 'VoIP Phone / Client') },
+        },
+        {
+          id: 'callee',
+          type: 'customComponent',
+          position: { x: 50, y: 230 },
+          data: { config: createDefaultConfig('client', 'callee', 'Recipient Phone') },
+        },
+        {
+          id: 'sipProxy',
+          type: 'customComponent',
+          position: { x: 280, y: 70 },
+          data: { config: createDefaultConfig('app_server', 'sipProxy', 'Kamailio SIP Proxy') },
+        },
+        {
+          id: 'mediaRelay',
+          type: 'customComponent',
+          position: { x: 280, y: 230 },
+          data: {
+            config: createDefaultConfig('app_server', 'mediaRelay', 'RTP Media Relay (FreeSWITCH)'),
+          },
+        },
+        {
+          id: 'locStore',
+          type: 'customComponent',
+          position: { x: 540, y: 70 },
+          data: { config: createDefaultConfig('redis_cache', 'locStore', 'SIP User Location DB') },
+        },
       ],
       edges: [
         { id: 'e1', source: 'caller', target: 'sipProxy', data: { protocol: 'UDP' } },
@@ -227,11 +359,13 @@ export const COMMUNICATION_SCENARIOS: Scenario[] = [
     discussionPoints: [
       {
         question: 'Why separate SIP signaling from RTP media streams?',
-        answer: 'SIP handles light control logic (ring, answer, hangup) and can be centrally orchestrated, while heavy RTP media streams route directly over the shortest network path via UDP to minimize latency and jitter.',
+        answer:
+          'SIP handles light control logic (ring, answer, hangup) and can be centrally orchestrated, while heavy RTP media streams route directly over the shortest network path via UDP to minimize latency and jitter.',
       },
       {
         question: 'What is jitter and how does a jitter buffer smooth out audio playback?',
-        answer: 'Jitter is variance in packet arrival times; a jitter buffer delays audio packets by 20-50ms to play them out at evenly spaced intervals, eliminating choppy audio.',
+        answer:
+          'Jitter is variance in packet arrival times; a jitter buffer delays audio packets by 20-50ms to play them out at evenly spaced intervals, eliminating choppy audio.',
       },
     ],
     sources: [

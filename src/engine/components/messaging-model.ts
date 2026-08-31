@@ -227,11 +227,13 @@ export class MessagingModel {
 
       const nextAttempt = delivery.attempt + 1;
       const retryable = this.options.deliveryGuarantee !== 'at_most_once';
-      const consumerRetryLimit = typeof outcome === 'boolean' || outcome.retryLimit === undefined
-        ? clampInteger(this.options.retryLimit, 0)
-        : Math.min(clampInteger(this.options.retryLimit, 0), clampInteger(outcome.retryLimit, 0));
+      const consumerRetryLimit =
+        typeof outcome === 'boolean' || outcome.retryLimit === undefined
+          ? clampInteger(this.options.retryLimit, 0)
+          : Math.min(clampInteger(this.options.retryLimit, 0), clampInteger(outcome.retryLimit, 0));
       if (retryable && nextAttempt <= consumerRetryLimit) {
-        const retryDelay = Math.max(0, this.options.retryDelayMs) * 2 ** Math.max(0, nextAttempt - 1);
+        const retryDelay =
+          Math.max(0, this.options.retryDelayMs) * 2 ** Math.max(0, nextAttempt - 1);
         this.pending.push({
           ...delivery,
           attempt: nextAttempt,
@@ -315,14 +317,15 @@ export class MessagingModel {
     const replicas = clampInteger(workers.replicas, 1);
     const concurrency = clampInteger(workers.concurrencyLimit, 1) * replicas;
     const workerRate = Math.max(0, workers.processingRatePerSec) * replicas;
-    const latencyRate = (concurrency * 1000) /
-      Math.max(1, this.options.consumerProcessingLatencyMs);
+    const latencyRate =
+      (concurrency * 1000) / Math.max(1, this.options.consumerProcessingLatencyMs);
     const populatedPartitions = new Set(this.pending.map((delivery) => delivery.partition)).size;
-    const activePartitions = this.options.orderingGuarantee === 'FIFO'
-      ? 1
-      : Math.min(this.getPartitions(), concurrency, Math.max(1, populatedPartitions));
-    const partitionRate = Math.max(0, this.options.throughputPerPartitionPerSec) *
-      Math.max(1, activePartitions);
+    const activePartitions =
+      this.options.orderingGuarantee === 'FIFO'
+        ? 1
+        : Math.min(this.getPartitions(), concurrency, Math.max(1, populatedPartitions));
+    const partitionRate =
+      Math.max(0, this.options.throughputPerPartitionPerSec) * Math.max(1, activePartitions);
     const rate = Math.min(workerRate, latencyRate, partitionRate);
     this.fractionalDrainBudget += (rate * Math.max(0, deltaMs)) / 1000;
     const budget = Math.floor(this.fractionalDrainBudget);
@@ -338,7 +341,10 @@ export class MessagingModel {
     if (this.options.orderingGuarantee === 'FIFO') {
       let earliestIndex = -1;
       for (let index = 0; index < this.pending.length; index++) {
-        if (earliestIndex < 0 || this.pending[index].sequence < this.pending[earliestIndex].sequence) {
+        if (
+          earliestIndex < 0 ||
+          this.pending[index].sequence < this.pending[earliestIndex].sequence
+        ) {
           earliestIndex = index;
         }
       }
@@ -355,15 +361,19 @@ export class MessagingModel {
         earliestByPartition.set(delivery.partition, index);
       }
     }
-    return [...earliestByPartition.values()]
-      .filter((index) => this.pending[index].availableAtMs <= nowMs)
-      .sort((left, right) => this.pending[left].sequence - this.pending[right].sequence)[0] ?? -1;
+    return (
+      [...earliestByPartition.values()]
+        .filter((index) => this.pending[index].availableAtMs <= nowMs)
+        .sort((left, right) => this.pending[left].sequence - this.pending[right].sequence)[0] ?? -1
+    );
   }
 
   private expireRetained(nowMs: number): void {
     const retentionMs = Math.max(0, this.options.retentionMs);
     if (!Number.isFinite(retentionMs)) return;
-    const retained = this.pending.filter((delivery) => nowMs - delivery.enqueuedAtMs <= retentionMs);
+    const retained = this.pending.filter(
+      (delivery) => nowMs - delivery.enqueuedAtMs <= retentionMs,
+    );
     const expired = this.pending.length - retained.length;
     if (expired > 0) {
       this.pending = retained;

@@ -10,14 +10,31 @@ const graph = {
     { id: 'client', config: createDefaultConfig('client', 'client') },
     { id: 'waf', config: { ...createDefaultConfig('firewall', 'waf'), blockRatePercent: 50 } },
   ],
-  edges: [{ id: 'edge', source: 'client', target: 'waf', data: { protocol: 'HTTP' as const, purpose: 'request' as const, latencyMs: 3 } }],
+  edges: [
+    {
+      id: 'edge',
+      source: 'client',
+      target: 'waf',
+      data: { protocol: 'HTTP' as const, purpose: 'request' as const, latencyMs: 3 },
+    },
+  ],
 };
 const run = (seed: number) => {
-  const config: TrafficConfig = { pattern: 'steady', baseQps: 100, burstMultiplier: 1, rampDurationSec: 1, spikeFrequencySec: 1, seed };
+  const config: TrafficConfig = {
+    pattern: 'steady',
+    baseQps: 100,
+    burstMultiplier: 1,
+    rampDurationSec: 1,
+    spikeFrequencySec: 1,
+    seed,
+  };
   const engine = new SysSimEngine(structuredClone(graph), config);
   engine.start();
   const result = engine.step(1000);
-  return { statuses: result.recentRequests.map((request) => request.status), metrics: result.metrics };
+  return {
+    statuses: result.recentRequests.map((request) => request.status),
+    metrics: result.metrics,
+  };
 };
 
 describe('seed tasks 173-178', () => {

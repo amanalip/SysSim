@@ -85,7 +85,8 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
     id: 'ha_database_cluster',
     name: 'Database Replica Topology',
     category: 'Storage',
-    description: 'Primary + 2 replica nodes; replication-edge traffic is independent of each SQL node\'s virtual lag/failover model',
+    description:
+      "Primary + 2 replica nodes; replication-edge traffic is independent of each SQL node's virtual lag/failover model",
     icon: 'Database',
     create: (baseX, baseY) => {
       const ts = Date.now();
@@ -140,7 +141,8 @@ export const ARCHITECTURE_BLUEPRINTS: ArchitectureBlueprint[] = [
     id: 'event_driven_pipeline',
     name: 'Messaging Pipeline Topology',
     category: 'Messaging',
-    description: 'Gateway acknowledgement + 2 consumer-group deliveries + NoSQL sink; consumers drain independently',
+    description:
+      'Gateway acknowledgement + 2 consumer-group deliveries + NoSQL sink; consumers drain independently',
     icon: 'Radio',
     create: (baseX, baseY) => {
       const ts = Date.now();

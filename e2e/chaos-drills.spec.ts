@@ -3,19 +3,40 @@ import LZString from 'lz-string';
 import { createDefaultConfig } from '../src/model/component-defaults';
 
 const nodes = [
-  ['client', 'client', 40, 100], ['api_gateway', 'gateway', 220, 100],
-  ['redis_cache', 'cache', 420, 40], ['app_server', 'app', 420, 160], ['sql_db', 'db', 640, 160],
+  ['client', 'client', 40, 100],
+  ['api_gateway', 'gateway', 220, 100],
+  ['redis_cache', 'cache', 420, 40],
+  ['app_server', 'app', 420, 160],
+  ['sql_db', 'db', 640, 160],
 ].map(([type, id, x, y]) => ({
-  id, type: 'customComponent', position: { x, y },
-  data: { config: { ...createDefaultConfig(type as Parameters<typeof createDefaultConfig>[0], id as string), ...(id === 'db' ? { automaticFailover: true, readReplicasCount: 1, replicas: 2 } : {}) } },
+  id,
+  type: 'customComponent',
+  position: { x, y },
+  data: {
+    config: {
+      ...createDefaultConfig(type as Parameters<typeof createDefaultConfig>[0], id as string),
+      ...(id === 'db' ? { automaticFailover: true, readReplicasCount: 1, replicas: 2 } : {}),
+    },
+  },
 }));
 const edges = [
-  ['ingress', 'client', 'gateway'], ['gateway-cache', 'gateway', 'cache'],
-  ['gateway-app', 'gateway', 'app'], ['cache-app', 'cache', 'app'], ['app-db', 'app', 'db'],
-].map(([id, source, target]) => ({ id, source, target, type: 'protocolEdge', data: { protocol: 'HTTP', purpose: 'request', latencyMs: 10 } }));
+  ['ingress', 'client', 'gateway'],
+  ['gateway-cache', 'gateway', 'cache'],
+  ['gateway-app', 'gateway', 'app'],
+  ['cache-app', 'cache', 'app'],
+  ['app-db', 'app', 'db'],
+].map(([id, source, target]) => ({
+  id,
+  source,
+  target,
+  type: 'protocolEdge',
+  data: { protocol: 'HTTP', purpose: 'request', latencyMs: 10 },
+}));
 
 test('each targeted chaos drill injects and restores through the UI', async ({ page }) => {
-  const state = LZString.compressToEncodedURIComponent(JSON.stringify({ version: 9, nodes, edges, zones: [] }));
+  const state = LZString.compressToEncodedURIComponent(
+    JSON.stringify({ version: 9, nodes, edges, zones: [] }),
+  );
   await page.goto(`/#data=${state}`);
   await expect(page.getByTitle('Run targeted Chaos Engineering drills')).toBeVisible();
   await page.getByTitle('Run targeted Chaos Engineering drills').click();

@@ -28,7 +28,9 @@ describe('messaging properties', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Dead-letter queue ON' }));
 
-    const selected = useStore.getState().nodes.find((node) => node.id === useStore.getState().selectedNodeId);
+    const selected = useStore
+      .getState()
+      .nodes.find((node) => node.id === useStore.getState().selectedNodeId);
     const config = selected?.data.config as PubSubConfig;
     expect(config.deliveryGuarantee).toBe('exactly_once');
     expect(config.deadLetterQueue).toBe(false);

@@ -39,8 +39,10 @@ describe('Properties Panel & Config Tests (Milestone 4)', () => {
       evictionPolicy: 'LFU',
     });
 
-    const lb = useStore.getState().nodes.find((n) => n.id === lbId)?.data.config as LoadBalancerConfig;
-    const cache = useStore.getState().nodes.find((n) => n.id === cacheId)?.data.config as RedisCacheConfig;
+    const lb = useStore.getState().nodes.find((n) => n.id === lbId)?.data
+      .config as LoadBalancerConfig;
+    const cache = useStore.getState().nodes.find((n) => n.id === cacheId)?.data
+      .config as RedisCacheConfig;
 
     expect(lb.algorithm).toBe('least_connections');
     expect(cache.hitRatioPercent).toBe(95);

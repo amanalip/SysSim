@@ -51,31 +51,52 @@ describe('messaging model', () => {
     const model = new MessagingModel(options({ throughputPerPartitionPerSec: 10 }));
     for (let index = 0; index < 20; index++) model.enqueue(`m-${index}`, `key-${index}`, 0);
     expect(model.drain(500, 500, workers(), () => true)).toMatchObject({ delivered: 5, depth: 15 });
-    expect(model.drain(500, 1000, workers(), () => true)).toMatchObject({ delivered: 5, depth: 10 });
+    expect(model.drain(500, 1000, workers(), () => true)).toMatchObject({
+      delivered: 5,
+      depth: 10,
+    });
   });
 
   it('uses worker replicas, concurrency, and processing rate as drain limits', () => {
     const make = () => {
-      const model = new MessagingModel(options({
-        partitions: 20,
-        orderingGuarantee: 'None',
-        throughputPerPartitionPerSec: 1000,
-        consumerProcessingLatencyMs: 1000,
-      }));
+      const model = new MessagingModel(
+        options({
+          partitions: 20,
+          orderingGuarantee: 'None',
+          throughputPerPartitionPerSec: 1000,
+          consumerProcessingLatencyMs: 1000,
+        }),
+      );
       for (let index = 0; index < 50; index++) model.enqueue(`m-${index}`, `key-${index}`, 0);
       return model;
     };
-    expect(make().drain(1000, 1000, workers({ replicas: 2, concurrencyLimit: 3, processingRatePerSec: 4 }), () => true).delivered).toBe(6);
-    expect(make().drain(1000, 1000, workers({ replicas: 4, concurrencyLimit: 3, processingRatePerSec: 4 }), () => true).delivered).toBe(12);
+    expect(
+      make().drain(
+        1000,
+        1000,
+        workers({ replicas: 2, concurrencyLimit: 3, processingRatePerSec: 4 }),
+        () => true,
+      ).delivered,
+    ).toBe(6);
+    expect(
+      make().drain(
+        1000,
+        1000,
+        workers({ replicas: 4, concurrencyLimit: 3, processingRatePerSec: 4 }),
+        () => true,
+      ).delivered,
+    ).toBe(12);
   });
 
   it('uses populated partitions to increase bounded parallel drain capacity', () => {
     const run = (partitions: number) => {
-      const model = new MessagingModel(options({
-        partitions,
-        orderingGuarantee: 'Partition Key',
-        throughputPerPartitionPerSec: 10,
-      }));
+      const model = new MessagingModel(
+        options({
+          partitions,
+          orderingGuarantee: 'Partition Key',
+          throughputPerPartitionPerSec: 10,
+        }),
+      );
       for (let index = 0; index < 100; index++) model.enqueue(`m-${index}`, `key-${index}`, 0);
       return model.drain(1000, 1000, workers(), () => true).delivered;
     };
@@ -86,20 +107,36 @@ describe('messaging model', () => {
   it('applies at-most-once, at-least-once, and exactly-once semantics', () => {
     const atMostOnce = new MessagingModel(options({ deliveryGuarantee: 'at_most_once' }));
     atMostOnce.enqueue('m', 'key', 0);
-    expect(atMostOnce.drain(1000, 0, workers(), () => false)).toMatchObject({ dropped: 0, deadLettered: 1, depth: 0 });
+    expect(atMostOnce.drain(1000, 0, workers(), () => false)).toMatchObject({
+      dropped: 0,
+      deadLettered: 1,
+      depth: 0,
+    });
 
     const atLeastOnce = new MessagingModel(options({ deliveryGuarantee: 'at_least_once' }));
     atLeastOnce.enqueue('m', 'key', 0);
-    expect(atLeastOnce.drain(1000, 0, workers(), () => false)).toMatchObject({ retried: 1, depth: 1 });
+    expect(atLeastOnce.drain(1000, 0, workers(), () => false)).toMatchObject({
+      retried: 1,
+      depth: 1,
+    });
     expect(atLeastOnce.drain(1000, 99, workers(), () => true).attempted).toBe(0);
-    expect(atLeastOnce.drain(1000, 100, workers(), () => true)).toMatchObject({ delivered: 1, depth: 0 });
+    expect(atLeastOnce.drain(1000, 100, workers(), () => true)).toMatchObject({
+      delivered: 1,
+      depth: 0,
+    });
 
     const exactlyOnce = new MessagingModel(options({ deliveryGuarantee: 'exactly_once' }));
     let calls = 0;
     exactlyOnce.enqueue('same-id', 'key', 0);
-    exactlyOnce.drain(1000, 0, workers(), () => { calls++; return true; });
+    exactlyOnce.drain(1000, 0, workers(), () => {
+      calls++;
+      return true;
+    });
     exactlyOnce.enqueue('same-id', 'key', 1);
-    exactlyOnce.drain(1000, 1, workers(), () => { calls++; return true; });
+    exactlyOnce.drain(1000, 1, workers(), () => {
+      calls++;
+      return true;
+    });
     expect(calls).toBe(1);
   });
 
@@ -123,11 +160,13 @@ describe('messaging model', () => {
     });
     expect(fifoOrder).toEqual(['first']);
 
-    const keyed = new MessagingModel(options({
-      partitions: 2,
-      orderingGuarantee: 'Partition Key',
-      retryDelayMs: 100,
-    }));
+    const keyed = new MessagingModel(
+      options({
+        partitions: 2,
+        orderingGuarantee: 'Partition Key',
+        retryDelayMs: 100,
+      }),
+    );
     const first = keyed.enqueue('first', 'a', 0);
     const second = keyed.enqueue('second', 'b', 0);
     expect(first.partition).not.toBe(second.partition);
@@ -151,34 +190,67 @@ describe('messaging model', () => {
     const rejecting = new MessagingModel(options({ maxDepth: 2, overflowPolicy: 'reject_newest' }));
     rejecting.enqueue('first', 'key', 0);
     rejecting.enqueue('second', 'key', 0);
-    expect(rejecting.enqueue('third', 'key', 0)).toMatchObject({ accepted: false, dropped: 1, depth: 2 });
-    expect(rejecting.getMetrics(0)).toMatchObject({ producerAccepted: 2, producerRejected: 1, dropped: 1 });
+    expect(rejecting.enqueue('third', 'key', 0)).toMatchObject({
+      accepted: false,
+      dropped: 1,
+      depth: 2,
+    });
+    expect(rejecting.getMetrics(0)).toMatchObject({
+      producerAccepted: 2,
+      producerRejected: 1,
+      dropped: 1,
+    });
 
     const dropping = new MessagingModel(options({ maxDepth: 2, overflowPolicy: 'drop_oldest' }));
     dropping.enqueue('first', 'key', 0);
     dropping.enqueue('second', 'key', 0);
-    expect(dropping.enqueue('third', 'key', 0)).toMatchObject({ accepted: true, dropped: 1, depth: 2 });
+    expect(dropping.enqueue('third', 'key', 0)).toMatchObject({
+      accepted: true,
+      dropped: 1,
+      depth: 2,
+    });
     const delivered: string[] = [];
-    dropping.drain(1000, 1, workers(), (attempt) => { delivered.push(attempt.messageId); return true; });
+    dropping.drain(1000, 1, workers(), (attempt) => {
+      delivered.push(attempt.messageId);
+      return true;
+    });
     expect(delivered).toEqual(['second', 'third']);
 
-    const oversized = new MessagingModel(options({
-      kind: 'pubsub', subscribersPerTopic: 3, maxDepth: 2, overflowPolicy: 'drop_oldest',
-    }));
-    expect(oversized.enqueue('too-large', 'key', 0)).toMatchObject({ accepted: false, dropped: 3, depth: 0 });
+    const oversized = new MessagingModel(
+      options({
+        kind: 'pubsub',
+        subscribersPerTopic: 3,
+        maxDepth: 2,
+        overflowPolicy: 'drop_oldest',
+      }),
+    );
+    expect(oversized.enqueue('too-large', 'key', 0)).toMatchObject({
+      accepted: false,
+      dropped: 3,
+      depth: 0,
+    });
   });
 
   it('recovers deterministically from overload and separates retries, failures, and DLQ outcomes', () => {
-    const model = new MessagingModel(options({ retryLimit: 1, retryDelayMs: 10, orderingGuarantee: 'None' }));
+    const model = new MessagingModel(
+      options({ retryLimit: 1, retryDelayMs: 10, orderingGuarantee: 'None' }),
+    );
     for (let index = 0; index < 5; index++) model.enqueue(`m-${index}`, 'key', 0);
-    expect(model.drain(1000, 0, workers({ processingRatePerSec: 0 }), () => true)).toMatchObject({ delivered: 0, depth: 5 });
+    expect(model.drain(1000, 0, workers({ processingRatePerSec: 0 }), () => true)).toMatchObject({
+      delivered: 0,
+      depth: 5,
+    });
 
     let attemptCount = 0;
-    expect(model.drain(1000, 1, workers({ processingRatePerSec: 10 }), () => {
-      attemptCount++;
-      return false;
-    })).toMatchObject({ attempted: 5, retried: 5, depth: 5 });
-    expect(model.drain(1000, 11, workers({ processingRatePerSec: 2 }), () => false)).toMatchObject({ deadLettered: 2 });
+    expect(
+      model.drain(1000, 1, workers({ processingRatePerSec: 10 }), () => {
+        attemptCount++;
+        return false;
+      }),
+    ).toMatchObject({ attempted: 5, retried: 5, depth: 5 });
+    expect(model.drain(1000, 11, workers({ processingRatePerSec: 2 }), () => false)).toMatchObject({
+      deadLettered: 2,
+    });
     expect(model.getMetrics(11)).toMatchObject({ consumerFailed: 7, retries: 5, deadLettered: 2 });
   });
 });

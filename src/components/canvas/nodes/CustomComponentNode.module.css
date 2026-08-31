@@ -5,7 +5,10 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   position: relative;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
   user-select: none;
   font-family: var(--font-sans);
 }
@@ -17,7 +20,9 @@
 
 .selected {
   border-color: var(--accent-primary) !important;
-  box-shadow: 0 0 0 2px var(--accent-subtle), var(--shadow-lg) !important;
+  box-shadow:
+    0 0 0 2px var(--accent-subtle),
+    var(--shadow-lg) !important;
 }
 
 .floatingToolbar {
@@ -38,8 +43,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translate(-50%, 4px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 .floatingBtn {
@@ -154,8 +165,12 @@
 }
 
 @keyframes pulse {
-  0% { opacity: 0.4; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .telemetryRow {

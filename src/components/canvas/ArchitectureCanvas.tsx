@@ -75,7 +75,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
     () => ({
       customComponent: CustomComponentNode,
     }),
-    []
+    [],
   );
 
   const edgeTypes = useMemo(
@@ -83,7 +83,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
       protocolEdge: ProtocolEdge,
       ...customEdgeTypes,
     }),
-    [customEdgeTypes]
+    [customEdgeTypes],
   );
 
   const defaultEdgeOptions = useMemo(
@@ -96,39 +96,48 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         color: '#58a6ff',
       },
     }),
-    []
+    [],
   );
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      const hasDraggingPosition = changes.some((change) => change.type === 'position' && change.dragging === true);
+      const hasDraggingPosition = changes.some(
+        (change) => change.type === 'position' && change.dragging === true,
+      );
       if (hasDraggingPosition && !nodeDragActive.current) {
         beginNodeDragHistory();
         nodeDragActive.current = true;
       }
-      if (nodeDragActive.current && changes.some((change) => change.type === 'position' && change.dragging === false)) {
+      if (
+        nodeDragActive.current &&
+        changes.some((change) => change.type === 'position' && change.dragging === false)
+      ) {
         nodeDragActive.current = false;
       }
-      const removedNodeIds = changes.filter((change) => change.type === 'remove').map((change) => change.id);
+      const removedNodeIds = changes
+        .filter((change) => change.type === 'remove')
+        .map((change) => change.id);
       if (removedNodeIds.length > 0) removeGraphItems(removedNodeIds, []);
       const visualChanges = changes.filter((change) => change.type !== 'remove');
       if (visualChanges.length > 0) {
         setNodes((nds) => applyNodeChanges(visualChanges, nds as unknown as Node[]) as any);
       }
     },
-    [beginNodeDragHistory, removeGraphItems, setNodes]
+    [beginNodeDragHistory, removeGraphItems, setNodes],
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
-      const removedEdgeIds = changes.filter((change) => change.type === 'remove').map((change) => change.id);
+      const removedEdgeIds = changes
+        .filter((change) => change.type === 'remove')
+        .map((change) => change.id);
       if (removedEdgeIds.length > 0) removeGraphItems([], removedEdgeIds);
       const remainingChanges = changes.filter((change) => change.type !== 'remove');
       if (remainingChanges.length > 0) {
         setEdges((eds) => applyEdgeChanges(remainingChanges, eds as unknown as Edge[]) as any);
       }
     },
-    [removeGraphItems, setEdges]
+    [removeGraphItems, setEdges],
   );
 
   const onConnect = useCallback(
@@ -137,7 +146,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         addEdge(params.source, params.target);
       }
     },
-    [addEdge]
+    [addEdge],
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -148,9 +157,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
-      const type = event.dataTransfer.getData(
-        'application/syssim-component-type'
-      ) as ComponentType;
+      const type = event.dataTransfer.getData('application/syssim-component-type') as ComponentType;
 
       if (!type) return;
 
@@ -161,7 +168,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
 
       addNode(type, position);
     },
-    [addNode, reactFlowInstance]
+    [addNode, reactFlowInstance],
   );
 
   const handleAutoLayout = useCallback(() => {
@@ -215,7 +222,18 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         }
       }
     },
-    [selectedNodeId, selectedEdgeId, nodes, setNodes, addNode, duplicateNode, removeNode, removeEdge, undo, redo]
+    [
+      selectedNodeId,
+      selectedEdgeId,
+      nodes,
+      setNodes,
+      addNode,
+      duplicateNode,
+      removeNode,
+      removeEdge,
+      undo,
+      redo,
+    ],
   );
 
   const handleContextMenu = useCallback(
@@ -235,7 +253,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         nodeId,
       });
     },
-    [reactFlowInstance]
+    [reactFlowInstance],
   );
 
   return (
