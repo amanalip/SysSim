@@ -38,7 +38,7 @@ export const ModelNotice: React.FC<ModelNoticeProps> = ({
           className={styles.assumptionsLink}
           href={`${PRODUCT_CONTRACT_URL}#${assumptionSection}`}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
         >
           Assumptions: {assumptionLabel}
         </a>
