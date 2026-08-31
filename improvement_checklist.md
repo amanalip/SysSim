@@ -842,102 +842,112 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 558. Split component property editors into type-specific subcomponents.
 - [x] 559. Split metrics dashboard views into independently loaded components.
 - [x] 560. Extract calculator formulas and formatting.
-- [ ] 561. Split scenario data from scenario registry metadata where useful for code loading.
-- [ ] 562. Keep files cohesive rather than enforcing an arbitrary line limit.
-- [ ] 563. Add architecture dependency rules to prevent UI-to-engine/store cycles.
+- [x] 561. Split scenario data from scenario registry metadata where useful for code loading.
+- [x] 562. Keep files cohesive rather than enforcing an arbitrary line limit.
+- [x] 563. Add architecture dependency rules to prevent UI-to-engine/store cycles.
 
 ## Standardize code quality tooling — P1/P2
 
-- [ ] 564. Add ESLint with TypeScript and React rules appropriate to the project.
-- [ ] 565. Add Prettier or another consistent formatter.
-- [ ] 566. Add scripts for `lint`, `lint:fix`, `format`, `format:check`, and `typecheck`.
-- [ ] 567. Remove stale comments and misleading terminology such as round-robin being called fanout.
-- [ ] 568. Define import ordering and unused-code rules.
-- [ ] 569. Enforce accessibility lint rules as a supplement to real testing.
-- [ ] 570. Avoid inline styles where reusable semantic styles improve maintainability.
-- [ ] 571. Add pre-commit hooks only if they do not duplicate slow CI unnecessarily.
+- [x] 564. Add ESLint with TypeScript and React rules appropriate to the project.
+- [x] 565. Add Prettier or another consistent formatter.
+- [x] 566. Add scripts for `lint`, `lint:fix`, `format`, `format:check`, and `typecheck`.
+- [x] 567. Remove stale comments and misleading terminology such as round-robin being called fanout.
+- [x] 568. Define import ordering and unused-code rules.
+- [x] 569. Enforce accessibility lint rules as a supplement to real testing.
+- [x] 570. Avoid inline styles where reusable semantic styles improve maintainability.
+- [x] 571. Add pre-commit hooks only if they do not duplicate slow CI unnecessarily.
+
+Decision: Pre-commit hooks are intentionally omitted; `docs/code-quality.md` records why CI and targeted local commands are the non-duplicative enforcement path.
 
 ## Improve IDs and time handling — P2
 
-- [ ] 572. Replace timestamp-plus-short-random IDs with collision-resistant IDs.
-- [ ] 573. Make IDs injectable or deterministic in tests.
-- [ ] 574. Centralize simulation time rather than mixing simulation time and wall-clock time.
-- [ ] 575. Ensure all displayed timestamps have explicit locale/timezone expectations.
-- [ ] 576. Avoid relying on `Date.now()` for semantic ordering when multiple events can occur in one millisecond.
+- [x] 572. Replace timestamp-plus-short-random IDs with collision-resistant IDs.
+- [x] 573. Make IDs injectable or deterministic in tests.
+- [x] 574. Centralize simulation time rather than mixing simulation time and wall-clock time.
+- [x] 575. Ensure all displayed timestamps have explicit locale/timezone expectations.
+- [x] 576. Avoid relying on `Date.now()` for semantic ordering when multiple events can occur in one millisecond.
 
 # Phase 9 — User Experience and Product Polish
 
 ## Protect users from destructive actions — P1
 
-- [ ] 577. Confirm before clearing a non-empty canvas.
-- [ ] 578. Confirm before replacing unsaved work with a scenario, import, snapshot, or shared URL.
-- [ ] 579. Provide undo after feasible destructive actions.
-- [ ] 580. Distinguish “clear canvas” from “reset simulation metrics.”
-- [ ] 581. Warn before deleting zones containing components if containment is semantic.
-- [ ] 582. Ensure repeated rapid clicks cannot duplicate destructive operations.
+- [x] 577. Confirm before clearing a non-empty canvas.
+- [x] 578. Confirm before replacing unsaved work with a scenario, import, snapshot, or shared URL.
+- [x] 579. Provide undo after feasible destructive actions.
+- [x] 580. Distinguish “clear canvas” from “reset simulation metrics.”
+- [x] 581. Warn before deleting zones containing components if containment is semantic.
+- [x] 582. Ensure repeated rapid clicks cannot duplicate destructive operations.
+
+Decision: Zones are non-semantic annotations, so deleting one never deletes or moves components and requires no containment warning.
 
 ## Improve canvas interaction clarity — P1/P2
 
-- [ ] 583. Explain edge direction and purpose during connection creation.
-- [ ] 584. Display why a connection is discouraged before or immediately after creation.
-- [ ] 585. Decide whether invalid connections should be rejected rather than merely warned.
-- [ ] 586. Provide a discoverable connection-mode tutorial.
-- [ ] 587. Make selected node and edge state visually unambiguous.
-- [ ] 588. Keep floating node controls accessible without accidental canvas operations.
-- [ ] 589. Provide multi-select operations if Ctrl/Cmd+A claims all nodes are selected.
-- [ ] 590. Ensure deletion works consistently for React Flow multi-selection.
-- [ ] 591. Preserve zone containment during all movement and layout operations.
-- [ ] 592. Add alignment/distribution helpers if they materially improve diagram construction.
+- [x] 583. Explain edge direction and purpose during connection creation.
+- [x] 584. Display why a connection is discouraged before or immediately after creation.
+- [x] 585. Decide whether invalid connections should be rejected rather than merely warned.
+- [x] 586. Provide a discoverable connection-mode tutorial.
+- [x] 587. Make selected node and edge state visually unambiguous.
+- [x] 588. Keep floating node controls accessible without accidental canvas operations.
+- [x] 589. Provide multi-select operations if Ctrl/Cmd+A claims all nodes are selected.
+- [x] 590. Ensure deletion works consistently for React Flow multi-selection.
+- [x] 591. Preserve zone containment during all movement and layout operations.
+- [x] 592. Add alignment/distribution helpers if they materially improve diagram construction.
+
+Decision: Invalid purpose/protocol combinations are rejected. Unusual but structurally valid topology is allowed with an immediate educational warning. Zones do not own components; grid snapping and auto-layout cover current alignment needs, so separate distribution commands are deferred pending usability evidence.
 
 ## Improve simulation feedback — P1
 
-- [ ] 593. Show the active seed, elapsed simulation time, offered load, and completed throughput.
-- [ ] 594. Explain when the engine is warming up or lacks enough samples for percentiles.
-- [ ] 595. Surface overload, dropped traffic, and stale worker state immediately.
-- [ ] 596. Clarify whether speed changes simulation time, UI playback, or both.
-- [ ] 597. Provide a run summary after stop.
-- [ ] 598. Allow traces to be filtered by status, route, node, and time.
-- [ ] 599. Make metric units and rolling windows visible.
-- [ ] 600. Provide empty-state explanations instead of optimistic zero-derived grades.
+- [x] 593. Show the active seed, elapsed simulation time, offered load, and completed throughput.
+- [x] 594. Explain when the engine is warming up or lacks enough samples for percentiles.
+- [x] 595. Surface overload, dropped traffic, and stale worker state immediately.
+- [x] 596. Clarify whether speed changes simulation time, UI playback, or both.
+- [x] 597. Provide a run summary after stop.
+- [x] 598. Allow traces to be filtered by status, route, node, and time.
+- [x] 599. Make metric units and rolling windows visible.
+- [x] 600. Provide empty-state explanations instead of optimistic zero-derived grades.
 
 ## Improve import, export, and sharing UX — P1/P2
 
-- [ ] 601. Display schema/application version in JSON exports.
-- [ ] 602. Preserve all supported edge fields, including bandwidth and latency, during serialization.
-- [ ] 603. Preview imported architecture metadata before replacement.
-- [ ] 604. Offer validation warnings without partially loading invalid state.
-- [ ] 605. Handle clipboard-unavailable environments gracefully.
-- [ ] 606. Warn when a share URL exceeds practical browser/service length limits.
-- [ ] 607. Consider file or hosted sharing for oversized architectures if the product scope permits it.
-- [ ] 608. Add deterministic export names or optional user-provided names.
-- [ ] 609. Test PNG output in both themes and at high device-pixel ratios.
+- [x] 601. Display schema/application version in JSON exports.
+- [x] 602. Preserve all supported edge fields, including bandwidth and latency, during serialization.
+- [x] 603. Preview imported architecture metadata before replacement.
+- [x] 604. Offer validation warnings without partially loading invalid state.
+- [x] 605. Handle clipboard-unavailable environments gracefully.
+- [x] 606. Warn when a share URL exceeds practical browser/service length limits.
+- [x] 607. Consider file or hosted sharing for oversized architectures if the product scope permits it.
+- [x] 608. Add deterministic export names or optional user-provided names.
+- [x] 609. Test PNG output in both themes and at high device-pixel ratios.
+
+Decision: Oversized architectures use the existing local JSON file workflow; SysSim does not add hosted storage or silently place an unreliable URL in browser history.
 
 ## Improve theming and visual consistency — P2
 
-- [ ] 610. Verify every component in dark and light themes.
-- [ ] 611. Replace hard-coded colors with semantic tokens where appropriate.
-- [ ] 612. Ensure status colors remain consistent across nodes, traces, charts, toasts, and panels.
-- [ ] 613. Audit chart palettes for color-vision deficiencies.
-- [ ] 614. Ensure external font failure has acceptable fallbacks.
-- [ ] 615. Add a reduced-motion mode and honor the system preference.
+- [x] 610. Verify every component in dark and light themes.
+- [x] 611. Replace hard-coded colors with semantic tokens where appropriate.
+- [x] 612. Ensure status colors remain consistent across nodes, traces, charts, toasts, and panels.
+- [x] 613. Audit chart palettes for color-vision deficiencies.
+- [x] 614. Ensure external font failure has acceptable fallbacks.
+- [x] 615. Add a reduced-motion mode and honor the system preference.
 
 # Phase 10 — Documentation, Licensing, and Governance
 
 ## Resolve licensing immediately — P0
 
-- [ ] 616. Decide whether the project is MIT or GNU GPLv3.
-- [ ] 617. Make `README.md`, `LICENSE`, `package.json`, repository metadata, and release artifacts agree.
-- [ ] 618. Add the appropriate copyright holder and year information.
-- [ ] 619. Review dependency-license compatibility with the chosen project license.
-- [ ] 620. Document any third-party assets or content requiring attribution.
-- [ ] 621. Do not publish a release while the current MIT/GPL contradiction remains unresolved.
+- [x] 616. Decide whether the project is MIT or GNU GPLv3.
+- [x] 617. Make `README.md`, `LICENSE`, `package.json`, repository metadata, and release artifacts agree.
+- [x] 618. Add the appropriate copyright holder and year information.
+- [x] 619. Review dependency-license compatibility with the chosen project license.
+- [x] 620. Document any third-party assets or content requiring attribution.
+- [x] 621. Do not publish a release while the current MIT/GPL contradiction remains unresolved.
+
+Decision: SysSim is `GPL-3.0-only`; package/release metadata, notices, CI license checks, and documentation now agree.
 
 ## Expand README documentation — P1/P2
 
-- [ ] 622. Add a screenshot or short demo showing the primary workflow.
-- [ ] 623. Explain the product contract and simulation limitations.
-- [ ] 624. Document the exact supported Node.js range.
-- [ ] 625. Prefer `npm ci` for reproducible clean installs where appropriate.
+- [x] 622. Add a screenshot or short demo showing the primary workflow.
+- [x] 623. Explain the product contract and simulation limitations.
+- [x] 624. Document the exact supported Node.js range.
+- [x] 625. Prefer `npm ci` for reproducible clean installs where appropriate.
 - [ ] 626. Document the GitHub Pages base path and local root URL differences.
 - [ ] 627. List all development scripts, including future lint/type/E2E scripts.
 - [ ] 628. Explain architecture import, export, snapshot, and share privacy implications.

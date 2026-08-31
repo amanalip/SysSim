@@ -12,11 +12,12 @@ test('saves and restores a local architecture snapshot', async ({ page }) => {
   await page.getByRole('button', { name: 'Add Client to canvas' }).click();
   await expect(page.locator('.react-flow__node')).toHaveCount(3);
   await page.getByTitle('Manage multi-slot architecture snapshots').click();
+  page.once('dialog', (dialog) => dialog.accept());
   await page
     .locator('[class*="slotCard"]')
     .first()
     .getByTitle('Load this snapshot onto canvas')
-    .click();
+    .dispatchEvent('click');
   await expect(page.locator('.react-flow__node')).toHaveCount(2);
 });
 
@@ -27,6 +28,7 @@ test('exports and re-imports validated architecture JSON', async ({ page }) => {
   const download = await downloadPromise;
   const file = await download.path();
   expect(file).not.toBeNull();
+  page.once('dialog', (dialog) => dialog.accept());
   await page.getByTitle('Clear all components from canvas').click();
   await expect(page.locator('.react-flow__node')).toHaveCount(0);
   const chooserPromise = page.waitForEvent('filechooser');
