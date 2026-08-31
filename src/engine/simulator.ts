@@ -3,7 +3,6 @@ import {
   ComponentMetricSnapshot,
   EdgePurpose,
   OverallMetrics,
-  ProtocolEdgeData,
   RequestHop,
   SimRequest,
   SimulationState,
@@ -43,23 +42,16 @@ import { EventPriorityQueue, SimulationEvent, SimulationEventKind } from './even
 import { SIMULATION_LIMITS } from './simulation-limits';
 import { capacityUtilizationPercent } from './metrics/capacity';
 import { RollingQuantile } from './metrics/rolling-quantile';
-
-export interface SimNode {
-  id: string;
-  config: AnyComponentConfig;
-}
-
-export interface SimEdge {
-  id: string;
-  source: string;
-  target: string;
-  data: ProtocolEdgeData;
-}
-
-export interface SimGraph {
-  nodes: SimNode[];
-  edges: SimEdge[];
-}
+import {
+  clampSimGraph,
+  clampSpeedMultiplier,
+  clampStepDelta,
+  clampTrafficConfig,
+} from './runtime-guards';
+import type { SimEdge, SimGraph, SimNode } from './graph';
+import { calculateScheduledQps, createDefaultTrafficConfig } from './traffic-schedule';
+import { getComponentExecutionKind } from './component-execution-kind';
+export type { SimEdge, SimGraph, SimNode } from './graph';
 
 interface TraversalResult {
   success: boolean;
@@ -82,16 +74,7 @@ export class SysSimEngine {
   private outgoingEdgesByNode = new Map<string, SimEdge[]>();
   private incomingEdgesByNode = new Map<string, SimEdge[]>();
   private trafficSourceNodes: SimNode[] = [];
-  private config: TrafficConfig = {
-    pattern: 'steady',
-    baseQps: 500,
-    burstMultiplier: 3,
-    rampDurationSec: 30,
-    spikeFrequencySec: 10,
-    seed: 1,
-    requestKeyDistribution: 'uniform',
-    requestKeySpaceSize: 100,
-  };
+  private config: TrafficConfig = createDefaultTrafficConfig();
   private speedMultiplier = 1;
   private state: SimulationState = 'idle';
   private randomGenerator = new SeededRandom(1);
@@ -179,6 +162,7 @@ export class SysSimEngine {
   }
 
   public setGraph(graph: SimGraph): void {
+    graph = clampSimGraph(graph);
     const previousHealth = new Map(this.graph.nodes.map((node) => [node.id, node.config.health]));
     this.graph = graph;
     this.nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
@@ -259,6 +243,7 @@ export class SysSimEngine {
     }
 
     this.graph.nodes.forEach((n) => {
+      getComponentExecutionKind(n.config.type);
       if (!this.nodeStats[n.id]) {
         this.nodeStats[n.id] = {
           totalRequests: 0,
@@ -465,12 +450,12 @@ export class SysSimEngine {
   }
 
   public setConfig(config: Partial<TrafficConfig>): void {
-    this.config = { ...this.config, ...config };
+    this.config = clampTrafficConfig(this.config, config);
     if (config.seed !== undefined) this.randomGenerator = new SeededRandom(config.seed);
   }
 
   public setSpeedMultiplier(multiplier: number): void {
-    this.speedMultiplier = Math.max(0.1, multiplier);
+    this.speedMultiplier = clampSpeedMultiplier(multiplier);
   }
 
   public getState(): SimulationState {
@@ -559,46 +544,7 @@ export class SysSimEngine {
   }
 
   public getCurrentQps(elapsedSec: number): number {
-    const base = this.config.baseQps;
-    let qps: number;
-    switch (this.config.pattern) {
-      case 'bursty': {
-        const cycle = Math.floor(elapsedSec / 5) % 2;
-        qps = cycle === 1 ? base * this.config.burstMultiplier : base;
-        break;
-      }
-      case 'ramp': {
-        const progress = Math.min(1, elapsedSec / (this.config.rampDurationSec || 30));
-        qps = Math.floor(base * (0.2 + 0.8 * progress));
-        break;
-      }
-      case 'spike': {
-        const spikeEvery = this.config.spikeFrequencySec || 10;
-        const isSpike = Math.floor(elapsedSec) % spikeEvery === 0;
-        qps = isSpike ? base * 5 : base;
-        break;
-      }
-      case 'custom': {
-        if (this.config.customSchedule && this.config.customSchedule.length > 0) {
-          let entry: (typeof this.config.customSchedule)[number] | undefined;
-          for (let index = this.config.customSchedule.length - 1; index >= 0; index--) {
-            if (elapsedSec >= this.config.customSchedule[index].timeSec) {
-              entry = this.config.customSchedule[index];
-              break;
-            }
-          }
-          qps = entry ? entry.qps : base;
-          break;
-        }
-        qps = base;
-        break;
-      }
-      default:
-        qps = base;
-    }
-    return Number.isFinite(qps)
-      ? Math.min(SIMULATION_LIMITS.maxConfiguredQps, Math.max(0, qps))
-      : 0;
+    return calculateScheduledQps(this.config, elapsedSec);
   }
 
   public step(deltaMs: number): {
@@ -614,7 +560,7 @@ export class SysSimEngine {
       };
     }
 
-    const scaledDelta = deltaMs * this.speedMultiplier;
+    const scaledDelta = clampStepDelta(deltaMs) * this.speedMultiplier;
     const stepStartMs = this.elapsedSimulationMs;
     const stepEndMs = stepStartMs + scaledDelta;
     this.flushReadyCacheFills();

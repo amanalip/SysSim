@@ -10,4 +10,9 @@ export const SIMULATION_LIMITS = {
   maxLatencySamplesPerNode: 500,
   maxTimeSeriesPoints: 60,
   uiUpdateIntervalMs: 100,
+  maxStepDeltaMs: 1_000,
+  minSpeedMultiplier: 0.1,
+  maxSpeedMultiplier: 10,
+  maxCustomScheduleEntries: 1_000,
+  maxCustomRequestKeys: 1_000,
 } as const;

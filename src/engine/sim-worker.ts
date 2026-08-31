@@ -8,9 +8,25 @@ let timer: ReturnType<typeof setInterval> | null = null;
 let lastTickTime = Date.now();
 let graphRevision = 0;
 
-const postTick = (payload: ReturnType<SysSimEngine['step']>) => {
-  const message: WorkerResponse = { type: 'TICK_UPDATE', payload: { ...payload, graphRevision } };
+const postTick = (payload: ReturnType<SysSimEngine['step']>, stepCpuMs = 0) => {
+  const message: WorkerResponse = {
+    type: 'TICK_UPDATE',
+    payload: {
+      ...payload,
+      graphRevision,
+      performance: { stepCpuMs, messageBytes: 0 },
+    },
+  };
+  const serializedBytes = new TextEncoder().encode(JSON.stringify(message)).byteLength;
+  if (message.type === 'TICK_UPDATE' && message.payload.performance)
+    message.payload.performance.messageBytes = serializedBytes;
   self.postMessage(message);
+};
+
+const stepWithTiming = (deltaMs: number) => {
+  const startedAt = performance.now();
+  const result = engine.step(deltaMs);
+  postTick(result, performance.now() - startedAt);
 };
 
 self.onmessage = (event: MessageEvent) => {
@@ -40,8 +56,7 @@ self.onmessage = (event: MessageEvent) => {
           const now = Date.now();
           const delta = now - lastTickTime;
           lastTickTime = now;
-          const result = engine.step(delta);
-          postTick(result);
+          stepWithTiming(delta);
         }, SIMULATION_LIMITS.uiUpdateIntervalMs);
       }
       break;
@@ -62,17 +77,17 @@ self.onmessage = (event: MessageEvent) => {
           const now = Date.now();
           const delta = now - lastTickTime;
           lastTickTime = now;
-          const result = engine.step(delta);
-          postTick(result);
+          stepWithTiming(delta);
         }, SIMULATION_LIMITS.uiUpdateIntervalMs);
       }
       break;
 
     case 'STEP':
       engine.start();
+      const stepStartedAt = performance.now();
       const stepResult = engine.step(100);
       engine.pause();
-      postTick(stepResult);
+      postTick(stepResult, performance.now() - stepStartedAt);
       break;
 
     case 'STOP':
