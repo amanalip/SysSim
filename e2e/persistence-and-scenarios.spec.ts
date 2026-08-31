@@ -82,6 +82,7 @@ test('opens a representative scenario from every category', async ({ page }) => 
 
 test('switches between dark and light themes', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', /^(dark|light)$/);
   const initial = await page.locator('html').getAttribute('data-theme');
   await page
     .getByTitle(new RegExp(`Switch to ${initial === 'dark' ? 'Light' : 'Dark'} mode`))
