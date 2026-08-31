@@ -20,18 +20,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { activeSidebarTab, setActiveSidebarTab } = useStore();
 
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
-      if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
-      if (e.key === '1') setActiveSidebarTab('palette');
-      if (e.key === '2') setActiveSidebarTab('scenarios');
-      if (e.key === '3') setActiveSidebarTab('calculator');
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setActiveSidebarTab]);
-
   return (
     <>
       <button
@@ -45,11 +33,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}
         aria-label="Design tools"
       >
-        <div className={styles.tabsHeader}>
+        <div className={styles.tabsHeader} role="tablist" aria-label="Design tool sections">
           <button
             className={`${styles.tabBtn} ${activeSidebarTab === 'palette' ? styles.tabBtnActive : ''}`}
             onClick={() => setActiveSidebarTab('palette')}
             title="Component Palette (1)"
+            role="tab"
+            aria-selected={activeSidebarTab === 'palette'}
+            aria-controls="palette-panel"
+            id="palette-tab"
           >
             <Box size={15} />
             <span>Palette</span>
@@ -58,6 +50,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`${styles.tabBtn} ${activeSidebarTab === 'scenarios' ? styles.tabBtnActive : ''}`}
             onClick={() => setActiveSidebarTab('scenarios')}
             title="101 System Design Scenarios (2)"
+            role="tab"
+            aria-selected={activeSidebarTab === 'scenarios'}
+            aria-controls="scenarios-panel"
+            id="scenarios-tab"
           >
             <BookOpen size={15} />
             <span>Scenarios</span>
@@ -66,13 +62,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`${styles.tabBtn} ${activeSidebarTab === 'calculator' ? styles.tabBtnActive : ''}`}
             onClick={() => setActiveSidebarTab('calculator')}
             title="Capacity Calculator (3)"
+            role="tab"
+            aria-selected={activeSidebarTab === 'calculator'}
+            aria-controls="calculator-panel"
+            id="calculator-tab"
           >
             <Calculator size={15} />
             <span>Calculator</span>
           </button>
         </div>
 
-        <div className={styles.tabContent}>
+        <div
+          className={styles.tabContent}
+          role="tabpanel"
+          id={`${activeSidebarTab}-panel`}
+          aria-labelledby={`${activeSidebarTab}-tab`}
+        >
           {activeSidebarTab === 'palette' && paletteSlot}
           {activeSidebarTab === 'scenarios' && scenariosSlot}
           {activeSidebarTab === 'calculator' && calculatorSlot}

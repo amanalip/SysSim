@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore, CanvasNode, CanvasEdge } from './store/use-store';
 import { ZoneData } from './model/types';
 import { Header } from './components/layout/Header';
@@ -8,7 +9,6 @@ import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { PropertiesPanel } from './components/panels/PropertiesPanel';
 import { SimulationControls } from './components/playback/SimulationControls';
 import { EnvelopeCalculator } from './components/panels/EnvelopeCalculator';
-import { ShortcutsModal } from './components/modals/ShortcutsModal';
 import { ToastContainer } from './components/ui/Toast';
 import { chaosRunner } from './engine/metrics/chaos-runner';
 import {
@@ -36,6 +36,11 @@ const CommandPalette = lazy(() =>
     default: module.CommandPalette,
   })),
 );
+const ShortcutsModal = lazy(() =>
+  import('./components/modals/ShortcutsModal').then((module) => ({
+    default: module.ShortcutsModal,
+  })),
+);
 
 export function App() {
   const {
@@ -53,11 +58,31 @@ export function App() {
     autoLayout,
     isBottomDrawerOpen,
     setIsBottomDrawerOpen,
-  } = useStore();
+    keyboardShortcutsEnabled,
+  } = useStore(
+    useShallow((state) => ({
+      theme: state.theme,
+      nodes: state.nodes,
+      isChaosMode: state.isChaosMode,
+      setChaosMode: state.setChaosMode,
+      chaosIntervalSec: state.chaosIntervalSec,
+      simState: state.simState,
+      loadCanvasState: state.loadCanvasState,
+      loadScenario: state.loadScenario,
+      loadReferenceDesign: state.loadReferenceDesign,
+      setTrafficConfig: state.setTrafficConfig,
+      addToast: state.addToast,
+      autoLayout: state.autoLayout,
+      isBottomDrawerOpen: state.isBottomDrawerOpen,
+      setIsBottomDrawerOpen: state.setIsBottomDrawerOpen,
+      keyboardShortcutsEnabled: state.keyboardShortcutsEnabled,
+    })),
+  );
 
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 1100);
+  const bootstrappedRef = useRef(false);
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 1101px)');
@@ -79,6 +104,8 @@ export function App() {
 
   // Decode URL hash state on initial boot or load starter architecture
   useEffect(() => {
+    if (bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
     if (window.location.hash) {
       const decoded = decodeStateFromUrlHash(window.location.hash);
       if (decoded && decoded.nodes && decoded.edges) {
@@ -101,7 +128,14 @@ export function App() {
       loadScenario(starter);
       loadReferenceDesign(starter.referenceDesign);
     }
-  }, []);
+  }, [
+    addToast,
+    loadCanvasState,
+    loadReferenceDesign,
+    loadScenario,
+    nodes.length,
+    setTrafficConfig,
+  ]);
 
   // Chaos runner synchronization
   useEffect(() => {
@@ -116,22 +150,27 @@ export function App() {
   // Global keyboard shortcuts
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Command Palette (Ctrl+K or Cmd+K) - works even if typing in some inputs
+      const target = e.target instanceof HTMLElement ? e.target : document.body;
+      const isEditing =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable;
+      const isInsideModal = Boolean(target.closest('[role="dialog"]'));
+
+      // Never let application shortcuts escape a modal or editing context.
+      if (isInsideModal) return;
+
+      // Command Palette uses a conventional modified shortcut and remains available
+      // when single-key shortcuts are disabled, except while editing form content.
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        if (isEditing) return;
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
         return;
       }
 
-      // Ignore standard single-key shortcuts when user is actively typing in an input
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.tagName === 'SELECT'
-      ) {
-        return;
-      }
+      if (isEditing || !keyboardShortcutsEnabled) return;
 
       if (e.code === 'Space') {
         e.preventDefault();
@@ -199,6 +238,7 @@ export function App() {
     isBottomDrawerOpen,
     setIsBottomDrawerOpen,
     addToast,
+    keyboardShortcutsEnabled,
   ]);
 
   return (
@@ -245,10 +285,20 @@ export function App() {
         <PropertiesPanel />
       </div>
       <ToastContainer />
-      <ShortcutsModal
-        isOpen={isShortcutsModalOpen}
-        onClose={() => setIsShortcutsModalOpen(false)}
-      />
+      <div className={styles.srOnly} aria-live="polite" aria-atomic="true">
+        {simState === 'running'
+          ? 'Simulation running'
+          : simState === 'paused'
+            ? 'Simulation paused'
+            : simState === 'stopped'
+              ? 'Simulation stopped'
+              : 'Simulation idle'}
+      </div>
+      {isShortcutsModalOpen ? (
+        <Suspense fallback={null}>
+          <ShortcutsModal isOpen onClose={() => setIsShortcutsModalOpen(false)} />
+        </Suspense>
+      ) : null}
       {isCommandPaletteOpen ? (
         <Suspense fallback={null}>
           <CommandPalette isOpen onClose={() => setIsCommandPaletteOpen(false)} />

@@ -73,6 +73,8 @@ export interface SysSimState {
   // Theme & UI state
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
+  keyboardShortcutsEnabled: boolean;
+  setKeyboardShortcutsEnabled: (enabled: boolean) => void;
   activeSidebarTab: 'palette' | 'scenarios' | 'calculator';
   setActiveSidebarTab: (tab: 'palette' | 'scenarios' | 'calculator') => void;
   activeBottomTab: 'metrics' | 'bottlenecks' | 'health' | 'trace' | 'cost';
@@ -289,6 +291,14 @@ function readStoredTheme(): ThemeMode {
   }
 }
 
+function readStoredShortcutPreference(): boolean {
+  try {
+    return localStorage.getItem('syssim_keyboard_shortcuts') !== 'disabled';
+  } catch {
+    return true;
+  }
+}
+
 export const useStore = create<SysSimState>((set, get) => ({
   // Theme & UI state
   theme: readStoredTheme(),
@@ -296,6 +306,14 @@ export const useStore = create<SysSimState>((set, get) => ({
     localStorage.setItem('syssim_theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
     set({ theme });
+  },
+  keyboardShortcutsEnabled: readStoredShortcutPreference(),
+  setKeyboardShortcutsEnabled: (keyboardShortcutsEnabled) => {
+    localStorage.setItem(
+      'syssim_keyboard_shortcuts',
+      keyboardShortcutsEnabled ? 'enabled' : 'disabled',
+    );
+    set({ keyboardShortcutsEnabled });
   },
   activeSidebarTab: 'palette',
   setActiveSidebarTab: (activeSidebarTab) => set({ activeSidebarTab }),
