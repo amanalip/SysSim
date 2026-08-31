@@ -6,7 +6,9 @@
   background: rgba(22, 27, 34, 0.85);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -16,11 +18,67 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   max-width: 95vw;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1400px) {
+  .controlsBar {
+    left: 10px;
+    right: 10px;
+    transform: none;
+    max-width: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-height: 152px;
+    overflow: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .controlsBar {
+    bottom: 36px;
+    gap: 6px;
+    padding: 6px;
+    max-height: 168px;
+  }
+  .controlsBar button,
+  .controlsBar select {
+    min-height: 44px;
+  }
+  .controlBtn {
+    width: 44px;
+    height: 44px;
+  }
+  .playBtn {
+    min-height: 44px;
+  }
+  .divider,
+  .statsCluster {
+    display: none;
+  }
+  .configGroup {
+    flex-wrap: wrap;
+  }
+  .segmentedBtn span {
+    display: none;
+  }
+  .qpsInput {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statusRunning {
+    animation: none;
+  }
 }
 
 [data-theme='light'] .controlsBar {
   background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .statusDot {
@@ -47,8 +105,12 @@
 }
 
 @keyframes pulse {
-  0% { opacity: 0.5; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .buttonGroup {
@@ -198,8 +260,13 @@
   padding: 4px 5px;
 }
 
-.compactSelect { max-width: 92px; }
-.customKeysInput { width: 118px; font-family: var(--font-mono); }
+.compactSelect {
+  max-width: 92px;
+}
+.customKeysInput {
+  width: 118px;
+  font-family: var(--font-mono);
+}
 
 .speedSegmentedGroup {
   display: flex;

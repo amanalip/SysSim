@@ -11,21 +11,31 @@ import { EnvelopeCalculator } from './components/panels/EnvelopeCalculator';
 import { ShortcutsModal } from './components/modals/ShortcutsModal';
 import { ToastContainer } from './components/ui/Toast';
 import { chaosRunner } from './engine/metrics/chaos-runner';
-import { initializeSimulationRuntime, disposeSimulationRuntime, simulationRuntime as simBridge } from './engine/simulation-runtime';
+import {
+  initializeSimulationRuntime,
+  disposeSimulationRuntime,
+  simulationRuntime as simBridge,
+} from './engine/simulation-runtime';
 import { decodeStateFromUrlHash } from './utils/sharing';
 import { CORE_SCENARIOS } from './scenarios/core';
 import { normalizeScenario } from './scenarios/normalize';
 import styles from './App.module.css';
 
-const MetricsDashboard = lazy(() => import('./components/panels/MetricsDashboard').then(
-  (module) => ({ default: module.MetricsDashboard }),
-));
-const ScenarioManager = lazy(() => import('./components/scenarios/ScenarioManager').then(
-  (module) => ({ default: module.ScenarioManager }),
-));
-const CommandPalette = lazy(() => import('./components/modals/CommandPalette').then(
-  (module) => ({ default: module.CommandPalette }),
-));
+const MetricsDashboard = lazy(() =>
+  import('./components/panels/MetricsDashboard').then((module) => ({
+    default: module.MetricsDashboard,
+  })),
+);
+const ScenarioManager = lazy(() =>
+  import('./components/scenarios/ScenarioManager').then((module) => ({
+    default: module.ScenarioManager,
+  })),
+);
+const CommandPalette = lazy(() =>
+  import('./components/modals/CommandPalette').then((module) => ({
+    default: module.CommandPalette,
+  })),
+);
 
 export function App() {
   const {
@@ -47,6 +57,16 @@ export function App() {
 
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 1100);
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1101px)');
+    const syncSidebar = (event: MediaQueryListEvent | MediaQueryList) =>
+      setIsSidebarOpen(event.matches);
+    syncSidebar(media);
+    media.addEventListener('change', syncSidebar);
+    return () => media.removeEventListener('change', syncSidebar);
+  }, []);
 
   useEffect(() => {
     initializeSimulationRuntime();
@@ -65,7 +85,7 @@ export function App() {
         loadCanvasState(
           decoded.nodes as unknown as CanvasNode[],
           decoded.edges as unknown as CanvasEdge[],
-          (decoded.zones || []) as ZoneData[]
+          (decoded.zones || []) as ZoneData[],
         );
         if (decoded.trafficConfig) {
           setTrafficConfig(decoded.trafficConfig);
@@ -105,7 +125,11 @@ export function App() {
 
       // Ignore standard single-key shortcuts when user is actively typing in an input
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT'
+      ) {
         return;
       }
 
@@ -166,19 +190,33 @@ export function App() {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [simState, nodes, isChaosMode, setChaosMode, autoLayout, isBottomDrawerOpen, setIsBottomDrawerOpen, addToast]);
+  }, [
+    simState,
+    nodes,
+    isChaosMode,
+    setChaosMode,
+    autoLayout,
+    isBottomDrawerOpen,
+    setIsBottomDrawerOpen,
+    addToast,
+  ]);
 
   return (
     <div className={styles.appContainer}>
-      <Header />
+      <Header
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
+      />
       <div className={styles.mainLayout}>
         <Sidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
           paletteSlot={<ComponentPalette />}
-          scenariosSlot={(
+          scenariosSlot={
             <Suspense fallback={<div className={styles.lazyFallback}>Loading scenarios…</div>}>
               <ScenarioManager />
             </Suspense>
-          )}
+          }
           calculatorSlot={<EnvelopeCalculator />}
         />
 
@@ -189,11 +227,15 @@ export function App() {
               <div className={styles.emptyCanvasNotice}>
                 <div className={styles.emptyNoticeTitle}>SysSim Architecture Canvas</div>
                 <div className={styles.emptyNoticeText}>
-                  Drag components from the sidebar palette onto the canvas to construct your system architecture.
+                  Drag components from the sidebar palette onto the canvas to construct your system
+                  architecture.
                 </div>
               </div>
             )}
             <SimulationControls />
+            <div className={styles.unsupportedSize} role="status">
+              This viewport is too small for safe diagram editing. Use at least 320 × 560 pixels.
+            </div>
           </div>
           <Suspense fallback={null}>
             <MetricsDashboard />
@@ -209,10 +251,7 @@ export function App() {
       />
       {isCommandPaletteOpen ? (
         <Suspense fallback={null}>
-          <CommandPalette
-            isOpen
-            onClose={() => setIsCommandPaletteOpen(false)}
-          />
+          <CommandPalette isOpen onClose={() => setIsCommandPaletteOpen(false)} />
         </Suspense>
       ) : null}
     </div>

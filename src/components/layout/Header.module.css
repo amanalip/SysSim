@@ -56,6 +56,80 @@
   gap: 8px;
 }
 
+.actionMenu {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.menuToggle,
+.sidebarToggle {
+  display: none;
+}
+
+@media (max-width: 1240px) {
+  .header {
+    padding: 0 10px;
+  }
+  .subtitle {
+    display: none;
+  }
+  .menuToggle {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+  }
+  .actionsSection {
+    display: none;
+    position: absolute;
+    top: calc(100% + 7px);
+    right: 0;
+    width: min(280px, calc(100vw - 20px));
+    max-height: calc(100dvh - 72px);
+    overflow-y: auto;
+    padding: 8px;
+    flex-direction: column;
+    align-items: stretch;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+  .actionsOpen {
+    display: flex;
+  }
+  .actionsSection .actionBtn {
+    min-height: 44px;
+    justify-content: flex-start;
+  }
+  .actionsSection .iconBtn {
+    width: 100%;
+    min-height: 44px;
+  }
+  .actionsSection .divider {
+    width: 100%;
+    height: 1px;
+    margin: 2px 0;
+  }
+}
+
+@media (max-width: 1100px) {
+  .sidebarToggle {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 520px) {
+  .titleGroup,
+  .logoSection > span:last-child {
+    display: none;
+  }
+  .logoSection {
+    gap: 6px;
+  }
+}
+
 .actionBtn {
   display: inline-flex;
   align-items: center;

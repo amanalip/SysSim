@@ -10,6 +10,55 @@
   user-select: none;
 }
 
+.backdrop {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .sidebar {
+    position: fixed;
+    top: 54px;
+    bottom: 0;
+    left: 0;
+    height: auto;
+    width: min(360px, calc(100vw - 48px));
+    min-width: 0;
+    z-index: 45;
+    transform: translateX(-102%);
+    transition: transform 180ms ease;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+
+  .backdrop {
+    position: fixed;
+    inset: 54px 0 0;
+    z-index: 44;
+    display: block;
+    border: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.48);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+
+  .backdropOpen {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .tabBtn,
+  .tabsHeader button {
+    min-height: 44px;
+  }
+}
+
 .tabsHeader {
   display: flex;
   background-color: var(--bg-primary);

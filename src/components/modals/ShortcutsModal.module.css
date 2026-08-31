@@ -22,6 +22,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  max-height: 90dvh;
 }
 
 .modalHeader {
@@ -63,6 +64,23 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .modalContent {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+  .closeBtn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .shortcutRow {
+    min-height: 44px;
+  }
 }
 
 .shortcutRow {

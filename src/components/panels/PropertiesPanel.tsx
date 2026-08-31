@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  X,
-  RotateCcw,
-  Trash2,
-} from 'lucide-react';
+import { X, RotateCcw, Trash2 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { ComponentIcon } from '../icons/ComponentIcon';
 import { createDefaultConfig } from '../../model/component-defaults';
@@ -52,8 +48,16 @@ export const PropertiesPanel: React.FC = () => {
   }
 
   const config = selectedNode.data.config;
-  const isCacheConfig = ['cdn', 'redis_cache', 'local_cache', 'cdn_cache', 'browser_cache'].includes(config.type);
-  const isMessagingConfig = ['message_queue', 'task_queue', 'pubsub', 'event_bus'].includes(config.type);
+  const isCacheConfig = [
+    'cdn',
+    'redis_cache',
+    'local_cache',
+    'cdn_cache',
+    'browser_cache',
+  ].includes(config.type);
+  const isMessagingConfig = ['message_queue', 'task_queue', 'pubsub', 'event_bus'].includes(
+    config.type,
+  );
 
   const handleClose = () => {
     setIsPropertiesPanelOpen(false);
@@ -94,6 +98,7 @@ export const PropertiesPanel: React.FC = () => {
             <input
               type="text"
               className={styles.input}
+              aria-label="Component Name"
               value={config.name}
               onChange={(e) => updateNodeConfig(config.id, { name: e.target.value })}
             />
@@ -102,36 +107,47 @@ export const PropertiesPanel: React.FC = () => {
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>Health Status</label>
             <div className={styles.healthSelector}>
-              {(['healthy', 'degraded', 'down', 'overloaded'] as NodeHealthStatus[]).map((status) => (
-                <button
-                  key={status}
-                  className={`${styles.healthOption} ${
-                    config.health === status ? styles.healthOptionActive : ''
-                  }`}
-                  onClick={() => handleHealthChange(status)}
-                >
-                  <span
-                    className={styles.healthDot}
-                    style={{
-                      backgroundColor:
-                        status === 'healthy'
-                          ? 'var(--success)'
-                          : status === 'degraded'
-                          ? 'var(--warning)'
-                          : status === 'down'
-                          ? 'var(--error)'
-                          : '#f97316',
-                    }}
-                  />
-                  <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
-                </button>
-              ))}
+              {(['healthy', 'degraded', 'down', 'overloaded'] as NodeHealthStatus[]).map(
+                (status) => (
+                  <button
+                    key={status}
+                    className={`${styles.healthOption} ${
+                      config.health === status ? styles.healthOptionActive : ''
+                    }`}
+                    onClick={() => handleHealthChange(status)}
+                  >
+                    <span
+                      className={styles.healthDot}
+                      style={{
+                        backgroundColor:
+                          status === 'healthy'
+                            ? 'var(--success)'
+                            : status === 'degraded'
+                              ? 'var(--warning)'
+                              : status === 'down'
+                                ? 'var(--error)'
+                                : '#f97316',
+                      }}
+                    />
+                    <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+                  </button>
+                ),
+              )}
             </div>
           </div>
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>Latency Distribution</label>
-            <select className={styles.select} value={config.latencyDistribution || 'fixed'}
-              onChange={(event) => updateNodeConfig(config.id, { latencyDistribution: event.target.value as NonNullable<typeof config.latencyDistribution> })}>
+            <select
+              className={styles.select}
+              value={config.latencyDistribution || 'fixed'}
+              onChange={(event) =>
+                updateNodeConfig(config.id, {
+                  latencyDistribution: event.target.value as NonNullable<
+                    typeof config.latencyDistribution
+                  >,
+                })
+              }
+            >
               <option value="fixed">Fixed (legacy)</option>
               <option value="uniform">Uniform</option>
               <option value="normal">Normal</option>
@@ -141,8 +157,21 @@ export const PropertiesPanel: React.FC = () => {
           {config.latencyDistribution && config.latencyDistribution !== 'fixed' ? (
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>Latency Jitter (%)</label>
-              <input type="number" min="0" max="100" className={styles.input} value={config.latencyJitterPercent ?? 10}
-                onChange={(event) => updateNodeConfig(config.id, { latencyJitterPercent: Math.min(100, Math.max(0, Number(event.target.value) || 0)) })} />
+              <input
+                type="number"
+                min="0"
+                max="100"
+                className={styles.input}
+                value={config.latencyJitterPercent ?? 10}
+                onChange={(event) =>
+                  updateNodeConfig(config.id, {
+                    latencyJitterPercent: Math.min(
+                      100,
+                      Math.max(0, Number(event.target.value) || 0),
+                    ),
+                  })
+                }
+              />
             </div>
           ) : null}
         </div>
@@ -185,10 +214,10 @@ export const PropertiesPanel: React.FC = () => {
                   {'processingLatencyMs' in config
                     ? config.processingLatencyMs
                     : 'baseLatencyMs' in config
-                    ? config.baseLatencyMs
-                    : 'latencyMs' in config
-                    ? config.latencyMs
-                    : (config as any).queryLatencyMs}{' '}
+                      ? config.baseLatencyMs
+                      : 'latencyMs' in config
+                        ? config.latencyMs
+                        : (config as any).queryLatencyMs}{' '}
                   ms
                 </span>
               </div>
@@ -202,10 +231,10 @@ export const PropertiesPanel: React.FC = () => {
                     'processingLatencyMs' in config
                       ? config.processingLatencyMs
                       : 'baseLatencyMs' in config
-                      ? config.baseLatencyMs
-                      : 'latencyMs' in config
-                      ? config.latencyMs
-                      : (config as any).queryLatencyMs
+                        ? config.baseLatencyMs
+                        : 'latencyMs' in config
+                          ? config.latencyMs
+                          : (config as any).queryLatencyMs
                   }
                   onChange={(e) => {
                     const val = parseInt(e.target.value, 10);
@@ -229,8 +258,15 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Balancing Algorithm</label>
-                <select className={styles.select} value={config.algorithm}
-                  onChange={(e) => updateNodeConfig(config.id, { algorithm: e.target.value as LoadBalancerAlgorithm })}>
+                <select
+                  className={styles.select}
+                  value={config.algorithm}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      algorithm: e.target.value as LoadBalancerAlgorithm,
+                    })
+                  }
+                >
                   <option value="round_robin">Round Robin</option>
                   <option value="least_connections">Least Connections</option>
                   <option value="consistent_hashing">Consistent Hashing</option>
@@ -240,36 +276,75 @@ export const PropertiesPanel: React.FC = () => {
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Health Check Interval (sec)</label>
-                <input type="number" min="1" className={styles.input} value={config.healthCheckIntervalSec}
-                  onChange={(e) => updateNodeConfig(config.id, { healthCheckIntervalSec: Math.max(1, Number(e.target.value) || 1) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.healthCheckIntervalSec}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      healthCheckIntervalSec: Math.max(1, Number(e.target.value) || 1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Recovery Delay (sec)</label>
-                <input type="number" min="0" className={styles.input} value={config.healthRecoveryDelaySec}
-                  onChange={(e) => updateNodeConfig(config.id, { healthRecoveryDelaySec: Math.max(0, Number(e.target.value) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.healthRecoveryDelaySec}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      healthRecoveryDelaySec: Math.max(0, Number(e.target.value) || 0),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Session Affinity</label>
-                <button type="button" className={`${styles.actionBtn} ${config.stickySession ? styles.coalescingActive : ''}`}
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${config.stickySession ? styles.coalescingActive : ''}`}
                   aria-pressed={config.stickySession}
-                  onClick={() => updateNodeConfig(config.id, { stickySession: !config.stickySession })}>
+                  onClick={() =>
+                    updateNodeConfig(config.id, { stickySession: !config.stickySession })
+                  }
+                >
                   Sticky sessions {config.stickySession ? 'ON' : 'OFF'}
                 </button>
               </div>
-              {config.algorithm === 'weighted' && edges
-                .filter((edge) => edge.source === config.id && (edge.data.purpose || 'request') === 'request')
-                .map((edge) => {
-                  const target = nodes.find((node) => node.id === edge.target);
-                  return (
-                    <div className={styles.fieldGroup} key={edge.id}>
-                      <label className={styles.fieldLabel}>Weight: {target?.data.config.name || edge.target}</label>
-                      <input type="number" min="1" className={styles.input} value={config.targetWeights?.[edge.target] || 1}
-                        onChange={(event) => updateNodeConfig(config.id, {
-                          targetWeights: { ...config.targetWeights, [edge.target]: Math.max(1, Number(event.target.value) || 1) },
-                        })} />
-                    </div>
-                  );
-                })}
+              {config.algorithm === 'weighted' &&
+                edges
+                  .filter(
+                    (edge) =>
+                      edge.source === config.id && (edge.data.purpose || 'request') === 'request',
+                  )
+                  .map((edge) => {
+                    const target = nodes.find((node) => node.id === edge.target);
+                    return (
+                      <div className={styles.fieldGroup} key={edge.id}>
+                        <label className={styles.fieldLabel}>
+                          Weight: {target?.data.config.name || edge.target}
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          className={styles.input}
+                          value={config.targetWeights?.[edge.target] || 1}
+                          onChange={(event) =>
+                            updateNodeConfig(config.id, {
+                              targetWeights: {
+                                ...config.targetWeights,
+                                [edge.target]: Math.max(1, Number(event.target.value) || 1),
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                    );
+                  })}
             </>
           )}
 
@@ -277,26 +352,60 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Gateway Rate Limit (QPS)</label>
-                <input type="number" min="0" className={styles.input} value={config.rateLimitQps}
-                  onChange={(e) => updateNodeConfig(config.id, { rateLimitQps: Math.max(0, Number(e.target.value) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.rateLimitQps}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      rateLimitQps: Math.max(0, Number(e.target.value) || 0),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Authentication Mode</label>
-                <select className={styles.select} value={config.authMode}
-                  onChange={(e) => updateNodeConfig(config.id, { authMode: e.target.value as typeof config.authMode })}>
-                  <option value="None">None</option><option value="API_Key">API Key</option>
-                  <option value="JWT">JWT</option><option value="OAuth2">OAuth2</option>
+                <select
+                  className={styles.select}
+                  value={config.authMode}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      authMode: e.target.value as typeof config.authMode,
+                    })
+                  }
+                >
+                  <option value="None">None</option>
+                  <option value="API_Key">API Key</option>
+                  <option value="JWT">JWT</option>
+                  <option value="OAuth2">OAuth2</option>
                 </select>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Upstream Timeout (ms)</label>
-                <input type="number" min="1" className={styles.input} value={config.timeoutMs}
-                  onChange={(e) => updateNodeConfig(config.id, { timeoutMs: Math.max(1, Number(e.target.value) || 1) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.timeoutMs}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      timeoutMs: Math.max(1, Number(e.target.value) || 1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
-                <button type="button" className={`${styles.actionBtn} ${config.circuitBreakerEnabled ? styles.coalescingActive : ''}`}
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${config.circuitBreakerEnabled ? styles.coalescingActive : ''}`}
                   aria-pressed={config.circuitBreakerEnabled}
-                  onClick={() => updateNodeConfig(config.id, { circuitBreakerEnabled: !config.circuitBreakerEnabled })}>
+                  onClick={() =>
+                    updateNodeConfig(config.id, {
+                      circuitBreakerEnabled: !config.circuitBreakerEnabled,
+                    })
+                  }
+                >
                   Circuit breaker {config.circuitBreakerEnabled ? 'ON' : 'OFF'}
                 </button>
               </div>
@@ -307,18 +416,41 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Cache TTL (sec)</label>
-                <input type="number" min="1" className={styles.input} value={config.cacheTtlSec}
-                  onChange={(e) => updateNodeConfig(config.id, { cacheTtlSec: Math.max(1, Number(e.target.value) || 1) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.cacheTtlSec}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      cacheTtlSec: Math.max(1, Number(e.target.value) || 1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Edge Locations</label>
-                <input type="number" min="1" className={styles.input} value={config.edgeLocationsCount}
-                  onChange={(e) => updateNodeConfig(config.id, { edgeLocationsCount: Math.max(1, Math.floor(Number(e.target.value) || 1)) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.edgeLocationsCount}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      edgeLocationsCount: Math.max(1, Math.floor(Number(e.target.value) || 1)),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
-                <button type="button" className={`${styles.actionBtn} ${config.originShielding ? styles.coalescingActive : ''}`}
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${config.originShielding ? styles.coalescingActive : ''}`}
                   aria-pressed={config.originShielding}
-                  onClick={() => updateNodeConfig(config.id, { originShielding: !config.originShielding })}>
+                  onClick={() =>
+                    updateNodeConfig(config.id, { originShielding: !config.originShielding })
+                  }
+                >
                   Origin shield {config.originShielding ? 'ON' : 'OFF'}
                 </button>
               </div>
@@ -329,32 +461,81 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>DNS Lookup Latency (ms)</label>
-                <input type="number" min="0" className={styles.input} value={config.lookupLatencyMs}
-                  onChange={(e) => updateNodeConfig(config.id, { lookupLatencyMs: Math.max(0, Number(e.target.value) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.lookupLatencyMs}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      lookupLatencyMs: Math.max(0, Number(e.target.value) || 0),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>DNS Cache TTL (sec)</label>
-                <input type="number" min="1" className={styles.input} value={config.ttlSec}
-                  onChange={(e) => updateNodeConfig(config.id, { ttlSec: Math.max(1, Number(e.target.value) || 1) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.ttlSec}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      ttlSec: Math.max(1, Number(e.target.value) || 1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Routing Policy</label>
-                <select className={styles.select} value={config.routingPolicy}
-                  onChange={(e) => updateNodeConfig(config.id, { routingPolicy: e.target.value as typeof config.routingPolicy })}>
-                  <option value="simple">Simple</option><option value="weighted">Weighted</option>
-                  <option value="geolocation">Geolocation</option><option value="latency_based">Latency based</option>
+                <select
+                  className={styles.select}
+                  value={config.routingPolicy}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      routingPolicy: e.target.value as typeof config.routingPolicy,
+                    })
+                  }
+                >
+                  <option value="simple">Simple</option>
+                  <option value="weighted">Weighted</option>
+                  <option value="geolocation">Geolocation</option>
+                  <option value="latency_based">Latency based</option>
                 </select>
               </div>
-              {config.routingPolicy === 'weighted' && edges
-                .filter((edge) => edge.source === config.id && (edge.data.purpose || 'request') === 'request')
-                .map((edge) => (
-                  <div className={styles.fieldGroup} key={edge.id}>
-                    <label className={styles.fieldLabel}>DNS Weight: {nodes.find((node) => node.id === edge.target)?.data.config.name || edge.target}</label>
-                    <input type="number" min="1" className={styles.input} value={config.targetWeights?.[edge.target] || 1}
-                      onChange={(event) => updateNodeConfig(config.id, { targetWeights: { ...config.targetWeights, [edge.target]: Math.max(1, Number(event.target.value) || 1) } })} />
-                  </div>
-                ))}
-              <p className={styles.fieldHint}>DNS resolves one address; subsequent application traffic continues to that target.</p>
+              {config.routingPolicy === 'weighted' &&
+                edges
+                  .filter(
+                    (edge) =>
+                      edge.source === config.id && (edge.data.purpose || 'request') === 'request',
+                  )
+                  .map((edge) => (
+                    <div className={styles.fieldGroup} key={edge.id}>
+                      <label className={styles.fieldLabel}>
+                        DNS Weight:{' '}
+                        {nodes.find((node) => node.id === edge.target)?.data.config.name ||
+                          edge.target}
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        className={styles.input}
+                        value={config.targetWeights?.[edge.target] || 1}
+                        onChange={(event) =>
+                          updateNodeConfig(config.id, {
+                            targetWeights: {
+                              ...config.targetWeights,
+                              [edge.target]: Math.max(1, Number(event.target.value) || 1),
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
+              <p className={styles.fieldHint}>
+                DNS resolves one address; subsequent application traffic continues to that target.
+              </p>
             </>
           )}
 
@@ -362,19 +543,49 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Inspection Latency (ms)</label>
-                <input type="number" min="0" step="0.1" className={styles.input} value={config.inspectionLatencyMs}
-                  onChange={(e) => updateNodeConfig(config.id, { inspectionLatencyMs: Math.max(0, Number(e.target.value) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={styles.input}
+                  value={config.inspectionLatencyMs}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      inspectionLatencyMs: Math.max(0, Number(e.target.value) || 0),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>WAF Rules</label>
-                <input type="number" min="0" className={styles.input} value={config.ruleCount}
-                  onChange={(e) => updateNodeConfig(config.id, { ruleCount: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} />
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.ruleCount}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      ruleCount: Math.max(0, Math.floor(Number(e.target.value) || 0)),
+                    })
+                  }
+                />
                 <p className={styles.fieldHint}>Each rule adds 0.005 ms, capped at 5 ms.</p>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Malicious Block Rate (%)</label>
-                <input type="number" min="0" max="100" step="0.1" className={styles.input} value={config.blockRatePercent}
-                  onChange={(e) => updateNodeConfig(config.id, { blockRatePercent: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })} />
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  className={styles.input}
+                  value={config.blockRatePercent}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      blockRatePercent: Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                    })
+                  }
+                />
               </div>
             </>
           )}
@@ -382,32 +593,69 @@ export const PropertiesPanel: React.FC = () => {
           {config.type === 'reverse_proxy' && (
             <>
               <div className={styles.fieldGroup}>
-                <button type="button" className={`${styles.actionBtn} ${config.enableCompression ? styles.coalescingActive : ''}`}
-                  aria-pressed={config.enableCompression} onClick={() => updateNodeConfig(config.id, { enableCompression: !config.enableCompression })}>
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${config.enableCompression ? styles.coalescingActive : ''}`}
+                  aria-pressed={config.enableCompression}
+                  onClick={() =>
+                    updateNodeConfig(config.id, { enableCompression: !config.enableCompression })
+                  }
+                >
                   Compression {config.enableCompression ? 'ON' : 'OFF'}
                 </button>
               </div>
               <div className={styles.fieldGroup}>
-                <button type="button" className={`${styles.actionBtn} ${config.bufferingEnabled ? styles.coalescingActive : ''}`}
-                  aria-pressed={config.bufferingEnabled} onClick={() => updateNodeConfig(config.id, { bufferingEnabled: !config.bufferingEnabled })}>
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${config.bufferingEnabled ? styles.coalescingActive : ''}`}
+                  aria-pressed={config.bufferingEnabled}
+                  onClick={() =>
+                    updateNodeConfig(config.id, { bufferingEnabled: !config.bufferingEnabled })
+                  }
+                >
                   Request buffering {config.bufferingEnabled ? 'ON' : 'OFF'}
                 </button>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Request Buffer (KB)</label>
-                <input type="number" min="0" className={styles.input} value={config.bufferSizeKb}
-                  onChange={(e) => updateNodeConfig(config.id, { bufferSizeKb: Math.max(0, Number(e.target.value) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.bufferSizeKb}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      bufferSizeKb: Math.max(0, Number(e.target.value) || 0),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Upstream Bandwidth (Mbps)</label>
-                <input type="number" min="0.1" step="0.1" className={styles.input} value={config.upstreamBandwidthMbps}
-                  onChange={(e) => updateNodeConfig(config.id, { upstreamBandwidthMbps: Math.max(0.1, Number(e.target.value) || 0.1) })} />
+                <input
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  className={styles.input}
+                  value={config.upstreamBandwidthMbps}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      upstreamBandwidthMbps: Math.max(0.1, Number(e.target.value) || 0.1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Cache Rules (diagram only)</label>
-                <input type="text" className={styles.input} value={config.cacheRules}
-                  onChange={(e) => updateNodeConfig(config.id, { cacheRules: e.target.value })} />
-                <p className={styles.fieldHint}>Stored for architecture annotation; no cache-rule grammar is executed.</p>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={config.cacheRules}
+                  onChange={(e) => updateNodeConfig(config.id, { cacheRules: e.target.value })}
+                />
+                <p className={styles.fieldHint}>
+                  Stored for architecture annotation; no cache-rule grammar is executed.
+                </p>
               </div>
             </>
           )}
@@ -449,21 +697,54 @@ export const PropertiesPanel: React.FC = () => {
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Window Size (seconds)</label>
-                <input type="number" min="0.001" step="0.1" className={styles.input} value={config.windowSizeSec}
-                  onChange={(event) => updateNodeConfig(config.id, { windowSizeSec: Math.max(0.001, Number(event.target.value) || 0.001) })} />
+                <input
+                  type="number"
+                  min="0.001"
+                  step="0.1"
+                  className={styles.input}
+                  value={config.windowSizeSec}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      windowSizeSec: Math.max(0.001, Number(event.target.value) || 0.001),
+                    })
+                  }
+                />
               </div>
               {config.algorithm === 'token_bucket' || config.algorithm === 'leaky_bucket' ? (
                 <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>{config.algorithm === 'leaky_bucket' ? 'Queue Capacity' : 'Burst Capacity'}</label>
-                  <input type="number" min="0" className={styles.input} value={config.burstCapacity}
-                    onChange={(event) => updateNodeConfig(config.id, { burstCapacity: Math.max(0, parseInt(event.target.value, 10) || 0) })} />
+                  <label className={styles.fieldLabel}>
+                    {config.algorithm === 'leaky_bucket' ? 'Queue Capacity' : 'Burst Capacity'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    className={styles.input}
+                    value={config.burstCapacity}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        burstCapacity: Math.max(0, parseInt(event.target.value, 10) || 0),
+                      })
+                    }
+                  />
                 </div>
               ) : null}
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Decision Latency (ms)</label>
-                <input type="number" min="0" step="0.1" className={styles.input} value={config.decisionLatencyMs}
-                  onChange={(event) => updateNodeConfig(config.id, { decisionLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
-                <p className={styles.fieldHint}>Accepted and rejected requests both include policy-decision processing latency.</p>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={styles.input}
+                  value={config.decisionLatencyMs}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      decisionLatencyMs: Math.max(0, Number(event.target.value) || 0),
+                    })
+                  }
+                />
+                <p className={styles.fieldHint}>
+                  Accepted and rejected requests both include policy-decision processing latency.
+                </p>
               </div>
             </>
           )}
@@ -499,9 +780,11 @@ export const PropertiesPanel: React.FC = () => {
                 type="button"
                 className={`${styles.actionBtn} ${config.requestCoalescingEnabled ? styles.coalescingActive : ''}`}
                 aria-pressed={config.requestCoalescingEnabled}
-                onClick={() => updateNodeConfig(config.id, {
-                  requestCoalescingEnabled: !config.requestCoalescingEnabled,
-                } as Partial<typeof config>)}
+                onClick={() =>
+                  updateNodeConfig(config.id, {
+                    requestCoalescingEnabled: !config.requestCoalescingEnabled,
+                  } as Partial<typeof config>)
+                }
               >
                 Request coalescing {config.requestCoalescingEnabled ? 'ON' : 'OFF'}
               </button>
@@ -522,9 +805,11 @@ export const PropertiesPanel: React.FC = () => {
                 min="1"
                 className={styles.input}
                 value={config.ttlSec}
-                onChange={(event) => updateNodeConfig(config.id, {
-                  ttlSec: Math.max(1, parseInt(event.target.value, 10) || 1),
-                } as Partial<typeof config>)}
+                onChange={(event) =>
+                  updateNodeConfig(config.id, {
+                    ttlSec: Math.max(1, parseInt(event.target.value, 10) || 1),
+                  } as Partial<typeof config>)
+                }
               />
             </div>
           )}
@@ -541,9 +826,11 @@ export const PropertiesPanel: React.FC = () => {
                 step="0.1"
                 className={styles.input}
                 value={config.readLatencyMs}
-                onChange={(event) => updateNodeConfig(config.id, {
-                  readLatencyMs: Math.max(0, Number(event.target.value) || 0),
-                } as Partial<typeof config>)}
+                onChange={(event) =>
+                  updateNodeConfig(config.id, {
+                    readLatencyMs: Math.max(0, Number(event.target.value) || 0),
+                  } as Partial<typeof config>)
+                }
               />
             </div>
           )}
@@ -557,9 +844,11 @@ export const PropertiesPanel: React.FC = () => {
                   min="1"
                   className={styles.input}
                   value={config.sizeMb}
-                  onChange={(event) => updateNodeConfig(config.id, {
-                    sizeMb: Math.max(1, parseInt(event.target.value, 10) || 1),
-                  } as Partial<typeof config>)}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      sizeMb: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    } as Partial<typeof config>)
+                  }
                 />
               </div>
               {'entrySizeKb' in config ? (
@@ -571,9 +860,11 @@ export const PropertiesPanel: React.FC = () => {
                     step="0.1"
                     className={styles.input}
                     value={config.entrySizeKb}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      entrySizeKb: Math.max(0.1, Number(event.target.value) || 0.1),
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        entrySizeKb: Math.max(0.1, Number(event.target.value) || 0.1),
+                      } as Partial<typeof config>)
+                    }
                   />
                 </div>
               ) : null}
@@ -581,9 +872,14 @@ export const PropertiesPanel: React.FC = () => {
           )}
 
           {config.type === 'browser_cache' ? (
-            <p className={styles.fieldHint}>Browser entries are isolated per client and terminate before a network request on hit.</p>
+            <p className={styles.fieldHint}>
+              Browser entries are isolated per client and terminate before a network request on hit.
+            </p>
           ) : config.type === 'cdn_cache' ? (
-            <p className={styles.fieldHint}>CDN entries are shared at the edge and forward misses to the configured origin fallback.</p>
+            <p className={styles.fieldHint}>
+              CDN entries are shared at the edge and forward misses to the configured origin
+              fallback.
+            </p>
           ) : null}
 
           {/* Cache Eviction Policy */}
@@ -656,46 +952,103 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Isolation Level</label>
-                <select className={styles.select} value={config.isolationLevel}
-                  onChange={(event) => updateNodeConfig(config.id, { isolationLevel: event.target.value as typeof config.isolationLevel })}>
+                <select
+                  className={styles.select}
+                  value={config.isolationLevel}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      isolationLevel: event.target.value as typeof config.isolationLevel,
+                    })
+                  }
+                >
                   <option value="Read Committed">Read Committed</option>
                   <option value="Repeatable Read">Repeatable Read</option>
                   <option value="Serializable">Serializable</option>
                 </select>
-                <p className={styles.fieldHint}>Stronger isolation increases latency and reduces effective concurrent capacity.</p>
+                <p className={styles.fieldHint}>
+                  Stronger isolation increases latency and reduces effective concurrent capacity.
+                </p>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Connection Queue Limit</label>
-                <input type="number" min="0" className={styles.input} value={config.connectionQueueLimit}
-                  onChange={(event) => updateNodeConfig(config.id, { connectionQueueLimit: Math.max(0, parseInt(event.target.value, 10) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.connectionQueueLimit}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      connectionQueueLimit: Math.max(0, parseInt(event.target.value, 10) || 0),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Shard Count</label>
-                <input type="number" min="1" className={styles.input} value={config.shardCount}
-                  onChange={(event) => updateNodeConfig(config.id, { shardCount: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.shardCount}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      shardCount: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Sharding Key</label>
-                <input type="text" className={styles.input} value={config.shardingKey || ''} placeholder="Disabled when blank"
-                  onChange={(event) => updateNodeConfig(config.id, { shardingKey: event.target.value })} />
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={config.shardingKey || ''}
+                  placeholder="Disabled when blank"
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, { shardingKey: event.target.value })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Replication Lag (ms)</label>
-                <input type="number" min="0" className={styles.input} value={config.replicationLagMs}
-                  onChange={(event) => updateNodeConfig(config.id, { replicationLagMs: Math.max(0, Number(event.target.value) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.replicationLagMs}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      replicationLagMs: Math.max(0, Number(event.target.value) || 0),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
-                <button type="button" className={`${styles.actionBtn} ${config.automaticFailover ? styles.coalescingActive : ''}`}
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${config.automaticFailover ? styles.coalescingActive : ''}`}
                   aria-pressed={config.automaticFailover}
-                  onClick={() => updateNodeConfig(config.id, { automaticFailover: !config.automaticFailover })}>
+                  onClick={() =>
+                    updateNodeConfig(config.id, { automaticFailover: !config.automaticFailover })
+                  }
+                >
                   Automatic failover {config.automaticFailover ? 'ON' : 'OFF'}
                 </button>
               </div>
               {config.automaticFailover ? (
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Failover Latency (ms)</label>
-                  <input type="number" min="0" className={styles.input} value={config.failoverLatencyMs}
-                    onChange={(event) => updateNodeConfig(config.id, { failoverLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
+                  <input
+                    type="number"
+                    min="0"
+                    className={styles.input}
+                    value={config.failoverLatencyMs}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        failoverLatencyMs: Math.max(0, Number(event.target.value) || 0),
+                      })
+                    }
+                  />
                 </div>
               ) : null}
             </>
@@ -705,19 +1058,46 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Partition Key</label>
-                <input type="text" className={styles.input} value={config.partitionKey}
-                  onChange={(event) => updateNodeConfig(config.id, { partitionKey: event.target.value })} />
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={config.partitionKey}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, { partitionKey: event.target.value })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Partition Count</label>
-                <input type="number" min="1" className={styles.input} value={config.partitionCount}
-                  onChange={(event) => updateNodeConfig(config.id, { partitionCount: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.partitionCount}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      partitionCount: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Replication Lag (ms)</label>
-                <input type="number" min="0" className={styles.input} value={config.replicationLagMs}
-                  onChange={(event) => updateNodeConfig(config.id, { replicationLagMs: Math.max(0, Number(event.target.value) || 0) })} />
-                <p className={styles.fieldHint}>Quorums are derived from consistency: strong/bounded use majority reads; non-eventual writes use majority.</p>
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.replicationLagMs}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      replicationLagMs: Math.max(0, Number(event.target.value) || 0),
+                    })
+                  }
+                />
+                <p className={styles.fieldHint}>
+                  Quorums are derived from consistency: strong/bounded use majority reads;
+                  non-eventual writes use majority.
+                </p>
               </div>
             </>
           )}
@@ -726,8 +1106,15 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Storage Class</label>
-                <select className={styles.select} value={config.storageClass}
-                  onChange={(event) => updateNodeConfig(config.id, { storageClass: event.target.value as typeof config.storageClass })}>
+                <select
+                  className={styles.select}
+                  value={config.storageClass}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      storageClass: event.target.value as typeof config.storageClass,
+                    })
+                  }
+                >
                   <option value="Standard">Standard</option>
                   <option value="Infrequent">Infrequent Access</option>
                   <option value="Glacier">Glacier</option>
@@ -735,9 +1122,21 @@ export const PropertiesPanel: React.FC = () => {
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Bulk Throughput (MB/s)</label>
-                <input type="number" min="0.1" step="0.1" className={styles.input} value={config.throughputMbPerSec}
-                  onChange={(event) => updateNodeConfig(config.id, { throughputMbPerSec: Math.max(0.1, Number(event.target.value) || 0.1) })} />
-                <p className={styles.fieldHint}>Total time separates request overhead from payload transfer time.</p>
+                <input
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  className={styles.input}
+                  value={config.throughputMbPerSec}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      throughputMbPerSec: Math.max(0.1, Number(event.target.value) || 0.1),
+                    })
+                  }
+                />
+                <p className={styles.fieldHint}>
+                  Total time separates request overhead from payload transfer time.
+                </p>
               </div>
             </>
           )}
@@ -746,14 +1145,34 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Primary Shards</label>
-                <input type="number" min="1" className={styles.input} value={config.shards}
-                  onChange={(event) => updateNodeConfig(config.id, { shards: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.shards}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      shards: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Indexing Latency (ms)</label>
-                <input type="number" min="0" className={styles.input} value={config.indexingLatencyMs}
-                  onChange={(event) => updateNodeConfig(config.id, { indexingLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
-                <p className={styles.fieldHint}>Writes use indexing latency; reads use query latency and fan out across shards.</p>
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.indexingLatencyMs}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      indexingLatencyMs: Math.max(0, Number(event.target.value) || 0),
+                    })
+                  }
+                />
+                <p className={styles.fieldHint}>
+                  Writes use indexing latency; reads use query latency and fan out across shards.
+                </p>
               </div>
             </>
           )}
@@ -762,14 +1181,34 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Traversal Depth</label>
-                <input type="number" min="1" className={styles.input} value={config.traversalDepth}
-                  onChange={(event) => updateNodeConfig(config.id, { traversalDepth: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.traversalDepth}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      traversalDepth: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Traversal Depth Limit</label>
-                <input type="number" min="1" className={styles.input} value={config.traversalDepthLimit}
-                  onChange={(event) => updateNodeConfig(config.id, { traversalDepthLimit: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
-                <p className={styles.fieldHint}>Traversal latency grows with depth^1.35; requests above the limit are clamped.</p>
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.traversalDepthLimit}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      traversalDepthLimit: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    })
+                  }
+                />
+                <p className={styles.fieldHint}>
+                  Traversal latency grows with depth^1.35; requests above the limit are clamped.
+                </p>
               </div>
             </>
           )}
@@ -778,19 +1217,45 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Write Throughput (/s)</label>
-                <input type="number" min="0" className={styles.input} value={config.writeThroughputPerSec}
-                  onChange={(event) => updateNodeConfig(config.id, { writeThroughputPerSec: Math.max(0, parseInt(event.target.value, 10) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.writeThroughputPerSec}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      writeThroughputPerSec: Math.max(0, parseInt(event.target.value, 10) || 0),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Retention (days)</label>
-                <input type="number" min="1" className={styles.input} value={config.retentionDays}
-                  onChange={(event) => updateNodeConfig(config.id, { retentionDays: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
-                <p className={styles.fieldHint}>Longer retained windows increase query scan latency; downsampling is not modeled yet.</p>
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.retentionDays}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      retentionDays: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    })
+                  }
+                />
+                <p className={styles.fieldHint}>
+                  Longer retained windows increase query scan latency; downsampling is not modeled
+                  yet.
+                </p>
               </div>
               <div className={styles.fieldGroup}>
-                <button type="button" className={`${styles.actionBtn} ${config.coldTierEnabled ? styles.coalescingActive : ''}`}
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${config.coldTierEnabled ? styles.coalescingActive : ''}`}
                   aria-pressed={config.coldTierEnabled}
-                  onClick={() => updateNodeConfig(config.id, { coldTierEnabled: !config.coldTierEnabled })}>
+                  onClick={() =>
+                    updateNodeConfig(config.id, { coldTierEnabled: !config.coldTierEnabled })
+                  }
+                >
                   Cold tier {config.coldTierEnabled ? 'ON' : 'OFF'}
                 </button>
               </div>
@@ -798,13 +1263,32 @@ export const PropertiesPanel: React.FC = () => {
                 <>
                   <div className={styles.fieldGroup}>
                     <label className={styles.fieldLabel}>Cold Tier After (days)</label>
-                    <input type="number" min="1" className={styles.input} value={config.coldTierAfterDays}
-                      onChange={(event) => updateNodeConfig(config.id, { coldTierAfterDays: Math.max(1, parseInt(event.target.value, 10) || 1) })} />
+                    <input
+                      type="number"
+                      min="1"
+                      className={styles.input}
+                      value={config.coldTierAfterDays}
+                      onChange={(event) =>
+                        updateNodeConfig(config.id, {
+                          coldTierAfterDays: Math.max(1, parseInt(event.target.value, 10) || 1),
+                        })
+                      }
+                    />
                   </div>
                   <div className={styles.fieldGroup}>
                     <label className={styles.fieldLabel}>Cold Tier Latency Multiplier</label>
-                    <input type="number" min="1" step="0.1" className={styles.input} value={config.coldTierLatencyMultiplier}
-                      onChange={(event) => updateNodeConfig(config.id, { coldTierLatencyMultiplier: Math.max(1, Number(event.target.value) || 1) })} />
+                    <input
+                      type="number"
+                      min="1"
+                      step="0.1"
+                      className={styles.input}
+                      value={config.coldTierLatencyMultiplier}
+                      onChange={(event) =>
+                        updateNodeConfig(config.id, {
+                          coldTierLatencyMultiplier: Math.max(1, Number(event.target.value) || 1),
+                        })
+                      }
+                    />
                   </div>
                 </>
               ) : null}
@@ -833,8 +1317,18 @@ export const PropertiesPanel: React.FC = () => {
 
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Validation Latency (ms)</label>
-                <input type="number" min="0" step="0.1" className={styles.input} value={config.validationLatencyMs}
-                  onChange={(event) => updateNodeConfig(config.id, { validationLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={styles.input}
+                  value={config.validationLatencyMs}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      validationLatencyMs: Math.max(0, Number(event.target.value) || 0),
+                    })
+                  }
+                />
               </div>
 
               <div className={styles.fieldGroup}>
@@ -852,14 +1346,23 @@ export const PropertiesPanel: React.FC = () => {
                     })
                   }
                 />
-                <p className={styles.fieldHint}>TTL is retained as diagram metadata; request token age and expiry are not modeled.</p>
+                <p className={styles.fieldHint}>
+                  TTL is retained as diagram metadata; request token age and expiry are not modeled.
+                </p>
               </div>
               {config.tokenType === 'Session' ? (
                 <>
                   <div className={styles.fieldGroup}>
-                    <button type="button" className={`${styles.actionBtn} ${config.sessionCacheEnabled ? styles.coalescingActive : ''}`}
+                    <button
+                      type="button"
+                      className={`${styles.actionBtn} ${config.sessionCacheEnabled ? styles.coalescingActive : ''}`}
                       aria-pressed={config.sessionCacheEnabled}
-                      onClick={() => updateNodeConfig(config.id, { sessionCacheEnabled: !config.sessionCacheEnabled })}>
+                      onClick={() =>
+                        updateNodeConfig(config.id, {
+                          sessionCacheEnabled: !config.sessionCacheEnabled,
+                        })
+                      }
+                    >
                       Session cache {config.sessionCacheEnabled ? 'ON' : 'OFF'}
                     </button>
                   </div>
@@ -867,13 +1370,36 @@ export const PropertiesPanel: React.FC = () => {
                     <>
                       <div className={styles.fieldGroup}>
                         <label className={styles.fieldLabel}>Session Cache Hit Rate (%)</label>
-                        <input type="number" min="0" max="100" className={styles.input} value={config.sessionCacheHitRatePercent}
-                          onChange={(event) => updateNodeConfig(config.id, { sessionCacheHitRatePercent: Math.min(100, Math.max(0, Number(event.target.value) || 0)) })} />
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          className={styles.input}
+                          value={config.sessionCacheHitRatePercent}
+                          onChange={(event) =>
+                            updateNodeConfig(config.id, {
+                              sessionCacheHitRatePercent: Math.min(
+                                100,
+                                Math.max(0, Number(event.target.value) || 0),
+                              ),
+                            })
+                          }
+                        />
                       </div>
                       <div className={styles.fieldGroup}>
                         <label className={styles.fieldLabel}>Session Cache Latency (ms)</label>
-                        <input type="number" min="0" step="0.1" className={styles.input} value={config.sessionCacheLatencyMs}
-                          onChange={(event) => updateNodeConfig(config.id, { sessionCacheLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          className={styles.input}
+                          value={config.sessionCacheLatencyMs}
+                          onChange={(event) =>
+                            updateNodeConfig(config.id, {
+                              sessionCacheLatencyMs: Math.max(0, Number(event.target.value) || 0),
+                            })
+                          }
+                        />
                       </div>
                     </>
                   ) : null}
@@ -885,7 +1411,10 @@ export const PropertiesPanel: React.FC = () => {
           {/* Encryption Service Algorithm & Key Rotation */}
           {config.type === 'encryption_service' && (
             <>
-              <p className={styles.fieldHint}>This component estimates processing latency only. It does not perform encryption, inspect key material, or validate cryptographic security.</p>
+              <p className={styles.fieldHint}>
+                This component estimates processing latency only. It does not perform encryption,
+                inspect key material, or validate cryptographic security.
+              </p>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Cipher Algorithm</label>
                 <select
@@ -905,8 +1434,18 @@ export const PropertiesPanel: React.FC = () => {
 
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>AES Baseline Overhead (ms)</label>
-                <input type="number" min="0" step="0.1" className={styles.input} value={config.overheadLatencyMs}
-                  onChange={(event) => updateNodeConfig(config.id, { overheadLatencyMs: Math.max(0, Number(event.target.value) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={styles.input}
+                  value={config.overheadLatencyMs}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      overheadLatencyMs: Math.max(0, Number(event.target.value) || 0),
+                    })
+                  }
+                />
               </div>
 
               <div className={styles.fieldGroup}>
@@ -924,7 +1463,10 @@ export const PropertiesPanel: React.FC = () => {
                     })
                   }
                 />
-                <p className={styles.fieldHint}>Rotation is diagram metadata; no scheduled rotation event or security guarantee is simulated.</p>
+                <p className={styles.fieldHint}>
+                  Rotation is diagram metadata; no scheduled rotation event or security guarantee is
+                  simulated.
+                </p>
               </div>
             </>
           )}
@@ -934,19 +1476,49 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Base Execution Latency (ms)</label>
-                <input type="number" min="1" className={styles.input} value={config.baseExecutionLatencyMs}
-                  onChange={(e) => updateNodeConfig(config.id, { baseExecutionLatencyMs: Math.max(1, Number(e.target.value) || 1) })} />
-                <p className={styles.fieldHint}>512 MB baseline; memory changes modeled execution time.</p>
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.baseExecutionLatencyMs}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      baseExecutionLatencyMs: Math.max(1, Number(e.target.value) || 1),
+                    })
+                  }
+                />
+                <p className={styles.fieldHint}>
+                  512 MB baseline; memory changes modeled execution time.
+                </p>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Provisioned Warm Instances</label>
-                <input type="number" min="0" max={config.concurrencyLimit} className={styles.input} value={config.warmInstances}
-                  onChange={(e) => updateNodeConfig(config.id, { warmInstances: Math.max(0, parseInt(e.target.value, 10) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  max={config.concurrencyLimit}
+                  className={styles.input}
+                  value={config.warmInstances}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      warmInstances: Math.max(0, parseInt(e.target.value, 10) || 0),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Warm Idle Timeout (sec)</label>
-                <input type="number" min="1" className={styles.input} value={config.idleTimeoutSec}
-                  onChange={(e) => updateNodeConfig(config.id, { idleTimeoutSec: Math.max(1, parseInt(e.target.value, 10) || 1) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.idleTimeoutSec}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      idleTimeoutSec: Math.max(1, parseInt(e.target.value, 10) || 1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <div className={styles.fieldLabel}>
@@ -1010,24 +1582,62 @@ export const PropertiesPanel: React.FC = () => {
             <>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Per-Replica Concurrency</label>
-                <input type="number" min="1" className={styles.input} value={config.concurrencyLimit}
-                  onChange={(e) => updateNodeConfig(config.id, { concurrencyLimit: Math.max(1, parseInt(e.target.value, 10) || 1) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.concurrencyLimit}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      concurrencyLimit: Math.max(1, parseInt(e.target.value, 10) || 1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Per-Replica Processing Rate (/sec)</label>
-                <input type="number" min="1" className={styles.input} value={config.jobProcessingRatePerSec}
-                  onChange={(e) => updateNodeConfig(config.id, { jobProcessingRatePerSec: Math.max(1, Number(e.target.value) || 1) })} />
+                <input
+                  type="number"
+                  min="1"
+                  className={styles.input}
+                  value={config.jobProcessingRatePerSec}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      jobProcessingRatePerSec: Math.max(1, Number(e.target.value) || 1),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Processing Latency (ms)</label>
-                <input type="number" min="0" className={styles.input} value={config.processingLatencyMs}
-                  onChange={(e) => updateNodeConfig(config.id, { processingLatencyMs: Math.max(0, Number(e.target.value) || 0) })} />
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.processingLatencyMs}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      processingLatencyMs: Math.max(0, Number(e.target.value) || 0),
+                    })
+                  }
+                />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Worker Retry Limit</label>
-                <input type="number" min="0" className={styles.input} value={config.retryLimit}
-                  onChange={(e) => updateNodeConfig(config.id, { retryLimit: Math.max(0, parseInt(e.target.value, 10) || 0) })} />
-                <p className={styles.fieldHint}>The lower of broker and worker retry limits is enforced.</p>
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.input}
+                  value={config.retryLimit}
+                  onChange={(e) =>
+                    updateNodeConfig(config.id, {
+                      retryLimit: Math.max(0, parseInt(e.target.value, 10) || 0),
+                    })
+                  }
+                />
+                <p className={styles.fieldHint}>
+                  The lower of broker and worker retry limits is enforced.
+                </p>
               </div>
             </>
           )}
@@ -1041,20 +1651,27 @@ export const PropertiesPanel: React.FC = () => {
                   min="0"
                   className={styles.input}
                   value={config.requestRateQps}
-                  onChange={(event) => updateNodeConfig(config.id, {
-                    requestRateQps: Math.max(0, Number(event.target.value) || 0),
-                  })}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      requestRateQps: Math.max(0, Number(event.target.value) || 0),
+                    })
+                  }
                 />
-                <p className={styles.fieldHint}>Global traffic QPS is the total load; client QPS values divide that total proportionally.</p>
+                <p className={styles.fieldHint}>
+                  Global traffic QPS is the total load; client QPS values divide that total
+                  proportionally.
+                </p>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.fieldLabel}>Connection Type</label>
                 <select
                   className={styles.select}
                   value={config.connectionType}
-                  onChange={(event) => updateNodeConfig(config.id, {
-                    connectionType: event.target.value as typeof config.connectionType,
-                  })}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      connectionType: event.target.value as typeof config.connectionType,
+                    })
+                  }
                 >
                   <option value="HTTP/2">HTTP/2</option>
                   <option value="HTTP/3">HTTP/3</option>
@@ -1069,9 +1686,11 @@ export const PropertiesPanel: React.FC = () => {
                   step="0.1"
                   className={styles.input}
                   value={config.requestPayloadKb}
-                  onChange={(event) => updateNodeConfig(config.id, {
-                    requestPayloadKb: Math.max(0, Number(event.target.value) || 0),
-                  })}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      requestPayloadKb: Math.max(0, Number(event.target.value) || 0),
+                    })
+                  }
                 />
               </div>
               <div className={styles.fieldGroup}>
@@ -1079,9 +1698,11 @@ export const PropertiesPanel: React.FC = () => {
                 <select
                   className={styles.select}
                   value={config.operationType}
-                  onChange={(event) => updateNodeConfig(config.id, {
-                    operationType: event.target.value as ClientOperationType,
-                  })}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      operationType: event.target.value as ClientOperationType,
+                    })
+                  }
                 >
                   <option value="read">Read</option>
                   <option value="write">Write</option>
@@ -1100,9 +1721,11 @@ export const PropertiesPanel: React.FC = () => {
                     max="100"
                     className={styles.rangeInput}
                     value={config.readPercentage}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      readPercentage: parseInt(event.target.value, 10),
-                    })}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        readPercentage: parseInt(event.target.value, 10),
+                      })
+                    }
                   />
                 </div>
               ) : null}
@@ -1111,9 +1734,11 @@ export const PropertiesPanel: React.FC = () => {
                 <select
                   className={styles.select}
                   value={config.requestKeyDistribution}
-                  onChange={(event) => updateNodeConfig(config.id, {
-                    requestKeyDistribution: event.target.value as RequestKeyDistribution,
-                  })}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      requestKeyDistribution: event.target.value as RequestKeyDistribution,
+                    })
+                  }
                 >
                   <option value="uniform">Uniform</option>
                   <option value="zipfian">Zipfian / hot key</option>
@@ -1127,9 +1752,11 @@ export const PropertiesPanel: React.FC = () => {
                   min="1"
                   className={styles.input}
                   value={config.requestKeySpaceSize}
-                  onChange={(event) => updateNodeConfig(config.id, {
-                    requestKeySpaceSize: Math.max(1, parseInt(event.target.value, 10) || 1),
-                  })}
+                  onChange={(event) =>
+                    updateNodeConfig(config.id, {
+                      requestKeySpaceSize: Math.max(1, parseInt(event.target.value, 10) || 1),
+                    })
+                  }
                 />
               </div>
             </>
@@ -1145,11 +1772,15 @@ export const PropertiesPanel: React.FC = () => {
                     min="1"
                     className={styles.input}
                     value={config.consumerGroups}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      consumerGroups: Math.max(1, parseInt(event.target.value, 10) || 1),
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        consumerGroups: Math.max(1, parseInt(event.target.value, 10) || 1),
+                      } as Partial<typeof config>)
+                    }
                   />
-                  <p className={styles.fieldHint}>Each group receives one logical copy; members within a group share partitions.</p>
+                  <p className={styles.fieldHint}>
+                    Each group receives one logical copy; members within a group share partitions.
+                  </p>
                 </div>
               ) : null}
 
@@ -1161,9 +1792,11 @@ export const PropertiesPanel: React.FC = () => {
                     min="1"
                     className={styles.input}
                     value={config.subscribersPerTopic}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      subscribersPerTopic: Math.max(1, parseInt(event.target.value, 10) || 1),
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        subscribersPerTopic: Math.max(1, parseInt(event.target.value, 10) || 1),
+                      } as Partial<typeof config>)
+                    }
                   />
                 </div>
               ) : null}
@@ -1176,9 +1809,11 @@ export const PropertiesPanel: React.FC = () => {
                     min="1"
                     className={styles.input}
                     value={config.fanoutFactor}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      fanoutFactor: Math.max(1, parseInt(event.target.value, 10) || 1),
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        fanoutFactor: Math.max(1, parseInt(event.target.value, 10) || 1),
+                      } as Partial<typeof config>)
+                    }
                   />
                 </div>
               ) : null}
@@ -1189,9 +1824,11 @@ export const PropertiesPanel: React.FC = () => {
                   <select
                     className={styles.select}
                     value={config.deliveryGuarantee}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      deliveryGuarantee: event.target.value as DeliveryGuarantee,
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        deliveryGuarantee: event.target.value as DeliveryGuarantee,
+                      } as Partial<typeof config>)
+                    }
                   >
                     <option value="at_most_once">At most once</option>
                     <option value="at_least_once">At least once</option>
@@ -1206,9 +1843,11 @@ export const PropertiesPanel: React.FC = () => {
                   <select
                     className={styles.select}
                     value={config.orderingGuarantee}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      orderingGuarantee: event.target.value as MessageOrdering,
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        orderingGuarantee: event.target.value as MessageOrdering,
+                      } as Partial<typeof config>)
+                    }
                   >
                     <option value="FIFO">Global FIFO</option>
                     <option value="Partition Key">Partition-key order</option>
@@ -1225,9 +1864,11 @@ export const PropertiesPanel: React.FC = () => {
                     min="0"
                     className={styles.input}
                     value={config.producerAckLatencyMs}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      producerAckLatencyMs: Math.max(0, Number(event.target.value) || 0),
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        producerAckLatencyMs: Math.max(0, Number(event.target.value) || 0),
+                      } as Partial<typeof config>)
+                    }
                   />
                 </div>
               ) : null}
@@ -1240,9 +1881,11 @@ export const PropertiesPanel: React.FC = () => {
                     min="1"
                     className={styles.input}
                     value={config.consumerProcessingLatencyMs}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      consumerProcessingLatencyMs: Math.max(1, Number(event.target.value) || 1),
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        consumerProcessingLatencyMs: Math.max(1, Number(event.target.value) || 1),
+                      } as Partial<typeof config>)
+                    }
                   />
                 </div>
               ) : null}
@@ -1255,9 +1898,14 @@ export const PropertiesPanel: React.FC = () => {
                     min="1"
                     className={styles.input}
                     value={config.consumerThroughputPerSec}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      consumerThroughputPerSec: Math.max(1, parseInt(event.target.value, 10) || 1),
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        consumerThroughputPerSec: Math.max(
+                          1,
+                          parseInt(event.target.value, 10) || 1,
+                        ),
+                      } as Partial<typeof config>)
+                    }
                   />
                 </div>
               ) : null}
@@ -1270,9 +1918,11 @@ export const PropertiesPanel: React.FC = () => {
                     min="0"
                     className={styles.input}
                     value={config.retryLimit}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      retryLimit: Math.max(0, parseInt(event.target.value, 10) || 0),
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        retryLimit: Math.max(0, parseInt(event.target.value, 10) || 0),
+                      } as Partial<typeof config>)
+                    }
                   />
                 </div>
               ) : null}
@@ -1285,9 +1935,11 @@ export const PropertiesPanel: React.FC = () => {
                     min="0"
                     className={styles.input}
                     value={config.retryDelayMs}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      retryDelayMs: Math.max(0, parseInt(event.target.value, 10) || 0),
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        retryDelayMs: Math.max(0, parseInt(event.target.value, 10) || 0),
+                      } as Partial<typeof config>)
+                    }
                   />
                   <p className={styles.fieldHint}>Retries use deterministic exponential backoff.</p>
                 </div>
@@ -1300,9 +1952,11 @@ export const PropertiesPanel: React.FC = () => {
                     type="button"
                     className={styles.actionBtn}
                     aria-pressed={config.deadLetterQueue}
-                    onClick={() => updateNodeConfig(config.id, {
-                      deadLetterQueue: !config.deadLetterQueue,
-                    } as Partial<typeof config>)}
+                    onClick={() =>
+                      updateNodeConfig(config.id, {
+                        deadLetterQueue: !config.deadLetterQueue,
+                      } as Partial<typeof config>)
+                    }
                   >
                     Dead-letter queue {config.deadLetterQueue ? 'ON' : 'OFF'}
                   </button>
@@ -1317,9 +1971,11 @@ export const PropertiesPanel: React.FC = () => {
                     min="1"
                     className={styles.input}
                     value={config.maxDepth}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      maxDepth: Math.max(1, parseInt(event.target.value, 10) || 1),
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        maxDepth: Math.max(1, parseInt(event.target.value, 10) || 1),
+                      } as Partial<typeof config>)
+                    }
                   />
                 </div>
               ) : null}
@@ -1332,9 +1988,11 @@ export const PropertiesPanel: React.FC = () => {
                     step="0.1"
                     className={styles.input}
                     value={config.retentionHours}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      retentionHours: Math.max(0, Number(event.target.value) || 0),
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        retentionHours: Math.max(0, Number(event.target.value) || 0),
+                      } as Partial<typeof config>)
+                    }
                   />
                 </div>
               ) : null}
@@ -1344,9 +2002,11 @@ export const PropertiesPanel: React.FC = () => {
                   <select
                     className={styles.select}
                     value={config.overflowPolicy}
-                    onChange={(event) => updateNodeConfig(config.id, {
-                      overflowPolicy: event.target.value as QueueOverflowPolicy,
-                    } as Partial<typeof config>)}
+                    onChange={(event) =>
+                      updateNodeConfig(config.id, {
+                        overflowPolicy: event.target.value as QueueOverflowPolicy,
+                      } as Partial<typeof config>)
+                    }
                   >
                     <option value="reject_newest">Reject newest message</option>
                     <option value="drop_oldest">Drop oldest pending delivery</option>

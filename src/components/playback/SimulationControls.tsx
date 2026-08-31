@@ -10,6 +10,7 @@ import {
   Waves,
   Zap,
   Activity,
+  Square,
 } from 'lucide-react';
 import { useStore } from '../../store/use-store';
 import { simulationRuntime as simBridge } from '../../engine/simulation-runtime';
@@ -36,7 +37,9 @@ export const SimulationControls: React.FC = () => {
   const [qpsText, setQpsText] = React.useState(String(trafficConfig.baseQps));
   const [seedText, setSeedText] = React.useState(String(trafficConfig.seed ?? 1));
   const [customKeysText, setCustomKeysText] = React.useState(() =>
-    (trafficConfig.customRequestKeys || []).map((entry) => `${entry.key}:${entry.weight}`).join(','),
+    (trafficConfig.customRequestKeys || [])
+      .map((entry) => `${entry.key}:${entry.weight}`)
+      .join(','),
   );
 
   React.useEffect(() => {
@@ -48,7 +51,7 @@ export const SimulationControls: React.FC = () => {
   const applySeed = () => {
     const value = Number(seedText);
     if (!Number.isFinite(value)) return setSeedText(String(trafficConfig.seed ?? 1));
-    const seed = (Math.floor(value) >>> 0) || 1;
+    const seed = Math.floor(value) >>> 0 || 1;
     setSeedText(String(seed));
     setTrafficConfig({ seed });
   };
@@ -73,6 +76,10 @@ export const SimulationControls: React.FC = () => {
 
   const handleStep = () => {
     simBridge.step();
+  };
+
+  const handleStop = () => {
+    simBridge.stop();
   };
 
   const handleReset = () => {
@@ -156,6 +163,16 @@ export const SimulationControls: React.FC = () => {
 
         <button
           className={styles.controlBtn}
+          onClick={handleStop}
+          disabled={!hasNodes || simState === 'idle'}
+          title="Stop simulation"
+          aria-label="Stop simulation"
+        >
+          <Square size={13} />
+        </button>
+
+        <button
+          className={styles.controlBtn}
           onClick={handleStep}
           disabled={!hasNodes || isRunning}
           title="Step forward by 1 tick"
@@ -194,12 +211,16 @@ export const SimulationControls: React.FC = () => {
       </div>
 
       <div className={styles.configGroup}>
-        <label className={styles.label} htmlFor="request-key-distribution">Keys</label>
+        <label className={styles.label} htmlFor="request-key-distribution">
+          Keys
+        </label>
         <select
           id="request-key-distribution"
           className={styles.compactSelect}
           value={trafficConfig.requestKeyDistribution || 'uniform'}
-          onChange={(event) => handleKeyDistributionChange(event.target.value as RequestKeyDistribution)}
+          onChange={(event) =>
+            handleKeyDistributionChange(event.target.value as RequestKeyDistribution)
+          }
           title="Request-key popularity distribution"
         >
           <option value="uniform">Uniform</option>
@@ -220,7 +241,9 @@ export const SimulationControls: React.FC = () => {
       </div>
 
       <div className={styles.configGroup}>
-        <label className={styles.label} htmlFor="simulation-qps">QPS</label>
+        <label className={styles.label} htmlFor="simulation-qps">
+          QPS
+        </label>
         <input
           id="simulation-qps"
           type="number"
@@ -235,10 +258,23 @@ export const SimulationControls: React.FC = () => {
       </div>
 
       <div className={styles.configGroup}>
-        <label className={styles.label} htmlFor="simulation-seed">Seed</label>
-        <input id="simulation-seed" aria-label="Simulation seed" type="number" className={styles.qpsInput}
-          value={seedText} onChange={(event) => setSeedText(event.target.value)} onBlur={applySeed} min="1" step="1" />
-        <button className={styles.controlBtn} onClick={copySeed} title="Copy simulation seed">Copy</button>
+        <label className={styles.label} htmlFor="simulation-seed">
+          Seed
+        </label>
+        <input
+          id="simulation-seed"
+          aria-label="Simulation seed"
+          type="number"
+          className={styles.qpsInput}
+          value={seedText}
+          onChange={(event) => setSeedText(event.target.value)}
+          onBlur={applySeed}
+          min="1"
+          step="1"
+        />
+        <button className={styles.controlBtn} onClick={copySeed} title="Copy simulation seed">
+          Copy
+        </button>
       </div>
 
       {/* Segmented Speed Selector */}
@@ -270,7 +306,9 @@ export const SimulationControls: React.FC = () => {
       {/* Telemetry Stats */}
       <div className={styles.statsCluster}>
         <div className={styles.statItem}>
-          <span className={styles.statVal}>{(metrics.totalRequestsOffered ?? metrics.totalRequestsSent).toLocaleString()}</span>
+          <span className={styles.statVal}>
+            {(metrics.totalRequestsOffered ?? metrics.totalRequestsSent).toLocaleString()}
+          </span>
           <span className={styles.statLbl}>Offered</span>
         </div>
         <div className={styles.statItem}>

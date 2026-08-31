@@ -37,8 +37,12 @@
 }
 
 @keyframes pulse {
-  0% { opacity: 0.4; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .miniTitle {
@@ -126,6 +130,62 @@
   z-index: 25;
   user-select: none;
   font-family: var(--font-sans);
+}
+
+@media (max-width: 900px) {
+  .drawerContainer {
+    height: min(56dvh, 440px);
+  }
+  .drawerHeader {
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .headerLeft {
+    min-width: 0;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .subTabs {
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .tabBtn {
+    min-height: 44px;
+    white-space: nowrap;
+  }
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+  .drawerBody {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 640px) and (orientation: portrait) {
+  .miniTickerBar {
+    padding: 0 8px;
+  }
+  .miniTickerLeft > :nth-child(n + 5) {
+    display: none;
+  }
+  .drawerContainer {
+    height: 64dvh;
+  }
+  .btn,
+  .closeBtn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .miniPulseDot,
+  .miniBottleneckPill {
+    animation: none;
+  }
 }
 
 .drawerHeader {

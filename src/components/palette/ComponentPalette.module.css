@@ -158,3 +158,21 @@
 .addBtn:hover {
   background-color: var(--accent-subtle);
 }
+
+@media (pointer: coarse), (max-width: 640px) {
+  .componentCard,
+  .categoryHeader,
+  .addBtn {
+    min-height: 44px;
+  }
+  .addBtn {
+    min-width: 44px;
+    opacity: 1;
+  }
+  .searchBox {
+    min-height: 44px;
+  }
+  .searchInput {
+    font-size: 16px;
+  }
+}

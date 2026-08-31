@@ -11,6 +11,36 @@
   user-select: none;
 }
 
+@media (max-width: 1100px) {
+  .panel {
+    position: fixed;
+    top: 54px;
+    right: 0;
+    bottom: 0;
+    width: min(380px, calc(100vw - 32px));
+    min-width: 0;
+    height: auto;
+    z-index: 46;
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+@media (max-width: 640px) {
+  .panel {
+    width: 100vw;
+  }
+  .closeBtn,
+  .actionBtn,
+  .healthOption {
+    min-height: 44px;
+  }
+  .input,
+  .select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
 .panelHeader {
   display: flex;
   align-items: center;

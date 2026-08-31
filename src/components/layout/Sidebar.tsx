@@ -7,12 +7,16 @@ interface SidebarProps {
   paletteSlot?: React.ReactNode;
   scenariosSlot?: React.ReactNode;
   calculatorSlot?: React.ReactNode;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   paletteSlot,
   scenariosSlot,
   calculatorSlot,
+  isOpen = true,
+  onClose,
 }) => {
   const { activeSidebarTab, setActiveSidebarTab } = useStore();
 
@@ -29,39 +33,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [setActiveSidebarTab]);
 
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.tabsHeader}>
-        <button
-          className={`${styles.tabBtn} ${activeSidebarTab === 'palette' ? styles.tabBtnActive : ''}`}
-          onClick={() => setActiveSidebarTab('palette')}
-          title="Component Palette (1)"
-        >
-          <Box size={15} />
-          <span>Palette</span>
-        </button>
-        <button
-          className={`${styles.tabBtn} ${activeSidebarTab === 'scenarios' ? styles.tabBtnActive : ''}`}
-          onClick={() => setActiveSidebarTab('scenarios')}
-          title="101 System Design Scenarios (2)"
-        >
-          <BookOpen size={15} />
-          <span>Scenarios</span>
-        </button>
-        <button
-          className={`${styles.tabBtn} ${activeSidebarTab === 'calculator' ? styles.tabBtnActive : ''}`}
-          onClick={() => setActiveSidebarTab('calculator')}
-          title="Capacity Calculator (3)"
-        >
-          <Calculator size={15} />
-          <span>Calculator</span>
-        </button>
-      </div>
+    <>
+      <button
+        type="button"
+        className={`${styles.backdrop} ${isOpen ? styles.backdropOpen : ''}`}
+        aria-label="Close component sidebar"
+        tabIndex={isOpen ? 0 : -1}
+        onClick={onClose}
+      />
+      <aside
+        className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}
+        aria-label="Design tools"
+      >
+        <div className={styles.tabsHeader}>
+          <button
+            className={`${styles.tabBtn} ${activeSidebarTab === 'palette' ? styles.tabBtnActive : ''}`}
+            onClick={() => setActiveSidebarTab('palette')}
+            title="Component Palette (1)"
+          >
+            <Box size={15} />
+            <span>Palette</span>
+          </button>
+          <button
+            className={`${styles.tabBtn} ${activeSidebarTab === 'scenarios' ? styles.tabBtnActive : ''}`}
+            onClick={() => setActiveSidebarTab('scenarios')}
+            title="101 System Design Scenarios (2)"
+          >
+            <BookOpen size={15} />
+            <span>Scenarios</span>
+          </button>
+          <button
+            className={`${styles.tabBtn} ${activeSidebarTab === 'calculator' ? styles.tabBtnActive : ''}`}
+            onClick={() => setActiveSidebarTab('calculator')}
+            title="Capacity Calculator (3)"
+          >
+            <Calculator size={15} />
+            <span>Calculator</span>
+          </button>
+        </div>
 
-      <div className={styles.tabContent}>
-        {activeSidebarTab === 'palette' && paletteSlot}
-        {activeSidebarTab === 'scenarios' && scenariosSlot}
-        {activeSidebarTab === 'calculator' && calculatorSlot}
-      </div>
-    </aside>
+        <div className={styles.tabContent}>
+          {activeSidebarTab === 'palette' && paletteSlot}
+          {activeSidebarTab === 'scenarios' && scenariosSlot}
+          {activeSidebarTab === 'calculator' && calculatorSlot}
+        </div>
+      </aside>
+    </>
   );
 };
