@@ -1,0 +1,10 @@
+# Repository owner is the required reviewer until component teams are established.
+* @amanalip
+
+# High-risk domains retain explicit ownership for review routing.
+/src/engine/ @amanalip
+/src/model/ @amanalip
+/src/scenarios/ @amanalip
+/src/components/ @amanalip
+/.github/workflows/ @amanalip
+/SECURITY.md @amanalip

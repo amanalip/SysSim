@@ -1,8 +1,9 @@
 # Security Policy
 
-## Supported version
+## Supported versions
 
-Security fixes are applied to the latest commit on `main`. SysSim is a static, client-side
+Security fixes are applied to the latest published major version and the latest commit on `main`.
+Older tags are unsupported; users should reproduce reports against the current release. SysSim is a static, client-side
 educational simulator deployed through GitHub Pages; it has no application backend or server-side
 secret store.
 

@@ -64,22 +64,58 @@ npm run dev
 
 Use `npm ci` for clean, reproducible installs in CI and fresh checkouts. Use `npm install` only when intentionally changing dependencies and commit the resulting lockfile update.
 
-Visit `http://localhost:5173/SysSim/` in a current Chromium-based desktop browser. The currently supported viewport is 1280 × 720 CSS pixels or larger with keyboard and mouse/trackpad input. Other browsers, touch input, and smaller layouts are currently best effort; see the [supported environment](docs/product-contract.md#supported-environment).
+Visit `http://localhost:5173/SysSim/` during local development. Vite intentionally uses the same `/SysSim/` base path as GitHub Pages; `http://localhost:5173/` is not the application route. The deployed application is served from `https://amanalip.github.io/SysSim/`. Direct deployment routes are recovered by `public/404.html`, including architecture data stored in the URL hash.
+
+The supported browser and viewport matrix is maintained in the [product contract](docs/product-contract.md#supported-environment).
 
 ---
 
 ## Development Scripts
 
-```bash
-# Run unit test suites
-npm run test
+| Script                                          | Purpose                                                              |
+| ----------------------------------------------- | -------------------------------------------------------------------- |
+| `npm run dev`                                   | Start the Vite development server at `/SysSim/`.                     |
+| `npm run build`                                 | Type-check and create production assets in `dist/`.                  |
+| `npm run preview`                               | Serve the production build locally.                                  |
+| `npm run test` / `test:watch` / `test:coverage` | Run Vitest once, interactively, or with enforced coverage.           |
+| `npm run test:accessibility`                    | Run focused automated accessibility contracts.                       |
+| `npm run test:performance`                      | Run bounded engine and rendering performance tests.                  |
+| `npm run test:e2e` / `test:e2e:release`         | Run Playwright locally or across Chromium, Firefox, and WebKit.      |
+| `npm run test:e2e:production`                   | Build and test production assets under the `/SysSim/` base path.     |
+| `npm run lint` / `lint:fix`                     | Check or repair lint violations.                                     |
+| `npm run typecheck`                             | Check TypeScript without emitting files.                             |
+| `npm run format` / `format:check`               | Write or verify Prettier formatting.                                 |
+| `npm run check:duplicates`                      | Enforce the duplicate-code budget and write a report.                |
+| `npm run check:bundle`                          | Build and enforce JavaScript/CSS bundle budgets.                     |
+| `npm run check:security`                        | Fail on high-severity npm advisories.                                |
+| `npm run check:licenses`                        | Validate dependency licenses against project policy.                 |
+| `npm run check:scenario-links`                  | Verify scenario citation reachability and classify restricted hosts. |
+| `npm run test:scenario-content`                 | Audit scenario structure, provenance, and reference graphs.          |
+| `npm run generate:sbom`                         | Generate a CycloneDX release SBOM.                                   |
+| `npm run release:verify`                        | Run the reproducible local release gate.                             |
 
-# Run type checks and compile production build
-npm run build
+## Data and privacy
 
-# Preview production build locally
-npm run preview
-```
+- JSON exports and browser snapshots contain component names, positions, configuration, zones, and traffic settings. Treat them as architecture documents.
+- Snapshot slots and learning progress remain in browser `localStorage` until cleared. SysSim has no application server receiving them.
+- Share links contain compressed architecture JSON in the URL hash. The hash is not normally sent as an HTTP request, but the complete URL can remain in browser history, screenshots, clipboard managers, support tickets, or analytics tooling that reads the address.
+- PNG exports contain the visible canvas. Diagnostic exports deliberately exclude architecture names, configuration values, scenario notes, URL hashes, and request traces.
+- Imported JSON and hash data are untrusted, bounded, migrated, and schema-validated before entering application state.
+
+See [persistence and privacy](docs/persistence.md), [browser security](docs/browser-security.md), and the [security policy](SECURITY.md).
+
+## How outputs are derived
+
+Simulation metrics come from deterministic, seeded discrete events and distinguish offered, accepted, completed, failed, and dropped requests. Rolling percentiles use bounded successful-request windows. Capacity and cost calculators use visible formulas and user-entered assumptions; they do not query providers or predict production performance. Definitions and sampling windows are documented in [metrics semantics](docs/metrics-semantics.md), [capacity calculator](docs/capacity-calculator.md), and [cost estimation](docs/cost-estimation.md).
+
+## Project documentation
+
+- [Architecture overview](docs/architecture.md) and [module boundaries](docs/architecture-boundaries.md)
+- [Testing strategy](docs/testing.md) and [release process](docs/release-process.md)
+- [Contributing](CONTRIBUTING.md), [security](SECURITY.md), and [changelog](CHANGELOG.md)
+- [Persistence schemas](docs/persistence.md), [simulation semantics](docs/simulation-clock.md), and [quality rubric](docs/quality-rubric.md)
+
+The feature list above is reviewed by the automated product-claim and README contract tests. A feature must be implemented, documented with its limitations, and covered by evidence before it is added.
 
 ---
 

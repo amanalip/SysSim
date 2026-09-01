@@ -1,0 +1,31 @@
+name: Bug report
+description: Report reproducible incorrect behavior without including private architecture data.
+title: '[Bug]: '
+labels: [bug]
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Observed and expected behavior
+      description: Explain what happened and what should have happened.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include steps, seed, browser, and a sanitized architecture if needed.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Privacy-safe diagnostics
+      description: Paste the SysSim diagnostic export. Remove anything you consider sensitive.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed credentials, private names, URL hashes, and proprietary topology data.
+          required: true
