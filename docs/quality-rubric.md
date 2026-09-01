@@ -144,5 +144,6 @@ A score below 95 may still describe a useful educational project, but it must no
 | 2026-08-27 | `042d627` |        Not scored | Not evaluated   |           — | Rubric established; verified rescore deferred to task 21 | Tasks 16–20 definition work; no score inferred from implementation confidence. |
 | 2026-08-27 | `438a79d` |                 6 | −43; cap 49     |           0 | Not production-ready                                     | [Dated quality report](quality-report-2026-08-27.md)                           |
 | 2026-08-31 | `877b021` |                67 | −15; cap 69     |          52 | Not production-ready; WebKit host dependencies missing   | [Dated quality report](quality-report-2026-08-31.md)                           |
+| 2026-09-01 | `466ce66` |                79 | None            |          79 | Not production-ready; independent evidence remains       | [Dated quality report](quality-report-2026-09-01.md)                           |
 
 Future entries must preserve earlier rows. Corrections should be appended with an explanation rather than silently rewriting historical results.
