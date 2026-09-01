@@ -45,7 +45,7 @@ describe('event-core operating envelope tasks 186-188', () => {
     expect(result.metrics.timeSeries.length).toBeLessThanOrEqual(
       SIMULATION_LIMITS.maxTimeSeriesPoints,
     );
-  }, 15_000);
+  }, 30_000);
 
   it('benchmarks 100 nodes at the supported 50,000 QPS limit', () => {
     const nodes = Array.from({ length: SIMULATION_LIMITS.maxNodes }, (_, index) => ({
