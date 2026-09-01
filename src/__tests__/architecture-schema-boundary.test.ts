@@ -341,6 +341,76 @@ describe('versioned architecture schema tasks 222-236', () => {
     });
   });
 
+  it('validates advanced workload, network, and version fields', () => {
+    const advanced = state({
+      engineVersion: '1.0.0',
+      trafficConfig: {
+        ...state().trafficConfig!,
+        operationMix: { read: 70, write: 30 },
+        workloadTrace: [{ atMs: 0, operation: 'read' }],
+        payloadDistribution: 'lognormal',
+        requestPayloadMinKb: 1,
+        requestPayloadMaxKb: 8,
+        responsePayloadMinKb: 2,
+        responsePayloadMaxKb: 16,
+        warmUpSec: 5,
+        measurementDurationSec: 60,
+      },
+      edges: [
+        {
+          ...state().edges[0],
+          data: {
+            ...state().edges[0].data,
+            lossRatePercent: 0.5,
+            retryLimit: 3,
+            connectionSetupMs: 15,
+            crossZoneCostPerGb: 0.02,
+          },
+        },
+      ],
+      simulationMetadata: {
+        savedAt: 100,
+        appVersion: '1.0.0',
+        engineVersion: '1.0.0',
+        state: 'idle',
+      },
+    });
+    expect(validateArchitectureState(advanced).trafficConfig).toMatchObject({
+      payloadDistribution: 'lognormal',
+      warmUpSec: 5,
+      measurementDurationSec: 60,
+    });
+
+    const invalidChanges: Array<(draft: any) => void> = [
+      (draft) => {
+        draft.trafficConfig = 'invalid';
+      },
+      (draft) => {
+        draft.trafficConfig.payloadDistribution = 'poisson';
+      },
+      (draft) => {
+        draft.trafficConfig.requestPayloadMinKb = -1;
+      },
+      (draft) => {
+        draft.edges[0].data.lossRatePercent = 101;
+      },
+      (draft) => {
+        draft.edges[0].data.retryLimit = 21;
+      },
+      (draft) => {
+        draft.edges[0].data.connectionSetupMs = -1;
+      },
+      (draft) => {
+        draft.edges[0].data.crossZoneCostPerGb = -1;
+      },
+    ];
+    invalidChanges.forEach((change, index) => {
+      const draft = state() as any;
+      change(draft);
+      expect(() => validateArchitectureState(draft), `invalid advanced field ${index}`).toThrow();
+    });
+  });
+
   it('formats structured, native, and unknown validation failures', () => {
     expect(formatArchitectureError(new ArchitectureValidationError(['one', 'two']))).toBe(
       'Invalid architecture: one; two',

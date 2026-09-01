@@ -4,7 +4,9 @@ import {
   SimulationBridgeEvents,
   SimulationBridgeSnapshot,
 } from '../engine/sim-bridge';
+import { SysSimEngine } from '../engine/simulator';
 import { isWorkerCommand, isWorkerResponse, WorkerCommand } from '../engine/worker-protocol';
+import { createInitialMetrics } from '../store/slices/initial-state';
 
 function fixture() {
   let snapshot: SimulationBridgeSnapshot = {
@@ -73,6 +75,40 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
       data: { type: 'GRAPH_ACK', payload: { graphRevision: 4 } },
     } as MessageEvent);
     expect(f.posted).toContainEqual({ type: 'START' });
+
+    bridge.syncConfig({ baseQps: 25 });
+    bridge.setSpeed(2);
+    bridge.pause();
+    bridge.resume();
+    bridge.step();
+    bridge.stop();
+    bridge.reset();
+    f.worker.onmessage?.({
+      data: {
+        type: 'TICK_UPDATE',
+        payload: {
+          graphRevision: 4,
+          elapsedSimulationMs: 100,
+          metrics: createInitialMetrics(),
+          activeRequests: [],
+          recentRequests: [],
+        },
+      },
+    } as MessageEvent);
+    expect(f.events.onTick).toHaveBeenCalledOnce();
+    expect(f.posted.map((message) => message.type)).toEqual(
+      expect.arrayContaining([
+        'UPDATE_CONFIG',
+        'SET_SPEED',
+        'PAUSE',
+        'RESUME',
+        'STEP',
+        'STOP',
+        'RESET',
+      ]),
+    );
+    bridge.dispose();
+    expect(f.posted.at(-1)).toEqual({ type: 'DISPOSE' });
   });
 
   it('ignores invalid and stale tick payloads', () => {
@@ -118,6 +154,76 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
     expect(clearIntervalFn).toHaveBeenCalledTimes(2);
     bridge.pause();
     expect(clearIntervalFn).toHaveBeenCalledTimes(3);
+  });
+
+  it('executes the complete fallback lifecycle and publishes measured ticks', () => {
+    const f = fixture();
+    const metrics = createInitialMetrics();
+    const engine = {
+      setGraph: vi.fn(),
+      setConfig: vi.fn(),
+      setSpeedMultiplier: vi.fn(),
+      start: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      step: vi.fn(() => ({ metrics, activeRequests: [], recentRequests: [] })),
+      stop: vi.fn(),
+      reset: vi.fn(),
+      getElapsedSimulationMs: vi.fn(() => 250),
+    } as unknown as SysSimEngine;
+    let timerCallback: (() => void) | undefined;
+    const setIntervalFn = vi.fn((callback: TimerHandler) => {
+      timerCallback = callback as () => void;
+      return 1 as unknown as ReturnType<typeof setInterval>;
+    });
+    const clearIntervalFn = vi.fn();
+    let currentTime = 1_000;
+    const bridge = new SimulationBridge(f.getSnapshot, f.events, {
+      workerFactory: () => {
+        throw 'worker unavailable';
+      },
+      engineFactory: () => engine,
+      setIntervalFn: setIntervalFn as unknown as typeof setInterval,
+      clearIntervalFn,
+      now: () => currentTime,
+    });
+
+    bridge.start();
+    currentTime += 50;
+    timerCallback?.();
+    bridge.step();
+    bridge.pause();
+    bridge.resume();
+    bridge.stop();
+    bridge.reset();
+
+    expect(f.events.onError).toHaveBeenCalledWith('worker', 'Simulation worker could not start');
+    expect(engine.start).toHaveBeenCalledOnce();
+    expect(engine.pause).toHaveBeenCalledOnce();
+    expect(engine.resume).toHaveBeenCalledOnce();
+    expect(engine.stop).toHaveBeenCalledOnce();
+    expect(engine.reset).toHaveBeenCalledOnce();
+    expect(engine.step).toHaveBeenNthCalledWith(1, 50);
+    expect(engine.step).toHaveBeenNthCalledWith(2, 100);
+    expect(f.events.onTick).toHaveBeenCalledTimes(2);
+    expect(f.events.onTick).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        graphRevision: 4,
+        elapsedSimulationMs: 250,
+        performance: expect.objectContaining({ messageBytes: expect.any(Number) }),
+      }),
+    );
+    expect(clearIntervalFn).toHaveBeenCalled();
+  });
+
+  it('uses the built-in engine fallback when workers are unavailable', () => {
+    const f = fixture();
+    vi.stubGlobal('Worker', undefined);
+    const bridge = new SimulationBridge(f.getSnapshot, f.events);
+    bridge.initialize();
+    expect(bridge.getMode()).toBe('fallback');
+    expect(f.events.onModeChange).toHaveBeenCalledWith('fallback');
+    bridge.dispose();
   });
 
   it('recovers from runtime worker failure and terminates resources on disposal', () => {
