@@ -17,6 +17,6 @@ A maintainer performs and records the exploratory workflow in [testing](testing.
 
 ## Rollback
 
-Locate the last green deployed SHA in the Pages environment history. Prefer `git revert` of the offending commit(s), merge the revert through normal CI, and allow Pages to deploy the new qualified head. For an urgent static-site rollback, a maintainer may re-run the Pages workflow against the last known-good tag, then must open a follow-up issue and restore `main` to a deployable state. Never rewrite published `main` history.
+Locate the last green deployed SHA in the Pages environment history. Prefer `git revert` of the offending commit(s), merge the revert through normal CI, and allow Pages to deploy the new qualified head. For an urgent static-site rollback, a maintainer may manually dispatch the Pages workflow with the last known-good tag or commit; the workflow resolves it to a full SHA and refuses any revision without a successful push-triggered complete CI run. The maintainer must then open a follow-up issue and restore `main` to a deployable state. Never rewrite published `main` history.
 
 After rollback, verify the root, `/SysSim/`, worker and dynamic assets, `404.html`, a shared hash, and the diagnostic build SHA. Record the rollback reason and affected versions in the changelog/release notes.
