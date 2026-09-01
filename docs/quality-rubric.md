@@ -2,6 +2,8 @@
 
 **Rubric version:** 1.0
 
+**Frozen for final review:** September 1, 2026. Version 1.0 weights, pass conditions, deductions, and caps must not change during the final-review cycle. Any future rubric change requires version 1.1 or later, a dated rationale, and a new score; historical scores remain evaluated against their recorded version.
+
 This rubric defines a reproducible score out of 100 for SysSim. It measures verified repository quality at a specific revision and date; it does not permanently certify the project or replace the release gates below.
 
 ## Scoring method
