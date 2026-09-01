@@ -377,7 +377,7 @@ export const COMMUNICATION_SCENARIOS: Scenario[] = [
       {
         title: 'Kamailio SIP Server Architecture',
         authorOrOrg: 'Kamailio Open Source Project',
-        url: 'https://www.kamailio.org/w/features/',
+        url: 'https://www.kamailio.org/w/info/',
       },
     ],
     trafficPreset: {
