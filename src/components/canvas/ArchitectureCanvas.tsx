@@ -228,6 +228,8 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
       const focusedNodeId = focusedNode?.dataset.id;
       if (focusedNodeId && (e.key === 'Enter' || e.key === ' ')) {
         e.preventDefault();
+        e.stopPropagation();
+        e.nativeEvent.stopImmediatePropagation();
         selectNode(focusedNodeId);
         return;
       }
@@ -242,6 +244,8 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
         const node = nodes.find((candidate) => candidate.id === focusedNodeId);
         if (!node) return;
         e.preventDefault();
+        e.stopPropagation();
+        e.nativeEvent.stopImmediatePropagation();
         beginNodeDragHistory();
         updateNodePosition(focusedNodeId, {
           x: node.position.x + movement.x,
