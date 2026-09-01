@@ -344,7 +344,7 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
       className={styles.canvasContainer}
       onDragOver={onDragOver}
       onDrop={onDrop}
-      onKeyDown={handleKeyDown}
+      onKeyDownCapture={handleKeyDown}
       onContextMenu={(e) => handleContextMenu(e, null)}
       tabIndex={0}
       role="region"

@@ -48,7 +48,7 @@ async function check(url) {
       signal: controller.signal,
       headers: { 'user-agent': 'SysSimScenarioLinkChecker/1.0' },
     });
-    if (response.status === 405)
+    if (response.status === 405 || response.status >= 500)
       response = await fetch(url, {
         method: 'GET',
         redirect: 'follow',
