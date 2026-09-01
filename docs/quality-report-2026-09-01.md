@@ -3,12 +3,12 @@
 **Rubric:** [SysSim Quality Scoring Rubric 1.0](quality-rubric.md)  
 **Scored commit:** `79f0cb2` (`docs(quality): retain final qualification evidence`)  
 **GitHub CI:** [run 33565823019](https://github.com/amanalip/SysSim/actions/runs/33565823019)  
-**Evidence subtotal:** **82/100**  
+**Evidence subtotal:** **86/100**  
 **Automatic deductions:** **None**  
-**Final score:** **82/100**  
+**Final score:** **86/100**  
 **Release status:** **Not production-ready**
 
-This score applies the frozen all-or-nothing rubric to an immutable, clean commit. It does not award points for implementation when required independent review, branch protection, or a newcomer walkthrough is absent.
+This score applies the frozen all-or-nothing rubric to an immutable, clean commit. It does not award points for implementation when required independent review or a newcomer walkthrough is absent.
 
 ## Verification evidence
 
@@ -27,7 +27,7 @@ This score applies the frozen all-or-nothing rubric to an immutable, clean commi
 | Chromium, Firefox, WebKit      | All three CI jobs passed with artifacts; Chromium/Firefox focused keyboard checks also passed locally                                                     |
 | Production base path           | 2/2 tests passed locally and in CI under `/SysSim/`                                                                                                       |
 | Manual browser QA              | Development app checked at 1440×900 and 390×844; page identity, nonblank UI, console, screenshots, component addition, telemetry, and mobile tools passed |
-| Branch protection              | Failed evidence check: GitHub reports `main` is not protected                                                                                             |
+| Branch protection              | Passed: `main` requires pull requests and all seven documented checks; administrator bypass remains enabled for owner direct pushes                       |
 
 The local CachyOS/Arch host cannot launch Playwright's Ubuntu-linked WebKit bundle because its required `libicu74`, WebKitGTK, Flite, JXL, and backtrace ABI libraries are unavailable. This is recorded as a local-environment limitation, not a scored E2E failure, because the exact scored commit's clean Ubuntu WebKit CI job passed.
 
@@ -48,7 +48,7 @@ The local CachyOS/Arch host cannot launch Playwright's Ubuntu-linked WebKit bund
 | TEST-1  | Pass   |    4/4 | The clean CI coverage job passed its enforced engine/store/validation/calculation thresholds.                                        |
 | TEST-2  | Pass   |    3/3 | Production-worker protocol, lifecycle, error, race, revision, cleanup, and fallback coverage passes.                                 |
 | TEST-3  | Pass   |    3/3 | Critical flows and failure states passed Chromium, Firefox, and WebKit CI jobs with failure artifacts configured.                    |
-| TEST-4  | Fail   |    0/4 | CI contains all required gates and is green, but `main` has no protected-branch configuration to enforce them before merge.          |
+| TEST-4  | Pass   |    4/4 | GitHub protects `main` with all seven documented CI checks; ordinary merges cannot bypass the pull-request qualification path.       |
 | SEC-1   | Pass   |    3/3 | Runtime schemas, unsafe-key rejection, bounds, React escaping, CSP, and security fixtures cover untrusted input/render paths.        |
 | SEC-2   | Pass   |    2/2 | Share privacy, secret-like fields, downloads, navigation, referrer behavior, and recovery controls are tested and documented.        |
 | SEC-3   | Pass   |    2/2 | The scored commit's clean CI dependency audit reports no high or critical vulnerability.                                             |
@@ -78,24 +78,23 @@ The local CachyOS/Arch host cannot launch Playwright's Ubuntu-linked WebKit bund
 | Simulation semantics and core correctness    |     20 |        20 |
 | Product trust and scope accuracy             |      6 |        10 |
 | Reliability and data integrity               |     12 |        12 |
-| Testing and continuous integration           |     10 |        14 |
+| Testing and continuous integration           |     14 |        14 |
 | Security and privacy                         |     10 |        10 |
 | Accessibility                                |      7 |        10 |
 | User experience and platform support         |      5 |         8 |
 | Performance and bounded resource use         |      6 |         6 |
 | Maintainability and developer experience     |      3 |         5 |
 | Documentation, legal, and release governance |      3 |         5 |
-| **Evidence subtotal / final score**          | **82** |   **100** |
+| **Evidence subtotal / final score**          | **86** |   **100** |
 
-No automatic deduction or cap applies: the scored remote commit is clean and all required CI, build, test, browser, accessibility, security, and performance jobs passed. `82 + 0 = 82`.
+No automatic deduction or cap applies: the scored remote commit is clean and all required CI, build, test, browser, accessibility, security, and performance jobs passed. `86 + 0 = 86`.
 
-## Remaining 18 points
+## Remaining 14 points
 
 1. Obtain independent claim and distributed-systems sign-off (TRUST-1).
-2. Protect `main` and require the aggregate release gate before merge (TEST-4).
-3. Complete the qualified accessibility/screen-reader review (A11Y-2).
-4. Complete the unfamiliar expert usability review (UX-1).
-5. Obtain independent architecture/rationale sign-off (MAINT-3).
-6. Record a clean newcomer documentation walkthrough (DOC-1).
+2. Complete the qualified accessibility/screen-reader review (A11Y-2).
+3. Complete the unfamiliar expert usability review (UX-1).
+4. Obtain independent architecture/rationale sign-off (MAINT-3).
+5. Record a clean newcomer documentation walkthrough (DOC-1).
 
-The project improved from 52/100 on August 31 to 82/100 on September 1. It is a strong educational application, but the missing independent evidence and branch enforcement prevent a production-ready claim.
+The project improved from 52/100 on August 31 to 86/100 on September 1. It is a strong educational application, but the missing independent evidence prevents a production-ready claim.

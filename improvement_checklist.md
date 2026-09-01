@@ -629,7 +629,10 @@ Every implementation checkbox from Phase 0 onward has a permanent numeric task I
 - [x] 407. Upload test, coverage, browser trace, and bundle artifacts.
 - [x] 408. Use concurrency cancellation for superseded CI runs where appropriate.
 - [x] 409. Pin or securely manage GitHub Action versions.
-- [ ] 410. Add branch protection requiring all mandatory checks. (Required checks are documented; applying the repository rule is blocked until GitHub CLI authentication is restored.)
+- [x] 410. Add branch protection requiring all mandatory checks.
+
+  - GitHub protects `main` with pull requests, current-branch enforcement, stale-approval dismissal, conversation resolution, linear history, and all seven documented CI checks. Administrator bypass remains enabled so the repository owner can directly push when necessary.
+
 - [x] 411. Ensure deployment depends on successful release-quality checks.
 
 # Phase 5 — Responsive Design and Accessibility

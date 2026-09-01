@@ -11,3 +11,7 @@ Protect `main` with pull requests and require these exact status checks before m
 - `E2E / webkit`
 
 Also dismiss stale approvals when new commits are pushed, require conversations to be resolved, block force pushes and deletion, and require the branch to be current before merging. The Pages deployment is intentionally triggered only after the `CI` workflow completes successfully for a push to `main`.
+
+Administrator bypass remains enabled for the repository owner. Ordinary contributors must use the
+protected pull-request path and satisfy every check above; owner direct pushes are permitted and
+still start the complete CI and Pages qualification workflows.

@@ -77,5 +77,6 @@ tasks 719 and 766.
   remain open and must be completed by people who meet the review criteria.
 - Recurring controls in tasks 724–733 remain open by design and must run whenever their trigger
   occurs.
-- Branch protection is repository state rather than source code. Its status is recorded separately
-  in `docs/branch-protection.md` and the dated quality report.
+- GitHub protects `main` with all seven documented status checks. Administrator bypass remains
+  enabled so the owner can push directly; ordinary contributors must use the qualified pull-request
+  path.
