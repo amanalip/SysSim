@@ -5,6 +5,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   base: '/SysSim/',
+  define: {
+    __BUILD_COMMIT__: JSON.stringify(process.env.GITHUB_SHA?.slice(0, 12) || 'development'),
+    __BUILD_TIMESTAMP__: JSON.stringify(process.env.BUILD_TIMESTAMP || new Date().toISOString()),
+  },
   build: {
     rollupOptions: {
       output: {

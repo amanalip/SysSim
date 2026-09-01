@@ -244,6 +244,11 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({ scenario, onBack
             Only in the reference: {comparison.referenceOnlyComponentTypes.join(', ') || 'none'}.
           </span>
           <span>{comparison.guidance}</span>
+          {comparison.engineCompatibility.status !== 'compatible' ? (
+            <span role="status">
+              Engine compatibility: {comparison.engineCompatibility.message}
+            </span>
+          ) : null}
         </div>
       )}
 

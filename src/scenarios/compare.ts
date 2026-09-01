@@ -1,4 +1,8 @@
 import { SerializedCanvasState } from '../model/types';
+import {
+  compareSimulationEngineVersions,
+  EngineCompatibility,
+} from '../engine/version-compatibility';
 
 export interface ArchitectureComparison {
   sharedComponentTypes: string[];
@@ -9,6 +13,7 @@ export interface ArchitectureComparison {
   userEdgeCount: number;
   referenceEdgeCount: number;
   guidance: string;
+  engineCompatibility: EngineCompatibility;
 }
 
 export function compareArchitectures(
@@ -25,6 +30,10 @@ export function compareArchitectures(
     referenceNodeCount: reference.nodes.length,
     userEdgeCount: user.edges.length,
     referenceEdgeCount: reference.edges.length,
+    engineCompatibility: compareSimulationEngineVersions(
+      user.engineVersion,
+      reference.engineVersion,
+    ),
     guidance:
       'Differences are discussion prompts, not correctness failures. Compare responsibilities, reachable paths, bottlenecks, and failure behavior rather than visual layout.',
   };

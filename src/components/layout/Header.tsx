@@ -29,8 +29,9 @@ import {
 } from '../../utils/sharing';
 import styles from './Header.module.css';
 import { safeErrorMessage } from '../../errors/app-error';
-import { buildDiagnosticReport } from '../../diagnostics/diagnostic-report';
+import { downloadDiagnosticReport } from '../../diagnostics/diagnostic-report';
 import { confirmCanvasReplacement } from '../../utils/destructive-actions';
+import { BUILD_INFO } from '../../platform/build-info';
 
 const ShortcutsModal = lazy(() =>
   import('../modals/ShortcutsModal').then((module) => ({ default: module.ShortcutsModal })),
@@ -155,20 +156,15 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
     }
   };
 
-  const handleCopyDiagnostics = async () => {
-    const report = buildDiagnosticReport({
+  const handleExportDiagnostics = () => {
+    downloadDiagnosticReport({
       simulationSeed: trafficConfig.seed || 1,
       simulationState: simState,
       runtimeMode: simulationRuntimeMode,
       nodeCount: nodes.length,
       edgeCount: edges.length,
     });
-    try {
-      await navigator.clipboard.writeText(report);
-      addToast('Privacy-safe diagnostic report copied', 'success');
-    } catch (error) {
-      addToast(safeErrorMessage(error, 'user'), 'error');
-    }
+    addToast('Privacy-safe diagnostic report downloaded', 'success');
   };
 
   const handleExportJson = () => {
@@ -223,6 +219,12 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
         </div>
         <div className={styles.titleGroup}>
           <span className={styles.title}>SysSim</span>
+          <span
+            className={styles.version}
+            title={`Engine ${BUILD_INFO.engineVersion} · build ${BUILD_INFO.commit}`}
+          >
+            v{BUILD_INFO.applicationVersion}
+          </span>
           <span className={styles.subtitle}>Interactive System Design Simulator</span>
         </div>
         <span className={styles.graphCount}>
@@ -322,8 +324,8 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
 
           <button
             className={styles.actionBtn}
-            onClick={handleCopyDiagnostics}
-            title="Copy privacy-safe app, browser, schema, seed, and performance diagnostics"
+            onClick={handleExportDiagnostics}
+            title={`Download privacy-safe diagnostics for app ${BUILD_INFO.applicationVersion}, engine ${BUILD_INFO.engineVersion}, build ${BUILD_INFO.commit}`}
           >
             <ClipboardCopy size={13} />
             <span>Diagnostics</span>

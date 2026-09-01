@@ -44,6 +44,12 @@
   font-family: var(--font-sans);
 }
 
+.version {
+  color: var(--text-muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
 .subtitle {
   font-size: 11px;
   color: var(--text-muted);
