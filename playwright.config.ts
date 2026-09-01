@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: ['**/deployment.spec.ts'],
   // Canvas/worker scenarios are CPU-heavy; keep each file serial for deterministic local QA.
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

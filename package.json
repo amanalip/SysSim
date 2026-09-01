@@ -24,6 +24,7 @@
     "test:performance": "vitest run src/__tests__/event-core-benchmark.test.ts src/__tests__/capacity-calculator-production.test.ts src/__tests__/scalability-benchmark.test.ts src/__tests__/runtime-performance-and-responsiveness.test.ts src/__tests__/render-performance.test.tsx",
     "test:e2e": "playwright test",
     "test:e2e:release": "playwright test --project=chromium --project=firefox --project=webkit",
+    "test:e2e:production": "npm run build && playwright test --config=playwright.production.config.ts",
     "lint": "eslint . --report-unused-disable-directives",
     "lint:fix": "npm run lint -- --fix",
     "typecheck": "tsc --noEmit",
@@ -35,7 +36,9 @@
     "check:licenses": "node scripts/check-licenses.mjs",
     "generate:sbom": "node scripts/generate-sbom.mjs",
     "test:scenario-content": "vitest run src/__tests__/scenario-catalog-audit.test.ts",
-    "check:scenario-links": "node scripts/check-scenario-links.mjs"
+    "check:scenario-links": "node scripts/check-scenario-links.mjs",
+    "check:release-blockers": "node scripts/check-release-blockers.mjs",
+    "release:verify": "node scripts/verify-release.mjs"
   },
   "dependencies": {
     "@xyflow/react": "^12.4.4",
