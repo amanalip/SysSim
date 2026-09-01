@@ -17,7 +17,7 @@ SysSim's synthetic results are designed to build intuition. They are not product
 - **Failure Exploration & Chaos Mode**: Mark components down, cut connections, and apply simplified fault states. Not every real-world recovery or failover path is modeled.
 - **Heuristic Design Review**: Rules-based prompts identify possible single points of failure, missing cache tiers, and modeled capacity pressure.
 - **Capacity Worksheet**: Deterministic back-of-envelope formulas estimate storage growth, replication multipliers, bandwidth, server count, and cache size from simplified assumptions.
-- **101 System Design Scenarios**: Factchecked scenario library spanning 15 categories with constraints, progressive hints, reference architectures, interview discussion questions, and verified source citations.
+- **101 System Design Scenarios**: Source-reviewed scenario library spanning 15 categories with constraints, progressive hints, reference architectures, interview discussion questions, and dated source citations. Automated checks establish reachability; they do not certify every external claim.
 - **Sharing & Export**: Compress bounded architecture state into URL hashes, export PNG diagrams, and save/load JSON architecture data.
 
 ---

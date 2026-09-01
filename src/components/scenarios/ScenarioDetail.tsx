@@ -324,9 +324,9 @@ export const ScenarioDetail: React.FC<ScenarioDetailProps> = ({ scenario, onBack
         ))}
       </div>
 
-      {/* Verified Source Citations */}
+      {/* Dated source citations */}
       <div className={styles.section}>
-        <div className={styles.sectionTitle}>Verified Citations & References</div>
+        <div className={styles.sectionTitle}>Dated Citations & References</div>
         {scenario.sources.map((src, idx) => (
           <div className={styles.sourceItem} key={`${src.title}-${idx}`}>
             <a
