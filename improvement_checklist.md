@@ -948,135 +948,137 @@ Decision: SysSim is `GPL-3.0-only`; package/release metadata, notices, CI licens
 - [x] 623. Explain the product contract and simulation limitations.
 - [x] 624. Document the exact supported Node.js range.
 - [x] 625. Prefer `npm ci` for reproducible clean installs where appropriate.
-- [ ] 626. Document the GitHub Pages base path and local root URL differences.
-- [ ] 627. List all development scripts, including future lint/type/E2E scripts.
-- [ ] 628. Explain architecture import, export, snapshot, and share privacy implications.
-- [ ] 629. Explain how metrics and calculators derive their outputs.
-- [ ] 630. Link to architecture, testing, contributing, security, and changelog documents.
-- [ ] 631. Keep the feature list generated or reviewed against actual implementation.
+- [x] 626. Document the GitHub Pages base path and local root URL differences.
+- [x] 627. List all development scripts, including future lint/type/E2E scripts.
+- [x] 628. Explain architecture import, export, snapshot, and share privacy implications.
+- [x] 629. Explain how metrics and calculators derive their outputs.
+- [x] 630. Link to architecture, testing, contributing, security, and changelog documents.
+- [x] 631. Keep the feature list generated or reviewed against actual implementation.
 
 ## Add architecture documentation — P2
 
-- [ ] 632. Document module boundaries and dependency direction.
-- [ ] 633. Document store slices and state ownership.
-- [ ] 634. Document the main-thread/worker message flow.
-- [ ] 635. Document simulation entities, events, timing, and routing semantics.
-- [ ] 636. Document persistence schemas and migrations.
-- [ ] 637. Document metrics definitions and sampling windows.
-- [ ] 638. Add decision records for major simulation tradeoffs.
-- [ ] 639. Include diagrams only where they clarify relationships better than prose.
+- [x] 632. Document module boundaries and dependency direction.
+- [x] 633. Document store slices and state ownership.
+- [x] 634. Document the main-thread/worker message flow.
+- [x] 635. Document simulation entities, events, timing, and routing semantics.
+- [x] 636. Document persistence schemas and migrations.
+- [x] 637. Document metrics definitions and sampling windows.
+- [x] 638. Add decision records for major simulation tradeoffs.
+- [x] 639. Include diagrams only where they clarify relationships better than prose.
 
 ## Add contributor and maintenance guidance — P2
 
-- [ ] 640. Add `CONTRIBUTING.md` with setup, branch, test, review, and checklist expectations.
-- [ ] 641. Add `SECURITY.md` with supported versions and reporting instructions.
-- [ ] 642. Add a changelog or release-note process.
-- [ ] 643. Add pull-request and issue templates.
-- [ ] 644. Define code ownership or review responsibilities for engine, scenarios, and UI.
-- [ ] 645. Document how to add a component type without missing defaults, properties, engine behavior, tests, icons, and scenarios.
-- [ ] 646. Document how to add or edit scenarios and verify citations.
-- [ ] 647. Document release and rollback procedures.
+- [x] 640. Add `CONTRIBUTING.md` with setup, branch, test, review, and checklist expectations.
+- [x] 641. Add `SECURITY.md` with supported versions and reporting instructions.
+- [x] 642. Add a changelog or release-note process.
+- [x] 643. Add pull-request and issue templates.
+- [x] 644. Define code ownership or review responsibilities for engine, scenarios, and UI.
+- [x] 645. Document how to add a component type without missing defaults, properties, engine behavior, tests, icons, and scenarios.
+- [x] 646. Document how to add or edit scenarios and verify citations.
+- [x] 647. Document release and rollback procedures.
 
 ## Maintain citation quality — P1
 
-- [ ] 648. Replace the nine URLs returning HTTP 404 during the August 2026 audit.
-- [ ] 649. Investigate or replace the five URLs that failed DNS resolution or timed out.
-- [ ] 650. Treat 403/406 results separately because they may block automated clients while remaining valid in browsers.
-- [ ] 651. Store citation verification dates.
-- [ ] 652. Prefer stable document URLs, DOI links, RFCs, and archived official pages.
-- [ ] 653. Avoid using a generic home page when a specific primary source exists.
-- [ ] 654. Add scheduled reporting for newly broken links.
-- [ ] 655. Review source relevance, not merely HTTP availability.
+- [x] 648. Replace the nine URLs returning HTTP 404 during the August 2026 audit.
+- [x] 649. Investigate or replace the five URLs that failed DNS resolution or timed out.
+- [x] 650. Treat 403/406 results separately because they may block automated clients while remaining valid in browsers.
+- [x] 651. Store citation verification dates.
+- [x] 652. Prefer stable document URLs, DOI links, RFCs, and archived official pages.
+- [x] 653. Avoid using a generic home page when a specific primary source exists.
+- [x] 654. Add scheduled reporting for newly broken links.
+- [x] 655. Review source relevance, not merely HTTP availability.
 
 # Phase 11 — Release Engineering and Operational Readiness
 
 ## Define release quality gates — P1
 
-- [ ] 656. Require clean install, lint, typecheck, unit, integration, build, E2E, accessibility, and security checks.
-- [ ] 657. Require no P0/P1 issue tagged for the release milestone.
-- [ ] 658. Require license and citation checks.
-- [ ] 659. Require bundle and performance budgets.
-- [ ] 660. Require schema migration tests for persistence changes.
-- [ ] 661. Require manual exploratory testing of critical workflows.
-- [ ] 662. Produce release notes with breaking changes and migration behavior.
+- [x] 656. Require clean install, lint, typecheck, unit, integration, build, E2E, accessibility, and security checks.
+- [x] 657. Require no P0/P1 issue tagged for the release milestone.
+- [x] 658. Require license and citation checks.
+- [x] 659. Require bundle and performance budgets.
+- [x] 660. Require schema migration tests for persistence changes.
+- [x] 661. Require manual exploratory testing of critical workflows.
+- [x] 662. Produce release notes with breaking changes and migration behavior.
 
 ## Improve deployment validation — P1/P2
 
-- [ ] 663. Test the built application under the `/SysSim/` base path rather than only the development root.
-- [ ] 664. Run a post-build preview E2E suite against production assets.
-- [ ] 665. Verify worker, favicon, CSS, fonts, and dynamic chunks resolve under GitHub Pages.
-- [ ] 666. Verify direct navigation and 404 redirect behavior.
-- [ ] 667. Verify shared URL hashes survive the deployment redirect path.
-- [ ] 668. Add a post-deployment smoke check.
-- [ ] 669. Document rollback to the previous known-good deployment.
+- [x] 663. Test the built application under the `/SysSim/` base path rather than only the development root.
+- [x] 664. Run a post-build preview E2E suite against production assets.
+- [x] 665. Verify worker, favicon, CSS, fonts, and dynamic chunks resolve under GitHub Pages.
+- [x] 666. Verify direct navigation and 404 redirect behavior.
+- [x] 667. Verify shared URL hashes survive the deployment redirect path.
+- [x] 668. Add a post-deployment smoke check.
+- [x] 669. Document rollback to the previous known-good deployment.
 
 ## Add versioning and diagnostics — P2
 
-- [ ] 670. Display the application version in an About or diagnostics surface.
-- [ ] 671. Embed build commit and build timestamp where useful.
-- [ ] 672. Include schema and engine version in exported architectures.
-- [ ] 673. Make simulation-result comparisons reject or warn about incompatible engine versions.
-- [ ] 674. Add a user-friendly diagnostic export for bug reports.
+- [x] 670. Display the application version in an About or diagnostics surface.
+- [x] 671. Embed build commit and build timestamp where useful.
+- [x] 672. Include schema and engine version in exported architectures.
+- [x] 673. Make simulation-result comparisons reject or warn about incompatible engine versions.
+- [x] 674. Add a user-friendly diagnostic export for bug reports.
 
 # Phase 12 — Advanced Simulation Credibility
 
 ## Validate the engine scientifically — P1/P3
 
-- [ ] 675. Create small reference systems with analytically calculable results.
-- [ ] 676. Compare queue behavior against established queueing-theory cases.
-- [ ] 677. Validate rate limiters against known request schedules.
-- [ ] 678. Validate load-balancer distributions statistically.
-- [ ] 679. Validate cache behavior against controlled key traces.
-- [ ] 680. Validate percentiles and throughput against external scripts or reference implementations.
-- [ ] 681. Publish acceptable error tolerances for approximations.
-- [ ] 682. Document where the engine intentionally favors learning clarity over realism.
+- [x] 675. Create small reference systems with analytically calculable results.
+- [x] 676. Compare queue behavior against established queueing-theory cases.
+- [x] 677. Validate rate limiters against known request schedules.
+- [x] 678. Validate load-balancer distributions statistically.
+- [x] 679. Validate cache behavior against controlled key traces.
+- [x] 680. Validate percentiles and throughput against external scripts or reference implementations.
+- [x] 681. Publish acceptable error tolerances for approximations.
+- [x] 682. Document where the engine intentionally favors learning clarity over realism.
 - [ ] 683. Have simulation assumptions reviewed by an experienced distributed-systems practitioner.
+
+  - External sign-off remains required. The review packet and sign-off record are prepared in `docs/reviews/distributed-systems-review-request.md`.
 
 ## Add workload modeling — P3
 
-- [ ] 684. Model read/write/compute/message operation mixes.
-- [ ] 685. Model request and response payload distributions.
-- [ ] 686. Model hot keys and skewed partitions.
-- [ ] 687. Model diurnal, burst, ramp, spike, and custom trace workloads.
-- [ ] 688. Allow importing a bounded workload trace.
-- [ ] 689. Model correlated failures only if clearly documented.
-- [ ] 690. Support warm-up and measurement intervals.
-- [ ] 691. Separate configured demand from capacity-constrained throughput.
+- [x] 684. Model read/write/compute/message operation mixes.
+- [x] 685. Model request and response payload distributions.
+- [x] 686. Model hot keys and skewed partitions.
+- [x] 687. Model diurnal, burst, ramp, spike, and custom trace workloads.
+- [x] 688. Allow importing a bounded workload trace.
+- [x] 689. Model correlated failures only if clearly documented.
+- [x] 690. Support warm-up and measurement intervals.
+- [x] 691. Separate configured demand from capacity-constrained throughput.
 
 ## Add network modeling — P3
 
-- [ ] 692. Add UDP if supported by bundled scenarios.
-- [ ] 693. Model bandwidth transfer time using payload size.
-- [ ] 694. Model propagation/base latency independently.
-- [ ] 695. Model packet/request loss and retry behavior.
-- [ ] 696. Model connection setup and keep-alive only where educationally useful.
-- [ ] 697. Model cross-zone/cross-region latency and cost through zones.
-- [ ] 698. Define protocol overhead assumptions for HTTP, gRPC, WebSocket, TCP, MQTT, pub/sub, and UDP.
-- [ ] 699. Ensure protocol choice does not imply guarantees the model does not implement.
+- [x] 692. Add UDP if supported by bundled scenarios.
+- [x] 693. Model bandwidth transfer time using payload size.
+- [x] 694. Model propagation/base latency independently.
+- [x] 695. Model packet/request loss and retry behavior.
+- [x] 696. Model connection setup and keep-alive only where educationally useful.
+- [x] 697. Model cross-zone/cross-region latency and cost through zones.
+- [x] 698. Define protocol overhead assumptions for HTTP, gRPC, WebSocket, TCP, MQTT, pub/sub, and UDP.
+- [x] 699. Ensure protocol choice does not imply guarantees the model does not implement.
 
 ## Add resilience and dependency modeling — P3
 
-- [ ] 700. Model timeouts and bounded retries with exponential backoff and jitter.
-- [ ] 701. Model circuit breakers and half-open recovery.
-- [ ] 702. Model bulkheads and concurrency isolation.
-- [ ] 703. Model quorum and replica failure for supported databases.
-- [ ] 704. Model regional or zone failures using actual zone membership.
-- [ ] 705. Model cascading failure caused by retry amplification and queue buildup.
-- [ ] 706. Add comparative experiments showing mitigation effectiveness.
+- [x] 700. Model timeouts and bounded retries with exponential backoff and jitter.
+- [x] 701. Model circuit breakers and half-open recovery.
+- [x] 702. Model bulkheads and concurrency isolation.
+- [x] 703. Model quorum and replica failure for supported databases.
+- [x] 704. Model regional or zone failures using actual zone membership.
+- [x] 705. Model cascading failure caused by retry amplification and queue buildup.
+- [x] 706. Add comparative experiments showing mitigation effectiveness.
 
 # Phase 13 — Final Audit and Continuous Improvement
 
 ## Perform milestone audits — P1
 
-- [ ] 707. Re-run the complete baseline after Phase 1.
-- [ ] 708. Re-score after core simulation correctness reaches its acceptance criteria.
-- [ ] 709. Re-run the complete baseline after persistence and validation work.
-- [ ] 710. Re-run the complete baseline after testing/CI work.
-- [ ] 711. Re-run desktop, tablet, mobile, keyboard, and screen-reader audits after accessibility work.
-- [ ] 712. Re-run bundle, CPU, memory, and endurance benchmarks after performance work.
-- [ ] 713. Re-run dependency, input-validation, and browser-security audits before releases.
-- [ ] 714. Re-run citation validation on a schedule.
-- [ ] 715. Record score changes and remaining deductions after every milestone.
+- [x] 707. Re-run the complete baseline after Phase 1.
+- [x] 708. Re-score after core simulation correctness reaches its acceptance criteria.
+- [x] 709. Re-run the complete baseline after persistence and validation work.
+- [x] 710. Re-run the complete baseline after testing/CI work.
+- [x] 711. Re-run desktop, tablet, mobile, keyboard, and screen-reader audits after accessibility work.
+- [x] 712. Re-run bundle, CPU, memory, and endurance benchmarks after performance work.
+- [x] 713. Re-run dependency, input-validation, and browser-security audits before releases.
+- [x] 714. Re-run citation validation on a schedule.
+- [x] 715. Record score changes and remaining deductions after every milestone.
 
 ## Conduct the final independent review — P1
 
