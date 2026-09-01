@@ -1033,6 +1033,7 @@ Decision: SysSim is `GPL-3.0-only`; package/release metadata, notices, CI licens
 - [ ] 683. Have simulation assumptions reviewed by an experienced distributed-systems practitioner.
 
   - External sign-off remains required. The review packet and sign-off record are prepared in `docs/reviews/distributed-systems-review-request.md`.
+  - A primary-source desk review is recorded in `docs/reviews/distributed-systems-fact-check-2026-09-01.md`; it corrected seven misleading or inconsistent assumptions but is not independent approval.
 
 ## Add workload modeling — P3
 
@@ -1082,16 +1083,27 @@ Decision: SysSim is `GPL-3.0-only`; package/release metadata, notices, CI licens
 
 ## Conduct the final independent review — P1
 
-- [ ] 716. Freeze the scoring rubric before the final review.
+- [x] 716. Freeze the scoring rubric before the final review.
 - [ ] 717. Ask a reviewer unfamiliar with the implementation to perform core workflows.
+
+  - The independent review packet is ready in `docs/reviews/usability-review-request.md`; genuine reviewer observations and sign-off remain required.
+
 - [ ] 718. Ask a distributed-systems reviewer to evaluate model assumptions and results.
+
+  - A primary-source desk fact-check and corrected review packet are ready, but independent practitioner sign-off remains required under task 683.
+
 - [ ] 719. Ask an accessibility reviewer or qualified tester to evaluate WCAG conformance.
-- [ ] 720. Review dependency and deployment security.
-- [ ] 721. Review licensing and citation accuracy.
-- [ ] 722. Resolve all high- and medium-severity findings or document accepted risk explicitly.
-- [ ] 723. Publish a dated quality report with evidence for every rubric point.
+
+  - The WCAG 2.2 AA and assistive-technology review packet is ready in `docs/reviews/accessibility-review-request.md`; qualified sign-off remains required.
+
+- [x] 720. Review dependency and deployment security.
+- [x] 721. Review licensing and citation accuracy.
+- [x] 722. Resolve all high- and medium-severity findings or document accepted risk explicitly.
+- [x] 723. Publish a dated quality report with evidence for every rubric point.
 
 ## Keep quality tending toward 100 — Ongoing
+
+These recurring controls intentionally remain open. They are policies to repeat when their trigger occurs, not one-time completion claims.
 
 - [ ] 724. Triage regressions before adding unrelated features.
 - [ ] 725. Add a regression test for every escaped defect.
@@ -1108,40 +1120,40 @@ Decision: SysSim is `GPL-3.0-only`; package/release metadata, notices, CI licens
 
 ## Milestone 1 — Remove immediate trust blockers
 
-- [ ] 734. Resolve the license contradiction.
-- [ ] 735. Correct misleading README and UI claims.
-- [ ] 736. Add shared runtime schema validation.
-- [ ] 737. Fix add-node/add-edge worker synchronization.
-- [ ] 738. Fix and test flash-crowd restoration.
-- [ ] 739. Replace dead citations.
+- [x] 734. Resolve the license contradiction.
+- [x] 735. Correct misleading README and UI claims.
+- [x] 736. Add shared runtime schema validation.
+- [x] 737. Fix add-node/add-edge worker synchronization.
+- [x] 738. Fix and test flash-crowd restoration.
+- [x] 739. Replace dead citations.
 
 ## Milestone 2 — Correct routing and cache behavior
 
-- [ ] 740. Define edge semantics.
-- [ ] 741. Implement cache hit/miss/fallback routing.
-- [ ] 742. Replace mislabeled generic fanout behavior.
-- [ ] 743. Add deterministic routing and caching tests.
-- [ ] 744. Validate the starter architecture end-to-end.
+- [x] 740. Define edge semantics.
+- [x] 741. Implement cache hit/miss/fallback routing.
+- [x] 742. Replace mislabeled generic fanout behavior.
+- [x] 743. Add deterministic routing and caching tests.
+- [x] 744. Validate the starter architecture end-to-end.
 
 ## Milestone 3 — Correct metrics and chaos behavior
 
-- [ ] 745. Separate offered, accepted, completed, and failed load.
-- [ ] 746. Correct active-request tracking and percentile calculations.
-- [ ] 747. Implement health-state effects.
-- [ ] 748. Make every chaos drill produce and restore its advertised effect.
-- [ ] 749. Add worker and browser regression tests.
+- [x] 745. Separate offered, accepted, completed, and failed load.
+- [x] 746. Correct active-request tracking and percentile calculations.
+- [x] 747. Implement health-state effects.
+- [x] 748. Make every chaos drill produce and restore its advertised effect.
+- [x] 749. Add worker and browser regression tests.
 
 ## Milestone 4 — Upgrade test and CI enforcement
 
-- [ ] 750. Add linting, formatting, standalone typecheck, coverage, and production-preview tests.
-- [ ] 751. Expand critical Playwright workflows.
-- [ ] 752. Add accessibility checks.
-- [ ] 753. Enforce checks before deployment.
+- [x] 750. Add linting, formatting, standalone typecheck, coverage, and production-preview tests.
+- [x] 751. Expand critical Playwright workflows.
+- [x] 752. Add accessibility checks.
+- [x] 753. Enforce checks before deployment.
 
 ## Milestone 5 — Responsive and accessible experience
 
-- [ ] 754. Implement compact and mobile layouts.
-- [ ] 755. Correct modal, keyboard, tab, form, and live-region semantics.
+- [x] 754. Implement compact and mobile layouts.
+- [x] 755. Correct modal, keyboard, tab, form, and live-region semantics.
 - [ ] 756. Verify all acceptance viewports and core assistive-technology workflows.
 
 ## Milestone 6 — Performance and maintainability
