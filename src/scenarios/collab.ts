@@ -93,7 +93,7 @@ export const COLLAB_SCENARIOS: Scenario[] = [
       {
         title: 'Conflict-Free Replicated Data Types (CRDTs)',
         authorOrOrg: 'Shapiro et al. (INRIA Research Report 2011)',
-        url: 'https://hal.inria.fr/inria-00555588',
+        url: 'https://inria.hal.science/inria-00555588',
       },
     ],
     trafficPreset: {
