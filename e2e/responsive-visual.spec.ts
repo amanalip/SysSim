@@ -16,15 +16,16 @@ test('keyboard, zoom, reduced-motion, and forced-color accessibility remain usab
 }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto('/');
-  const firstNode = page.locator('.react-flow__node').first();
+  const firstNode = page.locator('.react-flow__node[role="button"]').first();
+  await expect(firstNode).toBeVisible();
   await firstNode.focus();
-  await firstNode.press('Enter');
+  await expect(firstNode).toBeFocused();
+  await page.keyboard.press('Enter');
   await expect(firstNode).toHaveClass(/selected/);
-  const before = await page.locator('.react-flow__node').first().getAttribute('style');
-  await firstNode.press('ArrowRight');
-  await expect
-    .poll(() => page.locator('.react-flow__node').first().getAttribute('style'))
-    .not.toBe(before);
+  const before = await firstNode.getAttribute('style');
+  await expect(firstNode).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => firstNode.getAttribute('style')).not.toBe(before);
 
   await page.evaluate(() => {
     document.documentElement.style.zoom = '2';
