@@ -347,7 +347,7 @@ describe('versioned architecture schema tasks 222-236', () => {
       trafficConfig: {
         ...state().trafficConfig!,
         operationMix: { read: 70, write: 30 },
-        workloadTrace: [{ atMs: 0, operation: 'read' }],
+        workloadTrace: [{ timeSec: 0, qps: 100, operation: 'read' }],
         payloadDistribution: 'lognormal',
         requestPayloadMinKb: 1,
         requestPayloadMaxKb: 8,
