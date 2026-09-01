@@ -117,6 +117,22 @@ describe('versioned architecture schema tasks 222-236', () => {
     },
   );
 
+  it('canonicalizes historical React Flow presentation fields during migration', () => {
+    const historical = state() as SerializedCanvasState & {
+      nodes: Array<SerializedCanvasState['nodes'][number] & { measured?: unknown }>;
+      edges: Array<SerializedCanvasState['edges'][number] & { type?: string; selected?: boolean }>;
+    };
+    historical.version = 9;
+    historical.nodes[0].measured = { width: 180, height: 90 };
+    historical.edges[0].type = 'protocolEdge';
+    historical.edges[0].selected = true;
+    const migrated = migrateCanvasState(historical);
+    expect(migrated.nodes[0]).not.toHaveProperty('measured');
+    expect(migrated.edges[0]).not.toHaveProperty('type');
+    expect(migrated.edges[0]).not.toHaveProperty('selected');
+    expect(validateArchitectureState(migrated).edges).toHaveLength(1);
+  });
+
   it('round-trips every component type, protocol, and edge purpose', () => {
     const nodes = COMPONENT_METADATA_LIST.map((metadata, index) =>
       node(`n${index}`, metadata.type),

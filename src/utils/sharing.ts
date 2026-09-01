@@ -12,6 +12,7 @@ import { parseImportedArchitecture } from '../model/imported-architecture';
 import { byteLength, safeDownloadName } from '../security/untrusted-data';
 import { AppError } from '../errors/app-error';
 import { formatUtcDateForFilename } from '../platform/time';
+import { SIMULATION_ENGINE_VERSION } from '../platform/build-info';
 
 export const PRACTICAL_SHARE_URL_LENGTH = 8_000;
 const SENSITIVE_FIELD_NAMES = new Set([
@@ -40,6 +41,7 @@ export function serializeCanvasState(): SerializedCanvasState {
   return {
     version: CURRENT_CANVAS_VERSION,
     appVersion: APPLICATION_VERSION,
+    engineVersion: SIMULATION_ENGINE_VERSION,
     nodes: nodes.map((n) => ({
       id: n.id,
       type: n.type ?? 'customComponent',
@@ -56,6 +58,11 @@ export function serializeCanvasState(): SerializedCanvasState {
         bandwidthMbps: e.data?.bandwidthMbps,
         latencyMs: e.data?.latencyMs,
         isCut: !!e.data?.isCut,
+        lossRatePercent: e.data?.lossRatePercent,
+        retryLimit: e.data?.retryLimit,
+        connectionSetupMs: e.data?.connectionSetupMs,
+        keepAlive: e.data?.keepAlive,
+        crossZoneCostPerGb: e.data?.crossZoneCostPerGb,
       },
     })),
     zones: zones.map((z) => ({
@@ -72,6 +79,7 @@ export function serializeCanvasState(): SerializedCanvasState {
     simulationMetadata: {
       savedAt: Date.now(),
       appVersion: APPLICATION_VERSION,
+      engineVersion: SIMULATION_ENGINE_VERSION,
       state: useStore.getState().simState,
     },
   };

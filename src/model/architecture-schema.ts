@@ -49,6 +49,7 @@ const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$/;
 export const ARCHITECTURE_ROOT_KEYS = new Set([
   'version',
   'appVersion',
+  'engineVersion',
   'nodes',
   'edges',
   'zones',
@@ -59,7 +60,18 @@ const NODE_KEYS = new Set(['id', 'type', 'position', 'data']);
 const POSITION_KEYS = new Set(['x', 'y']);
 const NODE_DATA_KEYS = new Set(['config']);
 const EDGE_KEYS = new Set(['id', 'source', 'target', 'sourceHandle', 'targetHandle', 'data']);
-const EDGE_DATA_KEYS = new Set(['protocol', 'purpose', 'bandwidthMbps', 'latencyMs', 'isCut']);
+const EDGE_DATA_KEYS = new Set([
+  'protocol',
+  'purpose',
+  'bandwidthMbps',
+  'latencyMs',
+  'isCut',
+  'lossRatePercent',
+  'retryLimit',
+  'connectionSetupMs',
+  'keepAlive',
+  'crossZoneCostPerGb',
+]);
 const ZONE_KEYS = new Set(['id', 'label', 'category', 'color', 'x', 'y', 'width', 'height']);
 const TRAFFIC_KEYS = new Set([
   'pattern',
@@ -72,8 +84,17 @@ const TRAFFIC_KEYS = new Set([
   'requestKeyDistribution',
   'requestKeySpaceSize',
   'customRequestKeys',
+  'operationMix',
+  'payloadDistribution',
+  'requestPayloadMinKb',
+  'requestPayloadMaxKb',
+  'responsePayloadMinKb',
+  'responsePayloadMaxKb',
+  'workloadTrace',
+  'warmUpSec',
+  'measurementDurationSec',
 ]);
-const SIMULATION_METADATA_KEYS = new Set(['savedAt', 'appVersion', 'state']);
+const SIMULATION_METADATA_KEYS = new Set(['savedAt', 'appVersion', 'engineVersion', 'state']);
 const ENUM_VALUES: Record<string, ReadonlySet<string>> = {
   connectionType: new Set(['HTTP/2', 'HTTP/3', 'WebSocket']),
   operationType: new Set(['read', 'write', 'mixed']),
@@ -228,7 +249,7 @@ function validateTraffic(value: unknown, path: string, issues: string[]): value 
     issues.push(error instanceof Error ? error.message : `${path} contains unexpected fields`);
   }
   const traffic = value as Partial<TrafficConfig>;
-  if (!['steady', 'bursty', 'ramp', 'spike'].includes(String(traffic.pattern)))
+  if (!['steady', 'bursty', 'ramp', 'spike', 'diurnal', 'custom'].includes(String(traffic.pattern)))
     issues.push(`${path}.pattern is unsupported`);
   finiteNumber(traffic.baseQps, `${path}.baseQps`, issues, { min: 0, max: 50_000 });
   if (traffic.burstMultiplier !== undefined)
@@ -259,6 +280,29 @@ function validateTraffic(value: unknown, path: string, issues: string[]): value 
     validateStructuredValue(traffic.customSchedule, `${path}.customSchedule`, issues);
   if (traffic.customRequestKeys !== undefined)
     validateStructuredValue(traffic.customRequestKeys, `${path}.customRequestKeys`, issues);
+  if (traffic.operationMix !== undefined)
+    validateStructuredValue(traffic.operationMix, `${path}.operationMix`, issues);
+  if (traffic.workloadTrace !== undefined)
+    validateStructuredValue(traffic.workloadTrace, `${path}.workloadTrace`, issues);
+  if (
+    traffic.payloadDistribution !== undefined &&
+    !['fixed', 'uniform', 'lognormal'].includes(traffic.payloadDistribution)
+  )
+    issues.push(`${path}.payloadDistribution is unsupported`);
+  for (const key of [
+    'requestPayloadMinKb',
+    'requestPayloadMaxKb',
+    'responsePayloadMinKb',
+    'responsePayloadMaxKb',
+    'warmUpSec',
+    'measurementDurationSec',
+  ] as const) {
+    if (traffic[key] !== undefined)
+      finiteNumber(traffic[key], `${path}.${key}`, issues, {
+        min: 0,
+        max: ARCHITECTURE_LIMITS.maxNumericValue,
+      });
+  }
   return true;
 }
 
@@ -393,6 +437,23 @@ export function validateArchitectureState(
         min: 0,
         max: ARCHITECTURE_LIMITS.maxNumericValue,
       });
+    if (edge.data?.lossRatePercent !== undefined)
+      finiteNumber(edge.data.lossRatePercent, `${path}.data.lossRatePercent`, issues, {
+        min: 0,
+        max: 100,
+      });
+    if (edge.data?.retryLimit !== undefined)
+      finiteNumber(edge.data.retryLimit, `${path}.data.retryLimit`, issues, { min: 0, max: 20 });
+    if (edge.data?.connectionSetupMs !== undefined)
+      finiteNumber(edge.data.connectionSetupMs, `${path}.data.connectionSetupMs`, issues, {
+        min: 0,
+        max: 60_000,
+      });
+    if (edge.data?.crossZoneCostPerGb !== undefined)
+      finiteNumber(edge.data.crossZoneCostPerGb, `${path}.data.crossZoneCostPerGb`, issues, {
+        min: 0,
+        max: 1_000,
+      });
     return !dangling;
   });
 
@@ -436,6 +497,8 @@ export function validateArchitectureState(
   if (raw.trafficConfig) validateTraffic(raw.trafficConfig, 'trafficConfig', issues);
   if (raw.appVersion !== undefined)
     boundedString(raw.appVersion, 'appVersion', issues, ARCHITECTURE_LIMITS.maxNameLength);
+  if (raw.engineVersion !== undefined)
+    boundedString(raw.engineVersion, 'engineVersion', issues, ARCHITECTURE_LIMITS.maxNameLength);
   if (raw.simulationMetadata !== undefined) {
     const metadata = raw.simulationMetadata;
     if (!isPlainRecord(metadata)) issues.push('simulationMetadata must be an object');
@@ -455,6 +518,13 @@ export function validateArchitectureState(
         issues,
         ARCHITECTURE_LIMITS.maxNameLength,
       );
+      if (metadata.engineVersion !== undefined)
+        boundedString(
+          metadata.engineVersion,
+          'simulationMetadata.engineVersion',
+          issues,
+          ARCHITECTURE_LIMITS.maxNameLength,
+        );
       if (
         typeof metadata.state !== 'string' ||
         !['idle', 'running', 'paused', 'stopped'].includes(metadata.state)

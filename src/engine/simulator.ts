@@ -51,6 +51,8 @@ import {
 import type { SimEdge, SimGraph, SimNode } from './graph';
 import { calculateScheduledQps, createDefaultTrafficConfig } from './traffic-schedule';
 import { getComponentExecutionKind } from './component-execution-kind';
+import { getMeasurementPhase, sampleWorkload } from './workload-model';
+import { calculateNetworkTransfer } from './network-model';
 export type { SimEdge, SimGraph, SimNode } from './graph';
 
 interface TraversalResult {
@@ -82,6 +84,7 @@ export class SysSimEngine {
   private clientSelectionCredits = new Map<string, number>();
   private currentRequestArrivalMs = 0;
   private currentRequestPayloadKb = 0;
+  private currentResponsePayloadKb = 0;
   private currentRequestOperation: 'read' | 'write' = 'read';
   private zipfCumulativeWeights = new Map<number, number[]>();
 
@@ -606,16 +609,31 @@ export class SysSimEngine {
           clientConfig?.requestKeyDistribution,
           clientConfig?.requestKeySpaceSize,
         );
-        const operationType =
+        const clientOperation =
           clientConfig?.operationType === 'mixed'
             ? this.random() * 100 < clientConfig.readPercentage
               ? 'read'
               : 'write'
             : clientConfig?.operationType || 'read';
         const arrivalTimeMs = stepStartMs + ((i + 1) * scaledDelta) / (selectedSources.length + 1);
+        const workload = sampleWorkload(
+          this.config,
+          arrivalTimeMs / 1000,
+          () => this.random(),
+          clientConfig?.requestPayloadKb || 0,
+        );
+        const hasWorkloadOperation =
+          Boolean(this.config.operationMix) || Boolean(this.config.workloadTrace?.length);
+        const operationType = hasWorkloadOperation
+          ? workload.operation === 'write'
+            ? 'write'
+            : 'read'
+          : clientOperation;
         const req = createSimRequest(source.id, arrivalTimeMs, requestKey, this.requestSequence++, {
-          payloadSizeKb: clientConfig?.requestPayloadKb || 0,
+          payloadSizeKb: workload.requestPayloadKb,
           operationType,
+          workloadOperation: hasWorkloadOperation ? workload.operation : operationType,
+          responsePayloadSizeKb: workload.responsePayloadKb,
           simulationSeed: normalizeSeed(this.config.seed ?? 1),
         });
         if (!this.eventQueue.schedule(arrivalTimeMs, 'arrival', req))
@@ -791,6 +809,7 @@ export class SysSimEngine {
     this.recordLoad('accepted', req.timestamp, 1);
     this.currentRequestArrivalMs = req.timestamp;
     this.currentRequestPayloadKb = Math.max(0, req.payloadSizeKb || 0);
+    this.currentResponsePayloadKb = Math.max(0, req.responsePayloadSizeKb || 0);
     this.currentRequestOperation = req.operationType || 'read';
     const result = this.traverseNode(
       req.sourceNodeId,
@@ -1712,13 +1731,39 @@ export class SysSimEngine {
   }
 
   private getEdgeLatency(edge: SimEdge): number {
-    if (edge.data?.latencyMs !== undefined) return edge.data.latencyMs;
     const protocol = edge.data?.protocol || 'HTTP';
-    if (protocol === 'gRPC') return 1;
-    if (protocol === 'UDP') return 1;
-    if (protocol === 'WebSocket' || protocol === 'TCP') return 2;
-    if (protocol === 'pub/sub' || protocol === 'MQTT') return 3;
-    return 4;
+    const defaultLatency =
+      protocol === 'gRPC' || protocol === 'UDP'
+        ? 1
+        : protocol === 'WebSocket' || protocol === 'TCP'
+          ? 2
+          : protocol === 'pub/sub' || protocol === 'MQTT'
+            ? 3
+            : 4;
+    const sourceZoneId = this.nodeById.get(edge.source)?.config.zoneId;
+    const targetZoneId = this.nodeById.get(edge.target)?.config.zoneId;
+    const advanced =
+      edge.data?.bandwidthMbps !== undefined ||
+      edge.data?.lossRatePercent !== undefined ||
+      edge.data?.connectionSetupMs !== undefined ||
+      edge.data?.crossZoneCostPerGb !== undefined ||
+      Boolean(sourceZoneId && targetZoneId && sourceZoneId !== targetZoneId) ||
+      this.currentResponsePayloadKb > 0;
+    if (!advanced) return edge.data?.latencyMs ?? defaultLatency;
+    return calculateNetworkTransfer({
+      protocol,
+      baseLatencyMs: edge.data?.latencyMs ?? defaultLatency,
+      bandwidthMbps: edge.data?.bandwidthMbps,
+      requestPayloadKb: this.currentRequestPayloadKb,
+      responsePayloadKb: this.currentResponsePayloadKb,
+      lossRatePercent: edge.data?.lossRatePercent,
+      retryLimit: edge.data?.retryLimit,
+      connectionSetupMs: edge.data?.connectionSetupMs,
+      keepAlive: edge.data?.keepAlive,
+      sourceZoneId,
+      targetZoneId,
+      crossZoneCostPerGb: edge.data?.crossZoneCostPerGb,
+    }).totalLatencyMs;
   }
 
   private isCacheNode(node: SimNode): boolean {
@@ -2350,6 +2395,7 @@ export class SysSimEngine {
     const completedRequests = this.totalSuccess + this.totalFailed;
     return {
       metricScope: 'lifetime-totals-with-bounded-latency-window',
+      measurementPhase: getMeasurementPhase(this.config, this.elapsedSimulationMs / 1000),
       latencyWindowSize: this.completedRequests.length,
       totalRequestsSent: this.totalSent,
       totalRequestsOffered: this.totalOffered,

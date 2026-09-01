@@ -6,6 +6,8 @@ const clamp = (value: unknown, min: number, max: number, fallback: number): numb
   typeof value === 'number' && Number.isFinite(value)
     ? Math.min(max, Math.max(min, value))
     : fallback;
+const clampOptional = (value: unknown, min: number, max: number): number | undefined =>
+  value === undefined ? undefined : clamp(value, min, max, min);
 
 export function clampTrafficConfig(
   current: TrafficConfig,
@@ -35,6 +37,22 @@ export function clampTrafficConfig(
         key: String(entry.key).slice(0, 120),
         weight: clamp(entry.weight, 0, 1_000_000, 0),
       })),
+    requestPayloadMinKb: clampOptional(merged.requestPayloadMinKb, 0, 1_000_000),
+    requestPayloadMaxKb: clampOptional(merged.requestPayloadMaxKb, 0, 1_000_000),
+    responsePayloadMinKb: clampOptional(merged.responsePayloadMinKb, 0, 1_000_000),
+    responsePayloadMaxKb: clampOptional(merged.responsePayloadMaxKb, 0, 1_000_000),
+    warmUpSec: clampOptional(merged.warmUpSec, 0, 86_400),
+    measurementDurationSec: clampOptional(merged.measurementDurationSec, 0, 86_400),
+    workloadTrace: merged.workloadTrace
+      ?.slice(0, SIMULATION_LIMITS.maxCustomScheduleEntries)
+      .map((entry) => ({
+        timeSec: clamp(entry.timeSec, 0, 86_400, 0),
+        qps: clamp(entry.qps, 0, SIMULATION_LIMITS.maxConfiguredQps, 0),
+        operation: entry.operation,
+        requestPayloadKb: clamp(entry.requestPayloadKb, 0, 1_000_000, 0),
+        responsePayloadKb: clamp(entry.responsePayloadKb, 0, 1_000_000, 0),
+      }))
+      .sort((a, b) => a.timeSec - b.timeSec),
   };
 }
 

@@ -19,6 +19,7 @@ import { RequestKeyDistribution, TrafficPattern } from '../../model/types';
 import styles from './SimulationControls.module.css';
 import { safeErrorMessage } from '../../errors/app-error';
 import { formatSimulationDuration } from '../../platform/time';
+import { parseBoundedWorkloadTrace } from '../../engine/workload-model';
 
 export const SimulationControls: React.FC = () => {
   const {
@@ -65,6 +66,7 @@ export const SimulationControls: React.FC = () => {
       .join(','),
   );
   const [wallClockNow, setWallClockNow] = React.useState(Date.now());
+  const traceInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (simState !== 'running') return;
@@ -173,6 +175,23 @@ export const SimulationControls: React.FC = () => {
     setChaosMode(!isChaosMode);
   };
 
+  const handleTraceImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      const workloadTrace = parseBoundedWorkloadTrace(await file.text());
+      setTrafficConfig({
+        pattern: 'custom',
+        workloadTrace,
+        customSchedule: workloadTrace.map(({ timeSec, qps }) => ({ timeSec, qps })),
+      });
+      addToast(`Imported ${workloadTrace.length} bounded workload trace points`, 'success');
+    } catch (error) {
+      addToast(safeErrorMessage(error, 'user'), 'error');
+    }
+  };
+
   const speeds = [0.5, 1, 2, 5, 10];
   const completed =
     metrics.totalRequestsCompleted ?? metrics.totalRequestsSuccess + metrics.totalRequestsFailed;
@@ -187,6 +206,8 @@ export const SimulationControls: React.FC = () => {
     { key: 'bursty', label: 'Bursty', icon: <Waves size={10} /> },
     { key: 'ramp', label: 'Ramp', icon: <TrendingUp size={10} /> },
     { key: 'spike', label: 'Spike', icon: <Zap size={10} /> },
+    { key: 'diurnal', label: 'Diurnal', icon: <TrendingUp size={10} /> },
+    { key: 'custom', label: 'Trace', icon: <Activity size={10} /> },
   ];
 
   return (
@@ -300,6 +321,22 @@ export const SimulationControls: React.FC = () => {
           />
         ) : null}
       </div>
+
+      <input
+        ref={traceInputRef}
+        type="file"
+        accept=".json,.csv,application/json,text/csv"
+        hidden
+        onChange={handleTraceImport}
+        aria-label="Workload trace file"
+      />
+      <button
+        className={styles.controlBtn}
+        onClick={() => traceInputRef.current?.click()}
+        title="Import a bounded JSON or CSV workload trace"
+      >
+        Import trace
+      </button>
 
       <div className={styles.configGroup}>
         <label className={styles.label} htmlFor="simulation-qps">

@@ -1,6 +1,7 @@
 import type { TrafficConfig } from '../model/types';
 import { assertNever } from '../utils/assert-never';
 import { SIMULATION_LIMITS } from './simulation-limits';
+import { getWorkloadTracePoint } from './workload-model';
 
 export function createDefaultTrafficConfig(): TrafficConfig {
   return {
@@ -16,6 +17,8 @@ export function createDefaultTrafficConfig(): TrafficConfig {
 }
 
 export function calculateScheduledQps(config: TrafficConfig, elapsedSec: number): number {
+  const tracePoint = getWorkloadTracePoint(config.workloadTrace, elapsedSec);
+  if (tracePoint) return Math.min(SIMULATION_LIMITS.maxConfiguredQps, Math.max(0, tracePoint.qps));
   const base = config.baseQps;
   let qps: number;
   switch (config.pattern) {
@@ -30,6 +33,13 @@ export function calculateScheduledQps(config: TrafficConfig, elapsedSec: number)
     case 'spike':
       qps = Math.floor(elapsedSec) % (config.spikeFrequencySec || 10) === 0 ? base * 5 : base;
       break;
+    case 'diurnal': {
+      const dayFraction = (elapsedSec % 86_400) / 86_400;
+      qps = Math.floor(
+        base * (0.6 + 0.4 * (1 + Math.sin(dayFraction * Math.PI * 2 - Math.PI / 2))),
+      );
+      break;
+    }
     case 'custom': {
       let entry: NonNullable<TrafficConfig['customSchedule']>[number] | undefined;
       for (let index = (config.customSchedule?.length ?? 0) - 1; index >= 0; index -= 1) {

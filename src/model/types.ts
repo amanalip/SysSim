@@ -407,9 +407,24 @@ export interface ProtocolEdgeData extends Record<string, unknown> {
   bandwidthMbps?: number;
   latencyMs?: number;
   isCut?: boolean;
+  lossRatePercent?: number;
+  retryLimit?: number;
+  connectionSetupMs?: number;
+  keepAlive?: boolean;
+  crossZoneCostPerGb?: number;
 }
 
-export type TrafficPattern = 'steady' | 'bursty' | 'ramp' | 'spike' | 'custom';
+export type TrafficPattern = 'steady' | 'bursty' | 'ramp' | 'spike' | 'diurnal' | 'custom';
+export type WorkloadOperation = 'read' | 'write' | 'compute' | 'message';
+export type PayloadDistribution = 'fixed' | 'uniform' | 'lognormal';
+
+export interface WorkloadTracePoint {
+  timeSec: number;
+  qps: number;
+  operation?: WorkloadOperation;
+  requestPayloadKb?: number;
+  responsePayloadKb?: number;
+}
 
 export interface TrafficConfig {
   pattern: TrafficPattern;
@@ -422,6 +437,15 @@ export interface TrafficConfig {
   requestKeyDistribution?: RequestKeyDistribution;
   requestKeySpaceSize?: number;
   customRequestKeys?: CustomRequestKey[];
+  operationMix?: Partial<Record<WorkloadOperation, number>>;
+  payloadDistribution?: PayloadDistribution;
+  requestPayloadMinKb?: number;
+  requestPayloadMaxKb?: number;
+  responsePayloadMinKb?: number;
+  responsePayloadMaxKb?: number;
+  workloadTrace?: WorkloadTracePoint[];
+  warmUpSec?: number;
+  measurementDurationSec?: number;
 }
 
 export type SimulationState = 'idle' | 'running' | 'paused' | 'stopped';
@@ -447,6 +471,8 @@ export interface SimRequest {
   requestKey?: string;
   payloadSizeKb?: number;
   operationType?: 'read' | 'write';
+  workloadOperation?: WorkloadOperation;
+  responsePayloadSizeKb?: number;
   simulationSeed?: number;
   currentEdgeId?: string;
   currentEdgeProgress?: number; // 0 to 1
@@ -587,6 +613,7 @@ export interface TimeSeriesDataPoint {
 export interface OverallMetrics {
   metricScope?: 'lifetime-totals-with-bounded-latency-window';
   latencyWindowSize?: number;
+  measurementPhase?: 'warm-up' | 'measurement' | 'complete';
   totalRequestsSent: number;
   totalRequestsOffered?: number;
   totalRequestsAccepted?: number;
@@ -688,6 +715,7 @@ export interface ScenarioConstraints {
 export interface SerializedCanvasState {
   version?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
   appVersion?: string;
+  engineVersion?: string;
   nodes: Array<{
     id: string;
     type: string;
@@ -709,6 +737,7 @@ export interface SerializedCanvasState {
   simulationMetadata?: {
     savedAt: number;
     appVersion: string;
+    engineVersion?: string;
     state?: SimulationState;
   };
 }

@@ -1,9 +1,11 @@
-import { ComponentType, NodeHealthStatus, SimRequest } from '../model/types';
+import { ComponentType, NodeHealthStatus, SimRequest, WorkloadOperation } from '../model/types';
 
 interface RequestInputs {
   payloadSizeKb?: number;
   operationType?: 'read' | 'write';
   simulationSeed?: number;
+  workloadOperation?: WorkloadOperation;
+  responsePayloadSizeKb?: number;
 }
 
 let fallbackRequestSequence = 0;
@@ -27,6 +29,8 @@ export function createSimRequest(
     payloadSizeKb: inputs.payloadSizeKb,
     operationType: inputs.operationType,
     simulationSeed: inputs.simulationSeed,
+    workloadOperation: inputs.workloadOperation,
+    responsePayloadSizeKb: inputs.responsePayloadSizeKb,
     path: [],
     totalLatencyMs: 0,
     status: 'in_flight',
