@@ -43,22 +43,21 @@ export function migrateCanvasState(input: SerializedCanvasState): SerializedCanv
   }
   const nodes = structuredClone(input.nodes || []).map((node) => {
     const config = node.data.config;
-    if (
+    const migratedConfig =
       !MESSAGING_TYPES.has(config.type) &&
       !COMPUTE_TYPES.has(config.type) &&
       !COMPLETED_MODEL_TYPES.has(config.type) &&
       config.type !== 'client'
-    )
-      return node;
+        ? config
+        : {
+            ...createDefaultConfig(config.type, config.id, config.name),
+            ...config,
+          };
     return {
-      ...node,
-      data: {
-        ...node.data,
-        config: {
-          ...createDefaultConfig(config.type, config.id, config.name),
-          ...config,
-        },
-      },
+      id: node.id,
+      type: node.type || 'customComponent',
+      position: { x: node.position.x, y: node.position.y },
+      data: { config: migratedConfig },
     };
   });
   const nodeTypes = new Map(nodes.map((node) => [node.id, node.data.config.type]));
@@ -77,7 +76,11 @@ export function migrateCanvasState(input: SerializedCanvasState): SerializedCanv
       purpose = inferEdgePurpose(sourceType, targetType, protocol);
     }
     return {
-      ...edge,
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      sourceHandle: edge.sourceHandle,
+      targetHandle: edge.targetHandle,
       data: { ...edge.data, protocol, purpose },
     };
   });
@@ -85,6 +88,7 @@ export function migrateCanvasState(input: SerializedCanvasState): SerializedCanv
   return {
     version: CURRENT_CANVAS_VERSION,
     appVersion: input.appVersion || '1.0.0',
+    engineVersion: input.engineVersion,
     nodes,
     edges,
     zones: structuredClone(input.zones || []),
