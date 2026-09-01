@@ -27,6 +27,7 @@ const accessRestrictedHosts = new Set([
   'learn.microsoft.com',
   'medium.com',
   'netflixtechblog.com',
+  'reddit.com',
   'slack.engineering',
   'www.cloudflare.com',
   'www.oreilly.com',
