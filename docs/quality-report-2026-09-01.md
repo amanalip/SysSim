@@ -1,33 +1,33 @@
 # SysSim Quality Report — September 1, 2026
 
 **Rubric:** [SysSim Quality Scoring Rubric 1.0](quality-rubric.md)  
-**Scored commit:** `466ce66` (`fix(canvas): isolate keyboard node actions`)  
-**GitHub CI:** [run 33537426171](https://github.com/amanalip/SysSim/actions/runs/33537426171)  
-**Evidence subtotal:** **79/100**  
+**Scored commit:** `79f0cb2` (`docs(quality): retain final qualification evidence`)  
+**GitHub CI:** [run 33565823019](https://github.com/amanalip/SysSim/actions/runs/33565823019)  
+**Evidence subtotal:** **82/100**  
 **Automatic deductions:** **None**  
-**Final score:** **79/100**  
+**Final score:** **82/100**  
 **Release status:** **Not production-ready**
 
-This score applies the frozen all-or-nothing rubric to an immutable, clean commit. It does not award points for implementation when the required independent review, retained screenshot set, branch protection, or newcomer walkthrough is absent.
+This score applies the frozen all-or-nothing rubric to an immutable, clean commit. It does not award points for implementation when required independent review, branch protection, or a newcomer walkthrough is absent.
 
 ## Verification evidence
 
-| Gate                           | Result                                                                                                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| GitHub aggregate release gate  | Passed on `466ce66`; all required upstream jobs succeeded                                                                                                    |
-| Formatting, lint, strict types | Passed locally and in CI                                                                                                                                     |
-| Unit/integration and coverage  | 100 files and 544 tests passed locally; thresholds and artifacts passed in CI                                                                                |
-| Accessibility                  | 23 focused tests passed locally; accessibility job passed in CI                                                                                              |
-| Performance/endurance          | 27 focused tests passed; CI budget job passed                                                                                                                |
-| Production build and bundle    | Passed; entry JS gzip 146,729 bytes, entry CSS 57,517 bytes, largest JS chunk 492,686 bytes                                                                  |
-| Duplication budget             | Passed at 0.65% duplicated lines, below the 6% threshold                                                                                                     |
-| Dependency security            | `npm audit --audit-level=high` reported 0 vulnerabilities locally and in CI                                                                                  |
-| Licenses and SBOM              | 541 locked entries passed policy; CycloneDX SBOM generated and retained by CI                                                                                |
-| Scenario content and citations | 3 content tests passed; 164 unique external links checked with 0 failures                                                                                    |
-| Chromium, Firefox, WebKit      | All three CI jobs passed with artifacts; Chromium/Firefox focused keyboard checks also passed locally                                                        |
-| Production base path           | 2/2 tests passed locally and in CI under `/SysSim/`                                                                                                          |
-| Manual browser QA              | Production preview checked at 1440×900 and 390×844; page identity, nonblank UI, console, screenshots, component addition, and mobile tools navigation passed |
-| Branch protection              | Failed evidence check: GitHub reports `main` is not protected                                                                                                |
+| Gate                           | Result                                                                                                                                                    |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub aggregate release gate  | Passed on `79f0cb2`; all required upstream jobs succeeded                                                                                                 |
+| Formatting, lint, strict types | Passed locally and in CI                                                                                                                                  |
+| Unit/integration and coverage  | 100 files and 544 tests passed locally; thresholds and artifacts passed in CI                                                                             |
+| Accessibility                  | 23 focused tests passed locally; accessibility job passed in CI                                                                                           |
+| Performance/endurance          | 27 focused tests passed; CI budget job passed                                                                                                             |
+| Production build and bundle    | Passed; entry JS gzip 146,734 bytes, entry CSS 57,517 bytes, largest JS chunk 492,808 bytes                                                               |
+| Duplication budget             | Passed at 0.65% duplicated lines, below the 6% threshold                                                                                                  |
+| Dependency security            | `npm audit --audit-level=high` reported 0 vulnerabilities locally and in CI                                                                               |
+| Licenses and SBOM              | 541 locked entries passed policy; CycloneDX SBOM generated and retained by CI                                                                             |
+| Scenario content and citations | 3 content tests passed; 164 unique external links checked with 0 failures after refreshing the unavailable Kamailio URL                                   |
+| Chromium, Firefox, WebKit      | All three CI jobs passed with artifacts; Chromium/Firefox focused keyboard checks also passed locally                                                     |
+| Production base path           | 2/2 tests passed locally and in CI under `/SysSim/`                                                                                                       |
+| Manual browser QA              | Development app checked at 1440×900 and 390×844; page identity, nonblank UI, console, screenshots, component addition, telemetry, and mobile tools passed |
+| Branch protection              | Failed evidence check: GitHub reports `main` is not protected                                                                                             |
 
 The local CachyOS/Arch host cannot launch Playwright's Ubuntu-linked WebKit bundle because its required `libicu74`, WebKitGTK, Flite, JXL, and backtrace ABI libraries are unavailable. This is recorded as a local-environment limitation, not a scored E2E failure, because the exact scored commit's clean Ubuntu WebKit CI job passed.
 
@@ -40,7 +40,7 @@ The local CachyOS/Arch host cannot launch Playwright's Ubuntu-linked WebKit bund
 | SIM-3   | Pass   |    6/6 | Parameterized component and configuration tests cover supported fields, boundaries, and failure cases.                               |
 | SIM-4   | Pass   |    4/4 | Metrics, component outcomes, traces, exports, and visible labels have reconciliation and product-contract tests.                     |
 | TRUST-1 | Fail   |    0/4 | A dated source-backed claim audit exists, but it lacks independent reviewer sign-off.                                                |
-| TRUST-2 | Fail   |    0/3 | Component labels pass, but retained desktop screenshots for every analysis surface are incomplete.                                   |
+| TRUST-2 | Pass   |    3/3 | Committed Chromium baselines cover real-time charts/table, bottlenecks, health radar, distributed traces, and cloud cost analysis.   |
 | TRUST-3 | Pass   |    3/3 | Operating limits and unsupported production/accuracy uses are documented, tested, and verified across the deployment/browser matrix. |
 | DATA-1  | Pass   |    5/5 | Imports, hashes, storage, and worker boundaries are bounded, versioned, schema-validated, migrated, and adversarially tested.        |
 | DATA-2  | Pass   |    4/4 | JSON, sharing, snapshots, undo, and redo have representative and maximum-bound round-trip/invariant tests.                           |
@@ -76,7 +76,7 @@ The local CachyOS/Arch host cannot launch Playwright's Ubuntu-linked WebKit bund
 | Category                                     | Earned | Available |
 | -------------------------------------------- | -----: | --------: |
 | Simulation semantics and core correctness    |     20 |        20 |
-| Product trust and scope accuracy             |      3 |        10 |
+| Product trust and scope accuracy             |      6 |        10 |
 | Reliability and data integrity               |     12 |        12 |
 | Testing and continuous integration           |     10 |        14 |
 | Security and privacy                         |     10 |        10 |
@@ -85,18 +85,17 @@ The local CachyOS/Arch host cannot launch Playwright's Ubuntu-linked WebKit bund
 | Performance and bounded resource use         |      6 |         6 |
 | Maintainability and developer experience     |      3 |         5 |
 | Documentation, legal, and release governance |      3 |         5 |
-| **Evidence subtotal / final score**          | **79** |   **100** |
+| **Evidence subtotal / final score**          | **82** |   **100** |
 
-No automatic deduction or cap applies: the scored remote commit is clean and all required CI, build, test, browser, accessibility, security, and performance jobs passed. `79 + 0 = 79`.
+No automatic deduction or cap applies: the scored remote commit is clean and all required CI, build, test, browser, accessibility, security, and performance jobs passed. `82 + 0 = 82`.
 
-## Remaining 21 points
+## Remaining 18 points
 
 1. Obtain independent claim and distributed-systems sign-off (TRUST-1).
-2. Retain desktop browser screenshots for every analysis surface (TRUST-2).
-3. Protect `main` and require the aggregate release gate before merge (TEST-4).
-4. Complete the qualified accessibility/screen-reader review (A11Y-2).
-5. Complete the unfamiliar expert usability review (UX-1).
-6. Obtain independent architecture/rationale sign-off (MAINT-3).
-7. Record a clean newcomer documentation walkthrough (DOC-1).
+2. Protect `main` and require the aggregate release gate before merge (TEST-4).
+3. Complete the qualified accessibility/screen-reader review (A11Y-2).
+4. Complete the unfamiliar expert usability review (UX-1).
+5. Obtain independent architecture/rationale sign-off (MAINT-3).
+6. Record a clean newcomer documentation walkthrough (DOC-1).
 
-The project improved from 52/100 on August 31 to 79/100 on September 1. It is a strong educational application, but the missing independent evidence and branch enforcement prevent a production-ready claim.
+The project improved from 52/100 on August 31 to 82/100 on September 1. It is a strong educational application, but the missing independent evidence and branch enforcement prevent a production-ready claim.

@@ -1154,28 +1154,39 @@ These recurring controls intentionally remain open. They are policies to repeat 
 
 - [x] 754. Implement compact and mobile layouts.
 - [x] 755. Correct modal, keyboard, tab, form, and live-region semantics.
-- [ ] 756. Verify all acceptance viewports and core assistive-technology workflows.
+- [x] 756. Verify all acceptance viewports and core assistive-technology workflows.
+
+  - Dated automated and manual evidence is retained in `docs/reviews/final-qualification-2026-09-01.md`. Qualified independent accessibility review remains separately tracked by tasks 719 and 766.
 
 ## Milestone 6 — Performance and maintainability
 
-- [ ] 757. Code-split scenario, chart, modal, and export features.
-- [ ] 758. Optimize engine indexing and metric aggregation.
-- [ ] 759. Decompose store and oversized modules.
-- [ ] 760. Establish and enforce performance budgets.
+- [x] 757. Code-split scenario, chart, modal, and export features.
+- [x] 758. Optimize engine indexing and metric aggregation.
+- [x] 759. Decompose store and oversized modules.
+- [x] 760. Establish and enforce performance budgets.
+
+  - These milestone summaries are satisfied by completed tasks 473–506 and 540–563: category-level scenario imports, deferred telemetry/modal/export code, indexed graph/runtime state, bounded rolling metrics, store slices, cohesive engine/editor modules, and enforced bundle/runtime budgets.
 
 ## Milestone 7 — Deep component modeling
 
-- [ ] 761. Implement component models in dependency order: routing, cache, queues/workers, databases, gateways/security, storage/search, and network.
-- [ ] 762. Validate each model before exposing it as quantitative behavior.
-- [ ] 763. Update scenarios to exercise verified models.
+- [x] 761. Implement component models in dependency order: routing, cache, queues/workers, databases, gateways/security, storage/search, and network.
+- [x] 762. Validate each model before exposing it as quantitative behavior.
+- [x] 763. Update scenarios to exercise verified models.
+
+  - These milestone summaries are satisfied by completed component/edge tasks 31–179 and scientific/modeling tasks 675–706, including the behavior matrix, analytical fixtures, documented tolerances, and normalized 101-scenario catalog.
 
 ## Milestone 8 — Final qualification
 
-- [ ] 764. Complete documentation and governance files.
-- [ ] 765. Run the full audit matrix.
+- [x] 764. Complete documentation and governance files.
+- [x] 765. Run the full audit matrix.
 - [ ] 766. Obtain independent system-model and accessibility reviews.
+
+  - Review packets are complete, but genuine independent sign-off remains required under tasks 683 and 717–719.
+
 - [ ] 767. Resolve all remaining material findings.
-- [ ] 768. Publish the dated score and evidence.
+- [x] 768. Publish the dated score and evidence.
+
+  - The final audit found one newly unreachable citation and no product-code defect. The citation was replaced with a live official Kamailio source and all 164 links then passed. Task 767 remains open until task 766's independent reviews exist and any resulting material findings are resolved. The dated qualification record and strict score report retain the evidence and unresolved external-review deductions.
 
 # Standard verification commands
 
