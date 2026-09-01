@@ -6,6 +6,7 @@ Please assign an engineer with practical experience designing, operating, or rev
 
 ## Material to review
 
+- `docs/reviews/distributed-systems-fact-check-2026-09-01.md`
 - `docs/scientific-validation.md`
 - `docs/advanced-modeling.md`
 - `docs/reference-systems.md`

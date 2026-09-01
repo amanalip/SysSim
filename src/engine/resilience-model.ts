@@ -9,7 +9,7 @@ export function boundedExponentialBackoff(
   const ceiling = Math.max(0, options.maxDelayMs ?? 30_000);
   const exponential = Math.min(ceiling, Math.max(0, baseDelayMs) * 2 ** Math.max(0, attempt - 1));
   const jitter = Math.min(1, Math.max(0, (options.jitterPercent ?? 20) / 100));
-  return exponential * (1 - jitter + random() * jitter * 2);
+  return Math.min(ceiling, exponential * (1 - jitter + random() * jitter * 2));
 }
 
 export class BulkheadModel {

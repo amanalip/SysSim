@@ -18,9 +18,11 @@ Imports are limited to the architecture byte limit and 1,000 points. QPS and pay
 
 Advanced edge timing is decomposed as:
 
-`base propagation + payload transfer + protocol overhead + connection setup + expected bounded retry delay + cross-zone latency`
+`base propagation + payload transfer + protocol overhead + connection setup + expected repeated-attempt service time + cross-zone latency`
 
-Transfer time uses combined request and response kilobytes and configured megabits per second. Keep-alive suppresses configured connection-setup time. Loss produces expected retry attempts up to the edge retry limit. Different non-empty source and target zone IDs add a documented 2 ms educational cross-zone term and optional per-GB cost.
+Transfer time uses decimal kilobytes and configured decimal megabits per second. Cross-zone transfer cost converts the same payload to decimal gigabytes. Keep-alive suppresses configured connection-setup time. The field labeled loss is an independent per-attempt failure probability; it produces expected attempts up to the edge retry limit but does not emulate packets, TCP retransmission, retry backoff, timeout selection, or correlated loss. Different non-empty source and target zone IDs add a fixed 2 ms educational cross-zone term and optional per-GB cost.
+
+The overhead and cross-zone latency values below are illustrative constants chosen to expose model dimensions. They are not measurements, vendor defaults, or a valid protocol-performance ranking. Users comparing a real system should supply measured base latency and bandwidth and treat the protocol constant as an explicitly disclosed teaching aid.
 
 Protocol constants model timing overhead only:
 
@@ -38,7 +40,7 @@ Legacy edges without advanced fields retain their existing simple latency behavi
 
 ## Resilience experiments
 
-The resilience helpers provide bounded exponential backoff with jitter, named bulkhead capacity pools, quorum availability, zone-member failure, and retry-amplification/queue buildup calculations. API gateways continue to model closed, open, and half-open circuit states. Supported NoSQL models expose read and write quorum metrics; SQL models expose replicas and failover.
+The resilience helpers provide bounded exponential backoff with symmetric jitter, named bulkhead capacity pools, quorum availability, zone-member failure, and retry-amplification/queue buildup calculations. Jitter never exceeds the configured maximum delay. API gateways continue to model closed, open, and half-open circuit states. Supported NoSQL models expose read and write quorum availability metrics; the helper does not prove quorum intersection, linearizability, or consistency. SQL models expose replicas and failover.
 
 A useful comparative experiment runs the same initial demand and failure rate with a high retry limit, then with bounded retries. The model reports attempt amplification, queued requests, and drops. A second experiment allocates unrelated dependencies to separate bulkhead pools to demonstrate that exhaustion remains isolated.
 

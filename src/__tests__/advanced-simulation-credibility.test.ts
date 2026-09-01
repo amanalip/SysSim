@@ -155,12 +155,19 @@ describe('advanced workload, network, and resilience modeling', () => {
     expect(result.expectedAttempts).toBeCloseTo(1.11);
     expect(result.connectionSetupLatencyMs).toBe(5);
     expect(result.crossZoneLatencyMs).toBe(2);
-    expect(result.crossZoneCost).toBeGreaterThan(0);
+    expect(result.crossZoneCost).toBeCloseTo(0.00002);
     expect(PROTOCOL_ASSUMPTIONS.UDP.modeledGuarantees).toMatch(/no delivery/);
+    expect(PROTOCOL_ASSUMPTIONS.UDP.evidenceBasis).toMatch(/not benchmark-derived/);
   });
 
   it('models bounded retries, bulkheads, quorum, zone failure, and retry amplification', () => {
     expect(boundedExponentialBackoff(100, 3, () => 0.5)).toBe(400);
+    expect(
+      boundedExponentialBackoff(10_000, 10, () => 1, {
+        maxDelayMs: 30_000,
+        jitterPercent: 20,
+      }),
+    ).toBe(30_000);
     const bulkhead = new BulkheadModel({ search: 1, checkout: 2 });
     expect(bulkhead.acquire('search')).toBe(true);
     expect(bulkhead.acquire('search')).toBe(false);
