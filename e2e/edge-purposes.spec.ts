@@ -49,7 +49,7 @@ for (const testCase of cases) {
       ],
     };
     const hash = LZString.compressToEncodedURIComponent(JSON.stringify(state));
-    await page.goto(`/#data=${hash}`);
+    await page.goto(`./#data=${hash}`);
 
     await expect(
       page.getByRole('button', { name: new RegExp(`Edge purpose: ${testCase.purpose}`) }),

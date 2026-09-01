@@ -50,7 +50,7 @@ test('generates and reloads a share URL', async ({ page }) => {
 });
 
 test('searches for and loads a scenario reference architecture', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await page.getByTitle('101 System Design Scenarios (2)').click();
   const back = page.getByRole('button', { name: /Back to Scenarios/i });
   await expect(back).toBeVisible();
@@ -65,7 +65,7 @@ test('searches for and loads a scenario reference architecture', async ({ page }
 
 test('opens a representative scenario from every category', async ({ page }) => {
   test.setTimeout(60_000);
-  await page.goto('/');
+  await page.goto('./');
   await page.getByTitle('101 System Design Scenarios (2)').click();
   const back = page.getByRole('button', { name: /Back to Scenarios/i });
   await expect(back).toBeVisible();
@@ -83,7 +83,7 @@ test('opens a representative scenario from every category', async ({ page }) => 
 });
 
 test('switches between dark and light themes', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await expect(page.locator('html')).toHaveAttribute('data-theme', /^(dark|light)$/);
   const initial = await page.locator('html').getAttribute('data-theme');
   await page

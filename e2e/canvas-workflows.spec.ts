@@ -12,15 +12,26 @@ test('adds by drag, connects nodes, and changes edge protocol', async ({ page })
     });
   await expect(page.locator('.react-flow__node')).toHaveCount(before + 1);
 
-  await page.goto(
-    architectureUrl([
-      { id: 'source', type: 'client', x: 80, y: 180 },
-      { id: 'target', type: 'app_server', x: 620, y: 180 },
-    ]),
-  );
-  const source = page.locator('.react-flow__node').first().locator('.react-flow__handle-right');
-  const target = page.locator('.react-flow__node').last().locator('.react-flow__handle-left');
-  await source.dragTo(target, { force: true });
+  const connectionArchitecture = architectureUrl([
+    { id: 'source', type: 'client', x: 40, y: 180 },
+    { id: 'target', type: 'app_server', x: 1_000, y: 180 },
+  ]);
+  await page.goto('about:blank');
+  await page.goto(connectionArchitecture);
+  const source = page.getByTestId('rf__node-source').locator('.react-flow__handle-right');
+  const target = page.getByTestId('rf__node-target').locator('.react-flow__handle-left');
+  const sourceBox = await source.boundingBox();
+  const targetBox = await target.boundingBox();
+  if (!sourceBox || !targetBox) throw new Error('Connection handles are not measurable');
+  await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(sourceBox.x + sourceBox.width + 20, sourceBox.y + sourceBox.height / 2, {
+    steps: 4,
+  });
+  await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, {
+    steps: 12,
+  });
+  await page.mouse.up();
   await expect(page.locator('.react-flow__edge')).toHaveCount(1);
 
   await page.getByRole('button', { name: /Transport protocol: HTTP/ }).click();

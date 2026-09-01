@@ -37,7 +37,8 @@ test('each targeted chaos drill injects and restores through the UI', async ({ p
   const state = LZString.compressToEncodedURIComponent(
     JSON.stringify({ version: 9, nodes, edges, zones: [] }),
   );
-  await page.goto(`/#data=${state}`);
+  await page.goto(`./#data=${state}`);
+  await expect(page.getByTestId('rf__node-db')).toBeVisible();
   await expect(page.getByTitle('Run targeted Chaos Engineering drills')).toBeVisible();
   await page.getByTitle('Run targeted Chaos Engineering drills').click();
 

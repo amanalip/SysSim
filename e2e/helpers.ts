@@ -18,7 +18,7 @@ export function architectureUrl(
     edges,
     zones: [],
   };
-  return `/#data=${LZString.compressToEncodedURIComponent(JSON.stringify(state))}`;
+  return `./#data=${LZString.compressToEncodedURIComponent(JSON.stringify(state))}`;
 }
 
 export const twoNodeArchitecture = architectureUrl(
