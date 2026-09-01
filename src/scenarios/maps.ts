@@ -94,7 +94,7 @@ export const MAPS_SCENARIOS: Scenario[] = [
       {
         title: 'Contraction Hierarchies: Faster and Simpler Hierarchical Routing in Road Networks',
         authorOrOrg: 'Geisberger et al. (Karlsruhe Institute of Technology / WEA 2008)',
-        url: 'https://publikationen.bibliothek.kit.edu/1000015090',
+        url: 'https://ae.iti.kit.edu/english/999.php',
       },
       {
         title: 'OSRM: Open Source Routing Machine Architecture',

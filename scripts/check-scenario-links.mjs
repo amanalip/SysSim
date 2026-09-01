@@ -1,4 +1,4 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const scenarioDir = resolve('src/scenarios');
@@ -84,4 +84,9 @@ for (const result of results)
   );
 const failures = results.filter((result) => !result.ok);
 console.log(`Checked ${results.length} unique scenario links; ${failures.length} failed.`);
+await mkdir(resolve('reports'), { recursive: true });
+await writeFile(
+  resolve('reports/scenario-links.json'),
+  `${JSON.stringify({ checkedAt: new Date().toISOString(), total: results.length, failures, results }, null, 2)}\n`,
+);
 if (failures.length) process.exitCode = 1;

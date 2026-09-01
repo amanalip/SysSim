@@ -504,9 +504,9 @@ export const ECOMMERCE_SCENARIOS: Scenario[] = [
         url: 'https://doordash.engineering',
       },
       {
-        title: 'Event-Driven Architecture in Modern Delivery Marketplaces',
-        authorOrOrg: 'Martin Fowler',
-        url: 'https://martinfowler.com/articles/201701-event-driven.html',
+        title: 'Event-Driven Consumer Pattern',
+        authorOrOrg: 'Enterprise Integration Patterns',
+        url: 'https://www.enterpriseintegrationpatterns.com/patterns/messaging/EventDrivenConsumer.html',
       },
     ],
     trafficPreset: {

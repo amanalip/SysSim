@@ -24,6 +24,10 @@ Sources are classified as primary documentation, engineering publication, resear
 
 Links must use HTTPS and open in a new tab with `noopener noreferrer`. Access-restricted hosts may be accepted by the automated checker only for an explicit authorization or bot-protection response; missing pages and server failures still fail the job.
 
+The weekly report classifies `403` and `406` responses separately from missing pages because a browser-accessible primary source may intentionally reject automated clients. DNS failures and timeouts are retried on the next scheduled run and must be replaced when repeated. A successful status is only reachability evidence: the category owner still reads the source, confirms that the specific `supports` claim is relevant, prefers a DOI/RFC/stable official document over a home page, and updates `lastVerifiedOn` during content review.
+
+The August 2026 audit's historical nine 404s and five DNS/timeout failures were reconciled against the current catalog. On 2026-08-31, 162 of 164 unique URLs passed or were explicitly access-restricted; the two remaining endpoints were replaced with a stable KIT research page and a specific Enterprise Integration Patterns document. Verification dates are normalized into every source and enforced by the catalog audit.
+
 ## Reference-design limitations
 
 A reference design is one defensible decomposition of responsibilities. It is not an answer key, a deployable bill of materials, proof of an SLA, or a claim that a named company uses that exact graph. The simulator is deterministic and useful for relative experiments, but its output is illustrative. Learners should compare behaviors, failure paths, and tradeoffs rather than matching component counts.
