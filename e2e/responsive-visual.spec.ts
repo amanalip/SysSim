@@ -72,6 +72,22 @@ for (const viewport of viewports) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/');
     await expect(page.locator('#syssim-canvas')).toBeVisible();
+    // Check breakpoint behavior explicitly: small header changes can fall below
+    // the full-page screenshot's pixel-difference threshold.
+    for (const [name, visible] of [
+      ['Open design tools', viewport.width <= 1100],
+      ['Architecture actions', viewport.width <= 1240],
+    ] as const) {
+      const toggle = page.getByRole('button', { name, exact: true });
+      if (visible) {
+        await expect(toggle).toBeVisible();
+        const bounds = await toggle.boundingBox();
+        expect(bounds?.width).toBeGreaterThanOrEqual(44);
+        expect(bounds?.height).toBeGreaterThanOrEqual(44);
+      } else {
+        await expect(toggle).toBeHidden();
+      }
+    }
     await expect(page.locator('body')).toHaveScreenshot(`${viewport.name}.png`, {
       animations: 'disabled',
       caret: 'hide',
