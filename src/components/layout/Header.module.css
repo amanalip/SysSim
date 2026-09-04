@@ -81,8 +81,8 @@
   align-items: center;
   position: relative;
 }
-.menuToggle,
-.sidebarToggle {
+.iconBtn.menuToggle,
+.iconBtn.sidebarToggle {
   display: none;
 }
 
@@ -93,7 +93,7 @@
   .subtitle {
     display: none;
   }
-  .menuToggle {
+  .iconBtn.menuToggle {
     display: inline-flex;
     width: 44px;
     height: 44px;
@@ -133,7 +133,7 @@
 }
 
 @media (max-width: 1100px) {
-  .sidebarToggle {
+  .iconBtn.sidebarToggle {
     display: inline-flex;
     width: 44px;
     height: 44px;
