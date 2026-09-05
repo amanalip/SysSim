@@ -100,7 +100,7 @@
   transition: all 0.15s ease;
 }
 
-.iconBtn:hover {
+.iconBtn:hover:not(:disabled) {
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
   border-color: var(--border-subtle);
@@ -127,4 +127,9 @@
   .iconBtn {
     width: 44px;
   }
+}
+
+.iconBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
