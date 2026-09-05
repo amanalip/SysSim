@@ -214,3 +214,18 @@
   background-color: var(--border-primary);
   margin: 0 4px;
 }
+
+.mobileLabel {
+  display: none;
+}
+
+@media (max-width: 1240px) {
+  .mobileLabel {
+    display: inline;
+  }
+  .actionsSection .iconBtn {
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+}

@@ -351,8 +351,10 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
             className={styles.iconBtn}
             onClick={() => setIsShortcutsOpen(true)}
             title="Keyboard shortcuts (?)"
+            aria-label="Keyboard shortcuts (?)"
           >
             <Keyboard size={15} />
+            <span className={styles.mobileLabel}>Keyboard shortcuts</span>
           </button>
 
           <button
@@ -369,14 +371,21 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
             aria-label="Reduce motion"
           >
             <Accessibility size={15} />
+            <span className={styles.mobileLabel}>
+              Reduce motion: {motionPreference === 'reduced' ? 'On' : 'System'}
+            </span>
           </button>
 
           <button
             className={styles.iconBtn}
             onClick={toggleTheme}
+            aria-label={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
             title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
           >
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            <span className={styles.mobileLabel}>
+              Switch to {theme === 'dark' ? 'Light' : 'Dark'} mode
+            </span>
           </button>
         </div>
       </div>
