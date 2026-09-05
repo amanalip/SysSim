@@ -17,7 +17,12 @@
   user-select: none;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  width: calc(100% - 28px);
   max-width: 95vw;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-height: 152px;
+  overflow: auto;
   box-sizing: border-box;
 }
 
@@ -26,6 +31,7 @@
     left: 10px;
     right: 10px;
     transform: none;
+    width: auto;
     max-width: none;
     flex-wrap: wrap;
     justify-content: center;
@@ -366,4 +372,23 @@
 
 .failVal {
   color: var(--error);
+}
+
+.controlBtn.textBtn {
+  width: auto;
+  height: auto;
+  min-height: 30px;
+  padding: 6px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .controlBtn {
+    width: 44px;
+    height: 44px;
+  }
+  .controlBtn.textBtn {
+    min-height: 44px;
+  }
 }

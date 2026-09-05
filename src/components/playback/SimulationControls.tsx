@@ -331,7 +331,7 @@ export const SimulationControls: React.FC = () => {
         aria-label="Workload trace file"
       />
       <button
-        className={styles.controlBtn}
+        className={`${styles.controlBtn} ${styles.textBtn}`}
         onClick={() => traceInputRef.current?.click()}
         title="Import a bounded JSON or CSV workload trace"
       >
@@ -370,7 +370,11 @@ export const SimulationControls: React.FC = () => {
           min="1"
           step="1"
         />
-        <button className={styles.controlBtn} onClick={copySeed} title="Copy simulation seed">
+        <button
+          className={`${styles.controlBtn} ${styles.textBtn}`}
+          onClick={copySeed}
+          title="Copy simulation seed"
+        >
           Copy
         </button>
       </div>
