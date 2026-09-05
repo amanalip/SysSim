@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useReactFlow } from '@xyflow/react';
 import {
@@ -13,6 +13,7 @@ import {
   Undo2,
   Redo2,
   HelpCircle,
+  X,
 } from 'lucide-react';
 import { useReducedMotion } from '../useReducedMotion';
 import { useStore } from '../../store/use-store';
@@ -20,6 +21,12 @@ import styles from './CanvasHud.module.css';
 
 export const CanvasHud: React.FC = () => {
   const reduceMotion = useReducedMotion();
+  const [showConnectionHelp, setShowConnectionHelp] = useState(false);
+  const helpButtonRef = useRef<HTMLButtonElement>(null);
+  const closeHelp = () => {
+    setShowConnectionHelp(false);
+    helpButtonRef.current?.focus();
+  };
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const {
     snapToGrid,
@@ -97,14 +104,12 @@ export const CanvasHud: React.FC = () => {
 
       <button
         className={styles.helpBtn}
-        onClick={() =>
-          addToast(
-            'Connect from a source handle to a target. Arrows show flow direction; select a connection to set request, async, fanout, fallback, replication, or observability purpose.',
-            'info',
-          )
-        }
+        ref={helpButtonRef}
+        onClick={() => setShowConnectionHelp((open) => !open)}
+        aria-expanded={showConnectionHelp}
+        aria-controls="connection-help"
         title="How to create and classify connections"
-        aria-label="Connection tutorial"
+        aria-label="Connection help"
       >
         <HelpCircle size={14} />
         <span>Connections</span>
@@ -193,6 +198,44 @@ export const CanvasHud: React.FC = () => {
           <Maximize2 size={14} />
         </button>
       </div>
+      {showConnectionHelp && (
+        <section
+          id="connection-help"
+          className={styles.connectionHelp}
+          aria-label="Connection instructions"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.stopPropagation();
+              closeHelp();
+            }
+          }}
+        >
+          <div className={styles.helpHeading}>
+            <strong>Connect components</strong>
+            <button
+              className={styles.iconBtn}
+              onClick={closeHelp}
+              aria-label="Close connection help"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <ol>
+            <li>
+              Drag from the handle on the right of a source component to the handle on the left of a
+              target.
+            </li>
+            <li>
+              For example, connect a Client to an App Server. The arrow points toward the server.
+            </li>
+            <li>
+              Use the connection labels to choose its protocol and purpose: request, async, fanout,
+              fallback, replication, or observability.
+            </li>
+          </ol>
+          <p>This help stays open while you work. Close it when you are finished.</p>
+        </section>
+      )}
     </div>
   );
 };
