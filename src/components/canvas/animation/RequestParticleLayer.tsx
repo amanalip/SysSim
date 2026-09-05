@@ -15,20 +15,23 @@ interface ActiveParticle {
 }
 
 export const RequestParticleLayer: React.FC = () => {
-  const { activeRequests, nodes, edgeCount, simState, speedMultiplier } = useStore(
-    useShallow((state) => ({
-      activeRequests: state.activeRequests,
-      nodes: state.nodes,
-      edgeCount: state.edges.length,
-      simState: state.simState,
-      speedMultiplier: state.speedMultiplier,
-    })),
-  );
+  const { activeRequests, nodes, edgeCount, simState, speedMultiplier, motionPreference } =
+    useStore(
+      useShallow((state) => ({
+        activeRequests: state.activeRequests,
+        nodes: state.nodes,
+        edgeCount: state.edges.length,
+        simState: state.simState,
+        speedMultiplier: state.speedMultiplier,
+        motionPreference: state.motionPreference,
+      })),
+    );
   const viewport = useViewport();
   const [particles, setParticles] = useState<ActiveParticle[]>([]);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
+  const reduceMotion = motionPreference === 'reduced' || prefersReducedMotion;
   const animFrameRef = useRef<number | null>(null);
   const particleBudget = useMemo(() => {
     const cores = typeof navigator === 'undefined' ? 4 : navigator.hardwareConcurrency || 4;
@@ -53,7 +56,7 @@ export const RequestParticleLayer: React.FC = () => {
 
   // Synchronize particles with activeRequests
   useEffect(() => {
-    if (simState !== 'running' && simState !== 'paused') {
+    if (reduceMotion || (simState !== 'running' && simState !== 'paused')) {
       setParticles([]);
       return;
     }
@@ -90,11 +93,11 @@ export const RequestParticleLayer: React.FC = () => {
     });
 
     setParticles(newParticles);
-  }, [activeRequests, edgeCount, nodePositions, particleBudget, simState]);
+  }, [activeRequests, edgeCount, nodePositions, particleBudget, reduceMotion, simState]);
 
   // Smooth animation loop
   useEffect(() => {
-    if (simState !== 'running' || prefersReducedMotion) {
+    if (simState !== 'running' || reduceMotion) {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       return;
     }
@@ -122,9 +125,9 @@ export const RequestParticleLayer: React.FC = () => {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [prefersReducedMotion, simState, speedMultiplier]);
+  }, [reduceMotion, simState, speedMultiplier]);
 
-  if (particles.length === 0 || prefersReducedMotion) return null;
+  if (particles.length === 0 || reduceMotion) return null;
 
   return (
     <div className={styles.particleLayer}>

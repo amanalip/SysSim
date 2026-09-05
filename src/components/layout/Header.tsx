@@ -356,8 +356,8 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
             }
             title={
               motionPreference === 'reduced'
-                ? 'Use system motion preference'
-                : 'Reduce motion explicitly'
+                ? 'Reduced motion is on. Click to use system preference.'
+                : 'Using system motion preference. Click to reduce motion.'
             }
             aria-pressed={motionPreference === 'reduced'}
             aria-label="Reduce motion"

@@ -1,7 +1,8 @@
 import { ReactFlowProvider } from '@xyflow/react';
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestParticleLayer } from '../components/canvas/animation/RequestParticleLayer';
+import { Header } from '../components/layout/Header';
 import { RequestTracePanel } from '../components/panels/RequestTracePanel';
 import { createDefaultConfig } from '../model/component-defaults';
 import { SimRequest } from '../model/types';
@@ -45,6 +46,7 @@ describe('cache observability UI', () => {
       recentRequests: [cacheHitRequest],
       simState: 'paused',
       speedMultiplier: 1,
+      motionPreference: 'system',
       nodes: [
         {
           id: 'client',
@@ -70,7 +72,10 @@ describe('cache observability UI', () => {
     });
   });
 
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   it('labels cache hits and their request key in the trace waterfall', () => {
     render(<RequestTracePanel />);
@@ -89,4 +94,41 @@ describe('cache observability UI', () => {
     expect(particle).toHaveAttribute('data-request-color', '#06b6d4');
     expect(particle).toHaveStyle({ backgroundColor: '#06b6d4' });
   });
+
+  it.each([false, true])(
+    'toggles particles while respecting system reduced motion (%s)',
+    (systemReduced) => {
+      vi.spyOn(window, 'matchMedia').mockReturnValue({
+        matches: systemReduced,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as unknown as MediaQueryList);
+      useStore.setState({ simState: 'running' });
+      const frame = vi.spyOn(window, 'requestAnimationFrame');
+      const cancel = vi.spyOn(window, 'cancelAnimationFrame');
+      render(
+        <ReactFlowProvider>
+          <Header />
+          <RequestParticleLayer />
+        </ReactFlowProvider>,
+      );
+      const toggle = screen.getByRole('button', { name: 'Reduce motion' });
+      expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.queryAllByTestId('request-particle')).toHaveLength(systemReduced ? 0 : 1);
+      frame.mockClear();
+      fireEvent.click(toggle);
+      expect(toggle).toHaveAttribute('aria-pressed', 'true');
+      expect(toggle).toHaveAttribute(
+        'title',
+        'Reduced motion is on. Click to use system preference.',
+      );
+      expect(screen.queryByTestId('request-particle')).not.toBeInTheDocument();
+      expect(frame).not.toHaveBeenCalled();
+      if (!systemReduced) expect(cancel).toHaveBeenCalled();
+      fireEvent.click(toggle);
+      expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.queryAllByTestId('request-particle')).toHaveLength(systemReduced ? 0 : 1);
+      if (!systemReduced) expect(frame).toHaveBeenCalled();
+    },
+  );
 });
