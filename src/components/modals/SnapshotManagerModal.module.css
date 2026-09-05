@@ -258,7 +258,7 @@
 
 .loadBtn {
   background-color: var(--accent-primary);
-  color: #fff;
+  color: var(--text-on-accent);
   border: none;
 }
 

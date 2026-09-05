@@ -11,6 +11,7 @@ export interface ThemeColors {
   textSecondary: string;
   textMuted: string;
   accentPrimary: string;
+  textOnAccent: string;
   accentHover: string;
   accentSubtle: string;
   success: string;
@@ -34,6 +35,7 @@ export const themes: Record<ThemeMode, ThemeColors> = {
     textSecondary: '#c9d1d9',
     textMuted: '#8b949e',
     accentPrimary: '#58a6ff',
+    textOnAccent: '#0d1117',
     accentHover: '#79c0ff',
     accentSubtle: 'rgba(56, 139, 253, 0.15)',
     success: '#3fb950',
@@ -55,6 +57,7 @@ export const themes: Record<ThemeMode, ThemeColors> = {
     textSecondary: '#656d76',
     textMuted: '#626c77',
     accentPrimary: '#0969da',
+    textOnAccent: '#ffffff',
     accentHover: '#218bff',
     accentSubtle: 'rgba(9, 105, 218, 0.1)',
     success: '#1a7f37',

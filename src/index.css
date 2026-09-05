@@ -14,6 +14,7 @@
   --text-secondary: #c9d1d9;
   --text-muted: #8b949e;
   --accent-primary: #58a6ff;
+  --text-on-accent: #0d1117;
   --accent-hover: #79c0ff;
   --accent-subtle: rgba(56, 139, 253, 0.15);
   --success: #3fb950;
@@ -53,6 +54,7 @@
   --text-secondary: #656d76;
   --text-muted: #626c77;
   --accent-primary: #0969da;
+  --text-on-accent: #ffffff;
   --accent-hover: #218bff;
   --accent-subtle: rgba(9, 105, 218, 0.1);
   --success: #1a7f37;

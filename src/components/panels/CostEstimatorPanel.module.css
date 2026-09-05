@@ -109,7 +109,7 @@
 
 .providerBtnActive {
   background-color: var(--accent-primary);
-  color: #fff !important;
+  color: var(--text-on-accent) !important;
 }
 
 .spotToggle {
