@@ -2,6 +2,12 @@
   position: absolute;
   top: 14px;
   right: 14px;
+  left: 14px;
+  width: fit-content;
+  max-width: calc(100% - 28px);
+  margin-left: auto;
+  box-sizing: border-box;
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -104,4 +110,21 @@
   background-color: var(--accent-subtle) !important;
   color: var(--accent-primary) !important;
   border-color: rgba(88, 166, 255, 0.4) !important;
+}
+
+@media (max-width: 640px) {
+  .hudContainer {
+    gap: 4px;
+    padding: 4px;
+  }
+  .hudContainer > .divider {
+    display: none;
+  }
+  .hudBtn,
+  .iconBtn {
+    min-height: 44px;
+  }
+  .iconBtn {
+    width: 44px;
+  }
 }
