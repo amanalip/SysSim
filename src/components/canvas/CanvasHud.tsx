@@ -115,7 +115,7 @@ export const CanvasHud: React.FC = () => {
           className={styles.iconBtn}
           onClick={undo}
           disabled={!canUndo}
-          title="Undo graph change"
+          title={canUndo ? 'Undo graph change' : 'Nothing to undo'}
           aria-label="Undo graph change"
         >
           <Undo2 size={14} />
@@ -124,7 +124,7 @@ export const CanvasHud: React.FC = () => {
           className={styles.iconBtn}
           onClick={redo}
           disabled={!canRedo}
-          title="Redo graph change"
+          title={canRedo ? 'Redo graph change' : 'Nothing to redo'}
           aria-label="Redo graph change"
         >
           <Redo2 size={14} />
