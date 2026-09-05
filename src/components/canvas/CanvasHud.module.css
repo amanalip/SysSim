@@ -133,3 +133,31 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+.connectionHelp {
+  flex-basis: 100%;
+  min-width: 0;
+  max-height: 30dvh;
+  overflow-y: auto;
+  border-top: 1px solid var(--border-primary);
+  padding: 8px;
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.helpHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.connectionHelp ol {
+  padding-left: 20px;
+}
+
+.connectionHelp li,
+.connectionHelp p {
+  margin-top: 6px;
+}
