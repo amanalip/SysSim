@@ -17,6 +17,7 @@ import {
   MarkerType,
   useViewport,
 } from '@xyflow/react';
+import { useReducedMotion } from '../useReducedMotion';
 import { useStore } from '../../store/use-store';
 import { CustomComponentNode } from './nodes/CustomComponentNode';
 import { ProtocolEdge } from './edges/ProtocolEdge';
@@ -205,12 +206,13 @@ const InnerCanvas: React.FC<ArchitectureCanvasProps> = ({ customEdgeTypes }) => 
     [addNode, reactFlowInstance],
   );
 
+  const reduceMotion = useReducedMotion();
   const handleAutoLayout = useCallback(() => {
     autoLayout();
     setTimeout(() => {
-      reactFlowInstance.fitView({ padding: 0.2, duration: 400 });
+      reactFlowInstance.fitView({ padding: 0.2, duration: reduceMotion ? 0 : 400 });
     }, 50);
-  }, [autoLayout, reactFlowInstance]);
+  }, [autoLayout, reactFlowInstance, reduceMotion]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

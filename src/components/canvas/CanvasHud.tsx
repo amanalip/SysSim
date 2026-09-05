@@ -14,10 +14,12 @@ import {
   Redo2,
   HelpCircle,
 } from 'lucide-react';
+import { useReducedMotion } from '../useReducedMotion';
 import { useStore } from '../../store/use-store';
 import styles from './CanvasHud.module.css';
 
 export const CanvasHud: React.FC = () => {
+  const reduceMotion = useReducedMotion();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const {
     snapToGrid,
@@ -168,7 +170,7 @@ export const CanvasHud: React.FC = () => {
       <div className={styles.zoomGroup}>
         <button
           className={styles.iconBtn}
-          onClick={() => zoomIn({ duration: 200 })}
+          onClick={() => zoomIn({ duration: reduceMotion ? 0 : 200 })}
           title="Zoom In"
           aria-label="Zoom in"
         >
@@ -176,7 +178,7 @@ export const CanvasHud: React.FC = () => {
         </button>
         <button
           className={styles.iconBtn}
-          onClick={() => zoomOut({ duration: 200 })}
+          onClick={() => zoomOut({ duration: reduceMotion ? 0 : 200 })}
           title="Zoom Out"
           aria-label="Zoom out"
         >
@@ -184,7 +186,7 @@ export const CanvasHud: React.FC = () => {
         </button>
         <button
           className={styles.iconBtn}
-          onClick={() => fitView({ padding: 0.2, duration: 300 })}
+          onClick={() => fitView({ padding: 0.2, duration: reduceMotion ? 0 : 300 })}
           title="Fit Architecture into View"
           aria-label="Fit architecture into view"
         >

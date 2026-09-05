@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useViewport } from '@xyflow/react';
 import { useShallow } from 'zustand/react/shallow';
+import { useReducedMotion } from '../../useReducedMotion';
 import { useStore } from '../../../store/use-store';
 import styles from './RequestParticleLayer.module.css';
 
@@ -15,23 +16,18 @@ interface ActiveParticle {
 }
 
 export const RequestParticleLayer: React.FC = () => {
-  const { activeRequests, nodes, edgeCount, simState, speedMultiplier, motionPreference } =
-    useStore(
-      useShallow((state) => ({
-        activeRequests: state.activeRequests,
-        nodes: state.nodes,
-        edgeCount: state.edges.length,
-        simState: state.simState,
-        speedMultiplier: state.speedMultiplier,
-        motionPreference: state.motionPreference,
-      })),
-    );
+  const { activeRequests, nodes, edgeCount, simState, speedMultiplier } = useStore(
+    useShallow((state) => ({
+      activeRequests: state.activeRequests,
+      nodes: state.nodes,
+      edgeCount: state.edges.length,
+      simState: state.simState,
+      speedMultiplier: state.speedMultiplier,
+    })),
+  );
   const viewport = useViewport();
   const [particles, setParticles] = useState<ActiveParticle[]>([]);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
-    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  );
-  const reduceMotion = motionPreference === 'reduced' || prefersReducedMotion;
+  const reduceMotion = useReducedMotion();
   const animFrameRef = useRef<number | null>(null);
   const particleBudget = useMemo(() => {
     const cores = typeof navigator === 'undefined' ? 4 : navigator.hardwareConcurrency || 4;
@@ -46,13 +42,6 @@ export const RequestParticleLayer: React.FC = () => {
     );
     return positions;
   }, [nodes]);
-
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const update = () => setPrefersReducedMotion(media.matches);
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, []);
 
   // Synchronize particles with activeRequests
   useEffect(() => {
