@@ -1,3 +1,4 @@
+import { readStoredMotionPreference, motionPreferenceKey } from './motion-preference';
 import { create } from 'zustand';
 import {
   AnyComponentConfig,
@@ -242,8 +243,15 @@ export const useStore = create<SysSimState>((set, get) => ({
     document.documentElement.setAttribute('data-theme', theme);
     set({ theme });
   },
-  motionPreference: 'system',
-  setMotionPreference: (motionPreference) => set({ motionPreference }),
+  motionPreference: readStoredMotionPreference(),
+  setMotionPreference: (motionPreference) => {
+    set({ motionPreference });
+    try {
+      localStorage.setItem(motionPreferenceKey, motionPreference);
+    } catch {
+      get().addToast('Persistence error: motion preference could not be saved', 'warning');
+    }
+  },
   keyboardShortcutsEnabled: readStoredShortcutPreference(),
   setKeyboardShortcutsEnabled: (keyboardShortcutsEnabled) => {
     try {
