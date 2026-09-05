@@ -53,7 +53,7 @@ export const themes: Record<ThemeMode, ThemeColors> = {
     borderSubtle: '#e1e4e8',
     textPrimary: '#1f2328',
     textSecondary: '#656d76',
-    textMuted: '#8c959f',
+    textMuted: '#626c77',
     accentPrimary: '#0969da',
     accentHover: '#218bff',
     accentSubtle: 'rgba(9, 105, 218, 0.1)',
