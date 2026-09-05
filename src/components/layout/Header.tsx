@@ -101,6 +101,11 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
       if (event instanceof KeyboardEvent && event.key !== 'Escape') return;
       if (event instanceof MouseEvent && actionsRef.current?.contains(event.target as Node)) return;
       setIsActionsOpen(false);
+      if (event instanceof KeyboardEvent) {
+        actionsRef.current
+          ?.querySelector<HTMLButtonElement>('button[aria-controls="architecture-actions"]')
+          ?.focus();
+      }
     };
     document.addEventListener('mousedown', close);
     document.addEventListener('keydown', close);
@@ -246,7 +251,8 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
         <div
           id="architecture-actions"
           className={`${styles.actionsSection} ${isActionsOpen ? styles.actionsOpen : ''}`}
-          role={isActionsOpen ? 'menu' : undefined}
+          role="group"
+          aria-label="Architecture actions"
         >
           <button
             className={`${styles.actionBtn} ${styles.dangerAction}`}
