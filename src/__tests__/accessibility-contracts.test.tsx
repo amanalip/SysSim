@@ -102,6 +102,7 @@ describe('visual, form, and shortcut accessibility contracts', () => {
 
   it.each(['dark', 'light'] as const)('%s theme text and focus tokens meet AA contrast', (mode) => {
     const colors = themes[mode];
+    expect(contrast(colors.textOnAccent, colors.accentPrimary)).toBeGreaterThanOrEqual(4.5);
     if (mode === 'light') {
       for (const background of [colors.bgPrimary, colors.bgSecondary, colors.bgTertiary]) {
         expect(contrast(colors.textMuted, background)).toBeGreaterThanOrEqual(4.5);

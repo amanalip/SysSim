@@ -155,7 +155,7 @@
   justify-content: center;
   gap: 6px;
   background-color: var(--accent-primary);
-  color: #ffffff;
+  color: var(--text-on-accent);
   border: none;
   padding: 6px 10px;
   border-radius: var(--radius-sm);

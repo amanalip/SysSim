@@ -156,7 +156,7 @@
 
 .primaryBtn {
   background-color: var(--accent-primary);
-  color: #ffffff;
+  color: var(--text-on-accent);
   border: none;
   border-radius: var(--radius-md);
   padding: 8px 12px;
