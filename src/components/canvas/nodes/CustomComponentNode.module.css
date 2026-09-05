@@ -245,7 +245,8 @@
   transition: opacity 0.15s ease;
 }
 
-.nodeContainer:hover .quickActions {
+.nodeContainer:hover .quickActions,
+.nodeContainer:focus-within .quickActions {
   opacity: 1;
 }
 
@@ -304,4 +305,15 @@
   font-weight: 800;
   box-shadow: var(--shadow-sm);
   z-index: 5;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .quickActions {
+    opacity: 1;
+  }
+  .actionBtn {
+    min-width: 28px;
+    min-height: 28px;
+    justify-content: center;
+  }
 }
