@@ -141,7 +141,7 @@ export const CustomComponentNode: React.FC<NodeProps<CanvasNode>> = ({ id, data,
             title={isDown ? 'Restore to healthy' : 'Inject fault (mark down)'}
             aria-label={isDown ? `Restore ${config.name} to healthy` : `Mark ${config.name} down`}
           >
-            <Power size={11} color={isDown ? 'var(--error)' : 'inherit'} />
+            <Power size={11} color={isDown ? 'var(--error)' : 'currentColor'} />
           </button>
           <button
             className={styles.floatingBtn}
