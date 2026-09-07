@@ -17,4 +17,8 @@ Changes will be recorded in focused commits with explanatory messages. Run histo
 
 ## Validation results
 
-Pending implementation and verification.
+Implemented all seven product improvements. Additional reliability work confirms final worker metrics before saving a run, guards restarts while finishing, preserves unreadable drafts where storage permits, removes stale share hashes after edits, and fixes header/mobile control overflow.
+
+Initial automated verification: 105 test files / 562 tests passed, followed by focused tests for the finalization and input-validation changes. Browser checks verified the four-step guide, two saved runs with a pinned baseline and duration caveat, Escape dismissal, and recovery of edited QPS (1,234) after reload at 390 × 844.
+
+Final suite and visual-baseline verification in progress. Existing browser tests are being updated to navigate the responsive actions menu and reflect the intentionally changed layout.
