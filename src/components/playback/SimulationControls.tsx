@@ -155,19 +155,12 @@ export const SimulationControls: React.FC = () => {
     setTrafficConfig({ customRequestKeys });
   };
 
+  const qpsValid = Number.isInteger(Number(qpsText)) && Number(qpsText) >= 1 && Number(qpsText) <= 50_000;
   const handleQpsChange = (raw: string) => {
     setQpsText(raw);
-    const val = parseInt(raw, 10);
-    if (!isNaN(val) && val > 0) {
-      const safeVal = Math.max(1, Math.min(100000, val));
-      setTrafficConfig({ baseQps: safeVal });
-    }
-  };
-
-  const handleQpsBlur = () => {
-    const val = parseInt(qpsText, 10);
-    if (isNaN(val) || val <= 0) {
-      setQpsText(String(trafficConfig.baseQps));
+    const value = Number(raw);
+    if (Number.isInteger(value) && value >= 1 && value <= 50_000) {
+      setTrafficConfig({ baseQps: value });
     }
   };
 
@@ -348,12 +341,15 @@ export const SimulationControls: React.FC = () => {
           className={styles.qpsInput}
           value={qpsText}
           onChange={(e) => handleQpsChange(e.target.value)}
-          onBlur={handleQpsBlur}
-          min="10"
+          aria-invalid={!qpsValid}
+          aria-describedby={!qpsValid ? "qps-error" : undefined}
+          min="1"
           max="50000"
-          step="50"
+          step="1"
         />
       </div>
+
+      {!qpsValid && <span id="qps-error" role="status">Enter a whole number from 1 to 50,000. The last valid QPS remains active.</span>}
 
       <div className={styles.configGroup}>
         <label className={styles.label} htmlFor="simulation-seed">

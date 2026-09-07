@@ -7,7 +7,7 @@
 3. **Run comparison:** pin a baseline and compare results; identify differences in workload, duration, engine, or mid-run changes that make comparisons less controlled.
 4. **Simpler controls:** keep Simulate, QPS, and core feedback visible; disclose advanced traffic, seed, speed, and chaos settings on demand.
 5. **Guided first experiment:** offer a dismissible, replayable run → inspect → adjust → rerun guide using the existing starter design.
-6. **QPS correctness:** use the supported 1–100,000 integer range consistently and provide inline validation.
+6. **QPS correctness:** use the supported interactive 1–50,000 integer range consistently and provide inline validation.
 7. **Honest heuristic feedback:** say “No issues found by current checks” when no rules match.
 8. **Verification:** exercise persistence and comparison edge cases, run automated checks, and inspect desktop/mobile browser flows.
 
