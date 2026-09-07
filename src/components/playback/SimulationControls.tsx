@@ -155,7 +155,8 @@ export const SimulationControls: React.FC = () => {
     setTrafficConfig({ customRequestKeys });
   };
 
-  const qpsValid = Number.isInteger(Number(qpsText)) && Number(qpsText) >= 1 && Number(qpsText) <= 50_000;
+  const qpsValid =
+    Number.isInteger(Number(qpsText)) && Number(qpsText) >= 1 && Number(qpsText) <= 50_000;
   const handleQpsChange = (raw: string) => {
     setQpsText(raw);
     const value = Number(raw);
@@ -342,14 +343,18 @@ export const SimulationControls: React.FC = () => {
           value={qpsText}
           onChange={(e) => handleQpsChange(e.target.value)}
           aria-invalid={!qpsValid}
-          aria-describedby={!qpsValid ? "qps-error" : undefined}
+          aria-describedby={!qpsValid ? 'qps-error' : undefined}
           min="1"
           max="50000"
           step="1"
         />
       </div>
 
-      {!qpsValid && <span id="qps-error" role="status">Enter a whole number from 1 to 50,000. The last valid QPS remains active.</span>}
+      {!qpsValid && (
+        <span id="qps-error" role="status">
+          Enter a whole number from 1 to 50,000. The last valid QPS remains active.
+        </span>
+      )}
 
       <div className={styles.configGroup}>
         <label className={styles.label} htmlFor="simulation-seed">

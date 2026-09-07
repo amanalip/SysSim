@@ -31,6 +31,7 @@ import styles from './Header.module.css';
 import { safeErrorMessage } from '../../errors/app-error';
 import { downloadDiagnosticReport } from '../../diagnostics/diagnostic-report';
 import { confirmCanvasReplacement } from '../../utils/destructive-actions';
+import { useDraftStatus } from '../../store/workspace-draft';
 import { BUILD_INFO } from '../../platform/build-info';
 
 const ShortcutsModal = lazy(() =>
@@ -81,6 +82,7 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
     })),
   );
 
+  const draftStatus = useDraftStatus((state) => state.status);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
@@ -237,6 +239,9 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
         </span>
       </div>
 
+      <span role="status" style={{ fontSize: 12 }}>
+        {draftStatus}
+      </span>
       <div className={styles.actionMenu} ref={actionsRef}>
         <button
           type="button"
