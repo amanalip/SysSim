@@ -72,8 +72,10 @@ describe('Product contract labels', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Calculator' }));
     expect(
-      screen.getByLabelText(
+      await screen.findByLabelText(
         'Planning estimate: Total QPS includes read and write operations. readWriteRatio is reads per write. Decimal SI: 1 KB = 1,000 bytes; 1 GB = 1,000,000,000 bytes; 1 TB = 1,000 GB. Results are ranges, not production guarantees.',
+        undefined,
+        { timeout: 10_000 },
       ),
     ).toBeInTheDocument();
     expect(

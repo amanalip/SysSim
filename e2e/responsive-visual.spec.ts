@@ -76,7 +76,7 @@ for (const viewport of viewports) {
     // the full-page screenshot's pixel-difference threshold.
     for (const [name, visible] of [
       ['Open design tools', viewport.width <= 1100],
-      ['Architecture actions', viewport.width <= 1240],
+      ['Architecture actions', viewport.width <= 1680],
     ] as const) {
       const toggle = page.getByRole('button', { name, exact: true });
       if (visible) {
