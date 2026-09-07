@@ -8,7 +8,7 @@ import { ModalPortal } from './ModalPortal';
 import styles from './RunHistoryModal.module.css';
 
 export function RunHistoryModal({ onClose }: { onClose: () => void }) {
-  const { runs, baselineId, pinBaseline, clear } = useRunHistory();
+  const { runs, baselineId, pinBaseline, clear, isFinishing } = useRunHistory();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selected = runs.find((run) => run.id === selectedId) ?? runs[0];
   const baseline = runs.find((run) => run.id === baselineId);
@@ -37,6 +37,7 @@ export function RunHistoryModal({ onClose }: { onClose: () => void }) {
             Last 10 stopped runs in this tab, including your pinned baseline. Results remain
             available after resetting the simulation; reloading clears them.
           </p>
+          {isFinishing && <p role="status">Waiting for final simulation results…</p>}
           {!selected ? (
             <p>Run the simulation, then press Stop to save a summary here.</p>
           ) : (

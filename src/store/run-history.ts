@@ -19,12 +19,14 @@ export interface SavedRun {
   chaos: boolean;
 }
 interface RunHistory {
+  isFinishing: boolean;
   runs: SavedRun[];
   baselineId: number | null;
   pinBaseline: (id: number) => void;
   clear: () => void;
 }
 export const useRunHistory = create<RunHistory>((set) => ({
+  isFinishing: false,
   runs: [],
   baselineId: null,
   pinBaseline: (baselineId) => set({ baselineId }),
@@ -71,6 +73,7 @@ export function beginRun() {
   });
 }
 export function cancelRun() {
+  useRunHistory.setState({ isFinishing: false });
   unsubscribe?.();
   unsubscribe = undefined;
   active = null;

@@ -15,7 +15,7 @@ export interface SimulationBridgeSnapshot {
 
 export interface SimulationBridgeEvents {
   onTick: (payload: TickPayload) => void;
-  onStopped?: () => void;
+  onStopped?: (accepted: boolean) => void;
   onStateChange: (state: SimulationState) => void;
   onModeChange: (mode: SimulationRuntimeMode) => void;
   onReset: () => void;
@@ -131,8 +131,11 @@ export class SimulationBridge {
     }
     if (isCurrentGraphRevision(message.payload.graphRevision, this.getSnapshot().graphRevision)) {
       this.events.onTick(message.payload);
-      if (message.type === 'STOPPED') this.events.onStopped?.();
     }
+    if (message.type === 'STOPPED')
+      this.events.onStopped?.(
+        isCurrentGraphRevision(message.payload.graphRevision, this.getSnapshot().graphRevision),
+      );
   }
 
   private post(command: WorkerCommand): void {
@@ -216,7 +219,7 @@ export class SimulationBridge {
     this.post({ type: 'STOP' });
     this.fallbackEngine?.stop();
     this.clearFallbackTimer();
-    if (this.fallbackEngine) this.events.onStopped?.();
+    if (this.fallbackEngine) this.events.onStopped?.(true);
   }
 
   public reset(): void {

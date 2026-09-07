@@ -32,7 +32,7 @@ const steps = [
 export function ExperimentGuide() {
   const [open, setOpen] = useState(() => {
     try {
-      return localStorage.getItem(GUIDE_KEY) !== 'yes';
+      return localStorage.getItem(GUIDE_KEY) !== 'yes' && window.innerWidth > 640;
     } catch {
       return true;
     }
@@ -41,6 +41,7 @@ export function ExperimentGuide() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const hasNodes = useStore((state) => state.nodes.length > 0);
   const simState = useStore((state) => state.simState);
+  const isFinishing = useRunHistory((state) => state.isFinishing);
   const runCount = useRunHistory((state) => state.runs.length);
   const dismiss = () => {
     setOpen(false);
@@ -78,7 +79,10 @@ export function ExperimentGuide() {
             <strong>{steps[step].title}</strong>
             <p>{steps[step].text}</p>
           </div>
-          <button onClick={advance} disabled={!hasNodes || (step === 2 && runCount === 0)}>
+          <button
+            onClick={advance}
+            disabled={!hasNodes || isFinishing || (step === 2 && runCount === 0)}
+          >
             {steps[step].action}
           </button>
           <button onClick={dismiss}>Dismiss guide</button>

@@ -61,6 +61,7 @@ export const SimulationControls: React.FC = () => {
   );
 
   const [historyOpen, setHistoryOpen] = React.useState(false);
+  const isFinishing = useRunHistory((state) => state.isFinishing);
   const runCount = useRunHistory((state) => state.runs.length);
   const [qpsText, setQpsText] = React.useState(String(trafficConfig.baseQps));
   const [seedText, setSeedText] = React.useState(String(trafficConfig.seed ?? 1));
@@ -228,11 +229,11 @@ export const SimulationControls: React.FC = () => {
         <button
           className={`${styles.playBtn} ${isRunning ? styles.playBtnRunning : ''}`}
           onClick={handlePlayPause}
-          disabled={!hasNodes}
+          disabled={!hasNodes || isFinishing}
           title={isRunning ? 'Pause Simulation (Space)' : 'Start Simulation (Space)'}
         >
           {isRunning ? <Pause size={14} /> : <Play size={14} />}
-          <span>{isRunning ? 'Pause' : 'Simulate'}</span>
+          <span>{isFinishing ? 'Finishing…' : isRunning ? 'Pause' : 'Simulate'}</span>
         </button>
 
         <button

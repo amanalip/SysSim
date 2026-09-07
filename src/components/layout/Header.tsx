@@ -239,7 +239,7 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen = true, onToggleSi
         </span>
       </div>
 
-      <span role="status" style={{ fontSize: 12 }}>
+      <span role="status" className={styles.draftStatus}>
         {draftStatus}
       </span>
       <div className={styles.actionMenu} ref={actionsRef}>
