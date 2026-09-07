@@ -23,14 +23,12 @@ describe('saved simulation experiments', () => {
   afterEach(cancelRun);
   function completedRun() {
     beginRun();
-    useStore
-      .getState()
-      .updateMetrics({
-        totalRequestsCompleted: 90,
-        totalRequestsSuccess: 80,
-        totalRequestsDropped: 10,
-        p95LatencyMs: 25,
-      });
+    useStore.getState().updateMetrics({
+      totalRequestsCompleted: 90,
+      totalRequestsSuccess: 80,
+      totalRequestsDropped: 10,
+      p95LatencyMs: 25,
+    });
     useStore.getState().setSimulationTiming(2000, Date.now());
     finishRun();
     return useRunHistory.getState().runs[0];
