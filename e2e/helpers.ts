@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import LZString from 'lz-string';
 import { createDefaultConfig } from '../src/model/component-defaults';
 import { ComponentType, SerializedCanvasState } from '../src/model/types';
@@ -35,3 +36,10 @@ export const twoNodeArchitecture = architectureUrl(
     },
   ],
 );
+
+export async function openArchitectureActions(page: Page) {
+  const toggle = page.getByRole('button', { name: 'Architecture actions', exact: true });
+  if ((await toggle.isVisible()) && (await toggle.getAttribute('aria-expanded')) !== 'true') {
+    await toggle.click();
+  }
+}

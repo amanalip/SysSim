@@ -1,3 +1,4 @@
+import { openArchitectureActions } from './helpers';
 import { expect, test } from '@playwright/test';
 import LZString from 'lz-string';
 import { createDefaultConfig } from '../src/model/component-defaults';
@@ -39,6 +40,7 @@ test('each targeted chaos drill injects and restores through the UI', async ({ p
   );
   await page.goto(`./#data=${state}`);
   await expect(page.getByTestId('rf__node-db')).toBeVisible();
+  await openArchitectureActions(page);
   await expect(page.getByTitle('Run targeted Chaos Engineering drills')).toBeVisible();
   await page.getByTitle('Run targeted Chaos Engineering drills').click();
 
