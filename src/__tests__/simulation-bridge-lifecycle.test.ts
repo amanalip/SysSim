@@ -263,3 +263,36 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
     b.dispose();
   });
 });
+
+describe('confirmed stop results', () => {
+  it('publishes final metrics before confirming a stop and ignores cancelled acknowledgements', () => {
+    const f = fixture();
+    f.events.onStopped = vi.fn();
+    const bridge = new SimulationBridge(f.getSnapshot, f.events, { workerFactory: () => f.worker });
+    bridge.initialize();
+    const stopped = {
+      data: {
+        type: 'STOPPED',
+        payload: {
+          graphRevision: 4,
+          elapsedSimulationMs: 2000,
+          metrics: createInitialMetrics(),
+          activeRequests: [],
+          recentRequests: [],
+        },
+      },
+    } as MessageEvent;
+    bridge.stop();
+    expect(f.events.onStopped).not.toHaveBeenCalled();
+    expect(bridge.isStopping()).toBe(true);
+    f.worker.onmessage?.(stopped);
+    expect(f.events.onTick).toHaveBeenCalledOnce();
+    expect(f.events.onStopped).toHaveBeenCalledOnce();
+    expect(bridge.isStopping()).toBe(false);
+    bridge.stop();
+    bridge.reset();
+    f.worker.onmessage?.(stopped);
+    expect(f.events.onStopped).toHaveBeenCalledOnce();
+    bridge.dispose();
+  });
+});

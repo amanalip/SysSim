@@ -4,6 +4,7 @@ import {
   startWorkspaceAutosave,
   useDraftStatus,
   WORKSPACE_DRAFT_KEY,
+  UNREADABLE_DRAFT_KEY,
 } from '../store/workspace-draft';
 import { useStore } from '../store/use-store';
 
@@ -54,6 +55,7 @@ describe('workspace recovery', () => {
   it('rejects corrupted drafts', () => {
     localStorage.setItem(WORKSPACE_DRAFT_KEY, '{"nodes":"invalid"}');
     expect(() => readWorkspaceDraft()).toThrow();
+    expect(localStorage.getItem(UNREADABLE_DRAFT_KEY)).toBe('{"nodes":"invalid"}');
   });
   it('does not write on simulation telemetry updates', () => {
     dispose = startWorkspaceAutosave();

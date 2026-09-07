@@ -6,6 +6,7 @@ import { ARCHITECTURE_LIMITS } from '../model/architecture-schema';
 import { byteLength } from '../security/untrusted-data';
 
 export const WORKSPACE_DRAFT_KEY = 'syssim_workspace_draft_v1';
+export const UNREADABLE_DRAFT_KEY = 'syssim_workspace_unreadable_draft';
 export const useDraftStatus = create<{ status: string }>(() => ({
   status: 'Preparing local save…',
 }));
@@ -13,9 +14,19 @@ export const useDraftStatus = create<{ status: string }>(() => ({
 export function readWorkspaceDraft() {
   const raw = localStorage.getItem(WORKSPACE_DRAFT_KEY);
   if (raw === null) return null;
-  if (byteLength(raw) > ARCHITECTURE_LIMITS.maxImportBytes)
-    throw new Error('Draft exceeds size limit');
-  return parseImportedArchitecture(JSON.parse(raw));
+  try {
+    if (byteLength(raw) > ARCHITECTURE_LIMITS.maxImportBytes)
+      throw new Error('Draft exceeds size limit');
+    return parseImportedArchitecture(JSON.parse(raw));
+  } catch (error) {
+    // Keep the original for recovery before a starter can replace the active draft.
+    try {
+      localStorage.setItem(UNREADABLE_DRAFT_KEY, raw);
+    } catch {
+      /* Storage can be unavailable. */
+    }
+    throw error;
+  }
 }
 
 export function startWorkspaceAutosave() {
