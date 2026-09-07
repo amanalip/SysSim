@@ -94,6 +94,16 @@ self.onmessage = (event: MessageEvent) => {
 
     case 'STOP':
       engine.stop();
+      self.postMessage({
+        type: 'STOPPED',
+        payload: {
+          metrics: engine.getMetricsSnapshot(),
+          activeRequests: [],
+          recentRequests: [],
+          elapsedSimulationMs: engine.getElapsedSimulationMs(),
+          graphRevision,
+        },
+      } satisfies WorkerResponse);
       if (timer) {
         clearInterval(timer);
         timer = null;

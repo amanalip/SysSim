@@ -15,6 +15,7 @@ export interface SimulationBridgeSnapshot {
 
 export interface SimulationBridgeEvents {
   onTick: (payload: TickPayload) => void;
+  onStopped?: () => void;
   onStateChange: (state: SimulationState) => void;
   onModeChange: (mode: SimulationRuntimeMode) => void;
   onReset: () => void;
@@ -52,6 +53,8 @@ export class SimulationBridge {
   private workerReady = false;
   private acknowledgedGraphRevision = -1;
   private pendingStart = false;
+  private pendingStop = false;
+  public isStopping(): boolean { return this.pendingStop; }
   private mode: SimulationRuntimeMode = 'fallback';
   private readonly engineFactory: () => SysSimEngine;
   private readonly setIntervalFn: typeof setInterval;
@@ -120,8 +123,13 @@ export class SimulationBridge {
       }
       return;
     }
+    if (message.type === 'STOPPED') {
+      if (!this.pendingStop) return;
+      this.pendingStop = false;
+    }
     if (isCurrentGraphRevision(message.payload.graphRevision, this.getSnapshot().graphRevision)) {
       this.events.onTick(message.payload);
+      if (message.type === 'STOPPED') this.events.onStopped?.();
     }
   }
 
@@ -150,6 +158,7 @@ export class SimulationBridge {
   }
 
   public start(): void {
+    if (this.pendingStop) return;
     this.ensureInitialized();
     const snapshot = this.getSnapshot();
     this.syncGraph();
@@ -197,14 +206,20 @@ export class SimulationBridge {
   }
 
   public stop(): void {
+    if (this.pendingStop) return;
     this.ensureInitialized();
+    this.pendingStart = false;
+    this.pendingStop = Boolean(this.worker);
     this.events.onStateChange('stopped');
     this.post({ type: 'STOP' });
     this.fallbackEngine?.stop();
     this.clearFallbackTimer();
+    if (this.fallbackEngine) this.events.onStopped?.();
   }
 
   public reset(): void {
+    this.pendingStart = false;
+    this.pendingStop = false;
     this.ensureInitialized();
     this.events.onReset();
     this.post({ type: 'RESET' });
@@ -237,6 +252,7 @@ export class SimulationBridge {
   private activateFallback(): void {
     const shouldRun = this.getSnapshot().simState === 'running' || this.pendingStart;
     this.worker?.terminate();
+    this.pendingStop = false;
     this.worker = null;
     this.workerReady = false;
     this.acknowledgedGraphRevision = -1;
