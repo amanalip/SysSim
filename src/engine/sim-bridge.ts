@@ -181,6 +181,7 @@ export class SimulationBridge {
   }
 
   public pause(): void {
+    this.pendingStart = false;
     this.ensureInitialized();
     this.events.onStateChange('paused');
     this.post({ type: 'PAUSE' });
@@ -189,10 +190,15 @@ export class SimulationBridge {
   }
 
   public resume(): void {
+    if (this.pendingStop) return;
     this.ensureInitialized();
     this.syncGraph();
     this.events.onStateChange('running');
-    if (this.worker) this.post({ type: 'RESUME' });
+    if (this.worker) {
+      if (!this.workerReady || this.acknowledgedGraphRevision !== this.getSnapshot().graphRevision)
+        this.pendingStart = true;
+      else this.post({ type: 'RESUME' });
+    }
     if (this.fallbackEngine) {
       this.fallbackEngine.resume();
       this.startFallbackTimer();
