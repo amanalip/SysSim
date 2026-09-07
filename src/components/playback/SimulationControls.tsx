@@ -19,6 +19,8 @@ import { RequestKeyDistribution, TrafficPattern } from '../../model/types';
 import styles from './SimulationControls.module.css';
 import { safeErrorMessage } from '../../errors/app-error';
 import { formatSimulationDuration } from '../../platform/time';
+import { RunHistoryModal } from '../modals/RunHistoryModal';
+import { useRunHistory } from '../../store/run-history';
 import { parseBoundedWorkloadTrace } from '../../engine/workload-model';
 
 export const SimulationControls: React.FC = () => {
@@ -58,6 +60,8 @@ export const SimulationControls: React.FC = () => {
     })),
   );
 
+  const [historyOpen, setHistoryOpen] = React.useState(false);
+  const runCount = useRunHistory((state) => state.runs.length);
   const [qpsText, setQpsText] = React.useState(String(trafficConfig.baseQps));
   const [seedText, setSeedText] = React.useState(String(trafficConfig.seed ?? 1));
   const [customKeysText, setCustomKeysText] = React.useState(() =>
@@ -116,12 +120,6 @@ export const SimulationControls: React.FC = () => {
 
   const handleStop = () => {
     simBridge.stop();
-    const completed =
-      metrics.totalRequestsCompleted ?? metrics.totalRequestsSuccess + metrics.totalRequestsFailed;
-    addToast(
-      `Run stopped at ${formatSimulationDuration(simulationElapsedMs)}: ${completed.toLocaleString()} completed, ${(metrics.totalRequestsDropped ?? 0).toLocaleString()} dropped, p95 ${metrics.p95LatencyMs || 0} ms`,
-      metrics.totalRequestsDropped ? 'warning' : 'info',
-    );
   };
 
   const handleReset = () => {
@@ -240,7 +238,7 @@ export const SimulationControls: React.FC = () => {
         <button
           className={styles.controlBtn}
           onClick={handleStop}
-          disabled={!hasNodes || simState === 'idle'}
+          disabled={!hasNodes || simState === 'idle' || simState === 'stopped'}
           title="Stop simulation"
           aria-label="Stop simulation"
         >
@@ -268,6 +266,13 @@ export const SimulationControls: React.FC = () => {
 
       <div className={styles.divider} />
 
+      <button
+        className={styles.controlBtn + ' ' + styles.textBtn}
+        onClick={() => setHistoryOpen(true)}
+      >
+        Run history ({runCount})
+      </button>
+      {historyOpen && <RunHistoryModal onClose={() => setHistoryOpen(false)} />}
       {/* Traffic Pattern Segmented Switcher */}
       <div className={styles.configGroup}>
         <span className={styles.label}>Pattern</span>

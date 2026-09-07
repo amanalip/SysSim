@@ -54,7 +54,9 @@ export class SimulationBridge {
   private acknowledgedGraphRevision = -1;
   private pendingStart = false;
   private pendingStop = false;
-  public isStopping(): boolean { return this.pendingStop; }
+  public isStopping(): boolean {
+    return this.pendingStop;
+  }
   private mode: SimulationRuntimeMode = 'fallback';
   private readonly engineFactory: () => SysSimEngine;
   private readonly setIntervalFn: typeof setInterval;
