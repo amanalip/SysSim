@@ -97,9 +97,7 @@ self.onmessage = (event: MessageEvent) => {
       self.postMessage({
         type: 'STOPPED',
         payload: {
-          metrics: engine.getMetricsSnapshot(),
-          activeRequests: [],
-          recentRequests: [],
+          ...engine.step(0),
           elapsedSimulationMs: engine.getElapsedSimulationMs(),
           graphRevision,
         },

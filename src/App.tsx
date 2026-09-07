@@ -10,7 +10,6 @@ import { ComponentPalette } from './components/palette/ComponentPalette';
 import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { PropertiesPanel } from './components/panels/PropertiesPanel';
 import { SimulationControls } from './components/playback/SimulationControls';
-import { EnvelopeCalculator } from './components/panels/EnvelopeCalculator';
 import { ToastContainer } from './components/ui/Toast';
 import { chaosRunner } from './engine/metrics/chaos-runner';
 import {
@@ -22,6 +21,12 @@ import { decodeStateFromUrlHash } from './utils/sharing';
 import styles from './App.module.css';
 import { readWorkspaceDraft, startWorkspaceAutosave } from './store/workspace-draft';
 import { startUiPerformanceMonitor } from './diagnostics/runtime-performance';
+
+const EnvelopeCalculator = lazy(() =>
+  import('./components/panels/EnvelopeCalculator').then((module) => ({
+    default: module.EnvelopeCalculator,
+  })),
+);
 
 const MetricsDashboard = lazy(() =>
   import('./components/panels/MetricsDashboard').then((module) => ({
@@ -309,7 +314,11 @@ export function App() {
               <ScenarioManager />
             </Suspense>
           }
-          calculatorSlot={<EnvelopeCalculator />}
+          calculatorSlot={
+            <Suspense fallback={<div className={styles.lazyFallback}>Loading calculator…</div>}>
+              <EnvelopeCalculator />
+            </Suspense>
+          }
         />
 
         <main className={styles.canvasContainer}>

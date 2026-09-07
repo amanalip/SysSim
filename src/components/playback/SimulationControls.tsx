@@ -19,9 +19,12 @@ import { RequestKeyDistribution, TrafficPattern } from '../../model/types';
 import styles from './SimulationControls.module.css';
 import { safeErrorMessage } from '../../errors/app-error';
 import { formatSimulationDuration } from '../../platform/time';
-import { RunHistoryModal } from '../modals/RunHistoryModal';
 import { useRunHistory } from '../../store/run-history';
 import { parseBoundedWorkloadTrace } from '../../engine/workload-model';
+
+const RunHistoryModal = React.lazy(() =>
+  import('../modals/RunHistoryModal').then((module) => ({ default: module.RunHistoryModal })),
+);
 
 export const SimulationControls: React.FC = () => {
   const {
@@ -274,7 +277,11 @@ export const SimulationControls: React.FC = () => {
       >
         Run history ({runCount})
       </button>
-      {historyOpen && <RunHistoryModal onClose={() => setHistoryOpen(false)} />}
+      {historyOpen && (
+        <React.Suspense fallback={<span role="status">Loading run history…</span>}>
+          <RunHistoryModal onClose={() => setHistoryOpen(false)} />
+        </React.Suspense>
+      )}
       <div className={styles.configGroup}>
         <label className={styles.label} htmlFor="simulation-qps">
           QPS

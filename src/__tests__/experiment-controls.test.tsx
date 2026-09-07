@@ -25,16 +25,16 @@ describe('experiment controls', () => {
       expect(useStore.getState().trafficConfig.baseQps).toBe(Number(value));
     }
   });
-  it('keeps history accessible and puts specialist settings in a closed disclosure', () => {
+  it('keeps history accessible and puts specialist settings in a closed disclosure', async () => {
     const { container } = render(<SimulationControls />);
     const details = container.querySelector('details')!;
     expect(details).not.toHaveAttribute('open');
     expect(details).toContainElement(screen.getByLabelText('Simulation seed'));
     expect(screen.getByRole('button', { name: 'Run history (0)' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Run history (0)' }));
-    expect(screen.getByRole('dialog', { name: 'Run history & comparison' })).toHaveTextContent(
-      'press Stop',
-    );
+    expect(
+      await screen.findByRole('dialog', { name: 'Run history & comparison' }),
+    ).toHaveTextContent('press Stop');
     fireEvent.click(screen.getByRole('button', { name: 'Close run history' }));
     expect(screen.queryByRole('dialog')).toBeNull();
   });

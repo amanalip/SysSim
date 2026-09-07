@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useStore } from '../../store/use-store';
 import { useRunHistory } from '../../store/run-history';
 import { simulationRuntime } from '../../engine/simulation-runtime';
-import { RunHistoryModal } from '../modals/RunHistoryModal';
 import styles from './ExperimentGuide.module.css';
+
+const RunHistoryModal = lazy(() =>
+  import('../modals/RunHistoryModal').then((module) => ({ default: module.RunHistoryModal })),
+);
 
 const GUIDE_KEY = 'syssim_experiment_guide_dismissed';
 const steps = [
@@ -98,7 +101,11 @@ export function ExperimentGuide() {
           Guided experiment
         </button>
       )}
-      {historyOpen && <RunHistoryModal onClose={() => setHistoryOpen(false)} />}
+      {historyOpen && (
+        <Suspense fallback={<span role="status">Loading run history…</span>}>
+          <RunHistoryModal onClose={() => setHistoryOpen(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }
