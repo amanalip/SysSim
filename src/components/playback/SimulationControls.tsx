@@ -250,6 +250,7 @@ export const SimulationControls: React.FC = () => {
           onClick={handleStep}
           disabled={!hasNodes || isRunning}
           title="Step forward by 1 tick"
+          aria-label="Step forward by 1 tick"
         >
           <SkipForward size={14} />
         </button>
@@ -273,70 +274,6 @@ export const SimulationControls: React.FC = () => {
         Run history ({runCount})
       </button>
       {historyOpen && <RunHistoryModal onClose={() => setHistoryOpen(false)} />}
-      {/* Traffic Pattern Segmented Switcher */}
-      <div className={styles.configGroup}>
-        <span className={styles.label}>Pattern</span>
-        <div className={styles.segmentedGroup}>
-          {patterns.map((p) => (
-            <button
-              key={p.key}
-              className={`${styles.segmentedBtn} ${trafficConfig.pattern === p.key ? styles.segmentedBtnActive : ''}`}
-              onClick={() => handlePatternChange(p.key)}
-              title={`${p.label} Traffic Pattern`}
-            >
-              {p.icon}
-              <span>{p.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className={styles.configGroup}>
-        <label className={styles.label} htmlFor="request-key-distribution">
-          Keys
-        </label>
-        <select
-          id="request-key-distribution"
-          className={styles.compactSelect}
-          value={trafficConfig.requestKeyDistribution || 'uniform'}
-          onChange={(event) =>
-            handleKeyDistributionChange(event.target.value as RequestKeyDistribution)
-          }
-          title="Request-key popularity distribution"
-        >
-          <option value="uniform">Uniform</option>
-          <option value="zipfian">Hot-key (Zipf)</option>
-          <option value="custom">Custom</option>
-        </select>
-        {trafficConfig.requestKeyDistribution === 'custom' ? (
-          <input
-            className={styles.customKeysInput}
-            value={customKeysText}
-            onChange={(event) => setCustomKeysText(event.target.value)}
-            onBlur={handleCustomKeysBlur}
-            aria-label="Custom request keys and weights"
-            placeholder="home:5,search:2"
-            title="Comma-separated key:weight pairs"
-          />
-        ) : null}
-      </div>
-
-      <input
-        ref={traceInputRef}
-        type="file"
-        accept=".json,.csv,application/json,text/csv"
-        hidden
-        onChange={handleTraceImport}
-        aria-label="Workload trace file"
-      />
-      <button
-        className={`${styles.controlBtn} ${styles.textBtn}`}
-        onClick={() => traceInputRef.current?.click()}
-        title="Import a bounded JSON or CSV workload trace"
-      >
-        Import trace
-      </button>
-
       <div className={styles.configGroup}>
         <label className={styles.label} htmlFor="simulation-qps">
           QPS
@@ -361,55 +298,127 @@ export const SimulationControls: React.FC = () => {
         </span>
       )}
 
-      <div className={styles.configGroup}>
-        <label className={styles.label} htmlFor="simulation-seed">
-          Seed
-        </label>
-        <input
-          id="simulation-seed"
-          aria-label="Simulation seed"
-          type="number"
-          className={styles.qpsInput}
-          value={seedText}
-          onChange={(event) => setSeedText(event.target.value)}
-          onBlur={applySeed}
-          min="1"
-          step="1"
-        />
-        <button
-          className={`${styles.controlBtn} ${styles.textBtn}`}
-          onClick={copySeed}
-          title="Copy simulation seed"
-        >
-          Copy
-        </button>
-      </div>
+      <details className={styles.advancedSettings}>
+        <summary>
+          Advanced · {trafficConfig.pattern}
+          {isChaosMode ? ' · Chaos ON' : ''}
+        </summary>
+        <div className={styles.advancedContent}>
+          {/* Traffic Pattern Segmented Switcher */}
+          <div className={styles.configGroup}>
+            <span className={styles.label}>Pattern</span>
+            <div className={styles.segmentedGroup}>
+              {patterns.map((p) => (
+                <button
+                  key={p.key}
+                  className={`${styles.segmentedBtn} ${trafficConfig.pattern === p.key ? styles.segmentedBtnActive : ''}`}
+                  onClick={() => handlePatternChange(p.key)}
+                  title={`${p.label} Traffic Pattern`}
+                >
+                  {p.icon}
+                  <span>{p.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* Segmented Speed Selector */}
-      <div className={styles.speedSegmentedGroup}>
-        {speeds.map((spd) => (
+          <div className={styles.configGroup}>
+            <label className={styles.label} htmlFor="request-key-distribution">
+              Keys
+            </label>
+            <select
+              id="request-key-distribution"
+              className={styles.compactSelect}
+              value={trafficConfig.requestKeyDistribution || 'uniform'}
+              onChange={(event) =>
+                handleKeyDistributionChange(event.target.value as RequestKeyDistribution)
+              }
+              title="Request-key popularity distribution"
+            >
+              <option value="uniform">Uniform</option>
+              <option value="zipfian">Hot-key (Zipf)</option>
+              <option value="custom">Custom</option>
+            </select>
+            {trafficConfig.requestKeyDistribution === 'custom' ? (
+              <input
+                className={styles.customKeysInput}
+                value={customKeysText}
+                onChange={(event) => setCustomKeysText(event.target.value)}
+                onBlur={handleCustomKeysBlur}
+                aria-label="Custom request keys and weights"
+                placeholder="home:5,search:2"
+                title="Comma-separated key:weight pairs"
+              />
+            ) : null}
+          </div>
+
+          <input
+            ref={traceInputRef}
+            type="file"
+            accept=".json,.csv,application/json,text/csv"
+            hidden
+            onChange={handleTraceImport}
+            aria-label="Workload trace file"
+          />
           <button
-            key={spd}
-            className={`${styles.speedPill} ${speedMultiplier === spd ? styles.speedPillActive : ''}`}
-            onClick={() => handleSpeedChange(spd)}
-            title={`Set simulation clock speed to ${spd}x; UI refresh cadence stays constant`}
+            className={`${styles.controlBtn} ${styles.textBtn}`}
+            onClick={() => traceInputRef.current?.click()}
+            title="Import a bounded JSON or CSV workload trace"
           >
-            {spd}x
+            Import trace
           </button>
-        ))}
-      </div>
 
-      <div className={styles.divider} />
+          <div className={styles.configGroup}>
+            <label className={styles.label} htmlFor="simulation-seed">
+              Seed
+            </label>
+            <input
+              id="simulation-seed"
+              aria-label="Simulation seed"
+              type="number"
+              className={styles.qpsInput}
+              value={seedText}
+              onChange={(event) => setSeedText(event.target.value)}
+              onBlur={applySeed}
+              min="1"
+              step="1"
+            />
+            <button
+              className={`${styles.controlBtn} ${styles.textBtn}`}
+              onClick={copySeed}
+              title="Copy simulation seed"
+            >
+              Copy
+            </button>
+          </div>
 
-      {/* Chaos Mode Toggle */}
-      <button
-        className={`${styles.chaosBtn} ${isChaosMode ? styles.chaosBtnActive : ''}`}
-        onClick={toggleChaos}
-        title="Toggle Chaos Monkey failure injection (C)"
-      >
-        <Flame size={12} />
-        <span>Chaos {isChaosMode ? 'ON' : 'OFF'}</span>
-      </button>
+          {/* Segmented Speed Selector */}
+          <div className={styles.speedSegmentedGroup}>
+            {speeds.map((spd) => (
+              <button
+                key={spd}
+                className={`${styles.speedPill} ${speedMultiplier === spd ? styles.speedPillActive : ''}`}
+                onClick={() => handleSpeedChange(spd)}
+                title={`Set simulation clock speed to ${spd}x; UI refresh cadence stays constant`}
+              >
+                {spd}x
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.divider} />
+
+          {/* Chaos Mode Toggle */}
+          <button
+            className={`${styles.chaosBtn} ${isChaosMode ? styles.chaosBtnActive : ''}`}
+            onClick={toggleChaos}
+            title="Toggle Chaos Monkey failure injection (C)"
+          >
+            <Flame size={12} />
+            <span>Chaos {isChaosMode ? 'ON' : 'OFF'}</span>
+          </button>
+        </div>
+      </details>
 
       {/* Telemetry Stats */}
       <div className={styles.statsCluster}>
@@ -457,6 +466,7 @@ export const SimulationControls: React.FC = () => {
         className={`${styles.controlBtn} ${isBottomDrawerOpen ? styles.drawerBtnActive : ''}`}
         onClick={() => setIsBottomDrawerOpen(!isBottomDrawerOpen)}
         title="Toggle Real-Time Metrics & Charts Drawer (M)"
+        aria-label="Toggle metrics dashboard"
       >
         <BarChart2 size={15} />
       </button>

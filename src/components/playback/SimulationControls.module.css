@@ -392,3 +392,43 @@
     min-height: 44px;
   }
 }
+
+.advancedSettings {
+  font-size: 12px;
+}
+.advancedSettings summary {
+  cursor: pointer;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+.advancedSettings summary::before {
+  content: '▸';
+  margin-right: 6px;
+}
+.advancedSettings[open] summary::before {
+  content: '▾';
+}
+.advancedSettings[open] {
+  flex-basis: 100%;
+  order: 10;
+}
+.advancedContent {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 0;
+}
+.controlsBar:has(.advancedSettings[open]) {
+  max-height: min(45dvh, 360px);
+}
+@media (max-width: 640px) {
+  .advancedSettings summary {
+    min-height: 44px;
+  }
+}
