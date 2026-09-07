@@ -21,4 +21,14 @@ Implemented all seven product improvements. Additional reliability work confirms
 
 Initial automated verification: 105 test files / 562 tests passed, followed by focused tests for the finalization and input-validation changes. Browser checks verified the four-step guide, two saved runs with a pinned baseline and duration caveat, Escape dismissal, and recovery of edited QPS (1,234) after reload at 390 × 844.
 
-Final suite and visual-baseline verification in progress. Existing browser tests are being updated to navigate the responsive actions menu and reflect the intentionally changed layout.
+Completed final checks:
+
+- Formatting, lint, TypeScript, and duplicate-code checks passed.
+- Production bundle budget passed: largest chunk 487,038 bytes against the unchanged 500,000-byte limit. Calculator and run history load on demand.
+- All 35 Chromium browser tests passed with reviewed, updated visual baselines.
+- Both production deployment tests passed on the final build.
+- Focused accessibility and product-label checks passed (14 tests).
+
+The broader coverage run encountered timing failures while concurrent browser checks were running. Those focused checks subsequently passed; a coverage rerun was underway when the user requested stopping. Full coverage completion and remote CI success are not claimed.
+
+All implementation, regression tests, visual baselines, and the two reported GitHub CI fixes are committed and pushed. Further verification stopped at the user's request.
