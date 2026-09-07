@@ -88,6 +88,14 @@ export const SimulationControls: React.FC = () => {
 
   React.useEffect(() => setSeedText(String(trafficConfig.seed ?? 1)), [trafficConfig.seed]);
 
+  React.useEffect(() => {
+    setCustomKeysText(
+      (trafficConfig.customRequestKeys || [])
+        .map((entry) => `${entry.key}:${entry.weight}`)
+        .join(','),
+    );
+  }, [trafficConfig.customRequestKeys]);
+
   const applySeed = () => {
     const value = Number(seedText);
     if (!Number.isFinite(value)) return setSeedText(String(trafficConfig.seed ?? 1));
