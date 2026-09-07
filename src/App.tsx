@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store/use-store';
 import { ZoneData } from './model/types';
 import { toCanvasEdges, toCanvasNodes } from './model/canvas-types';
+import { ExperimentGuide } from './components/learning/ExperimentGuide';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { ComponentPalette } from './components/palette/ComponentPalette';
@@ -297,6 +298,7 @@ export function App() {
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
       />
+      <ExperimentGuide />
       <div className={styles.mainLayout}>
         <Sidebar
           isOpen={isSidebarOpen}

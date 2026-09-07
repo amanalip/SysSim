@@ -1,0 +1,51 @@
+.guide {
+  flex-shrink: 0;
+  padding: 4px 14px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.guide section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.copy {
+  flex: 1;
+  min-width: 0;
+}
+.copy p {
+  margin: 4px 0;
+  line-height: 1.4;
+  max-width: 100ch;
+}
+.guide button {
+  padding: 7px 10px;
+  min-height: 36px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.guide button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.guide .replay {
+  min-height: 28px;
+  padding: 2px 8px;
+}
+@media (max-width: 640px) {
+  .guide section {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .copy {
+    flex-basis: 100%;
+  }
+  .guide button {
+    min-height: 44px;
+  }
+}
