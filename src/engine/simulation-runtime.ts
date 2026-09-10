@@ -1,3 +1,4 @@
+import { beginRun, cancelRun, finishRun, useRunHistory } from '../store/run-history';
 import { useStore } from '../store/use-store';
 import { SimulationBridge } from './sim-bridge';
 import {
@@ -38,9 +39,27 @@ function createBridge(): SimulationBridge {
         state.setRecentRequests(recentRequests);
         state.setSimulationTiming(elapsedSimulationMs, Date.now());
       },
+      onStopped: (accepted) => {
+        if (accepted) finishRun();
+        else {
+          cancelRun();
+          useStore
+            .getState()
+            .addToast(
+              'Run summary skipped because the architecture changed while stopping.',
+              'warning',
+            );
+        }
+      },
       onStateChange: (simState) => useStore.getState().setSimState(simState),
-      onModeChange: (simulationRuntimeMode) => useStore.setState({ simulationRuntimeMode }),
-      onReset: () => useStore.getState().resetSimulation(),
+      onModeChange: (simulationRuntimeMode) => {
+        if (useRunHistory.getState().isFinishing) cancelRun();
+        useStore.setState({ simulationRuntimeMode });
+      },
+      onReset: () => {
+        cancelRun();
+        useStore.getState().resetSimulation();
+      },
       onError: (category, message) =>
         useStore
           .getState()
@@ -69,6 +88,7 @@ export function disposeSimulationRuntime(): void {
   configureGraphMutationListener(null);
   configureSimulationResetListener(null);
   configureTrafficConfigListener(null);
+  cancelRun();
   bridge?.dispose();
   bridge = null;
 }
@@ -80,11 +100,21 @@ export const simulationRuntime = {
   syncConfig: (config: Parameters<SimulationBridge['syncConfig']>[0]) =>
     getBridge().syncConfig(config),
   setSpeed: (speed: number) => getBridge().setSpeed(speed),
-  start: () => getBridge().start(),
+  start: () => {
+    const runtime = getBridge();
+    if (runtime.isStopping()) return;
+    if (useStore.getState().simState === 'stopped') runtime.reset();
+    beginRun();
+    runtime.start();
+  },
   pause: () => getBridge().pause(),
   resume: () => getBridge().resume(),
   step: () => getBridge().step(),
-  stop: () => getBridge().stop(),
+  stop: () => {
+    if (useStore.getState().simState === 'stopped') return;
+    useRunHistory.setState({ isFinishing: true });
+    getBridge().stop();
+  },
   reset: () => getBridge().reset(),
   getMode: () => getBridge().getMode(),
 };

@@ -19,7 +19,12 @@ import { RequestKeyDistribution, TrafficPattern } from '../../model/types';
 import styles from './SimulationControls.module.css';
 import { safeErrorMessage } from '../../errors/app-error';
 import { formatSimulationDuration } from '../../platform/time';
+import { useRunHistory } from '../../store/run-history';
 import { parseBoundedWorkloadTrace } from '../../engine/workload-model';
+
+const RunHistoryModal = React.lazy(() =>
+  import('../modals/RunHistoryModal').then((module) => ({ default: module.RunHistoryModal })),
+);
 
 export const SimulationControls: React.FC = () => {
   const {
@@ -58,6 +63,9 @@ export const SimulationControls: React.FC = () => {
     })),
   );
 
+  const [historyOpen, setHistoryOpen] = React.useState(false);
+  const isFinishing = useRunHistory((state) => state.isFinishing);
+  const runCount = useRunHistory((state) => state.runs.length);
   const [qpsText, setQpsText] = React.useState(String(trafficConfig.baseQps));
   const [seedText, setSeedText] = React.useState(String(trafficConfig.seed ?? 1));
   const [customKeysText, setCustomKeysText] = React.useState(() =>
@@ -79,6 +87,14 @@ export const SimulationControls: React.FC = () => {
   }, [trafficConfig.baseQps]);
 
   React.useEffect(() => setSeedText(String(trafficConfig.seed ?? 1)), [trafficConfig.seed]);
+
+  React.useEffect(() => {
+    setCustomKeysText(
+      (trafficConfig.customRequestKeys || [])
+        .map((entry) => `${entry.key}:${entry.weight}`)
+        .join(','),
+    );
+  }, [trafficConfig.customRequestKeys]);
 
   const applySeed = () => {
     const value = Number(seedText);
@@ -116,12 +132,6 @@ export const SimulationControls: React.FC = () => {
 
   const handleStop = () => {
     simBridge.stop();
-    const completed =
-      metrics.totalRequestsCompleted ?? metrics.totalRequestsSuccess + metrics.totalRequestsFailed;
-    addToast(
-      `Run stopped at ${formatSimulationDuration(simulationElapsedMs)}: ${completed.toLocaleString()} completed, ${(metrics.totalRequestsDropped ?? 0).toLocaleString()} dropped, p95 ${metrics.p95LatencyMs || 0} ms`,
-      metrics.totalRequestsDropped ? 'warning' : 'info',
-    );
   };
 
   const handleReset = () => {
@@ -155,19 +165,13 @@ export const SimulationControls: React.FC = () => {
     setTrafficConfig({ customRequestKeys });
   };
 
+  const qpsValid =
+    Number.isInteger(Number(qpsText)) && Number(qpsText) >= 1 && Number(qpsText) <= 50_000;
   const handleQpsChange = (raw: string) => {
     setQpsText(raw);
-    const val = parseInt(raw, 10);
-    if (!isNaN(val) && val > 0) {
-      const safeVal = Math.max(1, Math.min(100000, val));
-      setTrafficConfig({ baseQps: safeVal });
-    }
-  };
-
-  const handleQpsBlur = () => {
-    const val = parseInt(qpsText, 10);
-    if (isNaN(val) || val <= 0) {
-      setQpsText(String(trafficConfig.baseQps));
+    const value = Number(raw);
+    if (Number.isInteger(value) && value >= 1 && value <= 50_000) {
+      setTrafficConfig({ baseQps: value });
     }
   };
 
@@ -236,17 +240,17 @@ export const SimulationControls: React.FC = () => {
         <button
           className={`${styles.playBtn} ${isRunning ? styles.playBtnRunning : ''}`}
           onClick={handlePlayPause}
-          disabled={!hasNodes}
+          disabled={!hasNodes || isFinishing}
           title={isRunning ? 'Pause Simulation (Space)' : 'Start Simulation (Space)'}
         >
           {isRunning ? <Pause size={14} /> : <Play size={14} />}
-          <span>{isRunning ? 'Pause' : 'Simulate'}</span>
+          <span>{isFinishing ? 'Finishing…' : isRunning ? 'Pause' : 'Simulate'}</span>
         </button>
 
         <button
           className={styles.controlBtn}
           onClick={handleStop}
-          disabled={!hasNodes || simState === 'idle'}
+          disabled={!hasNodes || simState === 'idle' || simState === 'stopped'}
           title="Stop simulation"
           aria-label="Stop simulation"
         >
@@ -258,6 +262,7 @@ export const SimulationControls: React.FC = () => {
           onClick={handleStep}
           disabled={!hasNodes || isRunning}
           title="Step forward by 1 tick"
+          aria-label="Step forward by 1 tick"
         >
           <SkipForward size={14} />
         </button>
@@ -274,70 +279,17 @@ export const SimulationControls: React.FC = () => {
 
       <div className={styles.divider} />
 
-      {/* Traffic Pattern Segmented Switcher */}
-      <div className={styles.configGroup}>
-        <span className={styles.label}>Pattern</span>
-        <div className={styles.segmentedGroup}>
-          {patterns.map((p) => (
-            <button
-              key={p.key}
-              className={`${styles.segmentedBtn} ${trafficConfig.pattern === p.key ? styles.segmentedBtnActive : ''}`}
-              onClick={() => handlePatternChange(p.key)}
-              title={`${p.label} Traffic Pattern`}
-            >
-              {p.icon}
-              <span>{p.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className={styles.configGroup}>
-        <label className={styles.label} htmlFor="request-key-distribution">
-          Keys
-        </label>
-        <select
-          id="request-key-distribution"
-          className={styles.compactSelect}
-          value={trafficConfig.requestKeyDistribution || 'uniform'}
-          onChange={(event) =>
-            handleKeyDistributionChange(event.target.value as RequestKeyDistribution)
-          }
-          title="Request-key popularity distribution"
-        >
-          <option value="uniform">Uniform</option>
-          <option value="zipfian">Hot-key (Zipf)</option>
-          <option value="custom">Custom</option>
-        </select>
-        {trafficConfig.requestKeyDistribution === 'custom' ? (
-          <input
-            className={styles.customKeysInput}
-            value={customKeysText}
-            onChange={(event) => setCustomKeysText(event.target.value)}
-            onBlur={handleCustomKeysBlur}
-            aria-label="Custom request keys and weights"
-            placeholder="home:5,search:2"
-            title="Comma-separated key:weight pairs"
-          />
-        ) : null}
-      </div>
-
-      <input
-        ref={traceInputRef}
-        type="file"
-        accept=".json,.csv,application/json,text/csv"
-        hidden
-        onChange={handleTraceImport}
-        aria-label="Workload trace file"
-      />
       <button
-        className={`${styles.controlBtn} ${styles.textBtn}`}
-        onClick={() => traceInputRef.current?.click()}
-        title="Import a bounded JSON or CSV workload trace"
+        className={styles.controlBtn + ' ' + styles.textBtn}
+        onClick={() => setHistoryOpen(true)}
       >
-        Import trace
+        Run history ({runCount})
       </button>
-
+      {historyOpen && (
+        <React.Suspense fallback={<span role="status">Loading run history…</span>}>
+          <RunHistoryModal onClose={() => setHistoryOpen(false)} />
+        </React.Suspense>
+      )}
       <div className={styles.configGroup}>
         <label className={styles.label} htmlFor="simulation-qps">
           QPS
@@ -348,62 +300,141 @@ export const SimulationControls: React.FC = () => {
           className={styles.qpsInput}
           value={qpsText}
           onChange={(e) => handleQpsChange(e.target.value)}
-          onBlur={handleQpsBlur}
-          min="10"
-          max="50000"
-          step="50"
-        />
-      </div>
-
-      <div className={styles.configGroup}>
-        <label className={styles.label} htmlFor="simulation-seed">
-          Seed
-        </label>
-        <input
-          id="simulation-seed"
-          aria-label="Simulation seed"
-          type="number"
-          className={styles.qpsInput}
-          value={seedText}
-          onChange={(event) => setSeedText(event.target.value)}
-          onBlur={applySeed}
+          aria-invalid={!qpsValid}
+          aria-describedby={!qpsValid ? 'qps-error' : undefined}
           min="1"
+          max="50000"
           step="1"
         />
-        <button
-          className={`${styles.controlBtn} ${styles.textBtn}`}
-          onClick={copySeed}
-          title="Copy simulation seed"
-        >
-          Copy
-        </button>
       </div>
 
-      {/* Segmented Speed Selector */}
-      <div className={styles.speedSegmentedGroup}>
-        {speeds.map((spd) => (
+      {!qpsValid && (
+        <span id="qps-error" role="status">
+          Enter a whole number from 1 to 50,000. The last valid QPS remains active.
+        </span>
+      )}
+
+      <details className={styles.advancedSettings}>
+        <summary>
+          Advanced · {trafficConfig.pattern}
+          {isChaosMode ? ' · Chaos ON' : ''}
+        </summary>
+        <div className={styles.advancedContent}>
+          {/* Traffic Pattern Segmented Switcher */}
+          <div className={styles.configGroup}>
+            <span className={styles.label}>Pattern</span>
+            <div className={styles.segmentedGroup}>
+              {patterns.map((p) => (
+                <button
+                  key={p.key}
+                  className={`${styles.segmentedBtn} ${trafficConfig.pattern === p.key ? styles.segmentedBtnActive : ''}`}
+                  onClick={() => handlePatternChange(p.key)}
+                  title={`${p.label} Traffic Pattern`}
+                >
+                  {p.icon}
+                  <span>{p.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.configGroup}>
+            <label className={styles.label} htmlFor="request-key-distribution">
+              Keys
+            </label>
+            <select
+              id="request-key-distribution"
+              className={styles.compactSelect}
+              value={trafficConfig.requestKeyDistribution || 'uniform'}
+              onChange={(event) =>
+                handleKeyDistributionChange(event.target.value as RequestKeyDistribution)
+              }
+              title="Request-key popularity distribution"
+            >
+              <option value="uniform">Uniform</option>
+              <option value="zipfian">Hot-key (Zipf)</option>
+              <option value="custom">Custom</option>
+            </select>
+            {trafficConfig.requestKeyDistribution === 'custom' ? (
+              <input
+                className={styles.customKeysInput}
+                value={customKeysText}
+                onChange={(event) => setCustomKeysText(event.target.value)}
+                onBlur={handleCustomKeysBlur}
+                aria-label="Custom request keys and weights"
+                placeholder="home:5,search:2"
+                title="Comma-separated key:weight pairs"
+              />
+            ) : null}
+          </div>
+
+          <input
+            ref={traceInputRef}
+            type="file"
+            accept=".json,.csv,application/json,text/csv"
+            hidden
+            onChange={handleTraceImport}
+            aria-label="Workload trace file"
+          />
           <button
-            key={spd}
-            className={`${styles.speedPill} ${speedMultiplier === spd ? styles.speedPillActive : ''}`}
-            onClick={() => handleSpeedChange(spd)}
-            title={`Set simulation clock speed to ${spd}x; UI refresh cadence stays constant`}
+            className={`${styles.controlBtn} ${styles.textBtn}`}
+            onClick={() => traceInputRef.current?.click()}
+            title="Import a bounded JSON or CSV workload trace"
           >
-            {spd}x
+            Import trace
           </button>
-        ))}
-      </div>
 
-      <div className={styles.divider} />
+          <div className={styles.configGroup}>
+            <label className={styles.label} htmlFor="simulation-seed">
+              Seed
+            </label>
+            <input
+              id="simulation-seed"
+              aria-label="Simulation seed"
+              type="number"
+              className={styles.qpsInput}
+              value={seedText}
+              onChange={(event) => setSeedText(event.target.value)}
+              onBlur={applySeed}
+              min="1"
+              step="1"
+            />
+            <button
+              className={`${styles.controlBtn} ${styles.textBtn}`}
+              onClick={copySeed}
+              title="Copy simulation seed"
+            >
+              Copy
+            </button>
+          </div>
 
-      {/* Chaos Mode Toggle */}
-      <button
-        className={`${styles.chaosBtn} ${isChaosMode ? styles.chaosBtnActive : ''}`}
-        onClick={toggleChaos}
-        title="Toggle Chaos Monkey failure injection (C)"
-      >
-        <Flame size={12} />
-        <span>Chaos {isChaosMode ? 'ON' : 'OFF'}</span>
-      </button>
+          {/* Segmented Speed Selector */}
+          <div className={styles.speedSegmentedGroup}>
+            {speeds.map((spd) => (
+              <button
+                key={spd}
+                className={`${styles.speedPill} ${speedMultiplier === spd ? styles.speedPillActive : ''}`}
+                onClick={() => handleSpeedChange(spd)}
+                title={`Set simulation clock speed to ${spd}x; UI refresh cadence stays constant`}
+              >
+                {spd}x
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.divider} />
+
+          {/* Chaos Mode Toggle */}
+          <button
+            className={`${styles.chaosBtn} ${isChaosMode ? styles.chaosBtnActive : ''}`}
+            onClick={toggleChaos}
+            title="Toggle Chaos Monkey failure injection (C)"
+          >
+            <Flame size={12} />
+            <span>Chaos {isChaosMode ? 'ON' : 'OFF'}</span>
+          </button>
+        </div>
+      </details>
 
       {/* Telemetry Stats */}
       <div className={styles.statsCluster}>
@@ -451,6 +482,7 @@ export const SimulationControls: React.FC = () => {
         className={`${styles.controlBtn} ${isBottomDrawerOpen ? styles.drawerBtnActive : ''}`}
         onClick={() => setIsBottomDrawerOpen(!isBottomDrawerOpen)}
         title="Toggle Real-Time Metrics & Charts Drawer (M)"
+        aria-label="Toggle metrics dashboard"
       >
         <BarChart2 size={15} />
       </button>

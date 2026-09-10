@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { SCENARIO_CATEGORIES } from '../src/scenarios';
-import { twoNodeArchitecture } from './helpers';
+import { twoNodeArchitecture, openArchitectureActions } from './helpers';
 
 test('saves and restores a local architecture snapshot', async ({ page }) => {
   await page.goto(twoNodeArchitecture);
+  await openArchitectureActions(page);
   await page.getByTitle('Manage multi-slot architecture snapshots').click();
   const slot = page.locator('[class*="slotCard"]').first();
   await slot.getByTitle('Save current canvas state to this slot').click();
@@ -11,6 +12,7 @@ test('saves and restores a local architecture snapshot', async ({ page }) => {
   await page.getByRole('button', { name: 'Close snapshot manager' }).click();
   await page.getByRole('button', { name: 'Add Client to canvas' }).click();
   await expect(page.locator('.react-flow__node')).toHaveCount(3);
+  await openArchitectureActions(page);
   await page.getByTitle('Manage multi-slot architecture snapshots').click();
   page.once('dialog', (dialog) => dialog.accept());
   await page
@@ -24,14 +26,17 @@ test('saves and restores a local architecture snapshot', async ({ page }) => {
 test('exports and re-imports validated architecture JSON', async ({ page }) => {
   await page.goto(twoNodeArchitecture);
   const downloadPromise = page.waitForEvent('download');
+  await openArchitectureActions(page);
   await page.getByTitle('Export architecture as JSON file').click();
   const download = await downloadPromise;
   const file = await download.path();
   expect(file).not.toBeNull();
   page.once('dialog', (dialog) => dialog.accept());
+  await openArchitectureActions(page);
   await page.getByTitle('Clear all components from canvas').click();
   await expect(page.locator('.react-flow__node')).toHaveCount(0);
   const chooserPromise = page.waitForEvent('filechooser');
+  await openArchitectureActions(page);
   await page.getByTitle('Import architecture from JSON file').click();
   const chooser = await chooserPromise;
   await chooser.setFiles(file!);
@@ -41,6 +46,7 @@ test('exports and re-imports validated architecture JSON', async ({ page }) => {
 
 test('generates and reloads a share URL', async ({ page }) => {
   await page.goto(twoNodeArchitecture);
+  await openArchitectureActions(page);
   await page.getByTitle('Copy shareable link encoded with architecture state').click();
   await expect.poll(() => page.url()).toContain('#data=');
   const sharedUrl = page.url();
@@ -86,6 +92,7 @@ test('switches between dark and light themes', async ({ page }) => {
   await page.goto('./');
   await expect(page.locator('html')).toHaveAttribute('data-theme', /^(dark|light)$/);
   const initial = await page.locator('html').getAttribute('data-theme');
+  await openArchitectureActions(page);
   await page
     .getByTitle(new RegExp(`Switch to ${initial === 'dark' ? 'Light' : 'Dark'} mode`))
     .click();

@@ -40,7 +40,7 @@ SysSim's synthetic results are designed to build intuition. They are not product
 1. Drag a client, gateway, application server, and database onto the canvas.
 2. Draw arrows from source to target and choose each connection's purpose (request, fallback, async, fanout, replication, or observability).
 3. Set a deterministic seed and offered QPS, run the synthetic model, then inspect completed throughput, drops, rolling latency percentiles, and hop-by-hop traces.
-4. Stop to receive a run summary. Compare a scenario reference, undo changes, save a snapshot, or export the architecture as versioned JSON/PNG.
+4. Stop to save a summary in Run history. Pin a baseline and compare another run with the same seed, workload, and modeled duration. Compare a scenario reference, undo changes, save a snapshot, or export the architecture as versioned JSON/PNG.
 
 This is an interactive learning loop, not a load test: component capacity, latency, failures, and costs are simplified models. See the [product contract](docs/product-contract.md) for exact terms and limitations.
 
@@ -97,6 +97,7 @@ The supported browser and viewport matrix is maintained in the [product contract
 ## Data and privacy
 
 - JSON exports and browser snapshots contain component names, positions, configuration, zones, and traffic settings. Treat them as architecture documents.
+- The working architecture and traffic autosave locally and restore on reload. The header shows save status; use JSON export if local storage is unavailable. Run history stays in the current tab session and clears on reload.
 - Snapshot slots and learning progress remain in browser `localStorage` until cleared. SysSim has no application server receiving them.
 - Share links contain compressed architecture JSON in the URL hash. The hash is not normally sent as an HTTP request, but the complete URL can remain in browser history, screenshots, clipboard managers, support tickets, or analytics tooling that reads the address.
 - PNG exports contain the visible canvas. Diagnostic exports deliberately exclude architecture names, configuration values, scenario notes, URL hashes, and request traces.

@@ -31,7 +31,7 @@ export const BottleneckPanel: React.FC = () => {
         />
         <div className={styles.emptyState}>
           <CheckCircle2 size={24} color="var(--success)" />
-          <span className={styles.emptyTitle}>No Bottlenecks Detected</span>
+          <span className={styles.emptyTitle}>No issues found by current checks</span>
           <span style={{ fontSize: 11 }}>
             No issue matched the current baseline rules; this is not a production-readiness
             guarantee.

@@ -6,3 +6,6 @@ test-results
 reports
 package-lock.json
 e2e/**/*-snapshots/**
+
+.playwright-cli/
+output/playwright/

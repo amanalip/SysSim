@@ -50,6 +50,42 @@ function fixture() {
 describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', () => {
   beforeEach(() => vi.restoreAllMocks());
 
+  it('keeps an early pause in effect when the worker acknowledges startup', () => {
+    const f = fixture();
+    const bridge = new SimulationBridge(f.getSnapshot, f.events, { workerFactory: () => f.worker });
+    bridge.start();
+    bridge.pause();
+    f.worker.onmessage?.({ data: { type: 'WORKER_READY' } } as MessageEvent);
+    f.worker.onmessage?.({
+      data: { type: 'GRAPH_ACK', payload: { graphRevision: 4 } },
+    } as MessageEvent);
+    expect(f.posted).not.toContainEqual({ type: 'START' });
+    expect(f.events.onStateChange).toHaveBeenLastCalledWith('paused');
+    bridge.resume();
+    expect(f.posted).toContainEqual({ type: 'RESUME' });
+    bridge.dispose();
+  });
+
+  it('defers an early resume until the current graph is acknowledged', () => {
+    const f = fixture();
+    const bridge = new SimulationBridge(f.getSnapshot, f.events, { workerFactory: () => f.worker });
+    bridge.start();
+    bridge.pause();
+    bridge.resume();
+    expect(f.posted).not.toContainEqual({ type: 'RESUME' });
+    expect(f.posted).not.toContainEqual({ type: 'START' });
+    f.worker.onmessage?.({ data: { type: 'WORKER_READY' } } as MessageEvent);
+    f.worker.onmessage?.({
+      data: { type: 'GRAPH_ACK', payload: { graphRevision: 3 } },
+    } as MessageEvent);
+    expect(f.posted).not.toContainEqual({ type: 'START' });
+    f.worker.onmessage?.({
+      data: { type: 'GRAPH_ACK', payload: { graphRevision: 4 } },
+    } as MessageEvent);
+    expect(f.posted.filter((message) => message.type === 'START')).toHaveLength(1);
+    bridge.dispose();
+  });
+
   it('uses typed, validated commands and responses', () => {
     expect(isWorkerCommand({ type: 'SET_SPEED', payload: 2 })).toBe(true);
     expect(isWorkerCommand({ type: 'SET_SPEED', payload: Infinity })).toBe(false);
@@ -261,5 +297,38 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
     expect(first.worker.terminate).toHaveBeenCalledOnce();
     expect(second.worker.terminate).not.toHaveBeenCalled();
     b.dispose();
+  });
+});
+
+describe('confirmed stop results', () => {
+  it('publishes final metrics before confirming a stop and ignores cancelled acknowledgements', () => {
+    const f = fixture();
+    f.events.onStopped = vi.fn();
+    const bridge = new SimulationBridge(f.getSnapshot, f.events, { workerFactory: () => f.worker });
+    bridge.initialize();
+    const stopped = {
+      data: {
+        type: 'STOPPED',
+        payload: {
+          graphRevision: 4,
+          elapsedSimulationMs: 2000,
+          metrics: createInitialMetrics(),
+          activeRequests: [],
+          recentRequests: [],
+        },
+      },
+    } as MessageEvent;
+    bridge.stop();
+    expect(f.events.onStopped).not.toHaveBeenCalled();
+    expect(bridge.isStopping()).toBe(true);
+    f.worker.onmessage?.(stopped);
+    expect(f.events.onTick).toHaveBeenCalledOnce();
+    expect(f.events.onStopped).toHaveBeenCalledOnce();
+    expect(bridge.isStopping()).toBe(false);
+    bridge.stop();
+    bridge.reset();
+    f.worker.onmessage?.(stopped);
+    expect(f.events.onStopped).toHaveBeenCalledOnce();
+    bridge.dispose();
   });
 });

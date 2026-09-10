@@ -3,13 +3,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store/use-store';
 import { ZoneData } from './model/types';
 import { toCanvasEdges, toCanvasNodes } from './model/canvas-types';
+import { ExperimentGuide } from './components/learning/ExperimentGuide';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { ComponentPalette } from './components/palette/ComponentPalette';
 import { ArchitectureCanvas } from './components/canvas/ArchitectureCanvas';
 import { PropertiesPanel } from './components/panels/PropertiesPanel';
 import { SimulationControls } from './components/playback/SimulationControls';
-import { EnvelopeCalculator } from './components/panels/EnvelopeCalculator';
 import { ToastContainer } from './components/ui/Toast';
 import { chaosRunner } from './engine/metrics/chaos-runner';
 import {
@@ -19,7 +19,14 @@ import {
 } from './engine/simulation-runtime';
 import { decodeStateFromUrlHash } from './utils/sharing';
 import styles from './App.module.css';
+import { readWorkspaceDraft, startWorkspaceAutosave } from './store/workspace-draft';
 import { startUiPerformanceMonitor } from './diagnostics/runtime-performance';
+
+const EnvelopeCalculator = lazy(() =>
+  import('./components/panels/EnvelopeCalculator').then((module) => ({
+    default: module.EnvelopeCalculator,
+  })),
+);
 
 const MetricsDashboard = lazy(() =>
   import('./components/panels/MetricsDashboard').then((module) => ({
@@ -85,6 +92,10 @@ export function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 1100);
   const bootstrappedRef = useRef(false);
+  const [workspaceReady, setWorkspaceReady] = useState(false);
+  useEffect(() => {
+    if (workspaceReady) return startWorkspaceAutosave();
+  }, [workspaceReady]);
 
   useEffect(() => {
     return startUiPerformanceMonitor();
@@ -128,8 +139,25 @@ export function App() {
           setTrafficConfig(decoded.trafficConfig);
         }
         addToast('Loaded shared architecture from URL', 'success');
+        setWorkspaceReady(true);
         return;
       }
+    }
+
+    try {
+      const draft = readWorkspaceDraft();
+      if (draft) {
+        loadCanvasState(toCanvasNodes(draft.nodes), toCanvasEdges(draft.edges), draft.zones || []);
+        if (draft.trafficConfig) setTrafficConfig(draft.trafficConfig);
+        addToast('Restored your locally saved workspace', 'success');
+        setWorkspaceReady(true);
+        return;
+      }
+    } catch {
+      addToast(
+        'Saved workspace could not be restored. Use a JSON export or snapshot to recover it.',
+        'warning',
+      );
     }
 
     // Load the starter category only when no shared architecture was supplied.
@@ -137,12 +165,16 @@ export function App() {
       void Promise.all([import('./scenarios/core'), import('./scenarios/normalize')])
         .then(([core, normalization]) => {
           const starter = normalization.normalizeScenario(core.CORE_SCENARIOS[0]);
+          if (useStore.getState().nodes.length > 0) return;
           loadScenario(starter);
           loadReferenceDesign(starter.referenceDesign);
         })
         .catch(() => {
           addToast('Starter architecture could not be loaded', 'error');
-        });
+        })
+        .finally(() => setWorkspaceReady(true));
+    } else {
+      setWorkspaceReady(true);
     }
   }, [
     addToast,
@@ -271,6 +303,7 @@ export function App() {
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
       />
+      <ExperimentGuide />
       <div className={styles.mainLayout}>
         <Sidebar
           isOpen={isSidebarOpen}
@@ -281,7 +314,11 @@ export function App() {
               <ScenarioManager />
             </Suspense>
           }
-          calculatorSlot={<EnvelopeCalculator />}
+          calculatorSlot={
+            <Suspense fallback={<div className={styles.lazyFallback}>Loading calculator…</div>}>
+              <EnvelopeCalculator />
+            </Suspense>
+          }
         />
 
         <main className={styles.canvasContainer}>

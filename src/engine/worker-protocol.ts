@@ -22,7 +22,7 @@ export interface TickPayload {
 export type WorkerResponse =
   | { type: 'WORKER_READY' }
   | { type: 'GRAPH_ACK'; payload: { graphRevision: number } }
-  | { type: 'TICK_UPDATE'; payload: TickPayload };
+  | { type: 'TICK_UPDATE' | 'STOPPED'; payload: TickPayload };
 
 export function isWorkerCommand(value: unknown): value is WorkerCommand {
   if (!value || typeof value !== 'object' || typeof (value as { type?: unknown }).type !== 'string')
@@ -56,7 +56,11 @@ export function isWorkerResponse(value: unknown): value is WorkerResponse {
       (message.payload as { graphRevision?: unknown } | undefined)?.graphRevision,
     );
   }
-  if (message.type !== 'TICK_UPDATE' || !message.payload || typeof message.payload !== 'object')
+  if (
+    !['TICK_UPDATE', 'STOPPED'].includes(String(message.type)) ||
+    !message.payload ||
+    typeof message.payload !== 'object'
+  )
     return false;
   const payload = message.payload as Partial<TickPayload>;
   return (

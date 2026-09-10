@@ -15,3 +15,6 @@ playwright-report
 test-results
 coverage
 reports
+
+.playwright-cli/
+output/playwright/

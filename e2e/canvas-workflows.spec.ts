@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { architectureUrl, twoNodeArchitecture } from './helpers';
+import { architectureUrl, twoNodeArchitecture, openArchitectureActions } from './helpers';
 
 test('adds by drag, connects nodes, and changes edge protocol', async ({ page }) => {
   await page.goto(architectureUrl([{ id: 'client', type: 'client', x: 80, y: 160 }]));
@@ -49,6 +49,7 @@ test('edits representative properties in every component category', async ({ pag
     { id: 'security', type: 'rate_limiter' as const, name: 'Security', x: 560, y: 300 },
   ];
   await page.goto(architectureUrl(components));
+  await page.getByRole('button', { name: 'Show canvas minimap' }).click();
   for (const component of components) {
     await page.getByTestId(`rf__node-${component.id}`).click();
     const input = page.getByRole('textbox', { name: 'Component Name' });
@@ -124,7 +125,9 @@ test('uses undo, redo, duplicate, delete, auto-layout, and keyboard shortcuts', 
   await expect(page.locator('.react-flow__node')).toHaveCount(3);
   await page.keyboard.press('Control+Shift+z');
   await expect(page.locator('.react-flow__node')).toHaveCount(2);
+  await openArchitectureActions(page);
   await page.getByTitle('Topologically arrange components (L)').click();
+  await page.keyboard.press('Escape');
   await page.keyboard.press('?');
   await expect(page.getByRole('dialog', { name: /Keyboard Shortcuts/i })).toBeVisible();
 });
