@@ -16,7 +16,7 @@ test('keyboard, zoom, reduced-motion, and forced-color accessibility remain usab
 }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto('/');
-  const firstNode = page.locator('.react-flow__node[role="button"]').first();
+  const firstNode = page.locator('.react-flow__node[role="group"]').first();
   await expect(firstNode).toBeVisible();
   await firstNode.focus();
   await expect(firstNode).toBeFocused();

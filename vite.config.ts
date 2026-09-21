@@ -13,6 +13,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (/\/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react-runtime';
           if (id.includes('/node_modules/@xyflow/')) return 'react-flow';
           if (id.includes('/node_modules/lucide-react/')) return 'icons';
           return undefined;
