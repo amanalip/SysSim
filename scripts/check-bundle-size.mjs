@@ -18,7 +18,9 @@ for (const name of files.filter((file) => file.endsWith('.js') || file.endsWith(
 
 const js = rows.filter((row) => row.type === 'js');
 const css = rows.filter((row) => row.type === 'css');
-const entryJs = js.filter((row) => row.name.startsWith('index-'));
+const entryJs = js.filter(
+  (row) => row.name.startsWith('index-') || row.name.startsWith('react-runtime-'),
+);
 const entryCss = css.filter((row) => row.name.startsWith('index-'));
 const report = {
   generatedAt: new Date().toISOString(),
