@@ -411,6 +411,122 @@ describe('versioned architecture schema tasks 222-236', () => {
     });
   });
 
+  it.each([
+    [
+      'node id',
+      (draft: any) => {
+        draft.nodes[0].id = 42;
+      },
+      /nodes\[0\]\.id/,
+    ],
+    [
+      'node position',
+      (draft: any) => {
+        delete draft.nodes[0].position;
+      },
+      /position\.x/,
+    ],
+    [
+      'node data',
+      (draft: any) => {
+        delete draft.nodes[0].data;
+      },
+      /data\.config/,
+    ],
+    [
+      'node fields',
+      (draft: any) => {
+        draft.nodes[0].unexpected = true;
+      },
+      /unexpected/,
+    ],
+    [
+      'edge id',
+      (draft: any) => {
+        draft.edges[0].id = 42;
+      },
+      /edges\[0\]\.id/,
+    ],
+    [
+      'edge data',
+      (draft: any) => {
+        delete draft.edges[0].data;
+      },
+      /data\.protocol/,
+    ],
+    [
+      'edge fields',
+      (draft: any) => {
+        draft.edges[0].unexpected = true;
+      },
+      /unexpected/,
+    ],
+    [
+      'zone object',
+      (draft: any) => {
+        draft.zones[0] = null;
+      },
+      /zones\[0\] must be an object/,
+    ],
+    [
+      'zone id',
+      (draft: any) => {
+        draft.zones[0].id = 42;
+      },
+      /zones\[0\]\.id/,
+    ],
+    [
+      'zone label',
+      (draft: any) => {
+        draft.zones[0].label = 42;
+      },
+      /zones\[0\]\.label/,
+    ],
+    [
+      'zone fields',
+      (draft: any) => {
+        draft.zones[0].unexpected = true;
+      },
+      /unexpected/,
+    ],
+    [
+      'traffic fields',
+      (draft: any) => {
+        draft.trafficConfig.unexpected = true;
+      },
+      /unexpected/,
+    ],
+    [
+      'metadata fields',
+      (draft: any) => {
+        draft.simulationMetadata = {
+          savedAt: 1,
+          appVersion: '1.0.0',
+          state: 'idle',
+          unexpected: true,
+        };
+      },
+      /unexpected/,
+    ],
+  ] as const)(
+    'rejects malformed imported %s with an actionable field path',
+    (_label, mutate, error) => {
+      const draft = state();
+      mutate(draft);
+      expect(() => validateArchitectureState(draft)).toThrow(error);
+    },
+  );
+
+  it('accepts optional and null structured workload values without mutating the input', () => {
+    const draft = state();
+    draft.trafficConfig!.customSchedule = undefined;
+    draft.trafficConfig!.operationMix = null as never;
+    draft.trafficConfig!.customRequestKeys = [null, undefined] as never;
+    const restored = validateArchitectureState(draft);
+    expect(restored.trafficConfig).toEqual(draft.trafficConfig);
+    expect(restored).not.toBe(draft);
+  });
+
   it('formats structured, native, and unknown validation failures', () => {
     expect(formatArchitectureError(new ArchitectureValidationError(['one', 'two']))).toBe(
       'Invalid architecture: one; two',

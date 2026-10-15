@@ -86,6 +86,24 @@ describe('simulation boundary and worker lifecycle tasks 216-221 and 254-262', (
     bridge.dispose();
   });
 
+  it('starts immediately after pausing an already acknowledged worker without reinitializing it', () => {
+    const f = fixture();
+    const workerFactory = vi.fn(() => f.worker);
+    const bridge = new SimulationBridge(f.getSnapshot, f.events, { workerFactory });
+    bridge.initialize();
+    bridge.initialize();
+    f.worker.onmessage?.({ data: { type: 'WORKER_READY' } } as MessageEvent);
+    f.worker.onmessage?.({
+      data: { type: 'GRAPH_ACK', payload: { graphRevision: 4 } },
+    } as MessageEvent);
+    bridge.pause();
+    bridge.start();
+    expect(workerFactory).toHaveBeenCalledOnce();
+    expect(f.posted.filter((message) => message.type === 'START')).toHaveLength(1);
+    expect(f.events.onStateChange).toHaveBeenLastCalledWith('running');
+    bridge.dispose();
+  });
+
   it('uses typed, validated commands and responses', () => {
     expect(isWorkerCommand({ type: 'SET_SPEED', payload: 2 })).toBe(true);
     expect(isWorkerCommand({ type: 'SET_SPEED', payload: Infinity })).toBe(false);
